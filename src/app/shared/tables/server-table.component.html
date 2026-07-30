@@ -1,0 +1,69 @@
+<section class="table-region" [attr.aria-busy]="state() === 'loading'">
+  @switch (state()) {
+    @case ('loading') {
+      <p role="status">Cargando resultados…</p>
+    }
+    @case ('empty') {
+      <p>No hay resultados para los filtros seleccionados.</p>
+    }
+    @case ('error') {
+      <p role="alert">No fue posible cargar los resultados.</p>
+    }
+    @default {
+      <div class="desktop-table">
+        <table>
+          <caption>
+            {{
+              caption()
+            }}
+          </caption>
+          <thead>
+            <tr>
+              @for (column of columns(); track column.key) {
+                <th scope="col">
+                  @if (column.sortable && sortEnabled()) {
+                    <button type="button" (click)="sort(column)">
+                      {{ column.label }}
+                    </button>
+                  } @else {
+                    {{ column.label }}
+                  }
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of rows(); track $index) {
+              <tr>
+                @for (column of columns(); track column.key) {
+                  <td>{{ value(row, column) }}</td>
+                }
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="mobile-cards">
+        @for (row of rows(); track $index) {
+          <article>
+            @for (column of columns(); track column.key) {
+              <div>
+                <strong>{{ column.label }}</strong>
+                <span>{{ value(row, column) }}</span>
+              </div>
+            }
+          </article>
+        }
+      </div>
+
+      <nav class="pagination" aria-label="Paginación">
+        <button type="button" [disabled]="currentPage() <= 1" (click)="move(-1)">Anterior</button>
+        <span>Página {{ currentPage() }} de {{ lastPage() }}</span>
+        <button type="button" [disabled]="currentPage() >= lastPage()" (click)="move(1)">
+          Siguiente
+        </button>
+      </nav>
+    }
+  }
+</section>

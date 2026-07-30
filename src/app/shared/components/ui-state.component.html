@@ -1,0 +1,30 @@
+<section class="state" [class]="kind()" [attr.aria-busy]="kind() === 'loading'">
+  <div class="symbol" aria-hidden="true">
+    @switch (kind()) {
+      @case ('loading') {
+        <span class="spinner"></span>
+      }
+      @case ('success') {
+        <span>✓</span>
+      }
+      @case ('offline') {
+        <span>↯</span>
+      }
+      @default {
+        <span>!</span>
+      }
+    }
+  </div>
+  <div>
+    <h1>{{ resolvedTitle() }}</h1>
+    @if (message()) {
+      <p>{{ message() }}</p>
+    }
+    @if (requestId()) {
+      <p class="support">Referencia de soporte: {{ requestId() }}</p>
+    }
+    @if (retryable()) {
+      <button type="button" (click)="retry.emit()">Intentar de nuevo</button>
+    }
+  </div>
+</section>

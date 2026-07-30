@@ -1,0 +1,30 @@
+section {
+  max-width: 34rem;
+  border-radius: 1rem;
+  background: white;
+  padding: 1.25rem;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 18%);
+}
+
+h2 {
+  margin-top: 0;
+}
+
+label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+input {
+  min-height: 44px;
+  border: 1px solid #768579;
+  border-radius: 0.5rem;
+  padding: 0.65rem;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}

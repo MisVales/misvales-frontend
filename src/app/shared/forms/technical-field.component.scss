@@ -1,0 +1,48 @@
+.field {
+  display: grid;
+  gap: 0.4rem;
+}
+
+label {
+  font-weight: 650;
+}
+
+input:not([type='checkbox'], [type='radio']),
+select,
+textarea {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid #768579;
+  border-radius: 0.5rem;
+  background: white;
+  padding: 0.7rem 0.8rem;
+  color: inherit;
+}
+
+textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.check,
+.choices,
+.choices label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 44px;
+}
+
+.choices {
+  flex-wrap: wrap;
+}
+
+.error {
+  display: grid;
+  color: var(--mv-danger);
+  font-weight: 600;
+}
+
+small {
+  color: #425c46;
+}

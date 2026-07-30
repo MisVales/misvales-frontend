@@ -1,0 +1,37 @@
+.button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 2px solid transparent;
+  border-radius: 0.65rem;
+  padding: 0.65rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary {
+  background: var(--mv-green);
+  color: #08290c;
+}
+
+.secondary {
+  border-color: var(--mv-green-dark);
+  background: white;
+  color: var(--mv-green-dark);
+}
+
+.destructive {
+  background: var(--mv-danger);
+  color: white;
+}
+
+.icon {
+  border-color: var(--mv-gray);
+  background: white;
+  padding: 0.5rem;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}

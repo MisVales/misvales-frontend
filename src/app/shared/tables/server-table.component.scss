@@ -1,0 +1,77 @@
+.table-region {
+  min-width: 0;
+}
+
+.desktop-table {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+caption {
+  padding: 0.75rem;
+  text-align: left;
+  font-weight: 750;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--mv-gray);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+th {
+  background: var(--mv-mint);
+}
+
+th button,
+.pagination button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+}
+
+.mobile-cards {
+  display: none;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-block: 0.75rem;
+}
+
+@media (max-width: 767px) {
+  .desktop-table {
+    display: none;
+  }
+
+  .mobile-cards {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  article {
+    display: grid;
+    gap: 0.5rem;
+    border: 1px solid var(--mv-gray);
+    border-radius: 0.75rem;
+    background: white;
+    padding: 0.85rem;
+  }
+
+  article div {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+}

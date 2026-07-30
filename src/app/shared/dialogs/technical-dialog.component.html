@@ -1,0 +1,33 @@
+<section
+  cdkTrapFocus
+  [cdkTrapFocusAutoCapture]="true"
+  role="dialog"
+  aria-modal="true"
+  [attr.aria-labelledby]="'dialog-title'"
+>
+  <h2 id="dialog-title">{{ title() }}</h2>
+  <p>{{ message() }}</p>
+
+  @if (kind() === 'reinforced') {
+    <label for="reinforcement">
+      Escribe <strong>{{ reinforcementPhrase() }}</strong> para confirmar
+    </label>
+    <input id="reinforcement" type="text" [(ngModel)]="reinforcement" />
+  }
+
+  <div class="actions">
+    @if (kind() !== 'information') {
+      <mv-action-button variant="secondary" [disabled]="pending()" (activated)="cancelled.emit()">
+        Cancelar
+      </mv-action-button>
+    }
+    <mv-action-button
+      [variant]="kind() === 'reinforced' ? 'destructive' : 'primary'"
+      [pending]="pending()"
+      [disabled]="!canConfirm()"
+      (activated)="confirmed.emit()"
+    >
+      {{ kind() === 'information' ? 'Entendido' : 'Confirmar' }}
+    </mv-action-button>
+  </div>
+</section>

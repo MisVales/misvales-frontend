@@ -1,0 +1,86 @@
+<div class="field">
+  @if (kind() === 'checkbox') {
+    <label class="check" [for]="name()">
+      <input
+        [id]="name()"
+        type="checkbox"
+        [formControl]="control()"
+        [attr.aria-describedby]="describedBy() || null"
+      />
+      <span>{{ label() }}</span>
+    </label>
+  } @else {
+    <label [for]="name()">
+      {{ label() }}
+      @if (required()) {
+        <span aria-hidden="true">*</span>
+        <span class="mv-sr-only">(obligatorio)</span>
+      }
+    </label>
+
+    @switch (kind()) {
+      @case ('textarea') {
+        <textarea
+          [id]="name()"
+          [formControl]="control()"
+          [required]="required()"
+          [attr.aria-describedby]="describedBy() || null"
+        ></textarea>
+      }
+      @case ('select') {
+        <select
+          [id]="name()"
+          [formControl]="control()"
+          [required]="required()"
+          [attr.aria-describedby]="describedBy() || null"
+        >
+          <option value="">Selecciona una opción</option>
+          @for (option of options(); track option.value) {
+            <option [value]="option.value">{{ option.label }}</option>
+          }
+        </select>
+      }
+      @case ('radio') {
+        <div class="choices" role="radiogroup" [attr.aria-labelledby]="name() + '-legend'">
+          <span class="mv-sr-only" [id]="name() + '-legend'">{{ label() }}</span>
+          @for (option of options(); track option.value) {
+            <label>
+              <input
+                type="radio"
+                [name]="name()"
+                [value]="option.value"
+                [formControl]="control()"
+              />
+              {{ option.label }}
+            </label>
+          }
+        </div>
+      }
+      @default {
+        <input
+          [id]="name()"
+          [type]="inputType()"
+          [formControl]="control()"
+          [required]="required()"
+          [attr.inputmode]="kind() === 'decimal' || kind() === 'money' ? 'decimal' : null"
+          [attr.aria-describedby]="describedBy() || null"
+        />
+      }
+    }
+  }
+
+  @if (help()) {
+    <small [id]="name() + '-help'">{{ help() }}</small>
+  }
+
+  @if (localError() || serverErrors().length > 0) {
+    <div class="error" [id]="name() + '-error'" role="alert">
+      @if (localError()) {
+        <span>{{ localError() }}</span>
+      }
+      @for (message of serverErrors(); track message) {
+        <span>{{ message }}</span>
+      }
+    </div>
+  }
+</div>

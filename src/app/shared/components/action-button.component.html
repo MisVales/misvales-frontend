@@ -1,0 +1,14 @@
+<button
+  mat-button
+  type="button"
+  [class]="'button ' + variant()"
+  [disabled]="disabled() || pending()"
+  [attr.aria-label]="accessibleLabel()"
+  [attr.aria-busy]="pending()"
+  (click)="activated.emit()"
+>
+  <ng-content />
+  @if (pending()) {
+    <span class="mv-sr-only">Acción en proceso</span>
+  }
+</button>
