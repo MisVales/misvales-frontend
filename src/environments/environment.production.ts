@@ -1,12 +1,12 @@
 import { AppEnvironment } from './environment.model';
 
 export const environment: AppEnvironment = {
-  production: false,
+  production: true,
   apiBaseUrl: '/api/v1',
   csrfUrl: '/sanctum/csrf-cookie',
   businessTimezone: 'America/Monterrey',
   locale: 'es-MX',
-  loggingLevel: 'debug',
-  sourceMaps: true,
+  loggingLevel: 'error',
+  sourceMaps: false,
   logPayloads: false,
 };

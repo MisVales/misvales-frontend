@@ -6,7 +6,7 @@ export const environment: AppEnvironment = {
   csrfUrl: '/sanctum/csrf-cookie',
   businessTimezone: 'America/Monterrey',
   locale: 'es-MX',
-  loggingLevel: 'debug',
+  loggingLevel: 'warn',
   sourceMaps: true,
   logPayloads: false,
 };
