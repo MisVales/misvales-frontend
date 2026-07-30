@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
-  selector: 'mv-root',
+  selector: 'mv-auth-layout',
   imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.scss',
+  templateUrl: './auth-layout.component.html',
+  styleUrl: './auth-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class App {}
+export class AuthLayoutComponent {}

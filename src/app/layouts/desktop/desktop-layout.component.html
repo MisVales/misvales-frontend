@@ -1,0 +1,39 @@
+<div class="desktop-shell" [class.collapsed]="collapsed()">
+  <header>
+    <a class="brand" routerLink="/administrativa">MisVales</a>
+    <div class="header-actions" aria-label="Cuenta y notificaciones">
+      <button type="button" aria-label="Notificaciones">Avisos</button>
+      <button type="button" aria-label="Opciones de sesión">Sesión</button>
+    </div>
+  </header>
+
+  <aside>
+    <button
+      class="collapse"
+      type="button"
+      [attr.aria-expanded]="!collapsed()"
+      aria-controls="desktop-navigation"
+      (click)="collapsed.set(!collapsed())"
+    >
+      {{ collapsed() ? 'Abrir menú' : 'Contraer menú' }}
+    </button>
+    <nav id="desktop-navigation" aria-label="Navegación administrativa">
+      @for (item of navigation(); track item.path) {
+        <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+      } @empty {
+        <p>Navegación pendiente del contexto autorizado.</p>
+      }
+    </nav>
+  </aside>
+
+  <main>
+    <nav class="breadcrumb" aria-label="Ruta de navegación">
+      <a routerLink="/administrativa">Administrativa</a>
+    </nav>
+    <section class="workspace" aria-label="Área principal">
+      <router-outlet />
+      <h1>Experiencia administrativa</h1>
+      <p>Contenedor preparado para tablas, filtros, detalles y formularios.</p>
+    </section>
+  </main>
+</div>

@@ -1,0 +1,114 @@
+.desktop-shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template:
+    'header header' 68px
+    'sidebar main' 1fr /
+    17rem 1fr;
+  transition: grid-template-columns 160ms ease;
+}
+
+.desktop-shell.collapsed {
+  grid-template-columns: 7rem 1fr;
+}
+
+header {
+  display: flex;
+  grid-area: header;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--mv-green-dark);
+  padding: 0 1.25rem;
+  color: white;
+}
+
+.brand {
+  font-size: 1.35rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+button,
+aside a {
+  min-height: 44px;
+}
+
+button {
+  border: 1px solid rgb(255 255 255 / 40%);
+  border-radius: 0.5rem;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  color: inherit;
+  font: inherit;
+}
+
+aside {
+  grid-area: sidebar;
+  border-right: 1px solid var(--mv-gray);
+  background: white;
+  padding: 1rem;
+}
+
+aside nav {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+aside a {
+  display: flex;
+  align-items: center;
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  text-decoration: none;
+}
+
+aside a.active {
+  background: var(--mv-mint);
+  font-weight: 750;
+}
+
+aside p {
+  color: #526555;
+  font-size: 0.85rem;
+}
+
+main {
+  min-width: 0;
+  grid-area: main;
+}
+
+.breadcrumb {
+  border-bottom: 1px solid var(--mv-gray);
+  background: white;
+  padding: 0.8rem 1.5rem;
+}
+
+.workspace {
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+@media (max-width: 767px) {
+  .desktop-shell,
+  .desktop-shell.collapsed {
+    grid-template:
+      'header' auto
+      'sidebar' auto
+      'main' 1fr /
+      1fr;
+  }
+
+  header {
+    min-height: 68px;
+  }
+
+  aside {
+    border-right: 0;
+    border-bottom: 1px solid var(--mv-gray);
+  }
+}

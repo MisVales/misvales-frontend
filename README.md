@@ -1,24 +1,32 @@
 # MisVales Frontend
 
-Entorno inicial de desarrollo de MisVales con Angular 22 y Tailwind CSS.
+SPA Angular única de MisVales con experiencias administrativa, tableta y
+distribuidora.
 
 ## Ejecutar
 
 ```powershell
 npm ci
-npm run dev
+npm start
 ```
 
-La aplicación queda disponible en `http://localhost:4200` y utiliza `proxy.conf.json` para
-redirigir `/api` y `/sanctum` al backend local en `http://localhost:8000`.
+La aplicación queda disponible en `http://localhost:4200` y usa
+`proxy.conf.json` para `/api` y `/sanctum`.
 
-## Validar
+## Comandos
 
 ```powershell
-npm run check
+npm run build
+npm run build:test
+npm run build:production
+npm run lint
+npm run format
+npm run format:check
+npm run test
+npm run test:coverage
+npm run e2e
+npm run verify
 ```
 
-También están disponibles `npm run lint`, `npm run test`, `npm run format:check` y `npm run build`.
-
-El proyecto está configurado únicamente para desarrollo. No contiene configuración de despliegue
-ni funcionalidades de negocio.
+Consulta [el estado de la Etapa 1](docs/stage-1-status.md) para conocer el
+límite contractual vigente de `GET /api/v1/auth/context`.

@@ -1,0 +1,78 @@
+.tablet-shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-rows: 64px auto 1fr;
+}
+
+header,
+nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+header {
+  justify-content: space-between;
+  background: var(--mv-green-dark);
+  padding: 0 1rem;
+  color: white;
+}
+
+header a {
+  font-size: 1.25rem;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+button,
+nav a {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+button {
+  border: 1px solid white;
+  border-radius: 0.55rem;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
+  color: white;
+}
+
+nav {
+  overflow-x: auto;
+  border-bottom: 1px solid var(--mv-gray);
+  background: white;
+  padding: 0.65rem 1rem;
+}
+
+nav a {
+  display: grid;
+  place-items: center;
+  border-radius: 0.65rem;
+  padding: 0.5rem 0.85rem;
+  text-decoration: none;
+}
+
+nav a.active {
+  background: var(--mv-mint);
+}
+
+main {
+  padding: clamp(1rem, 4vw, 2rem);
+}
+
+.future-area {
+  min-height: 12rem;
+  border: 2px dashed var(--mv-green-medium);
+  border-radius: 1rem;
+  background: var(--mv-mint);
+  padding: 1rem;
+}
+
+@media (orientation: landscape) {
+  main section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+}

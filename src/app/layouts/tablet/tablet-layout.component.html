@@ -1,0 +1,25 @@
+<div class="tablet-shell">
+  <header>
+    <a routerLink="/tableta">MisVales</a>
+    <button type="button" aria-label="Opciones de sesión">Sesión</button>
+  </header>
+
+  <nav aria-label="Navegación operativa">
+    @for (item of navigation(); track item.path) {
+      <a [routerLink]="item.path" routerLinkActive="active">{{ item.label }}</a>
+    } @empty {
+      <span>Navegación pendiente del contexto autorizado</span>
+    }
+  </nav>
+
+  <main>
+    <router-outlet />
+    <section>
+      <h1>Experiencia para tableta</h1>
+      <p>Área táctil preparada para formularios por secciones, cámara y evidencias.</p>
+      <div class="future-area" aria-label="Área reservada para cámara y evidencias">
+        Cámara y evidencias — etapa posterior
+      </div>
+    </section>
+  </main>
+</div>
