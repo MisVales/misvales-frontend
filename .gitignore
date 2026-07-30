@@ -32,7 +32,6 @@
 .history/*
 
 # Miscellaneous
-/AGENTS.md
 /.angular/cache
 .sass-cache/
 /connect.lock
