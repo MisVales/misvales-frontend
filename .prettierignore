@@ -6,3 +6,7 @@ node_modules
 package-lock.json
 playwright-report
 test-results
+docs/GUIA-ENDPOINTS-API.md
+docs/MisVales-Planeacion-Analisis-Diseño.md
+docs/MisValesDoc(2).md
+docs/openapi.yaml
