@@ -13,6 +13,7 @@ import { SessionStore } from '@core/session/session.store';
 import { experienceGuard } from './experience.guard';
 import { permissionGuard } from './permission.guard';
 import { publicOnlyGuard } from './public-only.guard';
+import { roleGuard } from './role.guard';
 import { rootGuard } from './root.guard';
 import { sessionGuard } from './session.guard';
 
@@ -90,5 +91,29 @@ describe('technical guards', () => {
     expect(granted).toBe(true);
     expect(TestBed.inject(Router).serializeUrl(denied)).toBe('/403');
     expect(TestBed.inject(Router).serializeUrl(publicResult)).toBe('/administrativa');
+  });
+
+  it('grants only an explicitly allowed effective role', () => {
+    session.establish({
+      experience: 'administrativa',
+      permissions: new Set(),
+      role: 'ADMINISTRATOR',
+    });
+
+    const granted = TestBed.runInInjectionContext(() =>
+      roleGuard(
+        { data: { roles: ['ADMINISTRATOR'] } } as unknown as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    );
+    const denied = TestBed.runInInjectionContext(() =>
+      roleGuard(
+        { data: { roles: ['GENERAL_MANAGER'] } } as unknown as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    ) as UrlTree;
+
+    expect(granted).toBe(true);
+    expect(TestBed.inject(Router).serializeUrl(denied)).toBe('/403');
   });
 });
