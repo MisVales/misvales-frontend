@@ -1,7 +1,7 @@
 <div class="tablet-shell">
   <header>
     <a routerLink="/tableta">MisVales</a>
-    <button type="button" aria-label="Opciones de sesión">Sesión</button>
+    <mv-logout-button />
   </header>
 
   <nav aria-label="Navegación operativa">
@@ -14,12 +14,5 @@
 
   <main>
     <router-outlet />
-    <section>
-      <h1>Experiencia para tableta</h1>
-      <p>Área táctil preparada para formularios por secciones, cámara y evidencias.</p>
-      <div class="future-area" aria-label="Área reservada para cámara y evidencias">
-        Cámara y evidencias — etapa posterior
-      </div>
-    </section>
   </main>
 </div>

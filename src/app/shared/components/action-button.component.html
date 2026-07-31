@@ -1,6 +1,6 @@
 <button
   mat-button
-  type="button"
+  [type]="buttonType()"
   [class]="'button ' + variant()"
   [disabled]="disabled() || pending()"
   [attr.aria-label]="accessibleLabel()"

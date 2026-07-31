@@ -3,10 +3,11 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 import { SessionStore } from '@core/session/session.store';
 import { authorizedNavigation, NAVIGATION_ITEMS } from '@layouts/navigation/navigation.config';
+import { LogoutButtonComponent } from '@shared/components/logout-button.component';
 
 @Component({
   selector: 'mv-tablet-layout',
-  imports: [RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [LogoutButtonComponent, RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: './tablet-layout.component.html',
   styleUrl: './tablet-layout.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

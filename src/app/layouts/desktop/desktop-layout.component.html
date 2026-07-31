@@ -3,7 +3,7 @@
     <a class="brand" routerLink="/administrativa">MisVales</a>
     <div class="header-actions" aria-label="Cuenta y notificaciones">
       <button type="button" aria-label="Notificaciones">Avisos</button>
-      <button type="button" aria-label="Opciones de sesión">Sesión</button>
+      <mv-logout-button />
     </div>
   </header>
 
@@ -32,8 +32,6 @@
     </nav>
     <section class="workspace" aria-label="Área principal">
       <router-outlet />
-      <h1>Experiencia administrativa</h1>
-      <p>Contenedor preparado para tablas, filtros, detalles y formularios.</p>
     </section>
   </main>
 </div>

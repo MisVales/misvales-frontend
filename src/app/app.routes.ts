@@ -20,6 +20,7 @@ export const routes: Routes = [
     canActivate: [publicOnlyGuard],
     loadComponent: () =>
       import('@layouts/auth/auth-layout.component').then((module) => module.AuthLayoutComponent),
+    loadChildren: () => import('@features/auth/auth.routes').then((module) => module.AUTH_ROUTES),
   },
   {
     path: 'administrativa',
@@ -29,6 +30,37 @@ export const routes: Routes = [
       import('@layouts/desktop/desktop-layout.component').then(
         (module) => module.DesktopLayoutComponent,
       ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('@shared/components/experience-home-page.component').then(
+            (module) => module.ExperienceHomePageComponent,
+          ),
+      },
+      {
+        path: 'mi-cuenta',
+        loadChildren: () =>
+          import('@features/account-security/account-security.routes').then(
+            (module) => module.ACCOUNT_SECURITY_ROUTES,
+          ),
+      },
+      {
+        path: 'cuentas',
+        loadChildren: () =>
+          import('@features/account-security/account-security.routes').then(
+            (module) => module.ACCOUNT_ADMIN_ROUTES,
+          ),
+      },
+      {
+        path: 'organizacion',
+        loadChildren: () =>
+          import('@features/organization/organization.routes').then(
+            (module) => module.ORGANIZATION_ROUTES,
+          ),
+      },
+    ],
   },
   {
     path: 'tableta',
@@ -38,6 +70,23 @@ export const routes: Routes = [
       import('@layouts/tablet/tablet-layout.component').then(
         (module) => module.TabletLayoutComponent,
       ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('@shared/components/experience-home-page.component').then(
+            (module) => module.ExperienceHomePageComponent,
+          ),
+      },
+      {
+        path: 'mi-cuenta',
+        loadChildren: () =>
+          import('@features/account-security/account-security.routes').then(
+            (module) => module.ACCOUNT_SECURITY_ROUTES,
+          ),
+      },
+    ],
   },
   {
     path: 'distribuidora',
@@ -47,6 +96,23 @@ export const routes: Routes = [
       import('@layouts/mobile/mobile-layout.component').then(
         (module) => module.MobileLayoutComponent,
       ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('@shared/components/experience-home-page.component').then(
+            (module) => module.ExperienceHomePageComponent,
+          ),
+      },
+      {
+        path: 'mi-cuenta',
+        loadChildren: () =>
+          import('@features/account-security/account-security.routes').then(
+            (module) => module.ACCOUNT_SECURITY_ROUTES,
+          ),
+      },
+    ],
   },
   {
     path: '403',

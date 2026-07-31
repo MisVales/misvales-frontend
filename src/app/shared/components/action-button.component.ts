@@ -11,6 +11,7 @@ export type ActionButtonVariant = 'destructive' | 'icon' | 'primary' | 'secondar
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActionButtonComponent {
+  readonly buttonType = input<'button' | 'submit'>('button');
   readonly variant = input<ActionButtonVariant>('primary');
   readonly disabled = input(false);
   readonly pending = input(false);
