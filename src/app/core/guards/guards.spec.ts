@@ -10,7 +10,9 @@ import {
 
 import { SessionStore } from '@core/session/session.store';
 
+import { anyPermissionGuard } from './any-permission.guard';
 import { experienceGuard } from './experience.guard';
+import { opaqueIdentifierGuard } from './opaque-identifier.guard';
 import { permissionGuard } from './permission.guard';
 import { publicOnlyGuard } from './public-only.guard';
 import { roleGuard } from './role.guard';
@@ -115,5 +117,44 @@ describe('technical guards', () => {
 
     expect(granted).toBe(true);
     expect(TestBed.inject(Router).serializeUrl(denied)).toBe('/403');
+  });
+
+  it('grants a route when any documented capability is present', () => {
+    session.establish({
+      experience: 'administrativa',
+      permissions: new Set(['risk.view.global']),
+    });
+
+    const granted = TestBed.runInInjectionContext(() =>
+      anyPermissionGuard(
+        {
+          data: { permissions: ['risk.view.branch', 'risk.view.global'] },
+        } as unknown as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    );
+    const denied = TestBed.runInInjectionContext(() =>
+      anyPermissionGuard(
+        { data: { permissions: [] } } as unknown as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    ) as UrlTree;
+
+    expect(granted).toBe(true);
+    expect(TestBed.inject(Router).serializeUrl(denied)).toBe('/403');
+  });
+
+  it('rejects a missing opaque route identifier', () => {
+    const result = TestBed.runInInjectionContext(() =>
+      opaqueIdentifierGuard(
+        {
+          data: { identifierParameter: 'resourceId' },
+          paramMap: { get: () => '   ' },
+        } as unknown as ActivatedRouteSnapshot,
+        {} as RouterStateSnapshot,
+      ),
+    ) as UrlTree;
+
+    expect(TestBed.inject(Router).serializeUrl(result)).toBe('/404');
   });
 });

@@ -67,6 +67,28 @@ export const routes: Routes = [
             (module) => module.CONFIGURATION_ROUTES,
           ),
       },
+      {
+        path: 'puntos',
+        loadChildren: () =>
+          import('@features/points/points.routes').then((module) => module.POINTS_ADMIN_ROUTES),
+      },
+      {
+        path: 'canjes',
+        loadChildren: () =>
+          import('@features/points/points.routes').then(
+            (module) => module.POINT_REDEMPTIONS_ADMIN_ROUTES,
+          ),
+      },
+      {
+        path: 'riesgo',
+        loadChildren: () =>
+          import('@features/risk/risk.routes').then((module) => module.RISK_ADMIN_ROUTES),
+      },
+      {
+        path: 'morosidad',
+        loadChildren: () =>
+          import('@features/risk/risk.routes').then((module) => module.REMOVALS_ADMIN_ROUTES),
+      },
     ],
   },
   {
@@ -117,6 +139,66 @@ export const routes: Routes = [
         loadChildren: () =>
           import('@features/account-security/account-security.routes').then(
             (module) => module.ACCOUNT_SECURITY_ROUTES,
+          ),
+      },
+    ],
+  },
+  {
+    path: 'operativa',
+    canActivate: [sessionGuard, experienceGuard],
+    data: { experience: 'tableta' },
+    loadComponent: () =>
+      import('@layouts/tablet/tablet-layout.component').then(
+        (module) => module.TabletLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('@shared/components/experience-home-page.component').then(
+            (module) => module.ExperienceHomePageComponent,
+          ),
+      },
+      {
+        path: 'riesgo',
+        loadChildren: () =>
+          import('@features/risk/risk.routes').then((module) => module.RISK_TABLET_ROUTES),
+      },
+      {
+        path: 'morosidad',
+        loadChildren: () =>
+          import('@features/risk/risk.routes').then((module) => module.REMOVALS_TABLET_ROUTES),
+      },
+    ],
+  },
+  {
+    path: 'movil',
+    canActivate: [sessionGuard, experienceGuard],
+    data: { experience: 'distribuidora' },
+    loadComponent: () =>
+      import('@layouts/mobile/mobile-layout.component').then(
+        (module) => module.MobileLayoutComponent,
+      ),
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('@shared/components/experience-home-page.component').then(
+            (module) => module.ExperienceHomePageComponent,
+          ),
+      },
+      {
+        path: 'puntos',
+        loadChildren: () =>
+          import('@features/points/points.routes').then((module) => module.POINTS_MOBILE_ROUTES),
+      },
+      {
+        path: 'canjes',
+        loadChildren: () =>
+          import('@features/points/points.routes').then(
+            (module) => module.POINT_REDEMPTIONS_MOBILE_ROUTES,
           ),
       },
     ],

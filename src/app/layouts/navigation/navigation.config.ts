@@ -4,7 +4,8 @@ export interface NavigationItem {
   readonly label: string;
   readonly path: string;
   readonly experience: ApplicationExperience;
-  readonly permission: string;
+  readonly permission?: string;
+  readonly anyPermissions?: readonly string[];
   readonly roles?: readonly RoleCode[];
 }
 
@@ -14,6 +15,40 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     path: '/administrativa/mi-cuenta/seguridad',
     experience: 'administrativa',
     permission: 'auth.context.read',
+  },
+  {
+    label: 'Canjes',
+    path: '/administrativa/canjes',
+    experience: 'administrativa',
+    anyPermissions: [
+      'points.view.branch',
+      'points.view.global',
+      'points.redemptions.decide.branch',
+      'points.redemptions.decide.global',
+    ],
+  },
+  {
+    label: 'Ejecuciones de puntos',
+    path: '/administrativa/puntos/ejecuciones',
+    experience: 'administrativa',
+    permission: 'points.runs.view.global',
+  },
+  {
+    label: 'Riesgo',
+    path: '/administrativa/riesgo',
+    experience: 'administrativa',
+    anyPermissions: ['risk.view.branch', 'risk.view.global'],
+  },
+  {
+    label: 'Retiros de morosidad',
+    path: '/administrativa/morosidad/retiros',
+    experience: 'administrativa',
+    anyPermissions: [
+      'risk.view.branch',
+      'risk.view.global',
+      'delinquency.removal.decide.branch',
+      'delinquency.removal.decide.global',
+    ],
   },
   {
     label: 'Solicitudes de cuenta',
@@ -71,10 +106,34 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     permission: 'auth.context.read',
   },
   {
+    label: 'Riesgo',
+    path: '/operativa/riesgo',
+    experience: 'tableta',
+    permission: 'risk.view.assigned',
+  },
+  {
+    label: 'Retiros',
+    path: '/operativa/morosidad/retiros',
+    experience: 'tableta',
+    anyPermissions: ['risk.view.assigned', 'delinquency.removal.prepare'],
+  },
+  {
     label: 'Mi seguridad',
     path: '/distribuidora/mi-cuenta/seguridad',
     experience: 'distribuidora',
     permission: 'auth.context.read',
+  },
+  {
+    label: 'Puntos',
+    path: '/movil/puntos',
+    experience: 'distribuidora',
+    permission: 'points.view.own',
+  },
+  {
+    label: 'Canjes',
+    path: '/movil/canjes',
+    experience: 'distribuidora',
+    permission: 'points.view.own',
   },
 ];
 
@@ -86,8 +145,13 @@ export function authorizedNavigation(
   return items.filter(
     (item) =>
       item.experience === experience &&
-      session.hasPermission(item.permission) &&
+      hasNavigationPermission(item, session) &&
       (!item.roles ||
         (session.access()?.role ? item.roles.includes(session.access()!.role!) : false)),
   );
+}
+
+function hasNavigationPermission(item: NavigationItem, session: SessionStore): boolean {
+  if (item.permission) return session.hasPermission(item.permission);
+  return item.anyPermissions?.some((permission) => session.hasPermission(permission)) ?? false;
 }
