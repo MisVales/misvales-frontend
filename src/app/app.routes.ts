@@ -89,6 +89,23 @@ export const routes: Routes = [
         loadChildren: () =>
           import('@features/risk/risk.routes').then((module) => module.REMOVALS_ADMIN_ROUTES),
       },
+      {
+        path: 'reportes',
+        loadChildren: () =>
+          import('@features/reporting/reporting.routes').then((module) => module.REPORTING_ROUTES),
+      },
+      {
+        path: 'notificaciones',
+        loadChildren: () =>
+          import('@features/notifications/notifications.routes').then(
+            (module) => module.NOTIFICATIONS_ROUTES,
+          ),
+      },
+      {
+        path: 'auditoria',
+        loadChildren: () =>
+          import('@features/audit/audit.routes').then((module) => module.AUDIT_ROUTES),
+      },
     ],
   },
   {
@@ -170,6 +187,18 @@ export const routes: Routes = [
         loadChildren: () =>
           import('@features/risk/risk.routes').then((module) => module.REMOVALS_TABLET_ROUTES),
       },
+      {
+        path: 'reportes',
+        loadChildren: () =>
+          import('@features/reporting/reporting.routes').then((module) => module.REPORTING_ROUTES),
+      },
+      {
+        path: 'notificaciones',
+        loadChildren: () =>
+          import('@features/notifications/notifications.routes').then(
+            (module) => module.NOTIFICATIONS_ROUTES,
+          ),
+      },
     ],
   },
   {
@@ -199,6 +228,18 @@ export const routes: Routes = [
         loadChildren: () =>
           import('@features/points/points.routes').then(
             (module) => module.POINT_REDEMPTIONS_MOBILE_ROUTES,
+          ),
+      },
+      {
+        path: 'reportes',
+        loadChildren: () =>
+          import('@features/reporting/reporting.routes').then((module) => module.REPORTING_ROUTES),
+      },
+      {
+        path: 'notificaciones',
+        loadChildren: () =>
+          import('@features/notifications/notifications.routes').then(
+            (module) => module.NOTIFICATIONS_ROUTES,
           ),
       },
     ],

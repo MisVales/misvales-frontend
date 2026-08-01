@@ -51,6 +51,29 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     ],
   },
   {
+    label: 'Reportes',
+    path: '/administrativa/reportes',
+    experience: 'administrativa',
+    anyPermissions: [
+      'reports.view.own',
+      'reports.view.assigned',
+      'reports.view.branch',
+      'reports.view.global',
+    ],
+  },
+  {
+    label: 'Notificaciones',
+    path: '/administrativa/notificaciones',
+    experience: 'administrativa',
+    permission: 'auth.context.read',
+  },
+  {
+    label: 'Auditoría',
+    path: '/administrativa/auditoria',
+    experience: 'administrativa',
+    permission: 'security.audit.global.read',
+  },
+  {
     label: 'Solicitudes de cuenta',
     path: '/administrativa/cuentas/solicitudes',
     experience: 'administrativa',
@@ -118,6 +141,23 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     anyPermissions: ['risk.view.assigned', 'delinquency.removal.prepare'],
   },
   {
+    label: 'Reportes',
+    path: '/operativa/reportes',
+    experience: 'tableta',
+    anyPermissions: [
+      'reports.view.own',
+      'reports.view.assigned',
+      'reports.view.branch',
+      'reports.view.global',
+    ],
+  },
+  {
+    label: 'Notificaciones',
+    path: '/operativa/notificaciones',
+    experience: 'tableta',
+    permission: 'auth.context.read',
+  },
+  {
     label: 'Mi seguridad',
     path: '/distribuidora/mi-cuenta/seguridad',
     experience: 'distribuidora',
@@ -134,6 +174,18 @@ export const NAVIGATION_ITEMS: readonly NavigationItem[] = [
     path: '/movil/canjes',
     experience: 'distribuidora',
     permission: 'points.view.own',
+  },
+  {
+    label: 'Reportes',
+    path: '/movil/reportes',
+    experience: 'distribuidora',
+    permission: 'reports.view.own',
+  },
+  {
+    label: 'Notificaciones',
+    path: '/movil/notificaciones',
+    experience: 'distribuidora',
+    permission: 'auth.context.read',
   },
 ];
 
