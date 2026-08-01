@@ -26,7 +26,7 @@ de entrega, pero no se cumplen las dependencias para aprobar una versión candid
 ## Bloqueos de liberación
 
 - Etapas 4–6 y 8 no están implementadas en este checkout.
-- Etapa 3 está presente, pero acumula 19 archivos fuera de formato, 157 errores de lint y carece
+- Etapa 3 está presente, pero acumula 18 archivos fuera de formato, 157 errores de lint y carece
   del ambiente autenticado requerido por su prueba E2E.
 - Etapas 1, 7 y 9 conservan bloqueos contractuales explícitos.
 - `auth/context` no publica el Resource necesario para establecer sesión.

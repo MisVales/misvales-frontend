@@ -16,7 +16,7 @@ código validada: `7da0509e7f6b0032df015430228b616fd77528dc`. Backend: no dispon
 
 | Comando                      | Resultado final                                                   |
 | ---------------------------- | ----------------------------------------------------------------- |
-| `npm run format:check`       | Código 1; 19 archivos de Etapa 3 requieren formato                |
+| `npm run format:check`       | Código 1; 18 archivos de Etapa 3 requieren formato                |
 | `npm run lint`               | Código 1; 157 errores pertenecientes a Etapa 3                    |
 | `npm run audit:release`      | Código 0; guía 237, OpenAPI 237, frontend 104, CSRF transversal 1 |
 | `npm run audit:dependencies` | Código 0; cero vulnerabilidades de producción                     |
