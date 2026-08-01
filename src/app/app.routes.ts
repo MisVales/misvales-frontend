@@ -60,6 +60,13 @@ export const routes: Routes = [
             (module) => module.ORGANIZATION_ROUTES,
           ),
       },
+      {
+        path: '',
+        loadChildren: () =>
+          import('@features/configuration/configuration.routes').then(
+            (module) => module.CONFIGURATION_ROUTES,
+          ),
+      },
     ],
   },
   {
