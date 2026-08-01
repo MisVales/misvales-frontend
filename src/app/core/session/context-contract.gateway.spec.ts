@@ -1,45 +1,25 @@
-import { mapEffectiveContext } from './context-contract.gateway';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 
-describe('auth context contract', () => {
-  const base = {
-    user: {
-      id: '00000000-0000-4000-8000-000000000001',
-      email: 'usuario@example.test',
-      displayName: 'Usuario de prueba',
-      status: 'ACTIVE',
-    },
-    role: { code: 'GENERAL_MANAGER', name: 'Gerente general' },
-    scope: { type: 'GLOBAL', branchId: null },
-    permissions: ['auth.context.read', 'accounts.global.create'],
-    experience: { code: 'ADMIN', layout: 'desktop', homeRoute: '/administracion/inicio' },
-    session: {
-      id: '00000000-0000-4000-8000-000000000002',
-      authenticatedAt: '2026-07-30T12:00:00-06:00',
-      assuranceLevel: 'PASSWORD_MFA',
-      reauthenticatedUntil: null,
-    },
-    contextVersion: 1,
-  } as const;
+import {
+  AUTH_CONTEXT_CONTRACT_UNAVAILABLE,
+  ContextContractGateway,
+} from './context-contract.gateway';
 
-  it.each([
-    ['ADMIN', 'administrativa'],
-    ['TABLET', 'tableta'],
-    ['DISTRIBUTOR_MOBILE', 'distribuidora'],
-  ] as const)('maps %s to the authorized Angular experience', (code, experience) => {
-    const mapped = mapEffectiveContext({
-      ...base,
-      experience: { ...base.experience, code },
+describe('ContextContractGateway', () => {
+  it('fails closed without requesting a response whose Resource is not published', async () => {
+    TestBed.configureTestingModule({
+      providers: [provideHttpClient(), provideHttpClientTesting()],
     });
+    const http = TestBed.inject(HttpTestingController);
+    const gateway = TestBed.inject(ContextContractGateway);
 
-    expect(mapped.experience).toBe(experience);
-    expect(mapped.role).toBe('GENERAL_MANAGER');
-    expect(mapped.permissions.has('accounts.global.create')).toBe(true);
-    expect(mapped.identity?.displayName).toBe('Usuario de prueba');
-  });
+    const result = firstValueFrom(gateway.load());
 
-  it('rejects an incomplete response instead of establishing a partial session', () => {
-    expect(() => mapEffectiveContext({ user: {}, permissions: [] })).toThrow(
-      'INVALID_AUTH_CONTEXT_RESPONSE',
-    );
+    http.expectNone('/api/v1/auth/context');
+    await expect(result).rejects.toThrow(AUTH_CONTEXT_CONTRACT_UNAVAILABLE);
+    http.verify();
   });
 });
