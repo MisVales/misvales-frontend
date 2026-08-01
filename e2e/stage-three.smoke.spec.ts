@@ -1,18 +1,20 @@
 import { test, expect } from '@playwright/test';
-import { authenticator } from 'otplib';
 
 test('Stage 3 - Configuraciones y catalogos', async ({ page }) => {
+  const email = requiredE2eCredential('MISVALES_E2E_EMAIL');
+  const password = requiredE2eCredential('MISVALES_E2E_PASSWORD');
+  const mfaCode = requiredE2eCredential('MISVALES_E2E_MFA_CODE');
+
   // 1. Acceso y Auth
   await page.goto('/acceso');
-  await page.fill('input[type="email"]', 'garciaazamardaniel@gmail.com');
-  await page.fill('input[type="password"]', 'password123');
+  await page.fill('input[type="email"]', email);
+  await page.fill('input[type="password"]', password);
   await page.selectOption('select[name="application"]', 'administrativa');
   await page.click('button[type="submit"]');
 
   // MFA
   await page.waitForSelector('text=Confirma tu identidad');
-  const token = authenticator.generate('JBSWY3DPEHPK3PXP');
-  await page.fill('input[id="mfa-code"]', token);
+  await page.fill('input[id="mfa-code"]', mfaCode);
   await page.click('button[type="submit"]');
 
   // Verificamos entrar a administrativa
@@ -21,7 +23,7 @@ test('Stage 3 - Configuraciones y catalogos', async ({ page }) => {
   // 2. Navegar a Categorías
   await page.click('text=Categorías');
   await page.waitForURL('**/administrativa/categorias');
-  
+
   // 3. Crear Nueva Categoría
   await page.click('text=Nueva Categoría');
   await page.waitForSelector('text=Nueva Categoría');
@@ -44,3 +46,11 @@ test('Stage 3 - Configuraciones y catalogos', async ({ page }) => {
     await publishButton.click();
   }
 });
+
+function requiredE2eCredential(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(`STAGE_3_E2E_ENV_REQUIRED:${name}`);
+  }
+  return value;
+}

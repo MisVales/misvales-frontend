@@ -205,6 +205,11 @@ function verifyClientSource() {
     ['console.log', /\bconsole\.log\s*\(/],
     ['HTML no confiable', /\bbypassSecurityTrust|\[innerHTML\]/],
     ['pruebas enfocadas u omitidas', /\b(?:fit|fdescribe|xit|xdescribe)\s*\(|\.(?:only|skip)\s*\(/],
+    [
+      'credenciales E2E incrustadas',
+      /page\.fill\([^,\n]*(?:password|mfa-code)[^,\n]*,\s*['"][^'"]+['"]\s*\)/i,
+    ],
+    ['secreto TOTP incrustado', /authenticator\.generate\(\s*['"][A-Z2-7]+['"]\s*\)/],
   ];
   for (const file of files) {
     const contents = read(file);
