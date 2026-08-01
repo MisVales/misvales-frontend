@@ -93,7 +93,7 @@ function collectFrontendOperations(root) {
       true,
       ts.ScriptKind.TS,
     );
-    visit(source, source, file, operations);
+    visit(source, source, file, operations, collectEndpointConstants(source));
   }
 
   for (const operation of manualDynamicOperations()) {
@@ -102,31 +102,63 @@ function collectFrontendOperations(root) {
   return operations;
 }
 
-function visit(node, source, file, operations) {
+function visit(node, source, file, operations, endpointConstants) {
   if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression)) {
     const method = node.expression.name.text.toUpperCase();
     const argument = node.arguments[0];
     if (allowedMethods.has(method) && argument) {
-      const endpoint = endpointFrom(argument, source);
+      const endpoint = endpointFrom(argument, source, endpointConstants);
       if (endpoint?.startsWith('/')) {
-        const operation = canonicalOperation(`${method} /api/v1${endpoint}`);
+        const versionedEndpoint = endpoint.startsWith('/api/v1/') ? endpoint : `/api/v1${endpoint}`;
+        const operation = canonicalOperation(`${method} ${versionedEndpoint}`);
         if (!isExpandedDynamicOperation(operation, file)) {
           operations.add(operation);
         }
       }
     }
   }
-  ts.forEachChild(node, (child) => visit(child, source, file, operations));
+  ts.forEachChild(node, (child) => visit(child, source, file, operations, endpointConstants));
 }
 
-function endpointFrom(argument, source) {
+function collectEndpointConstants(source) {
+  const constants = new Map();
+  function collect(node) {
+    if (
+      ts.isPropertyDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isStringLiteralLike(node.initializer)
+    ) {
+      constants.set(node.name.text, node.initializer.text);
+    }
+    ts.forEachChild(node, collect);
+  }
+  collect(source);
+  return constants;
+}
+
+function endpointFrom(argument, source, endpointConstants) {
   if (ts.isStringLiteralLike(argument)) return argument.text;
+  const constant = endpointConstantFrom(argument, endpointConstants);
+  if (constant) return constant;
   if (!ts.isTemplateExpression(argument)) return null;
   let endpoint = argument.head.text;
   for (const span of argument.templateSpans) {
-    endpoint += `{${span.expression.getText(source)}}${span.literal.text}`;
+    endpoint +=
+      (endpointConstantFrom(span.expression, endpointConstants) ??
+        `{${span.expression.getText(source)}}`) + span.literal.text;
   }
   return endpoint;
+}
+
+function endpointConstantFrom(expression, endpointConstants) {
+  if (
+    ts.isPropertyAccessExpression(expression) &&
+    expression.expression.kind === ts.SyntaxKind.ThisKeyword
+  ) {
+    return endpointConstants.get(expression.name.text) ?? null;
+  }
+  return null;
 }
 
 function isExpandedDynamicOperation(operation, file) {
