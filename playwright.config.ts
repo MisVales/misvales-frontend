@@ -17,7 +17,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm start -- --host 127.0.0.1 --port 4200',
+    command: 'npm run start:production -- --host 127.0.0.1 --port 4200',
     url: 'http://127.0.0.1:4200/acceso',
     reuseExistingServer: false,
     timeout: 120_000,
