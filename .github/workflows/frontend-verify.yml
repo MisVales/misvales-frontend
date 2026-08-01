@@ -1,0 +1,52 @@
+name: Frontend verification
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout reviewed commit
+        uses: actions/checkout@v6
+
+      - name: Use approved Node.js version
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.15.0
+          cache: npm
+
+      - name: Use approved npm version
+        run: npm install --global npm@11.19.0
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Install Chromium runtime
+        run: npx playwright install --with-deps chromium
+
+      - name: Audit production dependencies
+        run: npm run audit:dependencies
+
+      - name: Verify frontend
+        run: npm run verify
+
+      - name: Hash diagnostic build
+        run: npm run artifact:hash
+
+      - name: Publish verification evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: frontend-verification-${{ github.sha }}
+          path: |
+            coverage/
+            dist/misvales/
+          if-no-files-found: error
+          retention-days: 14
