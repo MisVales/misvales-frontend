@@ -1,0 +1,77 @@
+<div class="flex-1 flex flex-col h-full">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-xl font-bold text-gray-900">Patrimonio (Bienes, Pasivos y Compromisos)</h2>
+    <button *ngIf="store.detalle()?.estado === 'DRAFT'" (click)="agregarRegistro()" class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+      Agregar Registro
+    </button>
+  </div>
+
+  <div class="flex gap-4 border-b border-gray-200 mb-6">
+    <button (click)="setTipoTab('ASSET')" [class.border-[#1A4D2E]]="tipoActivo === 'ASSET'" [class.text-[#1A4D2E]]="tipoActivo === 'ASSET'" [class.border-transparent]="tipoActivo !== 'ASSET'" [class.text-gray-500]="tipoActivo !== 'ASSET'" class="pb-3 border-b-2 font-medium text-sm transition-colors hover:text-[#1A4D2E]">
+      Bienes (Activos)
+    </button>
+    <button (click)="setTipoTab('LIABILITY')" [class.border-[#1A4D2E]]="tipoActivo === 'LIABILITY'" [class.text-[#1A4D2E]]="tipoActivo === 'LIABILITY'" [class.border-transparent]="tipoActivo !== 'LIABILITY'" [class.text-gray-500]="tipoActivo !== 'LIABILITY'" class="pb-3 border-b-2 font-medium text-sm transition-colors hover:text-[#1A4D2E]">
+      Pasivos (Deudas)
+    </button>
+    <button (click)="setTipoTab('ACTIVE_COMMITMENT')" [class.border-[#1A4D2E]]="tipoActivo === 'ACTIVE_COMMITMENT'" [class.text-[#1A4D2E]]="tipoActivo === 'ACTIVE_COMMITMENT'" [class.border-transparent]="tipoActivo !== 'ACTIVE_COMMITMENT'" [class.text-gray-500]="tipoActivo !== 'ACTIVE_COMMITMENT'" class="pb-3 border-b-2 font-medium text-sm transition-colors hover:text-[#1A4D2E]">
+      Compromisos Activos
+    </button>
+  </div>
+
+  <div *ngIf="cargando" class="text-gray-500 py-8 text-center">Cargando datos...</div>
+
+  <div *ngIf="!cargando && gruposFiltrados.length === 0" class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50">
+    <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    <p class="text-sm text-gray-500 max-w-[250px]">No hay registros de este tipo.</p>
+  </div>
+
+  <div *ngIf="!cargando && gruposFiltrados.length > 0" class="space-y-6">
+    <div *ngFor="let form of gruposFiltrados" [formGroup]="form" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative">
+      
+      <div class="absolute right-4 top-4 flex gap-2" *ngIf="store.detalle()?.estado === 'DRAFT'">
+        <button (click)="guardarRegistro(form)" [disabled]="form.pristine || form.invalid" class="text-[#1A4D2E] hover:text-[#133c23] p-1 disabled:opacity-50" title="Guardar">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+        </button>
+        <button (click)="form.value.id ? eliminarRegistroAPI(form, form.value.id) : removerRegistroVisual(form)" class="text-red-500 hover:text-red-700 p-1" title="Eliminar">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre / Descripción <span class="text-red-500">*</span></label>
+          <input type="text" formControlName="name" placeholder="Ej. Casa, Auto, Préstamo Banamex" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Monto / Valor Nominal <span class="text-red-500">*</span></label>
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+            <input type="text" formControlName="amount" placeholder="0.00" class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono">
+          </div>
+          <p *ngIf="form.controls['amount'].hasError('invalidDecimalString')" class="text-red-500 text-xs mt-1">Solo números con hasta 4 decimales permitidos, sin comas.</p>
+        </div>
+
+        <div *ngIf="tipoActivo === 'LIABILITY' || tipoActivo === 'ACTIVE_COMMITMENT'">
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Saldo Pendiente</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+            <input type="text" formControlName="outstanding_balance" placeholder="0.00" class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono">
+          </div>
+          <p *ngIf="form.controls['outstanding_balance'].hasError('invalidDecimalString')" class="text-red-500 text-xs mt-1">Formato inválido.</p>
+        </div>
+
+        <div *ngIf="tipoActivo === 'LIABILITY' || tipoActivo === 'ACTIVE_COMMITMENT'">
+          <label class="block text-xs font-semibold text-gray-700 mb-1">Pago Mensual</label>
+          <div class="relative">
+            <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
+            <input type="text" formControlName="monthly_payment" placeholder="0.00" class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono">
+          </div>
+          <p *ngIf="form.controls['monthly_payment'].hasError('invalidDecimalString')" class="text-red-500 text-xs mt-1">Formato inválido.</p>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>

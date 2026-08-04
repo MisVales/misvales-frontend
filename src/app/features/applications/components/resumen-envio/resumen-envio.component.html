@@ -1,0 +1,47 @@
+<div class="flex-1 flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 p-8">
+  <div class="text-center max-w-lg mx-auto mb-10">
+    <h2 class="text-2xl font-bold text-gray-900 mb-3">Resumen y Envío a Revisión</h2>
+    <p class="text-gray-600">Revisa que todas las secciones estén completadas o marcadas como 'No aplicable' antes de enviar la solicitud al Coordinador.</p>
+  </div>
+
+  <div class="max-w-3xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-10">
+    <div *ngFor="let sec of getSeccionesArray()" class="flex items-center justify-between p-4 border border-gray-100 rounded-xl bg-gray-50">
+      <span class="font-medium text-gray-700">{{ sec.label }}</span>
+      
+      <span *ngIf="sec.status === 'COMPLETED'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#E8F3E8] text-[#1A4D2E] text-xs font-bold uppercase tracking-wider">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+        Completa
+      </span>
+      
+      <span *ngIf="sec.status === 'NOT_APPLICABLE'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-200 text-gray-600 text-xs font-bold uppercase tracking-wider">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
+        No Aplica
+      </span>
+      
+      <span *ngIf="sec.status === 'PENDING' || !sec.status" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-bold uppercase tracking-wider">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Pendiente
+      </span>
+    </div>
+  </div>
+
+  <div class="max-w-xl mx-auto w-full text-center p-6 bg-gray-50 border border-gray-200 rounded-xl">
+    <p class="text-sm text-gray-500 mb-4 font-semibold uppercase tracking-wide">Progreso del Expediente</p>
+    <div class="flex items-center justify-center gap-4 mb-6">
+      <div class="w-full bg-gray-200 rounded-full h-3 max-w-sm">
+        <div class="bg-[#82B965] h-3 rounded-full transition-all duration-500" [style.width.%]="store.detalle() ? (store.detalle()!.avance.seccionesCompletadas / store.detalle()!.avance.seccionesTotales) * 100 : 0"></div>
+      </div>
+      <span class="text-gray-900 font-bold">{{ store.detalle()?.avance?.seccionesCompletadas || 0 }} de {{ store.detalle()?.avance?.seccionesTotales || 0 }}</span>
+    </div>
+    
+    <button (click)="enviarARevision()" [disabled]="!canSubmit || enviando || store.detalle()?.estado !== 'DRAFT'" class="w-full py-3.5 px-6 rounded-xl font-bold text-white bg-[#1A4D2E] hover:bg-[#133c23] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+      <svg *ngIf="enviando" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      {{ enviando ? 'Enviando...' : (store.detalle()?.estado === 'DRAFT' ? 'Enviar a Revisión' : 'Expediente Enviado') }}
+    </button>
+
+    <p *ngIf="!canSubmit && store.detalle()?.estado === 'DRAFT'" class="text-red-500 text-xs mt-3 font-medium">Debes completar todas las secciones para poder enviar a revisión.</p>
+  </div>
+</div>

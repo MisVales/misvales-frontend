@@ -1,0 +1,106 @@
+import { Component, inject, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
+import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
+import { VehiculoFormFactory } from '../../forms/vehiculo-form.factory';
+import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
+import { firstValueFrom } from 'rxjs';
+
+@Component({
+  selector: 'app-vehiculos-form',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './vehiculos-form.component.html',
+  styleUrls: ['./vehiculos-form.component.css']
+})
+export class VehiculosFormComponent implements OnInit {
+  protected store = inject(SolicitudDetalleStore);
+  private fb = inject(FormBuilder);
+  private api = inject(SolicitudesDistribuidoraApiService);
+
+  vehiculosArray: FormArray = VehiculoFormFactory.createArray(this.fb);
+  cargando = false;
+
+  get vehiculosGroups(): FormGroup[] {
+    return this.vehiculosArray.controls as FormGroup[];
+  }
+
+  async ngOnInit() {
+    await this.cargarVehiculos();
+  }
+
+  async cargarVehiculos() {
+    const id = this.store.detalle()?.id;
+    if (!id) return;
+
+    this.cargando = true;
+    try {
+      const data = await firstValueFrom(this.api.listarVehiculos(id));
+      this.vehiculosArray.clear();
+      data.forEach((vehiculo: any) => {
+        const form = VehiculoFormFactory.create(this.fb);
+        form.patchValue(vehiculo);
+        this.vehiculosArray.push(form);
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this.cargando = false;
+    }
+  }
+
+  agregarVehiculo() {
+    this.vehiculosArray.push(VehiculoFormFactory.create(this.fb));
+  }
+
+  removerVehiculoVisual(index: number) {
+    this.vehiculosArray.removeAt(index);
+  }
+
+  async guardarVehiculo(index: number) {
+    const formGroup = this.vehiculosArray.at(index) as FormGroup;
+    if (formGroup.invalid) {
+      formGroup.markAllAsTouched();
+      return;
+    }
+
+    const idSolicitud = this.store.detalle()?.id;
+    const version = this.store.detalle()?.versionBloqueo;
+    if (!idSolicitud || version === undefined) return;
+
+    const payload = formGroup.value;
+    const idVehiculo = payload.id;
+    delete payload.id;
+
+    try {
+      if (idVehiculo) {
+        await firstValueFrom(this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, version));
+      } else {
+        await firstValueFrom(this.api.crearVehiculo(idSolicitud, payload, version));
+      }
+      await this.cargarVehiculos();
+      this.store.cargarDetalle(idSolicitud);
+    } catch (e: any) {
+      if (e?.status === 409) {
+        alert('El expediente fue modificado por otro usuario. Recarga la información antes de continuar.');
+      }
+    }
+  }
+
+  async eliminarVehiculoAPI(index: number, idVehiculo: string) {
+    const confirmacion = confirm('¿Estás seguro de que deseas eliminar este vehículo?');
+    if (!confirmacion) return;
+
+    const idSolicitud = this.store.detalle()?.id;
+    const version = this.store.detalle()?.versionBloqueo;
+    if (!idSolicitud || version === undefined) return;
+
+    try {
+      await firstValueFrom(this.api.eliminarVehiculo(idSolicitud, idVehiculo, version));
+      this.removerVehiculoVisual(index);
+      this.store.cargarDetalle(idSolicitud);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+}
