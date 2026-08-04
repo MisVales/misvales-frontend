@@ -1,0 +1,60 @@
+<section class="p-6">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">
+      @if (isNew()) { Nueva Categoría } @else { Detalle de Categoría }
+    </h1>
+  </div>
+
+  <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="nombre">
+          Nombre
+        </label>
+        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="nombre" type="text" formControlName="nombre">
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcion">
+          Descripción
+        </label>
+        <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="descripcion" formControlName="descripcion"></textarea>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="porcentajeGanancia">
+          % Ganancia
+        </label>
+        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="porcentajeGanancia" type="text" formControlName="porcentajeGanancia" placeholder="Ej. 10.5">
+        @if (form.get('porcentajeGanancia')?.errors?.['pattern']) {
+          <p class="text-red-500 text-xs italic">Debe ser un número válido, máximo 4 decimales.</p>
+        }
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="inicioVigencia">
+          Inicio de Vigencia
+        </label>
+        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="inicioVigencia" type="date" formControlName="inicioVigencia">
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="motivo">
+          Motivo (Auditoría)
+        </label>
+        <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="motivo" type="text" formControlName="motivo">
+      </div>
+
+      <div class="flex items-center justify-between">
+        <a routerLink="/categorias" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">
+          Volver
+        </a>
+        @if (canWrite()) {
+          <button class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit" [disabled]="form.invalid">
+            Guardar
+          </button>
+        }
+      </div>
+    </form>
+  </div>
+</section>

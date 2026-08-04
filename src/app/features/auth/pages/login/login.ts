@@ -43,9 +43,7 @@ export class Login {
     }
   }
 
-  loginWithPasskey() {
-    this.authFacade.loginWithPasskey();
-  }
+
 
   onMfaSubmit() {
     if (this.mfaForm.valid && !this.isLoading) {

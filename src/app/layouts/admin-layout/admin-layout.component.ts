@@ -8,6 +8,7 @@ interface MenuItem {
   route: string;
   icon?: string;
   requiredPermissions?: string[];
+  requiredRoles?: string[];
 }
 
 @Component({
@@ -34,17 +35,23 @@ export class AdminLayoutComponent {
     { label: 'Dashboard', route: '/dashboard' },
     { label: 'Usuarios', route: '/usuarios', requiredPermissions: ['users.view'] },
     { label: 'Roles', route: '/roles', requiredPermissions: ['roles.view'] },
+    { label: 'Categorías', route: '/categorias', requiredRoles: ['gerente_general', 'gerente_sucursal', 'admin'] },
+    { label: 'Productos', route: '/productos', requiredRoles: ['gerente_general', 'gerente_sucursal', 'admin'] },
     { label: 'Seguridad', route: '/seguridad' },
     { label: 'Perfil', route: '/perfil' },
   ];
 
   menuItems = computed(() => {
     const userPermissions = this.sessionStore.permissions();
+    const userRoles = this.sessionStore.roles();
+    
     return this.allMenuItems.filter(item => {
-      if (!item.requiredPermissions || item.requiredPermissions.length === 0) {
-        return true;
-      }
-      return item.requiredPermissions.some(perm => userPermissions.includes(perm));
+      const hasPermission = !item.requiredPermissions || item.requiredPermissions.length === 0 || 
+                            item.requiredPermissions.some(perm => userPermissions.includes(perm));
+      const hasRole = !item.requiredRoles || item.requiredRoles.length === 0 || 
+                      item.requiredRoles.some(role => userRoles && userRoles.includes(role));
+                      
+      return hasPermission && hasRole;
     });
   });
 

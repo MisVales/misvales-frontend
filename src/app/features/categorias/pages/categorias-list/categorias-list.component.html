@@ -1,0 +1,51 @@
+<section class="p-6">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Categorías</h1>
+    <a routerLink="nueva" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+      Nueva Categoría
+    </a>
+  </div>
+
+  @if (store.estadoCarga()) {
+    <div class="text-center py-4">Cargando categorías...</div>
+  } @else if (store.error()) {
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+      <span class="block sm:inline">{{ store.error() }}</span>
+    </div>
+  } @else {
+    <div class="bg-white shadow-md rounded my-6 overflow-x-auto">
+      <table class="min-w-full w-full table-auto">
+        <thead>
+          <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
+            <th class="py-3 px-6 text-left">Nombre</th>
+            <th class="py-3 px-6 text-left">% Ganancia Vigente</th>
+            <th class="py-3 px-6 text-center">Estado</th>
+            <th class="py-3 px-6 text-center">Inicio Vigencia</th>
+            <th class="py-3 px-6 text-center">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="text-gray-600 text-sm font-light">
+          @for (cat of store.datos(); track cat.id) {
+            <tr class="border-b border-gray-200 hover:bg-gray-100">
+              <td class="py-3 px-6 text-left whitespace-nowrap">
+                <span class="font-medium">{{ cat.nombre }}</span>
+              </td>
+              <td class="py-3 px-6 text-left">
+                <span>{{ cat.porcentajeGanancia }}%</span>
+              </td>
+              <td class="py-3 px-6 text-center">
+                <span class="bg-purple-200 text-purple-600 py-1 px-3 rounded-full text-xs">{{ cat.estado }}</span>
+              </td>
+              <td class="py-3 px-6 text-center">
+                <span>{{ cat.inicioVigencia | date:'dd/MM/yyyy' }}</span>
+              </td>
+              <td class="py-3 px-6 text-center">
+                <a [routerLink]="[cat.id]" class="text-blue-500 hover:text-blue-700">Ver Detalle</a>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>
