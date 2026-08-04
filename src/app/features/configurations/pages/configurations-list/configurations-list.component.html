@@ -1,0 +1,253 @@
+<div class="min-h-screen bg-[#F8F9F5] p-6 lg:p-8">
+  <header class="mb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-bold text-gray-900">Configuraciones de Sistema</h1>
+      <p class="text-gray-600 mt-1">Administra los parámetros globales y reglas de negocio.</p>
+    </div>
+    <button class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-colors">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+      </svg>
+      Nueva Configuración
+    </button>
+  </header>
+
+  <!-- Filtros -->
+  <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Grupo</label>
+        <select class="w-full border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]">
+          <option>Todos los grupos</option>
+          <option>Crédito</option>
+          <option>Recargos y Penalizaciones</option>
+          <option>Fechas y Horarios</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Estado</label>
+        <select class="w-full border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]">
+          <option>Todos</option>
+          <option>Vigente</option>
+          <option>Futura</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tipo</label>
+        <select class="w-full border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]">
+          <option>Todos</option>
+          <option>Importe</option>
+          <option>Porcentaje</option>
+          <option>Entero</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">&nbsp;</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input type="text" class="w-full pl-10 border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]" placeholder="Buscar por clave...">
+        </div>
+      </div>
+    </div>
+    <div class="mt-4 flex">
+      <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+        </svg>
+        Filtrar
+      </button>
+    </div>
+  </section>
+
+  <!-- Grupo: Crédito -->
+  <section class="mb-10">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="bg-[#E8F3E8] p-1.5 rounded-md text-[#1A4D2E]">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900">Crédito</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <article *ngFor="let cfg of configuracionesCredito" (click)="goToDetail(cfg.clave)" class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <h3 class="font-semibold text-gray-900">{{cfg.nombre}}</h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">{{cfg.clave}}</p>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium" 
+                  [ngClass]="cfg.estado === 'publicado' ? 'bg-[#E8F3E8] text-[#1A4D2E]' : 'bg-orange-100 text-orange-800'">
+              {{cfg.estado === 'publicado' ? 'Vigente' : 'Futura'}}
+            </span>
+            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">v{{cfg.versionRegistro}}</span>
+          </div>
+        </div>
+        <div class="my-4">
+          <span class="text-3xl font-bold text-gray-900">{{cfg.valorVigente}}</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
+          <div class="flex items-center gap-1">
+            <span class="font-mono">{{cfg.tipo === 'importe' ? '$' : (cfg.tipo === 'porcentaje' ? '%' : '#')}}</span> {{cfg.tipo | titlecase}}
+          </div>
+          <div class="flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {{cfg.inicioVigencia | date:'dd/MM/yyyy'}}
+          </div>
+        </div>
+      </article>
+
+      <!-- Card 2 -->
+      <article class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <h3 class="font-semibold text-gray-900">Tasa de Interés Base</h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">CFG_INT_BASE</p>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E]">
+              Vigente
+            </span>
+            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">v4</span>
+          </div>
+        </div>
+        <div class="my-4">
+          <span class="text-3xl font-bold text-gray-900">12.5%</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
+          <div class="flex items-center gap-1">
+            <span class="font-mono">%</span> Porcentaje
+          </div>
+          <div class="flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            15/03/2024
+          </div>
+        </div>
+      </article>
+      
+      <!-- Card 3 -->
+      <article class="bg-white rounded-xl p-5 shadow-sm border border-orange-200 border-dashed hover:shadow-md transition-shadow cursor-pointer relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-16 h-16 bg-orange-50 rounded-bl-full -z-10"></div>
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <h3 class="font-semibold text-gray-900">Tasa Promocional Buen Fin</h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">CFG_INT_PROMO</p>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
+              Futura
+            </span>
+            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">v1</span>
+          </div>
+        </div>
+        <div class="my-4">
+          <span class="text-3xl font-bold text-orange-600">9.9%</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
+          <div class="flex items-center gap-1">
+            <span class="font-mono">%</span> Porcentaje
+          </div>
+          <div class="flex items-center gap-1 text-orange-600 font-medium">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            10/11/2024
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Grupo: Recargos y Penalizaciones -->
+  <section class="mb-10">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="bg-red-50 p-1.5 rounded-md text-red-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900">Recargos y Penalizaciones</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <article *ngFor="let cfg of configuracionesRecargos" (click)="goToDetail(cfg.clave)" class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <h3 class="font-semibold text-gray-900">{{cfg.nombre}}</h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">{{cfg.clave}}</p>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E]">
+              Vigente
+            </span>
+            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">v{{cfg.versionRegistro}}</span>
+          </div>
+        </div>
+        <div class="my-4">
+          <span class="text-3xl font-bold text-gray-900">{{cfg.valorVigente}}</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
+          <div class="flex items-center gap-1">
+            <span class="font-mono">$</span> Importe
+          </div>
+          <div class="flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {{cfg.inicioVigencia | date:'dd/MM/yyyy'}}
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <!-- Grupo: Fechas y Horarios -->
+  <section class="mb-10">
+    <div class="flex items-center gap-3 mb-4">
+      <div class="bg-blue-50 p-1.5 rounded-md text-blue-500">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <h2 class="text-xl font-bold text-gray-900">Fechas y Horarios</h2>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <article *ngFor="let cfg of configuracionesFechas" (click)="goToDetail(cfg.clave)" class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <h3 class="font-semibold text-gray-900">{{cfg.nombre}}</h3>
+            <p class="text-xs text-gray-500 font-mono mt-1">{{cfg.clave}}</p>
+          </div>
+          <div class="flex flex-col items-end gap-1">
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E]">
+              Vigente
+            </span>
+            <span class="text-xs font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">v{{cfg.versionRegistro}}</span>
+          </div>
+        </div>
+        <div class="my-4">
+          <span class="text-3xl font-bold text-gray-900">{{cfg.valorVigente}}</span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
+          <div class="flex items-center gap-1">
+            <span class="font-mono">{{cfg.tipo === 'entero' ? '#' : 'Tt'}}</span> {{cfg.tipo | titlecase}}
+          </div>
+          <div class="flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            {{cfg.inicioVigencia | date:'dd/MM/yyyy'}}
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+</div>

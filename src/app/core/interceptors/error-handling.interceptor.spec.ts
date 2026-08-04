@@ -42,7 +42,7 @@ describe('errorHandlingInterceptor', () => {
     req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
     expect(sessionStoreSpy.clearSession).toHaveBeenCalled();
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
   });
 
   it('should navigate to /login on 403 error', () => {
@@ -53,7 +53,7 @@ describe('errorHandlingInterceptor', () => {
     const req = httpTestingController.expectOne('/test');
     req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
 
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
   });
 
   it('should redirect to login on 419 error', () => {
@@ -64,6 +64,6 @@ describe('errorHandlingInterceptor', () => {
     const req = httpTestingController.expectOne('/test');
     req.flush('Page Expired', { status: 419, statusText: 'Page Expired' });
 
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/login']);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
   });
 });

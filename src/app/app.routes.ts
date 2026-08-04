@@ -38,6 +38,14 @@ export const routes: Routes = [
       {
         path: 'productos',
         loadChildren: () => import('./features/productos/productos.routes').then(m => m.PRODUCTOS_ROUTES)
+      },
+      {
+        path: 'configuraciones',
+        loadChildren: () => import('./features/configurations/configurations.routes').then(m => m.configurationsRoutes)
+      },
+      {
+        path: 'periodos-canje',
+        loadChildren: () => import('./features/exchange-periods/exchange-periods.routes').then(m => m.exchangePeriodsRoutes)
       }
     ]
   }
