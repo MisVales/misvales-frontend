@@ -86,7 +86,7 @@ export class DetalleSolicitudComponent implements OnInit, OnDestroy {
 
     const req = {
       motivo: this.devolucionMotivo(),
-      secciones_pendientes: this.devolucionSecciones(),
+      seccionesPendientes: this.devolucionSecciones(),
       lock_version: lockVersion
     };
 
