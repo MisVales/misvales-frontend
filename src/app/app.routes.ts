@@ -26,7 +26,12 @@ export const routes: Routes = [
       {
         path: 'seguridad',
         loadChildren: () => import('./features/security/security.routes').then(m => m.SECURITY_ROUTES)
+      },
+      {
+        path: 'organizacion',
+        loadChildren: () => import('./features/organization/organization.routes').then(m => m.organizationRoutes)
       }
     ]
   }
 ];
+
