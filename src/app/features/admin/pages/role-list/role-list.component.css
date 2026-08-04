@@ -1,0 +1,70 @@
+.admin-container {
+  background: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+}
+
+.header-actions {
+  margin-bottom: 2rem;
+}
+
+.roles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.role-card {
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background-color: #fcfcfc;
+}
+
+.role-card h3 {
+  margin-top: 0;
+  color: #1a1a2e;
+  border-bottom: 2px solid #0f3460;
+  padding-bottom: 0.5rem;
+}
+
+.permissions-section h4 {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 1rem;
+}
+
+.perm-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.perm-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.module-name {
+  font-weight: 600;
+  color: #444;
+  text-transform: capitalize;
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.action-chip {
+  background-color: #e0e7ff;
+  color: #3730a3;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}

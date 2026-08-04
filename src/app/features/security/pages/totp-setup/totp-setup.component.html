@@ -1,0 +1,35 @@
+<div class="totp-container">
+  <h2>Configurar Autenticación de Dos Pasos</h2>
+  
+  <div class="qr-section">
+    <img [src]="qrCodeUrl()" alt="QR Code" class="qr-code">
+    
+    <div class="secret-container">
+      <p>O ingresa este código manualmente:</p>
+      <div class="secret-box">
+        <code>{{ isSecretVisible() ? secret() : '****************' }}</code>
+        <button type="button" class="btn-icon" (click)="toggleSecretVisibility()">
+          {{ isSecretVisible() ? 'Ocultar' : 'Mostrar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="verifyTotp()" class="verify-form">
+    <div class="form-group">
+      <label for="code">Código de Verificación</label>
+      <input type="text" id="code" formControlName="code" placeholder="000000" maxlength="6">
+      @if (form.controls.code.touched && form.controls.code.invalid) {
+        <span class="error-msg">Ingresa un código válido de 6 dígitos.</span>
+      }
+    </div>
+
+    <button type="submit" [disabled]="form.invalid || isLoading()" class="btn-primary">
+      @if (isLoading()) {
+        Configurando...
+      } @else {
+        Verificar y Activar
+      }
+    </button>
+  </form>
+</div>

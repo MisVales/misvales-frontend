@@ -13,6 +13,7 @@ export interface SessionState {
   permissions: string[];
   activeBranch: string | null;
   isAuthenticated: boolean;
+  layoutPreference: 'desktop' | 'tablet' | 'mobile' | null;
 }
 
 const initialState: SessionState = {
@@ -21,18 +22,20 @@ const initialState: SessionState = {
   permissions: [],
   activeBranch: null,
   isAuthenticated: false,
+  layoutPreference: null,
 };
 
 export const SessionStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
   withMethods((store) => ({
-    setSession(user: UserInfo, roles: string[], permissions: string[], activeBranch: string | null) {
+    setSession(user: UserInfo, roles: string[], permissions: string[], activeBranch: string | null, layoutPreference?: 'desktop' | 'tablet' | 'mobile') {
       patchState(store, {
         user,
         roles,
         permissions,
         activeBranch,
+        layoutPreference: layoutPreference ?? null,
         isAuthenticated: true,
       });
     },

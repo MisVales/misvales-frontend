@@ -1,0 +1,29 @@
+<div class="recovery-container">
+  <h2>Códigos de Recuperación</h2>
+  
+  <div class="warning-alert">
+    <strong>¡Importante!</strong> Guarda estos códigos en un lugar seguro (ej. gestor de contraseñas). 
+    Cada código puede usarse solo una vez para recuperar el acceso a tu cuenta si pierdes tu dispositivo TOTP.
+  </div>
+
+  <div class="codes-grid">
+    @for (code of codes(); track code) {
+      <div class="code-item">
+        <code>{{ code }}</code>
+      </div>
+    }
+  </div>
+
+  <div class="actions">
+    <button type="button" class="btn-copy" (click)="copyCodes()">
+      {{ hasCopied() ? '¡Copiado!' : 'Copiar todos los códigos' }}
+    </button>
+  </div>
+
+  <div class="confirmation-section">
+    <label class="checkbox-label">
+      <input type="checkbox" [ngModel]="hasConfirmedSaved()" (ngModelChange)="hasConfirmedSaved.set($event)">
+      Confirmo que he guardado estos códigos en un lugar seguro.
+    </label>
+  </div>
+</div>

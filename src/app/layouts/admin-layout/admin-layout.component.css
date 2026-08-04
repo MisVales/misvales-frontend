@@ -1,0 +1,97 @@
+:host {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: #f5f7fa;
+}
+
+.sidebar {
+  background-color: #1a1a2e;
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  padding: 1rem 0;
+}
+
+.sidebar a {
+  color: #fff;
+  text-decoration: none;
+  padding: 0.75rem 1.5rem;
+  transition: background-color 0.2s;
+}
+
+.sidebar a:hover, .sidebar a.active {
+  background-color: #16213e;
+}
+
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.topbar {
+  background-color: #fff;
+  padding: 1rem;
+  display: flex;
+  justify-content: flex-end;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.topbar button {
+  padding: 0.5rem 1rem;
+  background-color: #e94560;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.topbar button:hover {
+  background-color: #d13d55;
+}
+
+.content-wrapper {
+  padding: 2rem;
+  flex-grow: 1;
+}
+
+/* Enforce sizes based on layout preference, ignoring window size */
+:host(.layout-desktop) .sidebar {
+  width: 250px;
+}
+
+:host(.layout-tablet) .sidebar {
+  width: 80px;
+}
+:host(.layout-tablet) .sidebar a {
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 0.8rem;
+}
+
+:host(.layout-mobile) {
+  flex-direction: column;
+}
+:host(.layout-mobile) .sidebar {
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+}
+:host(.layout-mobile) .sidebar nav {
+  flex-direction: row;
+  padding: 0;
+  overflow-x: auto;
+}
+:host(.layout-mobile) .sidebar a {
+  padding: 1rem;
+  white-space: nowrap;
+}

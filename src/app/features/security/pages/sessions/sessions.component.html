@@ -1,0 +1,40 @@
+<div class="sessions-container">
+  <h2>Dispositivos Vinculados</h2>
+  <p class="subtitle">Administra los dispositivos que tienen acceso a tu cuenta.</p>
+
+  <div class="sessions-list">
+    @for (session of sessions(); track session.id) {
+      <div class="session-card" [class.current]="session.isCurrent">
+        <div class="session-info">
+          <div class="device-name">
+            <strong>{{ session.device }}</strong>
+            @if (session.isCurrent) {
+              <span class="badge">Dispositivo Actual</span>
+            }
+          </div>
+          <div class="device-details">
+            <span>IP: {{ session.ip }}</span>
+            <span>&bull;</span>
+            <span>Última vez activo: {{ session.lastActive | date:'medium' }}</span>
+          </div>
+        </div>
+        
+        <div class="session-actions">
+          @if (!session.isCurrent) {
+            <button 
+              type="button" 
+              class="btn-revoke" 
+              (click)="revokeSession(session.id)"
+              [disabled]="session.isRevoking">
+              @if (session.isRevoking) {
+                Revocando...
+              } @else {
+                Revocar Acceso
+              }
+            </button>
+          }
+        </div>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,15 @@
+<aside class="sidebar">
+  <nav>
+    @for (item of menuItems(); track item.route) {
+      <a [routerLink]="item.route" routerLinkActive="active">{{ item.label }}</a>
+    }
+  </nav>
+</aside>
+<main class="main-content">
+  <header class="topbar">
+    <button (click)="logout()">Cerrar Sesión</button>
+  </header>
+  <div class="content-wrapper">
+    <router-outlet></router-outlet>
+  </div>
+</main>
