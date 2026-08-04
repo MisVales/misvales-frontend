@@ -43,6 +43,10 @@ export class Login {
     }
   }
 
+  loginWithPasskey() {
+    this.authFacade.loginWithPasskey();
+  }
+
   onMfaSubmit() {
     if (this.mfaForm.valid && !this.isLoading) {
       // Tomamos el email del primer form o usamos el mecanismo del backend

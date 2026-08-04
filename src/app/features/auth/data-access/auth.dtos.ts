@@ -1,7 +1,8 @@
 export interface LoginReq {
-  email: string;
+  email?: string;
   password?: string;
   totpCode?: string; // Optional if MFA is active
+  webauthnResponse?: any; // For passkey login
 }
 
 export interface LoginRes {

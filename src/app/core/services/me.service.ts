@@ -14,16 +14,28 @@ export class MeService {
   private readonly sessionStore = inject(SessionStore);
 
   fetchMe(): Observable<MeRes> {
-    return this.http.get<MeRes>(`${this.config.baseUrl}/v1/me`).pipe(
-      tap((res) => {
+    // MOCK ME ENDPOINT
+    return new Observable<MeRes>(observer => {
+      setTimeout(() => {
+        const mockRes: MeRes = {
+          id: '1',
+          name: 'Administrador Demo',
+          email: 'admin@demo.com',
+          roles: ['admin'],
+          permissions: ['users.view', 'users.create', 'roles.view'],
+          activeBranch: undefined,
+          layoutPreference: 'desktop'
+        };
         this.sessionStore.setSession(
-          { id: res.id, name: res.name, email: res.email },
-          res.roles,
-          res.permissions,
-          res.activeBranch || null,
-          res.layoutPreference
+          { id: mockRes.id, name: mockRes.name, email: mockRes.email },
+          mockRes.roles,
+          mockRes.permissions,
+          mockRes.activeBranch || null,
+          mockRes.layoutPreference
         );
-      })
-    );
+        observer.next(mockRes);
+        observer.complete();
+      }, 500);
+    });
   }
 }

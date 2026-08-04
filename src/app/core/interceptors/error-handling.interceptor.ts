@@ -15,10 +15,9 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
       if (error.status === 401 || error.status === 403 || error.status === 419) {
         // 401: Unauthorized, 403: Forbidden, 419: Page Expired (CSRF)
         sessionStore.clearSession();
-        localStorage.removeItem('token'); // In case it's used
         
         // Redirect to login, optionally passing current URL for returnUrl
-        router.navigate(['/login']);
+        router.navigate(['/auth/login']);
       }
 
       // Custom error handling logic can be expanded here

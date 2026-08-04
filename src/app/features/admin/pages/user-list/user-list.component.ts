@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { UserRes } from '../../data-access/admin.dtos';
 
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -45,9 +46,20 @@ export class UserListComponent {
     }, 1500);
   }
 
-  toggleBlock(user: UserRes) {
-    const action = user.status === 'blocked' ? 'desbloquear' : 'bloquear';
-    if (!window.confirm(`¿Seguro que deseas ${action} a ${user.name}?`)) return;
+  userToBlock = signal<UserRes | null>(null);
+
+  openBlockModal(user: UserRes) {
+    this.userToBlock.set(user);
+  }
+
+  closeBlockModal() {
+    this.userToBlock.set(null);
+  }
+
+  confirmBlock() {
+    const user = this.userToBlock();
+    if (!user) return;
+    this.closeBlockModal();
     
     this.isActionLoading.set(`block-${user.id}`);
     setTimeout(() => {

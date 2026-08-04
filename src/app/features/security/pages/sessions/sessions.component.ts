@@ -25,7 +25,21 @@ export class SessionsComponent {
     { id: '3', device: 'Firefox on Linux', ip: '10.0.0.5', lastActive: new Date(Date.now() - 172800000).toISOString(), isCurrent: false },
   ]);
 
-  revokeSession(id: string) {
+  sessionToRevoke = signal<string | null>(null);
+
+  openRevokeModal(id: string) {
+    this.sessionToRevoke.set(id);
+  }
+
+  closeRevokeModal() {
+    this.sessionToRevoke.set(null);
+  }
+
+  confirmRevoke() {
+    const id = this.sessionToRevoke();
+    if (!id) return;
+    this.closeRevokeModal();
+    
     this.sessions.update(sessions => 
       sessions.map(s => s.id === id ? { ...s, isRevoking: true } : s)
     );

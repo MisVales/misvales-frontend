@@ -11,6 +11,6 @@ export const scopeGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Opcional: Redirigir a una página de selección de sucursal
-  return router.createUrlTree(['/seleccionar-sucursal']);
+  // Opcional: Redirigir a la raíz por defecto si no hay sucursal
+  return router.createUrlTree(['/']);
 };

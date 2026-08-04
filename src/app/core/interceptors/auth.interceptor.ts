@@ -5,11 +5,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   // Configuración base para enviar cookies siempre
   let headers = req.headers.set('X-Request-Id', uuidv4());
 
-  // (Opcional) Si la arquitectura aún requiere enviar un Bearer token desde storage
-  const token = localStorage.getItem('token');
-  if (token) {
-    headers = headers.set('Authorization', `Bearer ${token}`);
-  }
+  // El token CSRF o cookies de sesión son manejadas automáticamente por el navegador
+  // gracias a withCredentials: true. No guardamos tokens en localStorage (Regla 2).
 
   const authReq = req.clone({
     headers,

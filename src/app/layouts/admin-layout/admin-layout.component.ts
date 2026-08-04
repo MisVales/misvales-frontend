@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { SessionStore } from '../../core/session/session.store';
+import { AuthFacade } from '../../features/auth/state/auth.facade';
 
 interface MenuItem {
   label: string;
@@ -24,6 +25,7 @@ interface MenuItem {
 })
 export class AdminLayoutComponent {
   private readonly sessionStore = inject(SessionStore);
+  private readonly authFacade = inject(AuthFacade);
 
   // Default to desktop if none provided
   layoutPreference = computed(() => this.sessionStore.layoutPreference() || 'desktop');
@@ -47,6 +49,6 @@ export class AdminLayoutComponent {
   });
 
   logout() {
-    this.sessionStore.clearSession();
+    this.authFacade.logout();
   }
 }

@@ -1,32 +1,38 @@
-<div class="sessions-container">
-  <h2>Dispositivos Vinculados</h2>
-  <p class="subtitle">Administra los dispositivos que tienen acceso a tu cuenta.</p>
+<div class="max-w-4xl mx-auto space-y-6 mt-6">
+  <div class="mb-8">
+    <h2 class="text-2xl font-extrabold text-[#386641] tracking-tight">Dispositivos Vinculados</h2>
+    <p class="text-gray-500 mt-2">Administra los dispositivos que tienen acceso a tu cuenta.</p>
+  </div>
 
-  <div class="sessions-list">
+  <div class="space-y-4">
     @for (session of sessions(); track session.id) {
-      <div class="session-card" [class.current]="session.isCurrent">
-        <div class="session-info">
-          <div class="device-name">
-            <strong>{{ session.device }}</strong>
+      <div class="bg-white p-5 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all shadow-sm hover:shadow-md" [class.border-[#386641]]="session.isCurrent" [class.border-gray-200]="!session.isCurrent">
+        <div>
+          <div class="flex items-center gap-3 mb-1">
+            <strong class="text-gray-900 font-bold">{{ session.device }}</strong>
             @if (session.isCurrent) {
-              <span class="badge">Dispositivo Actual</span>
+              <span class="bg-[#386641]/10 text-[#386641] text-xs font-bold px-2 py-0.5 rounded-full">Dispositivo Actual</span>
             }
           </div>
-          <div class="device-details">
+          <div class="text-sm text-gray-500 flex items-center gap-2">
             <span>IP: {{ session.ip }}</span>
-            <span>&bull;</span>
+            <span class="text-gray-300">&bull;</span>
             <span>Última vez activo: {{ session.lastActive | date:'medium' }}</span>
           </div>
         </div>
         
-        <div class="session-actions">
+        <div>
           @if (!session.isCurrent) {
             <button 
               type="button" 
-              class="btn-revoke" 
-              (click)="revokeSession(session.id)"
+              class="text-red-600 hover:text-white hover:bg-red-600 font-medium py-2 px-4 rounded-lg transition-colors border border-transparent hover:border-red-600 disabled:opacity-50 flex items-center gap-2" 
+              (click)="openRevokeModal(session.id)"
               [disabled]="session.isRevoking">
               @if (session.isRevoking) {
+                <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 Revocando...
               } @else {
                 Revocar Acceso
@@ -38,3 +44,29 @@
     }
   </div>
 </div>
+
+<!-- Modal Revocar Sesión -->
+@if (sessionToRevoke() !== null) {
+  <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-100 transform transition-all">
+      <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+        <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-bold text-gray-900 text-center mb-2">¿Revocar Sesión?</h3>
+      <p class="text-sm text-gray-500 text-center mb-6">
+        Esta acción cerrará la sesión en el dispositivo seleccionado inmediatamente.
+      </p>
+      
+      <div class="flex gap-3">
+        <button (click)="closeRevokeModal()" class="flex-1 px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-colors">
+          Cancelar
+        </button>
+        <button (click)="confirmRevoke()" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+          Revocar
+        </button>
+      </div>
+    </div>
+  </div>
+}

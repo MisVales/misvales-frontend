@@ -1,0 +1,131 @@
+<div class="max-w-4xl mx-auto space-y-6">
+  
+  <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center gap-3">
+      <a routerLink="/usuarios" class="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+      </a>
+      <h1 class="text-2xl font-bold text-gray-800">Detalle de Usuario: {{ userId() }}</h1>
+    </div>
+    
+    <div class="flex gap-2">
+      <button (click)="openDisableModal()" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg shadow-sm transition-colors text-sm">
+        Deshabilitar
+      </button>
+      <button (click)="openBlockModal()" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 font-medium rounded-lg shadow-sm transition-colors text-sm flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+        </svg>
+        Bloquear Usuario
+      </button>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    
+    <!-- Info General -->
+    <div class="col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          Datos Generales
+        </h3>
+        <span class="px-2.5 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full border border-green-200">
+          Activo
+        </span>
+      </div>
+      <div class="p-5 grid grid-cols-2 gap-4">
+        <div>
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Nombre Completo</p>
+          <p class="text-gray-900 font-medium">Juan Pérez López</p>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Correo Electrónico</p>
+          <p class="text-gray-900 font-medium">juan.perez@empresa.com</p>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Sucursal Activa</p>
+          <p class="text-gray-900 font-medium">Sucursal Norte (ID: 001)</p>
+        </div>
+        <div>
+          <p class="text-xs text-gray-500 font-medium uppercase tracking-wider mb-1">Última Conexión</p>
+          <p class="text-gray-900 font-medium">Hoy, 10:45 AM</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Roles y Permisos -->
+    <div class="col-span-1 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div class="p-5 border-b border-gray-100 flex items-center justify-between">
+        <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4V7a2 2 0 00-2-2H5a2 2 0 00-2 2v5l4 4z" />
+          </svg>
+          Roles
+        </h3>
+        <button class="text-xs text-[#386641] hover:underline font-medium">Editar</button>
+      </div>
+      <div class="p-5 space-y-3">
+        <div class="flex flex-wrap gap-2">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium bg-[#386641]/10 text-[#386641] border border-[#386641]/20">
+            Administrador
+          </span>
+          <span class="inline-flex items-center px-2.5 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-800 border border-gray-200">
+            Auditor
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Bloquear -->
+@if (isBlockModalOpen()) {
+  <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-100 transform transition-all">
+      <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+        <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-bold text-gray-900 text-center mb-2">¿Bloquear Usuario?</h3>
+      <p class="text-sm text-gray-500 text-center mb-6">
+        Esta acción impedirá que el usuario inicie sesión y se revocarán todas sus sesiones activas de inmediato.
+      </p>
+      
+      <div class="flex gap-3">
+        <button (click)="closeBlockModal()" class="flex-1 px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-colors">
+          Cancelar
+        </button>
+        <button (click)="confirmBlock()" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+          Bloquear
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Modal Deshabilitar -->
+@if (isDisableModalOpen()) {
+  <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-100 transform transition-all">
+      <h3 class="text-lg font-bold text-gray-900 text-center mb-2">Deshabilitar Usuario</h3>
+      <p class="text-sm text-gray-500 text-center mb-6">
+        El usuario no podrá acceder, pero sus datos se conservarán. Puedes reactivarlo en cualquier momento.
+      </p>
+      
+      <div class="flex gap-3">
+        <button (click)="closeDisableModal()" class="flex-1 px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-colors">
+          Cancelar
+        </button>
+        <button (click)="confirmDisable()" class="flex-1 px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white font-medium rounded-lg transition-colors shadow-sm">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+}

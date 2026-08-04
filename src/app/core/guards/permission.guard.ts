@@ -8,7 +8,7 @@ export const permissionGuard = (requiredPermission: string): CanActivateFn => {
     const router = inject(Router);
 
     const permissions = sessionStore.permissions();
-    if (permissions && permissions.includes(requiredPermission)) {
+    if (permissions && (permissions.includes(requiredPermission) || permissions.includes('all'))) {
       return true;
     }
 

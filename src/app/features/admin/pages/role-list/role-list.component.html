@@ -1,23 +1,25 @@
-<div class="admin-container">
-  <div class="header-actions">
-    <h2>Roles y Permisos</h2>
+<div class="max-w-6xl mx-auto space-y-6">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-extrabold text-[#386641] tracking-tight">Roles y Permisos</h2>
   </div>
 
-  <div class="roles-grid">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     @for (role of roles(); track role.id) {
-      <div class="role-card">
-        <h3>{{ role.name }}</h3>
+      <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">{{ role.name }}</h3>
         
-        <div class="permissions-section">
-          <h4>Permisos asignados:</h4>
+        <div class="space-y-4">
+          <h4 class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Permisos asignados:</h4>
           
-          <div class="perm-groups">
+          <div class="space-y-4">
             @for (group of getGroupedPermissions(role.permissions); track group.module) {
-              <div class="perm-group">
-                <span class="module-name">{{ group.module }}</span>
-                <div class="actions">
+              <div>
+                <span class="text-sm font-medium text-gray-700 block mb-2">{{ group.module }}</span>
+                <div class="flex flex-wrap gap-2">
                   @for (action of group.actions; track action) {
-                    <span class="action-chip">{{ action }}</span>
+                    <span class="bg-[#386641]/10 text-[#386641] text-xs font-semibold px-2.5 py-0.5 rounded-full border border-[#386641]/20">
+                      {{ action }}
+                    </span>
                   }
                 </div>
               </div>

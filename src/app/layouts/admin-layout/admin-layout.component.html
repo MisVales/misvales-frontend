@@ -1,15 +1,28 @@
-<aside class="sidebar">
-  <nav>
+<aside class="sidebar bg-[#386641] text-white flex flex-col transition-all duration-300 z-10 shadow-lg">
+  <div class="p-4 md:p-6 font-extrabold text-xl tracking-tight border-b border-[#6A994E]/50 flex items-center justify-center md:justify-start">
+    MisVales
+  </div>
+  <nav class="flex flex-col flex-grow py-4">
     @for (item of menuItems(); track item.route) {
-      <a [routerLink]="item.route" routerLinkActive="active">{{ item.label }}</a>
+      <a [routerLink]="item.route" 
+         routerLinkActive="bg-[#6A994E] border-r-4 border-white" 
+         class="px-4 md:px-6 py-3 text-sm font-medium hover:bg-[#6A994E]/70 transition-colors flex items-center">
+        {{ item.label }}
+      </a>
     }
   </nav>
 </aside>
-<main class="main-content">
-  <header class="topbar">
-    <button (click)="logout()">Cerrar Sesión</button>
+
+<main class="main-content flex-grow flex flex-col bg-[#F8F9FA] overflow-y-auto">
+  <header class="topbar bg-white px-6 py-4 flex justify-end shadow-sm border-b border-gray-200">
+    <button (click)="logout()" class="text-sm font-medium text-gray-600 hover:text-[#386641] transition-colors flex items-center gap-2">
+      Cerrar Sesión
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+      </svg>
+    </button>
   </header>
-  <div class="content-wrapper">
+  <div class="content-wrapper p-4 md:p-8 flex-grow">
     <router-outlet></router-outlet>
   </div>
 </main>
