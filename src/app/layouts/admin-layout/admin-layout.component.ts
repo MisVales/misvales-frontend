@@ -33,6 +33,9 @@ export class AdminLayoutComponent {
 
   private readonly allMenuItems: MenuItem[] = [
     { label: 'Dashboard', route: '/dashboard' },
+    { label: 'Revisión Solicitudes', route: '/verificacion-distribuidoras/solicitudes-distribuidora/revision', requiredPermissions: ['view_applications'] },
+    { label: 'Autorización Solicitudes', route: '/verificacion-distribuidoras/solicitudes-distribuidora/autorizaciones', requiredPermissions: ['authorize_applications'] },
+    { label: 'Mis Visitas Asignadas', route: '/verificacion-distribuidoras/verificaciones/asignadas', requiredPermissions: ['verify_applications'] },
     { label: 'Usuarios', route: '/usuarios', requiredPermissions: ['users.view'] },
     { label: 'Roles', route: '/roles', requiredPermissions: ['roles.view'] },
     { label: 'Categorías', route: '/categorias', requiredRoles: ['gerente_general', 'gerente_sucursal', 'admin'] },
@@ -47,9 +50,10 @@ export class AdminLayoutComponent {
     
     return this.allMenuItems.filter(item => {
       const hasPermission = !item.requiredPermissions || item.requiredPermissions.length === 0 || 
+                            userPermissions.includes('all') ||
                             item.requiredPermissions.some(perm => userPermissions.includes(perm));
       const hasRole = !item.requiredRoles || item.requiredRoles.length === 0 || 
-                      item.requiredRoles.some(role => userRoles && userRoles.includes(role));
+                      (userRoles && userRoles.some(role => role === 'admin' || item.requiredRoles!.includes(role)));
                       
       return hasPermission && hasRole;
     });

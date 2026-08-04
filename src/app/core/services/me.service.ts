@@ -22,7 +22,7 @@ export class MeService {
           name: 'Administrador Demo',
           email: 'admin@demo.com',
           roles: ['admin'],
-          permissions: ['users.view', 'users.create', 'roles.view'],
+          permissions: ['users.view', 'users.create', 'roles.view', 'all'],
           activeBranch: undefined,
           layoutPreference: 'desktop'
         };

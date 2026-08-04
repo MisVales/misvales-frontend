@@ -1,0 +1,76 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1 class="page-title">Revisión de Solicitudes</h1>
+    <p class="page-desc">Bandeja operativa para coordinación.</p>
+  </div>
+
+  @if (facade.error()) {
+    <div class="alert alert-danger">
+      {{ facade.error() }}
+      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">Cerrar</button>
+    </div>
+  }
+
+  <div class="content-card">
+    @if (facade.isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Cargando solicitudes...</p>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Folio</th>
+              <th>Aspirante</th>
+              <th>Sucursal</th>
+              <th>Estado</th>
+              <th>Avance</th>
+              <th>Fecha Envío</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (solicitud of facade.solicitudes(); track solicitud.id) {
+              <tr>
+                <td class="font-mono font-medium">{{ solicitud.folio }}</td>
+                <td>{{ solicitud.aspirante.nombreCompleto }}</td>
+                <td>{{ solicitud.sucursal.nombre }}</td>
+                <td>
+                  <app-estado-solicitud [estado]="solicitud.estado"></app-estado-solicitud>
+                </td>
+                <td>
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" [style.width]="solicitud.avance + '%'"></div>
+                  </div>
+                  <span class="text-xs text-muted">{{ solicitud.avance }}%</span>
+                </td>
+                <td>{{ solicitud.fechaEnvio | date:'mediumDate' }}</td>
+                <td class="actions-cell">
+                  <a [routerLink]="['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]" class="btn btn-sm btn-outline-primary">
+                    Abrir Expediente
+                  </a>
+                </td>
+              </tr>
+            }
+            @if (facade.solicitudes().length === 0) {
+              <tr>
+                <td colspan="7" class="text-center py-8 text-muted">
+                  No hay solicitudes pendientes en esta vista.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Basic pagination placeholder -->
+      <div class="pagination">
+        <button class="btn btn-sm btn-secondary" [disabled]="facade.pageSolicitudes() === 1" (click)="onPageChange(facade.pageSolicitudes() - 1)">Anterior</button>
+        <span class="page-info">Página {{ facade.pageSolicitudes() }}</span>
+        <button class="btn btn-sm btn-secondary" [disabled]="facade.solicitudes().length < facade.perPageSolicitudes()" (click)="onPageChange(facade.pageSolicitudes() + 1)">Siguiente</button>
+      </div>
+    }
+  </div>
+</div>

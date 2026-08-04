@@ -1,0 +1,46 @@
+<div class="page-container">
+  @if (facade.isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando información...</p>
+    </div>
+  }
+
+  @if (facade.error()) {
+    <div class="alert alert-danger">
+      {{ facade.error() }}
+      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">Cerrar</button>
+    </div>
+  }
+
+  @if (facade.solicitudSeleccionada(); as solicitud) {
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Asignar Verificador Físico</h2>
+        <p class="card-subtitle">Solicitud: {{ solicitud.folio }} - {{ solicitud.aspirante.nombreCompleto }}</p>
+      </div>
+
+      <div class="card-body">
+        <div class="form-group">
+          <label for="verifierSelect">Seleccione un Verificador</label>
+          <select id="verifierSelect" class="form-control" [(ngModel)]="verifierId" [disabled]="facade.isLoading()">
+            <option value="">Seleccione...</option>
+            @for (verifier of facade.verificadoresDisponibles(); track verifier.id) {
+              <option [value]="verifier.id" [disabled]="verifier.estado === 'INACTIVE'">
+                {{ verifier.nombreCompleto }} {{ verifier.estado === 'INACTIVE' ? '(Inactivo)' : '' }}
+              </option>
+            }
+          </select>
+          @if (facade.verificadoresDisponibles().length === 0 && !facade.isLoading()) {
+            <p class="text-sm text-danger mt-1">No hay verificadores disponibles en este momento.</p>
+          }
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="facade.isLoading()">Cancelar</button>
+        <button type="button" class="btn btn-primary" (click)="onAssign()" [disabled]="facade.isLoading() || !verifierId">Asignar y Guardar</button>
+      </div>
+    </div>
+  }
+</div>

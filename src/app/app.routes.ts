@@ -46,6 +46,10 @@ export const routes: Routes = [
       {
         path: 'periodos-canje',
         loadChildren: () => import('./features/exchange-periods/exchange-periods.routes').then(m => m.exchangePeriodsRoutes)
+      },
+      {
+        path: 'verificacion-distribuidoras',
+        loadChildren: () => import('./features/verificacion-distribuidoras/verificacion-distribuidoras.routes').then(m => m.VERIFICACION_DISTRIBUIDORAS_ROUTES)
       }
     ]
   }
