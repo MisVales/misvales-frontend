@@ -3,6 +3,14 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
+    "baseUrl": "./",
+    "paths": {
+      "@core/*": ["src/app/core/*"],
+      "@shared/*": ["src/app/shared/*"],
+      "@features/*": ["src/app/features/*"]
+    },
+    "moduleResolution": "bundler",
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
