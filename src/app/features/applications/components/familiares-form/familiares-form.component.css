@@ -1,0 +1,5 @@
+/* familiares-form.component.css */
+:host {
+  display: block;
+  height: 100%;
+}

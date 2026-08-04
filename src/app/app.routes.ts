@@ -50,6 +50,10 @@ export const routes: Routes = [
       {
         path: 'verificacion-distribuidoras',
         loadChildren: () => import('./features/verificacion-distribuidoras/verificacion-distribuidoras.routes').then(m => m.VERIFICACION_DISTRIBUIDORAS_ROUTES)
+      },
+      {
+        path: 'solicitudes-distribuidoras',
+        loadChildren: () => import('./features/applications/applications.routes').then(m => m.applicationsRoutes)
       }
     ]
   }
