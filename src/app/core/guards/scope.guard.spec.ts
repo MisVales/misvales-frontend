@@ -40,6 +40,6 @@ describe('scopeGuard', () => {
     });
 
     expect(result).toBe(mockUrlTree);
-    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/seleccionar-sucursal']);
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/']);
   });
 });

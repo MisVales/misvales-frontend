@@ -30,6 +30,14 @@ export const routes: Routes = [
       {
         path: 'organizacion',
         loadChildren: () => import('./features/organization/organization.routes').then(m => m.organizationRoutes)
+      },
+      {
+        path: 'configuraciones',
+        loadChildren: () => import('./features/configurations/configurations.routes').then(m => m.configurationsRoutes)
+      },
+      {
+        path: 'periodos-canje',
+        loadChildren: () => import('./features/exchange-periods/exchange-periods.routes').then(m => m.exchangePeriodsRoutes)
       }
     ]
   }

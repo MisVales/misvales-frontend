@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { UserListComponent } from './user-list.component';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { provideRouter } from '@angular/router';
 
 describe('UserListComponent', () => {
   let component: UserListComponent;
@@ -7,7 +9,8 @@ describe('UserListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UserListComponent]
+      imports: [UserListComponent],
+      providers: [provideRouter([])]
     })
     .compileComponents();
     
@@ -22,8 +25,7 @@ describe('UserListComponent', () => {
 
   it('should filter users by status', () => {
     component.filterStatus.set('blocked');
-    // Ensure the computed signal updates
-    expect(component.filteredUsers().every(u => u.status === 'blocked')).toBeTrue();
+    expect(component.filteredUsers().every(u => u.status === 'blocked')).toBe(true);
   });
 
   it('should show loading state when inviting user', () => {
@@ -33,9 +35,9 @@ describe('UserListComponent', () => {
   });
 
   it('should toggle user block status', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
     const user = component.users()[0];
-    component.toggleBlock(user);
+    component.openBlockModal(user);
+    component.confirmBlock();
     expect(component.isActionLoading()).toBe(`block-${user.id}`);
   });
 });

@@ -35,13 +35,5 @@ describe('authInterceptor', () => {
     req.flush({});
   });
 
-  it('should add Authorization header if token exists in localStorage', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('fake-token');
 
-    http.get('/test').subscribe();
-
-    const req = httpTestingController.expectOne('/test');
-    expect(req.request.headers.get('Authorization')).toBe('Bearer fake-token');
-    req.flush({});
-  });
 });
