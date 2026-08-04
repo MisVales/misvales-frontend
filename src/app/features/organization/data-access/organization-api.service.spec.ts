@@ -113,4 +113,36 @@ describe('OrganizationApiService', () => {
     expect(res.isActive).toBe(false);
     expect(res.lockVersion).toBe(2);
   });
+
+  // Tests for Mock Staff Endpoints
+  it('should get paginated staff', async () => {
+    const promise = new Promise(resolve => {
+      service.getStaff(1, 10).subscribe(resolve);
+    });
+    
+    // We skip HTTP mocking since it's a mocked endpoint
+    const res: any = await promise;
+    expect(res.data.length).toBeGreaterThan(0);
+    expect(res.total).toBe(3);
+  });
+
+  it('should get staff by id', async () => {
+    const promise = new Promise(resolve => {
+      service.getStaffById('1').subscribe(resolve);
+    });
+    
+    const res: any = await promise;
+    expect(res.id).toBe('1');
+    expect(res.name).toBe('Gerente Norte');
+  });
+
+  it('should assign staff', async () => {
+    const req = { userId: '101', role: 'admin', branchId: null, scopeType: 'global', startDate: '2026-08-01', reason: 'test' };
+    const promise = new Promise(resolve => {
+      service.assignStaff('1', req).subscribe(resolve);
+    });
+    
+    const res: any = await promise;
+    expect(res.success).toBe(true);
+  });
 });

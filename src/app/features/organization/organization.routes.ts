@@ -27,6 +27,21 @@ export const organizationRoutes: Routes = [
         canActivate: [permissionGuard('view_branches')],
         loadComponent: () => import('./pages/branch-detail/branch-detail').then(m => m.BranchDetail)
       },
+      {
+        path: 'personal',
+        canActivate: [permissionGuard('view_staff')],
+        loadComponent: () => import('./pages/staff-list/staff-list').then(m => m.StaffList)
+      },
+      {
+        path: 'personal/:id',
+        canActivate: [permissionGuard('view_staff')],
+        loadComponent: () => import('./pages/staff-detail/staff-detail').then(m => m.StaffDetail)
+      },
+      {
+        path: 'personal/:id/asignar',
+        canActivate: [permissionGuard('manage_staff')],
+        loadComponent: () => import('./pages/staff-assignment/staff-assignment').then(m => m.StaffAssignment)
+      },
       { path: '', redirectTo: 'sucursales', pathMatch: 'full' }
     ]
   }

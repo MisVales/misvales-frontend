@@ -1,0 +1,89 @@
+<div class="max-w-6xl mx-auto space-y-6">
+  <div class="flex items-center justify-between mb-6">
+    <h2 class="text-2xl font-extrabold text-[#386641] tracking-tight">Personal</h2>
+  </div>
+
+  <div class="flex flex-wrap gap-4 mb-6">
+    <input type="text" [ngModel]="filterSearch()" (ngModelChange)="filterSearch.set($event); onFilterChange()" placeholder="Buscar por nombre..."
+           class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-[200px]">
+    
+    <select [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+      <option value="">Todas las Sucursales</option>
+      <option value="b1">Sucursal Norte</option>
+      <option value="b2">Sucursal Centro</option>
+    </select>
+
+    <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+      <option value="">Todos los Roles</option>
+      <option value="admin">Administrador</option>
+      <option value="gerente">Gerente</option>
+      <option value="cajero">Cajero</option>
+    </select>
+
+    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+      <option value="">Todos los Estados</option>
+      <option value="active">Activo</option>
+      <option value="pending">Pendiente</option>
+      <option value="revoked">Revocado</option>
+    </select>
+  </div>
+
+  <div class="overflow-x-auto bg-white shadow-sm rounded-xl border border-gray-200">
+    <table class="w-full text-sm text-left text-gray-500">
+      <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th scope="col" class="px-6 py-4">Nombre</th>
+          <th scope="col" class="px-6 py-4">Email</th>
+          <th scope="col" class="px-6 py-4">Sucursal</th>
+          <th scope="col" class="px-6 py-4">Rol Efectivo</th>
+          <th scope="col" class="px-6 py-4">Estado Asignación</th>
+          <th scope="col" class="px-6 py-4">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @if (isLoading()) {
+          <tr>
+            <td colspan="6" class="px-6 py-8 text-center">
+              <svg class="animate-spin h-6 w-6 text-[#386641] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </td>
+          </tr>
+        } @else {
+          @for (user of staff(); track user.id) {
+            <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.name }}</td>
+              <td class="px-6 py-4">{{ user.email }}</td>
+              <td class="px-6 py-4">{{ user.branch ? user.branch.name : 'Global' }}</td>
+              <td class="px-6 py-4">
+                <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ user.effectiveRole }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                      [class.bg-green-100]="user.assignmentStatus === 'active'" [class.text-green-800]="user.assignmentStatus === 'active'"
+                      [class.bg-yellow-100]="user.assignmentStatus === 'pending'" [class.text-yellow-800]="user.assignmentStatus === 'pending'"
+                      [class.bg-red-100]="user.assignmentStatus === 'revoked'" [class.text-red-800]="user.assignmentStatus === 'revoked'">
+                  {{ user.assignmentStatus }}
+                </span>
+              </td>
+              <td class="px-6 py-4 flex items-center gap-3">
+                <a [routerLink]="['/organizacion/personal', user.id]" class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  Ver
+                </a>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="6" class="px-6 py-8 text-center text-gray-500">No se encontró personal.</td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
