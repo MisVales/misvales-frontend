@@ -1,11 +1,9 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
-
 @Component({
   selector: 'app-configuration-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule],
   templateUrl: './configuration-detail.component.html',
   styleUrls: ['./configuration-detail.component.css']
 })
