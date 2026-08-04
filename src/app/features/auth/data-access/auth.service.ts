@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_CONFIG } from '@core/api/api.config';
-import { Observable } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { LoginReq, LoginRes, MfaReq, RecoverReq, ResetPwdReq, InvitationRes } from './auth.dtos';
 
 @Injectable({
@@ -17,7 +17,8 @@ export class AuthService {
 
   // Example CSRF endpoint if needed
   getCsrfCookie(): Observable<any> {
-    return this.http.get(`${this.apiConfig.baseUrl}/sanctum/csrf-cookie`);
+    const hostUrl = this.apiConfig.baseUrl.replace('/api/v1', '');
+    return this.http.get(`${hostUrl}/sanctum/csrf-cookie`);
   }
 
   // WEBAUTHN MOCKS
@@ -70,33 +71,41 @@ export class AuthService {
   }
 
   login(credentials: LoginReq): Observable<LoginRes> {
-    // MOCK LOGIN FOR UI TESTING
-    return new Observable<LoginRes>(observer => {
-      setTimeout(() => {
-        // Simulamos error si el passkey es inválido
-        if (credentials.webauthnResponse && credentials.webauthnResponse.id === 'error') {
-          observer.error({ error: { code: 'AUTH_INVALID_CREDENTIALS', message: 'Passkey inválido' } });
-          return;
+    return this.http.post<any>(`${this.baseUrl}/login`, credentials).pipe(
+      map(res => {
+        if (res.mfa_challenge_token) {
+          return {
+            requiresMfa: true,
+            mfaChallengeToken: res.mfa_challenge_token,
+            availableMfa: res.available_mfa
+          };
         }
-
-        observer.next({
+        return {
           requiresMfa: false,
-          user: {
-            id: '1',
-            name: 'Administrador Demo',
-            email: credentials.email || 'passkey@demo.com',
-            roles: ['admin'],
-            permissions: ['all']
-          },
-          token: 'mock-jwt-token'
-        });
-        observer.complete();
-      }, 800);
-    });
+          user: res.user,
+          token: res.access_token
+        };
+      })
+    );
   }
 
   verifyMfa(data: MfaReq): Observable<LoginRes> {
-    return this.http.post<LoginRes>(`${this.baseUrl}/mfa/verify`, data);
+    return this.http.post<any>(`${this.baseUrl}/mfa/totp/verify`, data).pipe(
+      map(res => {
+        if (res.next_step) {
+           return {
+             requiresMfa: true,
+             mfaChallengeToken: res.mfa_challenge_token,
+             availableMfa: [res.next_step]
+           };
+        }
+        return {
+          requiresMfa: false,
+          user: res.user,
+          token: res.access_token
+        };
+      })
+    );
   }
 
   logout(): Observable<any> {

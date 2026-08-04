@@ -45,7 +45,7 @@ export const AuthFacade = signalStore(
       async login(credentials: LoginReq) {
         patchState(store, { isLoading: true, error: null });
         try {
-          // Si es necesario: await firstValueFrom(authService.getCsrfCookie());
+          await firstValueFrom(authService.getCsrfCookie());
           const response = await firstValueFrom(authService.login(credentials));
           
           if (response.requiresMfa) {
