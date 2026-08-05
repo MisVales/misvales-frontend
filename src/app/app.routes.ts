@@ -54,6 +54,14 @@ export const routes: Routes = [
       {
         path: 'solicitudes-distribuidoras',
         loadChildren: () => import('./features/applications/applications.routes').then(m => m.applicationsRoutes)
+      },
+      {
+        path: 'distribuidoras',
+        loadChildren: () => import('./features/distribuidoras/distribuidoras.routes').then(m => m.distribuidorasRoutes)
+      },
+      {
+        path: 'clientes',
+        loadChildren: () => import('./features/clientes/clientes.routes').then(m => m.CLIENTES_ROUTES)
       }
     ]
   }
