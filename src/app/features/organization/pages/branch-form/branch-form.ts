@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
-import { CreateBranchReq, UpdateBranchReq } from '../../data-access/organization.dtos';
+import { CreateBranchPayload, UpdateBranchPayload } from '../../data-access/organization.dtos';
 
 @Component({
   selector: 'app-branch-form',
@@ -135,12 +135,12 @@ export class BranchForm implements OnInit {
       
       const branch = this.facade.selectedBranch();
       if (branch) {
-        this.lockVersion = branch.lockVersion;
+        this.lockVersion = branch.lock_version;
         this.form.patchValue({
           code: branch.code,
           name: branch.name,
-          isActive: branch.isActive,
-          isHeadquarters: branch.isHeadquarters
+          isActive: branch.status === 'ACTIVE',
+          isHeadquarters: branch.is_headquarters
         });
       }
     }
@@ -158,11 +158,11 @@ export class BranchForm implements OnInit {
       await this.facade.getBranchById(this.branchId);
       const branch = this.facade.selectedBranch();
       if (branch) {
-        this.lockVersion = branch.lockVersion;
+        this.lockVersion = branch.lock_version;
         this.form.patchValue({
           name: branch.name,
-          isActive: branch.isActive,
-          isHeadquarters: branch.isHeadquarters
+          isActive: branch.status === 'ACTIVE',
+          isHeadquarters: branch.is_headquarters
         });
       }
     }
@@ -178,29 +178,27 @@ export class BranchForm implements OnInit {
     const formValue = this.form.value;
 
     if (this.isEditMode && this.branchId) {
-      const data: UpdateBranchReq = {
-        name: formValue.name,
-        isHeadquarters: formValue.isHeadquarters
+      const data: UpdateBranchPayload = {
+        name: formValue.name
       };
       
       // Manejar el toggle de estado también si cambió
       const branch = this.facade.selectedBranch();
-      if (branch && branch.isActive !== formValue.isActive) {
+      if (branch && (branch.status === 'ACTIVE') !== formValue.isActive) {
         // En un mundo real, esto podría requerir un endpoint separado o incluirse en update.
         // Simularemos que se actualiza el estado si cambió.
-        await this.facade.toggleBranchStatus(this.branchId, formValue.isActive, this.lockVersion);
+        await this.facade.toggleBranchStatus(this.branchId, formValue.isActive);
         // lockVersion se invalidaría tras esta llamada, así que recargamos.
         this.lockVersion++; 
       }
 
-      const success = await this.facade.updateBranch(this.branchId, data, this.lockVersion);
+      const success = await this.facade.updateBranch(this.branchId, data);
       if (success) this.goBack();
       
     } else {
-      const data: CreateBranchReq = {
+      const data: CreateBranchPayload = {
         code: formValue.code,
-        name: formValue.name,
-        isHeadquarters: formValue.isHeadquarters
+        name: formValue.name
       };
       
       const success = await this.facade.createBranch(data);

@@ -2,11 +2,11 @@ import { inject } from '@angular/core';
 import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
 import { firstValueFrom } from 'rxjs';
 import { OrganizationApiService } from '../data-access/organization-api.service';
-import { BranchRes, CreateBranchReq, UpdateBranchReq } from '../data-access/organization.dtos';
+import { Branch, CreateBranchPayload, UpdateBranchPayload } from '../data-access/organization.dtos';
 
 export interface OrganizationState {
-  branches: BranchRes[];
-  selectedBranch: BranchRes | null;
+  branches: Branch[];
+  selectedBranch: Branch | null;
   total: number;
   page: number;
   perPage: number;
@@ -34,12 +34,13 @@ export const OrganizationFacade = signalStore(
       async loadBranches(page: number = 1, perPage: number = 10, search?: string, status?: string) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.getBranches(page, perPage, search, status));
+          // The API now returns the full array. We can simulate pagination client-side or just store all.
+          const response = await firstValueFrom(apiService.getBranches());
           patchState(store, {
-            branches: response.data,
-            total: response.total,
-            page: response.page,
-            perPage: response.perPage,
+            branches: response,
+            total: response.length,
+            page: 1,
+            perPage: response.length,
             isLoading: false
           });
         } catch (err: any) {
@@ -50,14 +51,22 @@ export const OrganizationFacade = signalStore(
       async getBranchById(id: string) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const branch = await firstValueFrom(apiService.getBranchById(id));
-          patchState(store, { selectedBranch: branch, isLoading: false });
+          // Find locally since getBranchById is not in API spec
+          // Or wait, if we must get it from API, the spec doesn't define GET /api/v1/branches/{id}.
+          // Let's fallback to searching in the currently loaded branches array
+          const branches = store.branches();
+          const branch = branches.find(b => b.id === id) || null;
+          if (branch) {
+            patchState(store, { selectedBranch: branch, isLoading: false });
+          } else {
+             patchState(store, { isLoading: false, error: 'Sucursal no encontrada' });
+          }
         } catch (err: any) {
           patchState(store, { isLoading: false, error: err?.error?.message || 'Error al obtener la sucursal' });
         }
       },
 
-      async createBranch(data: CreateBranchReq) {
+      async createBranch(data: CreateBranchPayload) {
         patchState(store, { isLoading: true, error: null });
         try {
           const newBranch = await firstValueFrom(apiService.createBranch(data));
@@ -73,10 +82,10 @@ export const OrganizationFacade = signalStore(
         }
       },
 
-      async updateBranch(id: string, data: UpdateBranchReq, lockVersion: number) {
+      async updateBranch(id: string, data: UpdateBranchPayload) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const updatedBranch = await firstValueFrom(apiService.updateBranch(id, data, lockVersion));
+          const updatedBranch = await firstValueFrom(apiService.updateBranch(id, data));
           patchState(store, (state) => ({
             branches: state.branches.map(b => b.id === id ? updatedBranch : b),
             selectedBranch: state.selectedBranch?.id === id ? updatedBranch : state.selectedBranch,
@@ -93,10 +102,11 @@ export const OrganizationFacade = signalStore(
         }
       },
 
-      async toggleBranchStatus(id: string, isActive: boolean, lockVersion: number) {
+      async toggleBranchStatus(id: string, isActive: boolean) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const updatedBranch = await firstValueFrom(apiService.toggleBranchStatus(id, isActive, lockVersion));
+          const status = isActive ? 'ACTIVE' : 'INACTIVE';
+          const updatedBranch = await firstValueFrom(apiService.toggleBranchStatus(id, { status }));
           patchState(store, (state) => ({
             branches: state.branches.map(b => b.id === id ? updatedBranch : b),
             selectedBranch: state.selectedBranch?.id === id ? updatedBranch : state.selectedBranch,

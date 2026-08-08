@@ -68,13 +68,13 @@ import { SessionStore } from '@core/session/session.store';
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ branch.name }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium" 
-                        [ngClass]="branch.isHeadquarters ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
-                    {{ branch.isHeadquarters ? 'Matriz' : 'Foránea' }}
+                        [ngClass]="branch.is_headquarters ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'">
+                    {{ branch.is_headquarters ? 'Matriz' : 'Foránea' }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ branch.activeStaffCount }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ 0 }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
-                  <app-branch-status-badge [isActive]="branch.isActive"></app-branch-status-badge>
+                  <app-branch-status-badge [isActive]="branch.status === 'ACTIVE'"></app-branch-status-badge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                   <button [routerLink]="[branch.id]" class="text-gray-400 hover:text-[#386641] transition-colors p-2 rounded-full hover:bg-green-50">

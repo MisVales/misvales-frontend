@@ -1,0 +1,17 @@
+<div class="max-w-4xl mx-auto space-y-8 mt-6">
+  <div>
+    <h2 class="text-xl font-bold text-gray-900 mb-6">Información del Perfil</h2>
+    
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-start gap-4">
+        <div class="p-4 bg-gray-50 rounded-full flex-shrink-0">
+          <lucide-icon name="user" class="w-8 h-8 text-[#386641]"></lucide-icon>
+        </div>
+        <div class="space-y-1 w-full">
+          <h3 class="text-lg font-bold text-gray-900">{{ sessionStore.user()?.name }}</h3>
+          <p class="text-sm text-gray-500">{{ sessionStore.user()?.email }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

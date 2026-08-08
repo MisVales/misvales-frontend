@@ -12,7 +12,8 @@
     <div class="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full border border-gray-100">
       
       <!-- Éxito -->
-      <div *ngIf="isSuccess()" class="text-center">
+      @if (isSuccess()) {
+      <div class="text-center">
         <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-[#386641]/10 mb-6">
           <svg class="h-8 w-8 text-[#386641]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -20,21 +21,25 @@
         </div>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Revisa tu correo</h2>
         <p class="text-gray-500 text-sm mb-8">Si el correo existe en nuestro sistema, hemos enviado un enlace para que puedas restablecer tu contraseña. El enlace expirará en 1 hora.</p>
-        <a routerLink="/login" class="w-full inline-flex justify-center rounded-xl border border-transparent bg-gray-100 py-3 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors">
+        <a routerLink="/auth/login" class="w-full inline-flex justify-center rounded-xl border border-transparent bg-gray-100 py-3 px-4 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors">
           Volver al Inicio
         </a>
       </div>
+      }
 
       <!-- Formulario de Recuperación -->
-      <div *ngIf="!isSuccess()">
+      @if (!isSuccess()) {
+      <div>
         <div class="text-center mb-8">
           <h1 class="text-3xl font-extrabold text-[#386641] tracking-tight">Recuperar Acceso</h1>
           <p class="text-gray-500 text-sm mt-2">Ingresa tu correo y te enviaremos instrucciones.</p>
         </div>
 
-        <div *ngIf="error" class="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200">
+        @if (error) {
+        <div class="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200">
           {{ error }}
         </div>
+        }
 
         <form [formGroup]="recoverForm" (ngSubmit)="onSubmit()" class="space-y-6">
           
@@ -53,31 +58,41 @@
                      class="block w-full pl-10 pr-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors placeholder-gray-400"
                      placeholder="nombre@empresa.com">
             </div>
-            <div *ngIf="recoverForm.get('email')?.touched && recoverForm.get('email')?.invalid" class="mt-2 text-xs text-red-500">
-              <span *ngIf="recoverForm.get('email')?.errors?.['required']">El correo es obligatorio.</span>
-              <span *ngIf="recoverForm.get('email')?.errors?.['email']">Ingrese un correo válido.</span>
+            @if (recoverForm.get('email')?.touched && recoverForm.get('email')?.invalid) {
+            <div class="mt-2 text-xs text-red-500">
+              @if (recoverForm.get('email')?.errors?.['required']) {
+              <span>El correo es obligatorio.</span>
+              }
+              @if (recoverForm.get('email')?.errors?.['email']) {
+              <span>Ingrese un correo válido.</span>
+              }
             </div>
+            }
           </div>
 
           <button type="submit" 
                   [disabled]="isLoading || recoverForm.invalid"
                   class="w-full bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/70 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-4">
             
-            <ng-container *ngIf="!isLoading">
+            @if (!isLoading) {
+            <ng-container>
               Enviar Enlace
             </ng-container>
+            }
 
-            <ng-container *ngIf="isLoading">
+            @if (isLoading) {
+            <ng-container>
               <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               Procesando...
             </ng-container>
+            }
           </button>
 
           <div class="mt-6 text-center">
-            <a routerLink="/login" class="text-sm text-[#6A994E] hover:underline font-medium flex items-center justify-center">
+            <a routerLink="/auth/login" class="text-sm text-[#6A994E] hover:underline font-medium flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
@@ -87,6 +102,7 @@
 
         </form>
       </div>
+      }
 
     </div>
   </div>

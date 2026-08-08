@@ -5,37 +5,11 @@
   overflow: hidden;
 }
 
-:host(.layout-desktop) .sidebar {
-  width: 250px;
+.sidebar-wrapper {
+  flex-shrink: 0;
 }
 
-:host(.layout-tablet) .sidebar {
-  width: 80px;
-}
-
-:host(.layout-tablet) .sidebar a {
-  padding: 0.75rem;
-  justify-content: center;
-  font-size: 0.75rem;
-}
-
-:host(.layout-mobile) {
-  flex-direction: column;
-}
-
-:host(.layout-mobile) .sidebar {
-  width: 100%;
-  height: auto;
-  flex-direction: column;
-}
-
-:host(.layout-mobile) .sidebar nav {
-  flex-direction: row;
-  overflow-x: auto;
-  padding: 0;
-}
-
-:host(.layout-mobile) .sidebar a {
-  padding: 1rem;
-  white-space: nowrap;
+.main-content {
+  flex: 1;
+  min-width: 0;
 }

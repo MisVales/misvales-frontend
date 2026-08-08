@@ -60,7 +60,8 @@
               "buildTarget": "misvales-frontend:build:production"
             },
             "development": {
-              "buildTarget": "misvales-frontend:build:development"
+              "buildTarget": "misvales-frontend:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

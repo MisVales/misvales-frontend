@@ -6,7 +6,6 @@ import { AuthFacade } from '../../state/auth.facade';
 
 @Component({
   selector: 'app-recover-access',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './recover-access.html',
   styleUrls: ['./recover-access.css'],
@@ -30,13 +29,12 @@ export class RecoverAccess {
     return this.authFacade.error();
   }
 
-  onSubmit() {
+  async onSubmit() {
     if (this.recoverForm.valid && !this.isLoading) {
-      // this.authFacade.recoverAccess(this.recoverForm.value.email);
-      // Para simular el flujo en el UI:
-      setTimeout(() => {
+      const success = await this.authFacade.recoverAccess(this.recoverForm.value);
+      if (success) {
         this.isSuccess.set(true);
-      }, 800);
+      }
     } else {
       this.recoverForm.markAllAsTouched();
     }

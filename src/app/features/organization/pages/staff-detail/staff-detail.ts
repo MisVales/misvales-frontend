@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { OrganizationApiService } from '../../data-access/organization-api.service';
-import { StaffRes } from '../../data-access/organization.dtos';
+// import { StaffRes } from '../../data-access/organization.dtos';
 
 @Component({
   selector: 'app-staff-detail',
@@ -16,19 +16,20 @@ export class StaffDetail implements OnInit {
   private api = inject(OrganizationApiService);
   private route = inject(ActivatedRoute);
 
-  staff = signal<StaffRes | null>(null);
+  staff = signal<any | null>(null);
   isLoading = signal(true);
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.api.getStaffById(id).subscribe({
-        next: (res) => {
-          this.staff.set(res);
-          this.isLoading.set(false);
-        },
-        error: () => this.isLoading.set(false)
-      });
+      // this.api.getStaffById(id).subscribe({
+      //   next: (res: any) => {
+      //     this.staff.set(res);
+      //     this.isLoading.set(false);
+      //   },
+      //   error: () => this.isLoading.set(false)
+      // });
+      this.isLoading.set(false);
     }
   }
 }

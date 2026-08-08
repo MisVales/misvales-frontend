@@ -1,7 +1,10 @@
-import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, inject, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { UserRes } from '../../data-access/admin.dtos';
+import { UserService } from '../../data-access/user.service';
+import { UserRes, UserState, RoleRes } from '../../data-access/admin.dtos';
+import { RoleService } from '../../data-access/role.service';
+import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-user-list',
@@ -11,39 +14,91 @@ import { UserRes } from '../../data-access/admin.dtos';
   styleUrl: './user-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UserListComponent {
-  users = signal<UserRes[]>([
-    { id: '1', name: 'Juan Perez', email: 'juan@example.com', status: 'active', roles: ['admin'], branchId: 'suc-1' },
-    { id: '2', name: 'Maria Lopez', email: 'maria@example.com', status: 'invited', roles: ['gerente'], branchId: 'suc-2' },
-    { id: '3', name: 'Carlos Slim', email: 'carlos@example.com', status: 'blocked', roles: ['cajero'], branchId: 'suc-1' },
-  ]);
+export class UserListComponent implements OnInit {
+  private userService = inject(UserService);
+  private roleService = inject(RoleService);
 
-  filterStatus = signal<string>('');
+  users = signal<UserRes[]>([]);
+  totalUsers = signal(0);
+  
+  filterStatus = signal<UserState | ''>('');
   filterRole = signal<string>('');
-
-  filteredUsers = computed(() => {
-    return this.users().filter(u => {
-      const matchStatus = !this.filterStatus() || u.status === this.filterStatus();
-      const matchRole = !this.filterRole() || u.roles.includes(this.filterRole());
-      return matchStatus && matchRole;
-    });
-  });
+  filterSearch = signal<string>('');
+  page = signal(1);
 
   isActionLoading = signal<string | null>(null);
 
+  // Tabs
+  activeTab = signal<'directory' | 'roles'>('directory');
+
   // Modal State for Inviting
   showInviteModal = signal(false);
+  inviteName = signal('');
   inviteEmail = signal('');
+  inviteRoleId = signal('');
+
+  availableRoles = signal<RoleRes[]>([]);
+
+  async ngOnInit() {
+    this.loadUsers();
+    this.loadRoles();
+  }
+
+  async loadRoles() {
+    try {
+      const roles = await firstValueFrom(this.roleService.getRoles());
+      this.availableRoles.set(roles.filter(r => r.name.toLowerCase() !== 'gerente general' && r.id !== 'gerente_general'));
+    } catch (err) {
+      console.error('Failed to load roles', err);
+    }
+  }
+
+  loadUsers() {
+    this.userService.getUsers({
+      search: this.filterSearch() || undefined,
+      state: (this.filterStatus() as UserState) || undefined,
+      role_id: this.filterRole() || undefined,
+      page: this.page()
+    }).subscribe({
+      next: (res) => {
+        this.users.set(res.data);
+        this.totalUsers.set(res.total);
+      },
+      error: (err) => console.error('Failed to load users', err)
+    });
+  }
+
+  onFilterChange() {
+    this.page.set(1);
+    this.loadUsers();
+  }
 
   inviteUser() {
-    if (!this.inviteEmail()) return;
+    if (!this.inviteEmail() || !this.inviteName() || !this.inviteRoleId()) return;
     this.isActionLoading.set('invite');
-    setTimeout(() => {
-      this.isActionLoading.set(null);
-      this.showInviteModal.set(false);
-      alert(`Invitación enviada a ${this.inviteEmail()}`);
-      this.inviteEmail.set('');
-    }, 1500);
+    
+    this.userService.createAccount({ 
+      name: this.inviteName(), 
+      email: this.inviteEmail(),
+      role_id: this.inviteRoleId(),
+      branch_id: null,
+      send_invitation: true
+    }).subscribe({
+      next: () => {
+        this.isActionLoading.set(null);
+        this.showInviteModal.set(false);
+        this.inviteEmail.set('');
+        this.inviteName.set('');
+        this.inviteRoleId.set('');
+        alert('Se ha enviado el correo de invitación correctamente.');
+        this.loadUsers();
+      },
+      error: (err) => {
+        console.error(err);
+        this.isActionLoading.set(null);
+        alert(err.error?.message || 'Error invitando usuario');
+      }
+    });
   }
 
   userToBlock = signal<UserRes | null>(null);
@@ -59,17 +114,24 @@ export class UserListComponent {
   confirmBlock() {
     const user = this.userToBlock();
     if (!user) return;
-    this.closeBlockModal();
     
     this.isActionLoading.set(`block-${user.id}`);
-    setTimeout(() => {
-      this.users.update(list => list.map(u => {
-        if (u.id === user.id) {
-          return { ...u, status: u.status === 'blocked' ? 'active' : 'blocked' };
-        }
-        return u;
-      }));
-      this.isActionLoading.set(null);
-    }, 1000);
+    
+    const request = user.state === 'BLOCKED' 
+      ? this.userService.unblockUser(user.id)
+      : this.userService.blockUser(user.id);
+
+    request.subscribe({
+      next: () => {
+        this.isActionLoading.set(null);
+        this.closeBlockModal();
+        this.loadUsers();
+      },
+      error: (err) => {
+        console.error(err);
+        this.isActionLoading.set(null);
+        alert('Error cambiando estado del usuario');
+      }
+    });
   }
 }

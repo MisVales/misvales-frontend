@@ -1,37 +1,63 @@
 import { PaginationMeta } from '../../../core/api/models/api.dtos';
 
+export type UserState = 'INVITED' | 'PENDING_ACTIVATION' | 'ACTIVE' | 'BLOCKED' | 'DISABLED';
+
 export interface UserListFilterReq {
-  status?: 'active' | 'blocked' | 'invited';
-  role?: string;
-  branch?: string;
+  search?: string;
+  state?: UserState;
+  role_id?: string;
+  branch_id?: string;
+  page?: number;
+}
+
+export interface RoleScopeRes {
+  role: { name: string };
+  branch_id?: string;
 }
 
 export interface UserRes {
   id: string;
   name: string;
   email: string;
-  status: 'active' | 'blocked' | 'invited';
-  roles: string[];
-  branchId?: string;
+  state: UserState;
+  mfa_status?: boolean;
+  role_scopes?: RoleScopeRes[];
 }
 
 export interface UserListRes {
   data: UserRes[];
-  meta: PaginationMeta;
+  current_page: number;
+  total: number;
 }
 
-export interface UserInviteReq {
+export interface UserCreateReq {
+  name: string;
   email: string;
-  roles: string[];
-  branchId?: string;
+  role_id: string;
+  branch_id: string | null;
+  send_invitation: boolean;
 }
 
-export interface UserStatusUpdateReq {
-  status: 'active' | 'blocked';
+export interface UserUpdateReq {
+  name?: string;
+}
+
+export interface UserAssignmentReq {
+  role_id: string;
+  branch_id?: string | null;
+}
+
+export interface UserAssignmentRes {
+  id: string;
+  role: { id: string; name: string };
+  branch?: { id: string; name: string } | null;
+  assignedBy?: { id: string; name: string };
+  created_at?: string;
 }
 
 export interface RoleRes {
   id: string;
   name: string;
+  is_mutable?: boolean;
   permissions: string[];
 }

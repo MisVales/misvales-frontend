@@ -10,8 +10,12 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () => import('./pages/user-detail/user-detail.component').then(c => c.UserDetailComponent)
   },
   {
-    path: 'roles',
-    loadComponent: () => import('./pages/role-list/role-list.component').then(c => c.RoleListComponent)
+    path: 'invitaciones',
+    loadComponent: () => import('./pages/invitations/invitations').then(c => c.Invitations)
+  },
+  {
+    path: 'auditoria',
+    loadComponent: () => import('./pages/audit-logs/audit-logs').then(c => c.AuditLogs)
   },
   {
     path: '',

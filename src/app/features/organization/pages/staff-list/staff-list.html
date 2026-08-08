@@ -53,18 +53,17 @@
         } @else {
           @for (user of staff(); track user.id) {
             <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.name }}</td>
-              <td class="px-6 py-4">{{ user.email }}</td>
-              <td class="px-6 py-4">{{ user.branch ? user.branch.name : 'Global' }}</td>
+              <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.user?.name || 'Desconocido' }}</td>
+              <td class="px-6 py-4">{{ user.user?.email || 'N/A' }}</td>
+              <td class="px-6 py-4">{{ user.branch_id || 'Global' }}</td>
               <td class="px-6 py-4">
-                <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ user.effectiveRole }}</span>
+                <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ user.role?.name || 'Sin Rol' }}</span>
               </td>
               <td class="px-6 py-4">
                 <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                      [class.bg-green-100]="user.assignmentStatus === 'active'" [class.text-green-800]="user.assignmentStatus === 'active'"
-                      [class.bg-yellow-100]="user.assignmentStatus === 'pending'" [class.text-yellow-800]="user.assignmentStatus === 'pending'"
-                      [class.bg-red-100]="user.assignmentStatus === 'revoked'" [class.text-red-800]="user.assignmentStatus === 'revoked'">
-                  {{ user.assignmentStatus }}
+                      [class.bg-green-100]="user.status === 'ACTIVE'" [class.text-green-800]="user.status === 'ACTIVE'"
+                      [class.bg-red-100]="user.status === 'ENDED'" [class.text-red-800]="user.status === 'ENDED'">
+                  {{ user.status }}
                 </span>
               </td>
               <td class="px-6 py-4 flex items-center gap-3">

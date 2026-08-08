@@ -14,28 +14,36 @@ export class MeService {
   private readonly sessionStore = inject(SessionStore);
 
   fetchMe(): Observable<MeRes> {
-    // MOCK ME ENDPOINT
-    return new Observable<MeRes>(observer => {
-      setTimeout(() => {
-        const mockRes: MeRes = {
-          id: '1',
-          name: 'Administrador Demo',
-          email: 'admin@demo.com',
-          roles: ['admin'],
-          permissions: ['users.view', 'users.create', 'roles.view'],
-          activeBranch: undefined,
-          layoutPreference: 'desktop'
+    return this.http.get<any>(`${this.config.baseUrl}/me`).pipe(
+      tap((res: any) => {
+        // Map backend response to frontend MeRes
+        const mappedRes: MeRes = {
+          user: {
+            id: res.user.id,
+            name: res.user.name,
+            email: res.user.email,
+            status: res.user.state,
+            layoutPreference: 'desktop'
+          },
+          scopes: res.scopes.map((s: any) => ({
+            branchId: s.branch_id,
+            branchName: s.role_name, // Backend provides role_name, using as fallback or adjust later
+            role: s.role
+          })),
+          effective_permissions: res.effective_permissions,
+          activeBranch: undefined
         };
+
+        const roles = Array.from(new Set(mappedRes.scopes.map(s => s.role)));
         this.sessionStore.setSession(
-          { id: mockRes.id, name: mockRes.name, email: mockRes.email },
-          mockRes.roles,
-          mockRes.permissions,
-          mockRes.activeBranch || null,
-          mockRes.layoutPreference
+          { id: mappedRes.user.id, name: mappedRes.user.name, email: mappedRes.user.email },
+          roles,
+          mappedRes.effective_permissions,
+          mappedRes.activeBranch || null,
+          mappedRes.user.layoutPreference,
+          mappedRes.scopes
         );
-        observer.next(mockRes);
-        observer.complete();
-      }, 500);
-    });
+      })
+    );
   }
 }

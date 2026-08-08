@@ -1,9 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { MfaReauthModalComponent } from './core/components/mfa-reauth-modal/mfa-reauth-modal.component';
+import { AlertComponent } from './shared/components/alert/alert.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, MfaReauthModalComponent, AlertComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

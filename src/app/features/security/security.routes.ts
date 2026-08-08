@@ -2,21 +2,39 @@ import { Routes } from '@angular/router';
 
 export const SECURITY_ROUTES: Routes = [
   {
-    path: 'totp',
-    loadComponent: () => import('./pages/totp-setup/totp-setup.component').then(c => c.TotpSetupComponent)
-  },
-  {
-    path: 'recovery-codes',
-    loadComponent: () => import('./pages/recovery-codes/recovery-codes.component').then(c => c.RecoveryCodesComponent),
-    canDeactivate: [(c: any) => c.canLeave ? c.canLeave() : true]
-  },
-  {
-    path: 'sessions',
-    loadComponent: () => import('./pages/sessions/sessions.component').then(c => c.SessionsComponent)
-  },
-  {
     path: '',
-    redirectTo: 'totp',
-    pathMatch: 'full'
+    loadComponent: () => import('./pages/security-dashboard/security-dashboard').then(c => c.SecurityDashboard),
+    children: [
+      {
+        path: 'profile',
+        loadComponent: () => import('./pages/profile/profile.component').then(c => c.ProfileComponent)
+      },
+      {
+        path: 'password',
+        loadComponent: () => import('./pages/password-change/password-change').then(c => c.PasswordChange)
+      },
+      {
+        path: 'mfa',
+        loadComponent: () => import('./pages/mfa/mfa.component').then(c => c.MfaComponent)
+      },
+      {
+        path: 'recovery-codes',
+        loadComponent: () => import('./pages/recovery-codes/recovery-codes.component').then(c => c.RecoveryCodesComponent),
+        canDeactivate: [(c: any) => c.canLeave ? c.canLeave() : true]
+      },
+      {
+        path: 'sessions',
+        loadComponent: () => import('./pages/sessions/sessions.component').then(c => c.SessionsComponent)
+      },
+      {
+        path: 'history',
+        loadComponent: () => import('./pages/history/history.component').then(c => c.HistoryComponent)
+      },
+      {
+        path: '',
+        redirectTo: 'profile',
+        pathMatch: 'full'
+      }
+    ]
   }
 ];

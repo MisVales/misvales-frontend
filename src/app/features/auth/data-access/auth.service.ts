@@ -1,8 +1,9 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_CONFIG } from '@core/api/api.config';
-import { Observable } from 'rxjs';
-import { LoginReq, LoginRes, MfaReq, RecoverReq, ResetPwdReq, InvitationRes } from './auth.dtos';
+import { Observable, tap } from 'rxjs';
+import Cookies from 'js-cookie';
+import { LoginReq, LoginRes, MfaReq, RecoverReq, ResetPwdReq, InspectInvitationReq, InspectInvitationRes, SetupInvitationReq, SetupInvitationRes, CompleteInvitationReq, ResendInvitationReq, ResendInvitationRes, PasskeySetupReq, PasskeyRegisterReq } from './auth.dtos';
 
 @Injectable({
   providedIn: 'root'
@@ -70,48 +71,88 @@ export class AuthService {
   }
 
   login(credentials: LoginReq): Observable<LoginRes> {
-    // MOCK LOGIN FOR UI TESTING
-    return new Observable<LoginRes>(observer => {
-      setTimeout(() => {
-        // Simulamos error si el passkey es inválido
-        if (credentials.webauthnResponse && credentials.webauthnResponse.id === 'error') {
-          observer.error({ error: { code: 'AUTH_INVALID_CREDENTIALS', message: 'Passkey inválido' } });
-          return;
-        }
-
-        observer.next({
-          requiresMfa: false,
-          user: {
-            id: '1',
-            name: 'Administrador Demo',
-            email: credentials.email || 'passkey@demo.com',
-            roles: ['admin'],
-            permissions: ['all']
-          },
-          token: 'mock-jwt-token'
-        });
-        observer.complete();
-      }, 800);
-    });
+    return this.http.post<LoginRes>(`${this.baseUrl}/login`, credentials).pipe(
+      tap(this.saveTokensIfPresent)
+    );
   }
 
   verifyMfa(data: MfaReq): Observable<LoginRes> {
-    return this.http.post<LoginRes>(`${this.baseUrl}/mfa/verify`, data);
+    if (data.recovery_code) {
+      return this.http.post<LoginRes>(`${this.baseUrl}/mfa/recovery-code/verify`, data).pipe(
+        tap(this.saveTokensIfPresent)
+      );
+    }
+    return this.http.post<LoginRes>(`${this.baseUrl}/mfa/totp/verify`, data).pipe(
+      tap(this.saveTokensIfPresent)
+    );
   }
 
   logout(): Observable<any> {
-    return this.http.post(`${this.baseUrl}/logout`, {});
+    return this.http.post(`${this.baseUrl}/logout`, {}).pipe(
+      tap(() => {
+        Cookies.remove('access_token');
+        Cookies.remove('refresh_token');
+      })
+    );
   }
 
+  private saveTokensIfPresent = (response: LoginRes) => {
+    if (response.access_token) {
+      const expires = response.expires_in ? response.expires_in / (24 * 60 * 60) : 1; // Default 1 day if missing
+      Cookies.set('access_token', response.access_token, { 
+        expires, 
+        secure: true, 
+        sameSite: 'strict' 
+      });
+    }
+    if (response.refresh_token) {
+      Cookies.set('refresh_token', response.refresh_token, { 
+        expires: 7, 
+        secure: true, 
+        sameSite: 'strict' 
+      });
+    }
+  };
+
   recoverAccess(data: RecoverReq): Observable<any> {
-    return this.http.post(`${this.baseUrl}/recover`, data);
+    return this.http.post(`${this.baseUrl}/password/forgot`, data);
   }
 
   resetPassword(data: ResetPwdReq): Observable<any> {
-    return this.http.post(`${this.baseUrl}/reset-password`, data);
+    return this.http.post(`${this.baseUrl}/password/reset`, data);
   }
 
-  checkInvitation(token: string): Observable<InvitationRes> {
-    return this.http.get<InvitationRes>(`${this.baseUrl}/invitation/${token}`);
+  inspectInvitation(data: InspectInvitationReq): Observable<InspectInvitationRes> {
+    return this.http.post<InspectInvitationRes>(`${this.baseUrl}/invitations/inspect`, data);
+  }
+
+  setupInvitation(data: SetupInvitationReq): Observable<SetupInvitationRes> {
+    return this.http.post<SetupInvitationRes>(`${this.baseUrl}/invitations/setup`, data);
+  }
+
+  completeInvitation(data: CompleteInvitationReq): Observable<any> {
+    return this.http.post(`${this.baseUrl}/invitations/complete`, data);
+  }
+
+  resendInvitation(data: ResendInvitationReq): Observable<ResendInvitationRes> {
+    return this.http.post<ResendInvitationRes>(`${this.baseUrl}/invitations/resend`, data);
+  }
+
+  setupPasskey(data: PasskeySetupReq): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/invitations/passkey/setup`, data);
+  }
+
+  registerPasskey(data: PasskeyRegisterReq): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/invitations/passkey/register`, data);
+  }
+
+  getPasskeyOptions(data: { mfa_challenge_token: string }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/mfa/passkey/options`, data);
+  }
+
+  verifyPasskey(data: import('./auth.dtos').PasskeyVerifyReq): Observable<LoginRes> {
+    return this.http.post<LoginRes>(`${this.baseUrl}/mfa/passkey/verify`, data).pipe(
+      tap(this.saveTokensIfPresent)
+    );
   }
 }
