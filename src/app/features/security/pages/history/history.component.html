@@ -38,7 +38,7 @@
             <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mt-2">
               <span class="flex items-center gap-1">
                 <lucide-icon name="calendar-clock" class="w-4 h-4"></lucide-icon>
-                {{ event.created_at | date:'medium' }}
+                {{ event.occurred_at | date:'medium' }}
               </span>
               
               @if (event.ip_address) {
@@ -49,11 +49,11 @@
                 </span>
               }
               
-              @if (event.device) {
+              @if (event.user_agent) {
                 <span class="hidden sm:inline">•</span>
                 <span class="flex items-center gap-1">
                   <lucide-icon name="monitor-smartphone" class="w-4 h-4"></lucide-icon>
-                  {{ event.device }}
+                  {{ event.user_agent }}
                 </span>
               }
             </div>

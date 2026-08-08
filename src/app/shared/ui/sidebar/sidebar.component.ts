@@ -14,6 +14,7 @@ import { NAV_GROUPS, BOTTOM_ITEMS, NavItemData, NavGroupData } from './sidebar.c
 import { LucideAngularModule } from 'lucide-angular';
 import { Subscription, filter } from 'rxjs';
 import { AuthFacade } from '../../../features/auth/state/auth.facade';
+import { filterNavigationItems } from './sidebar.permissions';
 
 @Component({
   selector: 'app-sidebar',
@@ -48,11 +49,23 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // ─── Navegación filtrada por permisos ──────────────────────
 
   filteredNavGroups = computed<NavGroupData[]>(() => {
-    return NAV_GROUPS;
+    const permissions = this.sessionStore.permissions();
+    const roles = this.sessionStore.roles();
+
+    return NAV_GROUPS
+      .map((group) => ({
+        ...group,
+        items: filterNavigationItems(group.items, permissions, roles),
+      }))
+      .filter((group) => group.items.length > 0);
   });
 
   filteredBottomItems = computed<NavItemData[]>(() => {
-    return BOTTOM_ITEMS;
+    return filterNavigationItems(
+      BOTTOM_ITEMS,
+      this.sessionStore.permissions(),
+      this.sessionStore.roles(),
+    );
   });
 
   userName = computed(() => this.sessionStore.user()?.name ?? '');
@@ -128,10 +141,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // ─── Acciones ──────────────────────────────────────────────
 
   onItemClick(item: NavItemData): void {
-    if (item.action === 'search') {
-      // TODO: abrir command palette / modal de búsqueda
-      return;
-    }
     if (item.action === 'logout') {
       this.authFacade.logout();
       return;
@@ -143,31 +152,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   // ─── Helpers privados ──────────────────────────────────────
-
-  /** Filtra items recursivamente por permisos, oculta categorías vacías */
-  private filterItems(items: NavItemData[], perms: string[]): NavItemData[] {
-    return items
-      .map((item) => {
-        // Si tiene permiso requerido y el usuario no lo tiene, ocultar
-        if (item.permission && !perms.includes(item.permission)) {
-          // Excepción: items sin permiso declarado siempre se muestran (Buscar, Mi cuenta, etc.)
-          return null;
-        }
-
-        // Filtrar hijos recursivamente
-        if (item.children && item.children.length > 0) {
-          const filteredChildren = this.filterItems(item.children, perms);
-          // Si no quedan hijos visibles y no tiene ruta propia, ocultar la categoría
-          if (filteredChildren.length === 0 && !item.route && !item.action) {
-            return null;
-          }
-          return { ...item, children: filteredChildren };
-        }
-
-        return item;
-      })
-      .filter((item): item is NavItemData => item !== null);
-  }
 
   /** Abre automáticamente los ancestros de la ruta activa */
   private openAncestorsForRoute(url: string): void {

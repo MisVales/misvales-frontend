@@ -58,13 +58,10 @@
 
         <div class="flex flex-col items-center justify-center mb-6">
           <div class="p-2 bg-white rounded-xl shadow-sm border border-gray-100 inline-block mb-3">
-            <ng-container *ngIf="qrCodeUrl()">
-              <!-- Si es SVG, lo inyectamos -->
-              <div *ngIf="isSvgQr" [innerHTML]="safeQrCodeHtml" class="w-40 h-40 flex items-center justify-center"></div>
-              <!-- Si no es SVG, usamos img -->
-              <img *ngIf="!isSvgQr" [src]="safeQrCodeUrl" alt="QR Code" class="w-40 h-40 object-cover rounded-lg border border-gray-200">
+            <ng-container *ngIf="generatedQrCodeUrl()">
+              <img [src]="generatedQrCodeUrl()" alt="Código QR para configurar TOTP" class="w-40 h-40 object-cover rounded-lg border border-gray-200">
             </ng-container>
-            <div *ngIf="!qrCodeUrl()" class="w-40 h-40 bg-gray-100 flex items-center justify-center rounded-lg">
+            <div *ngIf="!generatedQrCodeUrl()" class="w-40 h-40 bg-gray-100 flex items-center justify-center rounded-lg">
               <span class="text-xs text-gray-400">QR no disponible</span>
             </div>
           </div>

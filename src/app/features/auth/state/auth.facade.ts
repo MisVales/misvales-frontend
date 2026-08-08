@@ -1,21 +1,31 @@
 import { inject } from '@angular/core';
-import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
-import { AuthService } from '../data-access/auth.service';
-import { SessionStore } from '@core/session/session.store';
-import { MeService } from '@core/services/me.service';
-import { LoginReq, MfaReq, RecoverReq, ResetPwdReq, SetupInvitationReq } from '../data-access/auth.dtos';
-import { firstValueFrom } from 'rxjs';
 import { Router } from '@angular/router';
-import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import { signalStore, withMethods, withState, patchState } from '@ngrx/signals';
+import { firstValueFrom } from 'rxjs';
+import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
+import { AuthService } from '../data-access/auth.service';
+import { LoginReq, MfaMethod, MfaReq, RecoverReq, ResetPwdReq, SetupInvitationReq } from '../data-access/auth.dtos';
+import { SessionStore } from '@core/session/session.store';
+import { AuthTokenStore } from '@core/session/auth-token.store';
+import { MeService } from '@core/services/me.service';
+import { AlertService } from '../../../shared/services/alert.service';
+import {
+  apiErrorCode,
+  apiErrorMessage,
+  apiValidationErrors,
+  ValidationErrorsByField,
+} from '@core/api/api-error';
 
 export interface AuthState {
   isLoading: boolean;
   error: string | null;
+  validationErrors: ValidationErrorsByField;
   mfaChallengeToken: string | null;
-  availableMfa: string[];
+  availableMfa: MfaMethod[];
   mfaStep: 'totp' | 'passkey';
   mfaExpiresAt: number | null;
   activationPhase: number;
+  activationOriginalToken: string | null;
   activationExchangeToken: string | null;
   activationUser: { name: string; email: string; roles?: string[] } | null;
   activationQrCode: string | null;
@@ -26,11 +36,13 @@ export interface AuthState {
 const initialAuthState: AuthState = {
   isLoading: false,
   error: null,
+  validationErrors: {},
   mfaChallengeToken: null,
   availableMfa: [],
   mfaStep: 'totp',
   mfaExpiresAt: null,
   activationPhase: 0,
+  activationOriginalToken: null,
   activationExchangeToken: null,
   activationUser: null,
   activationQrCode: null,
@@ -38,18 +50,22 @@ const initialAuthState: AuthState = {
   activationRecoveryCodes: null,
 };
 
-function mapErrorCodeToMessage(code: string, fallback: string): string {
-  const dictionary: Record<string, string> = {
-    'AUTH_INVALID_CREDENTIALS': 'El correo o contraseña son incorrectos.',
-    'AUTH_USER_BLOCKED': 'Esta cuenta ha sido bloqueada. Contacte a soporte.',
-    'AUTH_SCOPE_DENIED': 'No tiene permisos para acceder a esta área.',
-    'MFA_INVALID': 'El código de autenticación es incorrecto.',
-    'AUTH_ERROR': 'Ocurrió un error al intentar iniciar sesión. Por favor, intente de nuevo.',
-    'RECOVERY_ERROR': 'El código de recuperación es incorrecto.'
-  };
-  return dictionary[code] || fallback;
-}
+const ERROR_MESSAGES: Readonly<Record<string, string>> = {
+  INVALID_CREDENTIALS: 'El correo o contraseña son incorrectos.',
+  ACCOUNT_INACTIVE: 'La cuenta no está disponible para iniciar sesión.',
+  RATE_LIMIT_EXCEEDED: 'Se alcanzó el límite de intentos. Espera antes de volver a intentarlo.',
+  INVALID_MFA: 'El código de autenticación es incorrecto.',
+  EXPIRED_MFA_CHALLENGE: 'La verificación expiró. Inicia sesión nuevamente.',
+  RECOVERY_CODE_USED: 'El código de recuperación es incorrecto o ya fue utilizado.',
+  INVALID_INVITATION: 'La invitación no es válida.',
+  USED_INVITATION: 'La invitación ya fue utilizada o revocada.',
+  EXPIRED_INVITATION: 'La invitación ha expirado.',
+};
 
+function messageFor(error: unknown, fallback: string): string {
+  const code = apiErrorCode(error, 'UNEXPECTED_ERROR');
+  return ERROR_MESSAGES[code] ?? apiErrorMessage(error, fallback);
+}
 
 export const AuthFacade = signalStore(
   { providedIn: 'root' },
@@ -57,280 +73,281 @@ export const AuthFacade = signalStore(
   withMethods((store) => {
     const authService = inject(AuthService);
     const sessionStore = inject(SessionStore);
+    const tokenStore = inject(AuthTokenStore);
     const meService = inject(MeService);
     const router = inject(Router);
+    const alerts = inject(AlertService);
+
+    async function establishSession(): Promise<void> {
+      await firstValueFrom(meService.fetchMe());
+      patchState(store, {
+        isLoading: false,
+        error: null,
+        mfaChallengeToken: null,
+        availableMfa: [],
+        mfaExpiresAt: null,
+      });
+      await router.navigate(['/inicio']);
+    }
+
+    function fail(error: unknown, fallback: string): void {
+      patchState(store, {
+        isLoading: false,
+        error: messageFor(error, fallback),
+        validationErrors: apiValidationErrors(error),
+      });
+    }
+
+    async function completeInvitation(): Promise<void> {
+      const exchangeToken = store.activationExchangeToken();
+      if (!exchangeToken) return;
+      patchState(store, { isLoading: true, error: null });
+      try {
+        await firstValueFrom(
+          authService.completeInvitation({
+            exchange_token: exchangeToken,
+            codes_safeguarded: true,
+          }),
+        );
+        patchState(store, {
+          isLoading: false,
+          activationPhase: 4,
+          activationExchangeToken: null,
+          activationOriginalToken: null,
+          activationTotpSecret: null,
+          activationQrCode: null,
+          activationRecoveryCodes: null,
+        });
+      } catch (error: unknown) {
+        fail(error, 'Error al completar la activación.');
+      }
+    }
 
     return {
-      async login(credentials: LoginReq) {
-        patchState(store, { isLoading: true, error: null });
+      async login(credentials: LoginReq): Promise<void> {
+        patchState(store, { isLoading: true, error: null, validationErrors: {} });
         try {
           const response = await firstValueFrom(authService.login(credentials));
-          
           if (response.mfa_challenge_token) {
-            patchState(store, { 
-              mfaChallengeToken: response.mfa_challenge_token, 
-              availableMfa: response.available_mfa || [],
+            patchState(store, {
+              isLoading: false,
+              mfaChallengeToken: response.mfa_challenge_token,
+              availableMfa: response.available_mfa ?? [],
               mfaStep: 'totp',
-              mfaExpiresAt: response.expires_in ? Date.now() + response.expires_in * 1000 : null,
-              isLoading: false 
+              mfaExpiresAt: response.expires_in
+                ? Date.now() + response.expires_in * 1000
+                : null,
             });
-            router.navigate(['/auth/totp']);
-          } else if (response.access_token) {
-            await firstValueFrom(meService.fetchMe());
-            patchState(store, { isLoading: false });
-            router.navigate(['/']); // Go to dashboard
-          }
-        } catch (err: any) {
-          const code = err?.error?.error || 'AUTH_ERROR';
-          const fallback = err?.error?.message || 'Error al iniciar sesión';
-          patchState(store, { isLoading: false, error: mapErrorCodeToMessage(code, fallback) });
-        }
-      },
-
-      async verifyPasskeyMfa() {
-        patchState(store, { isLoading: true, error: null });
-        try {
-          const token = store.mfaChallengeToken();
-          if (!token) throw new Error('No MFA challenge token found');
-
-          // 1. Opciones
-          const responseOptions = await firstValueFrom(authService.getPasskeyOptions({ mfa_challenge_token: token }));
-          const options = responseOptions.options || responseOptions.data || responseOptions;
-          console.log('Passkey Options received:', options);
-          
-          // 2. startAuthentication
-          let attResp;
-          try {
-            attResp = await startAuthentication({ optionsJSON: options });
-          } catch (error: any) {
-            console.error('startAuthentication error:', error);
-            patchState(store, { isLoading: false, error: error.message || 'Error al iniciar el prompt de Passkey. Verifica la consola.' });
+            await router.navigate(['/auth/totp']);
             return;
           }
-
-          // 3. Verify
-          const response = await firstValueFrom(authService.verifyPasskey({
-            mfa_challenge_token: token,
-            id: attResp.id,
-            clientDataJSON: (attResp.response as any).clientDataJSON,
-            authenticatorData: (attResp.response as any).authenticatorData,
-            signature: (attResp.response as any).signature
-          }));
-
-          if (response.access_token) {
-            await firstValueFrom(meService.fetchMe());
-            patchState(store, { isLoading: false, mfaChallengeToken: null, availableMfa: [] });
-            router.navigate(['/']);
-          }
-        } catch (err: any) {
-          const code = err?.error?.error;
-          const fallback = err?.error?.message || 'Error al autenticar con Passkey';
-          
-          if (code === 'EXPIRED_MFA_CHALLENGE') {
-            alert(fallback);
-            patchState(store, initialAuthState);
-            router.navigate(['/auth/login']);
-          } else {
-            patchState(store, { isLoading: false, error: fallback });
-          }
+          if (response.access_token) await establishSession();
+        } catch (error: unknown) {
+          fail(error, 'Error al iniciar sesión.');
         }
       },
 
-      async verifyMfa(data: Omit<MfaReq, 'mfa_challenge_token'>) {
+      async verifyMfa(data: Omit<MfaReq, 'mfa_challenge_token'>): Promise<void> {
+        const token = store.mfaChallengeToken();
+        if (!token) {
+          patchState(store, { error: ERROR_MESSAGES['EXPIRED_MFA_CHALLENGE'] });
+          await router.navigate(['/auth/login']);
+          return;
+        }
+
+        patchState(store, { isLoading: true, error: null, validationErrors: {} });
+        try {
+          const response = await firstValueFrom(
+            authService.verifyMfa({ ...data, mfa_challenge_token: token }),
+          );
+          if (response.next_step === 'PASSKEY') {
+            patchState(store, {
+              isLoading: false,
+              mfaStep: 'passkey',
+              mfaChallengeToken: response.mfa_challenge_token ?? token,
+              mfaExpiresAt: response.expires_in
+                ? Date.now() + response.expires_in * 1000
+                : store.mfaExpiresAt(),
+            });
+            return;
+          }
+          if (response.access_token) await establishSession();
+        } catch (error: unknown) {
+          if (apiErrorCode(error, '') === 'EXPIRED_MFA_CHALLENGE') {
+            patchState(store, initialAuthState);
+            await router.navigate(['/auth/login']);
+            return;
+          }
+          fail(error, 'Código MFA inválido.');
+        }
+      },
+
+      async verifyPasskeyMfa(): Promise<void> {
+        const token = store.mfaChallengeToken();
+        if (!token) {
+          await router.navigate(['/auth/login']);
+          return;
+        }
+
         patchState(store, { isLoading: true, error: null });
         try {
-          const token = store.mfaChallengeToken();
-          if (!token) throw new Error('No MFA challenge token found');
-
-          const response = await firstValueFrom(authService.verifyMfa({ ...data, mfa_challenge_token: token }));
-          
-          if (response.next_step === 'PASSKEY') {
-            patchState(store, { 
-              isLoading: false, 
-              mfaStep: 'passkey',
-              mfaChallengeToken: response.mfa_challenge_token || token,
-              mfaExpiresAt: response.expires_in ? Date.now() + response.expires_in * 1000 : store.mfaExpiresAt()
-            });
-          } else if (response.access_token) {
-            await firstValueFrom(meService.fetchMe());
-            patchState(store, { isLoading: false, mfaChallengeToken: null, availableMfa: [] });
-            router.navigate(['/']);
-          }
-        } catch (err: any) {
-          const code = err?.error?.error || 'MFA_INVALID';
-          const fallback = err?.error?.message || 'Código MFA inválido';
-          
-          if (code === 'EXPIRED_MFA_CHALLENGE') {
-            alert(fallback);
-            patchState(store, initialAuthState);
-            router.navigate(['/auth/login']);
-          } else {
-            patchState(store, { isLoading: false, error: mapErrorCodeToMessage(code, fallback) });
-          }
+          const optionsJSON = await firstValueFrom(
+            authService.getPasskeyOptions({ mfa_challenge_token: token }),
+          );
+          const credential = await startAuthentication({ optionsJSON });
+          const response = await firstValueFrom(
+            authService.verifyPasskey({
+              mfa_challenge_token: token,
+              id: credential.id,
+              clientDataJSON: credential.response.clientDataJSON,
+              authenticatorData: credential.response.authenticatorData,
+              signature: credential.response.signature,
+            }),
+          );
+          if (response.access_token) await establishSession();
+        } catch (error: unknown) {
+          fail(error, 'La verificación con Passkey fue cancelada o no está disponible.');
         }
       },
 
       async recoverAccess(data: RecoverReq): Promise<boolean> {
-        patchState(store, { isLoading: true, error: null });
+        patchState(store, { isLoading: true, error: null, validationErrors: {} });
         try {
           await firstValueFrom(authService.recoverAccess(data));
           patchState(store, { isLoading: false });
           return true;
-        } catch (err: any) {
-          const code = err?.error?.code || 'RECOVERY_ERROR';
-          const fallback = err?.error?.message || 'Error al recuperar acceso';
-          patchState(store, { isLoading: false, error: mapErrorCodeToMessage(code, fallback) });
+        } catch (error: unknown) {
+          fail(error, 'Error al solicitar la recuperación de acceso.');
           return false;
         }
       },
 
       async resetPassword(data: ResetPwdReq): Promise<boolean> {
-        patchState(store, { isLoading: true, error: null });
+        patchState(store, { isLoading: true, error: null, validationErrors: {} });
         try {
           await firstValueFrom(authService.resetPassword(data));
           patchState(store, { isLoading: false });
           return true;
-        } catch (err: any) {
-          const code = err?.error?.code || 'RESET_ERROR';
-          const fallback = err?.error?.message || 'Error al restablecer la contraseña';
-          patchState(store, { isLoading: false, error: mapErrorCodeToMessage(code, fallback) });
+        } catch (error: unknown) {
+          fail(error, 'Error al restablecer la contraseña.');
           return false;
         }
       },
 
-      async logout() {
-        patchState(store, { isLoading: true, error: null });
+      async logout(): Promise<void> {
         try {
           await firstValueFrom(authService.logout());
-        } catch (err: any) {
-          console.warn('Logout API error:', err);
+        } catch {
+          alerts.showAlert(
+            'La sesión local se cerró, pero no fue posible confirmar la revocación en el servidor.',
+            'error',
+            7000,
+          );
         } finally {
+          tokenStore.clear();
           sessionStore.clearSession();
           patchState(store, initialAuthState);
-          router.navigate(['/auth/login']);
+          await router.navigate(['/auth/login']);
         }
       },
 
-      async inspectInvitation(token: string) {
-        if (store.isLoading() || store.activationPhase() > 0) return; // Prevent double firing in Strict Mode
-        patchState(store, { isLoading: true, error: null, activationPhase: 0 });
+      async inspectInvitation(token: string): Promise<void> {
+        if (store.isLoading() || store.activationPhase() > 0) return;
+        patchState(store, {
+          isLoading: true,
+          error: null,
+          validationErrors: {},
+          activationPhase: 0,
+          activationOriginalToken: token,
+        });
         try {
-          const res = await firstValueFrom(authService.inspectInvitation({ token }));
+          const response = await firstValueFrom(authService.inspectInvitation({ token }));
           patchState(store, {
             isLoading: false,
-            activationPhase: res.step === 'passkey' ? 3 : 1,
-            activationExchangeToken: res.exchange_token,
-            activationUser: res.user,
-            activationQrCode: res.totp_setup?.qr_code_url || null,
-            activationTotpSecret: res.totp_setup?.secret || res.totp_setup?.secret_key || null
+            activationPhase: response.step === 'passkey' ? 3 : 1,
+            activationExchangeToken: response.exchange_token,
+            activationUser: response.user,
+            activationQrCode: response.totp_setup?.qr_code_url ?? null,
+            activationTotpSecret:
+              response.totp_setup?.secret ?? response.totp_setup?.secret_key ?? null,
           });
-        } catch (err: any) {
-          const code = err?.error?.error || 'INVALID_INVITATION';
-          const fallback = err?.error?.message || 'Enlace inválido o expirado';
-          patchState(store, { isLoading: false, error: mapErrorCodeToMessage(code, fallback) });
+        } catch (error: unknown) {
+          fail(error, 'La invitación no es válida o ha expirado.');
         }
       },
 
-      async setupInvitation(data: Omit<SetupInvitationReq, 'exchange_token'>) {
-        patchState(store, { isLoading: true, error: null });
-        try {
-          const exchange_token = store.activationExchangeToken();
-          if (!exchange_token) throw new Error('No exchange token');
+      async setupInvitation(data: Omit<SetupInvitationReq, 'exchange_token'>): Promise<void> {
+        const exchangeToken = store.activationExchangeToken();
+        if (!exchangeToken) {
+          patchState(store, { error: 'La sesión de activación expiró.' });
+          return;
+        }
 
-          const res = await firstValueFrom(authService.setupInvitation({ ...data, exchange_token }));
+        patchState(store, { isLoading: true, error: null, validationErrors: {} });
+        try {
+          const response = await firstValueFrom(
+            authService.setupInvitation({ ...data, exchange_token: exchangeToken }),
+          );
           patchState(store, {
             isLoading: false,
             activationPhase: 2,
-            activationRecoveryCodes: res.recovery_codes
+            activationRecoveryCodes: response.recovery_codes,
           });
-        } catch (err: any) {
-          const code = err?.error?.error || 'SETUP_ERROR';
-          const fallback = err?.error?.message || 'Error al configurar cuenta';
-          patchState(store, { isLoading: false, error: mapErrorCodeToMessage(code, fallback) });
+        } catch (error: unknown) {
+          fail(error, 'Error al configurar la cuenta.');
         }
       },
 
-      async completeInvitation() {
-        patchState(store, { isLoading: true, error: null });
-        try {
-          const exchange_token = store.activationExchangeToken();
-          if (!exchange_token) throw new Error('No exchange token');
-
-          await firstValueFrom(authService.completeInvitation({ exchange_token, codes_safeguarded: true }));
-          patchState(store, { isLoading: false, activationPhase: 4 });
-        } catch (err: any) {
-          const code = err?.error?.error || 'COMPLETE_ERROR';
-          const fallback = err?.error?.message || 'Error al completar activación';
-          patchState(store, { isLoading: false, error: mapErrorCodeToMessage(code, fallback) });
+      proceedToPasskeys(): void {
+        if (store.activationRecoveryCodes()?.length) {
+          patchState(store, { activationPhase: 3, activationRecoveryCodes: null });
         }
       },
 
-      proceedToPasskeys() {
-        patchState(store, { activationPhase: 3 });
-      },
+      completeInvitation,
 
-      async registerPasskey() {
+      async registerPasskey(): Promise<void> {
+        const exchangeToken = store.activationExchangeToken();
+        if (!exchangeToken) return;
         patchState(store, { isLoading: true, error: null });
         try {
-          const exchange_token = store.activationExchangeToken();
-          if (!exchange_token) throw new Error('No exchange token');
+          const optionsJSON = await firstValueFrom(
+            authService.setupPasskey({ exchange_token: exchangeToken }),
+          );
+          const credential = await startRegistration({ optionsJSON });
+          await firstValueFrom(
+            authService.registerPasskey({
+              exchange_token: exchangeToken,
+              clientDataJSON: credential.response.clientDataJSON,
+              attestationObject: credential.response.attestationObject,
+            }),
+          );
+          await completeInvitation();
+        } catch (error: unknown) {
+          fail(error, 'El registro de Passkey fue cancelado o no pudo completarse.');
+        }
+      },
 
-          const options = await firstValueFrom(authService.setupPasskey({ exchange_token }));
-          
-          let attResp;
-          try {
-            attResp = await startRegistration({ optionsJSON: options });
-          } catch (error: any) {
-            patchState(store, { isLoading: false });
-            return;
-          }
+      async skipPasskey(): Promise<void> {
+        await completeInvitation();
+      },
 
-          await firstValueFrom(authService.registerPasskey({
-            exchange_token,
-            clientDataJSON: (attResp.response as any).clientDataJSON,
-            attestationObject: (attResp.response as any).attestationObject
-          }));
-
-          // Finalizar
-          await firstValueFrom(authService.completeInvitation({ exchange_token, codes_safeguarded: true }));
-          patchState(store, { isLoading: false, activationPhase: 4 });
-        } catch (err: any) {
-          const fallback = err?.error?.message || 'Error al registrar Passkey o completar la cuenta';
-          alert(fallback);
+      async resendInvitation(): Promise<void> {
+        const token = store.activationOriginalToken();
+        if (!token) return;
+        patchState(store, { isLoading: true, error: null });
+        try {
+          const response = await firstValueFrom(authService.resendInvitation({ token }));
           patchState(store, { isLoading: false });
+          alerts.showAlert(response.message, 'success', 5000);
+        } catch (error: unknown) {
+          fail(error, 'Error al reenviar la invitación.');
         }
       },
 
-      async skipPasskey() {
-        patchState(store, { isLoading: true, error: null });
-        try {
-          const exchange_token = store.activationExchangeToken();
-          if (!exchange_token) throw new Error('No exchange token');
-
-          await firstValueFrom(authService.completeInvitation({ exchange_token, codes_safeguarded: true }));
-          patchState(store, { isLoading: false, activationPhase: 4 });
-        } catch (err: any) {
-          const fallback = err?.error?.message || 'Error al completar activación';
-          alert(fallback);
-          patchState(store, { isLoading: false });
-        }
-      },
-
-      async resendInvitation(token: string) {
-        patchState(store, { isLoading: true, error: null });
-        try {
-          const res = await firstValueFrom(authService.resendInvitation({ token }));
-          patchState(store, { isLoading: false });
-          alert(res.message || "¡Nueva invitación enviada a tu correo!");
-        } catch (err: any) {
-          const fallback = err?.error?.message || 'Error al reenviar invitación';
-          patchState(store, { isLoading: false, error: fallback });
-        }
-      },
-      
-      resetState() {
+      resetState(): void {
         patchState(store, initialAuthState);
-      }
+      },
     };
-  })
+  }),
 );

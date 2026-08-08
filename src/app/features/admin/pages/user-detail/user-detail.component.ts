@@ -1,11 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { UserService } from '../../data-access/user.service';
-import { UserRes, UserAssignmentRes, RoleRes } from '../../data-access/admin.dtos';
-import { RoleService } from '../../data-access/role.service';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../../../core/api/api-error';
+import { SessionStore } from '../../../../core/session/session.store';
+import { Branch } from '../../../organization/data-access/organization.dtos';
+import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
+import { RoleRes, UserAssignmentRes, UserRes } from '../../data-access/admin.dtos';
+import { RoleService } from '../../data-access/role.service';
+import { UserService } from '../../data-access/user.service';
 
 @Component({
   selector: 'app-user-detail',
@@ -16,204 +20,221 @@ import { firstValueFrom } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UserDetailComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private userService = inject(UserService);
-  private roleService = inject(RoleService);
-  
-  userId = signal<string | null>(null);
-  user = signal<UserRes | null>(null);
-  assignments = signal<UserAssignmentRes[]>([]);
-  availableRoles = signal<RoleRes[]>([]);
-  
-  // Modals state
-  isBlockModalOpen = signal(false);
-  isDisableModalOpen = signal(false);
-  isAssignModalOpen = signal(false);
-  isActionLoading = signal<string | null>(null);
+  private readonly route = inject(ActivatedRoute);
+  private readonly userService = inject(UserService);
+  private readonly roleService = inject(RoleService);
+  private readonly organizationApi = inject(OrganizationApiService);
+  private readonly sessionStore = inject(SessionStore);
 
-  // Assign Form
-  newAssignment = signal({
-    role_id: '',
-    branch_id: ''
+  readonly userId = signal(this.route.snapshot.paramMap.get('id'));
+  readonly user = signal<UserRes | null>(null);
+  readonly assignments = signal<UserAssignmentRes[]>([]);
+  readonly availableRoles = signal<RoleRes[]>([]);
+  readonly availableBranches = signal<Branch[]>([]);
+  readonly pageError = signal('');
+  readonly pageMessage = signal('');
+  readonly isBlockModalOpen = signal(false);
+  readonly isDisableModalOpen = signal(false);
+  readonly isAssignModalOpen = signal(false);
+  readonly isActionLoading = signal<string | null>(null);
+  readonly newAssignment = signal({ role_id: '', branch_id: '' });
+
+  readonly selectedAssignmentRole = computed(
+    () => this.availableRoles().find((role) => role.id === this.newAssignment().role_id) ?? null,
+  );
+  readonly assignmentRequiresBranch = computed(() => {
+    const role = this.selectedAssignmentRole();
+    return role ? role.default_scope !== 'GLOBAL' : false;
   });
 
-  constructor() {
-    this.userId.set(this.route.snapshot.paramMap.get('id'));
+  async ngOnInit(): Promise<void> {
+    await this.loadUser();
+    if (this.canViewRoles()) await this.loadRoles();
+    if (this.canViewAssignments()) await this.loadAssignments();
+    if (this.hasPermission('branches.view')) await this.loadBranches();
   }
 
-  async ngOnInit() {
-    this.loadUser();
-    this.loadRoles();
-    this.loadAssignments();
+  canViewRoles(): boolean {
+    return this.hasPermission('roles.view');
   }
 
-  loadUser() {
+  canViewAssignments(): boolean {
+    return this.hasPermission('roles.assign') || this.hasPermission('branches.view');
+  }
+
+  canAssignRoles(): boolean {
+    return this.hasPermission('roles.assign') && this.canViewRoles();
+  }
+
+  canManageUserState(): boolean {
+    return this.hasPermission('users.manage_state');
+  }
+
+  async loadUser(): Promise<void> {
     const id = this.userId();
     if (!id) return;
-    this.userService.getUser(id).subscribe({
-      next: (res) => this.user.set(res),
-      error: (err) => console.error(err)
-    });
+    try {
+      this.user.set(await firstValueFrom(this.userService.getUser(id)));
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar el usuario.'));
+    }
   }
 
-  async loadRoles() {
+  async loadRoles(): Promise<void> {
     try {
       const roles = await firstValueFrom(this.roleService.getRoles());
-      this.availableRoles.set(roles.filter(r => r.name.toLowerCase() !== 'gerente general' && r.id !== 'gerente_general'));
-    } catch (e) {
-      console.error(e);
+      this.availableRoles.set(roles.filter((role) => role.is_active !== false && role.code !== 'general_manager'));
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar los roles.'));
     }
   }
 
-  async loadAssignments() {
+  async loadBranches(): Promise<void> {
+    try {
+      const branches = await firstValueFrom(this.organizationApi.getBranches());
+      this.availableBranches.set(branches.filter((branch) => branch.status === 'ACTIVE'));
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar las sucursales.'));
+    }
+  }
+
+  async loadAssignments(): Promise<void> {
     const id = this.userId();
     if (!id) return;
     try {
-      const data = await firstValueFrom(this.userService.getAssignments(id));
-      this.assignments.set(data);
-    } catch (e) {
-      console.error(e);
+      this.assignments.set(await firstValueFrom(this.userService.getAssignments(id)));
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar las asignaciones.'));
     }
   }
 
-  openBlockModal() {
-    this.isBlockModalOpen.set(true);
-  }
+  openBlockModal(): void { this.isBlockModalOpen.set(true); }
+  closeBlockModal(): void { this.isBlockModalOpen.set(false); }
+  openDisableModal(): void { this.isDisableModalOpen.set(true); }
+  closeDisableModal(): void { this.isDisableModalOpen.set(false); }
 
-  closeBlockModal() {
-    this.isBlockModalOpen.set(false);
-  }
-
-  confirmBlock() {
+  async confirmBlock(): Promise<void> {
     const id = this.userId();
-    const u = this.user();
-    if (!id || !u) return;
+    const currentUser = this.user();
+    if (!id || !currentUser || this.isActionLoading()) return;
 
     this.isActionLoading.set('block');
-    const req = u.state === 'BLOCKED' ? this.userService.unblockUser(id) : this.userService.blockUser(id);
-    
-    req.subscribe({
-      next: () => {
-        this.isActionLoading.set(null);
-        this.closeBlockModal();
-        this.loadUser();
-      },
-      error: (err) => {
-        console.error(err);
-        this.isActionLoading.set(null);
-        alert('Error al cambiar el estado de bloqueo');
-      }
-    });
-  }
-
-  openDisableModal() {
-    this.isDisableModalOpen.set(true);
-  }
-
-  closeDisableModal() {
-    this.isDisableModalOpen.set(false);
-  }
-
-  confirmDisable() {
-    const id = this.userId();
-    const u = this.user();
-    if (!id || !u) return;
-
-    this.isActionLoading.set('disable');
-    const request = u.state === 'DISABLED' 
-      ? this.userService.enableUser(id)
-      : this.userService.disableUser(id);
-
-    request.subscribe({
-      next: () => {
-        this.isActionLoading.set(null);
-        this.closeDisableModal();
-        this.loadUser();
-      },
-      error: (err) => {
-        console.error(err);
-        this.isActionLoading.set(null);
-      }
-    });
-  }
-
-  forcePasswordChange() {
-    const id = this.userId();
-    if (!id) return;
-
-    if (confirm('¿Exigir al usuario que cambie su contraseña en el próximo inicio de sesión?')) {
-      this.userService.requirePasswordChange(id).subscribe({
-        next: () => alert('Solicitud de cambio de contraseña configurada exitosamente.'),
-        error: (err) => console.error(err)
-      });
-    }
-  }
-
-  resendInvitation() {
-    const id = this.userId();
-    if (!id) return;
-
-    if (confirm('¿Reenviar el correo de invitación a este usuario?')) {
-      this.isActionLoading.set('resend');
-      this.userService.sendInvitation(id).subscribe({
-        next: () => {
-          this.isActionLoading.set(null);
-          alert('Invitación reenviada correctamente.');
-        },
-        error: (err) => {
-          console.error(err);
-          this.isActionLoading.set(null);
-          alert('Error al reenviar la invitación.');
-        }
-      });
-    }
-  }
-
-  openAssignModal() {
-    this.newAssignment.set({ role_id: '', branch_id: '' });
-    this.isAssignModalOpen.set(true);
-  }
-
-  closeAssignModal() {
-    this.isAssignModalOpen.set(false);
-  }
-
-  async submitAssignment() {
-    const id = this.userId();
-    const assignment = this.newAssignment();
-    if (!id || !assignment.role_id) return;
-
-    this.isActionLoading.set('assign');
+    this.pageError.set('');
     try {
-      await firstValueFrom(
-        this.userService.assignRole(id, {
-          role_id: assignment.role_id,
-          branch_id: assignment.branch_id || null
-        })
-      );
-      this.closeAssignModal();
-      await this.loadAssignments();
-    } catch (e: any) {
-      alert(e.error?.message || 'Error asignando rol');
+      const request = currentUser.state === 'BLOCKED'
+        ? this.userService.unblockUser(id)
+        : this.userService.blockUser(id);
+      const response = await firstValueFrom(request);
+      this.pageMessage.set(response.message);
+      this.closeBlockModal();
+      await this.loadUser();
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cambiar el estado de bloqueo.'));
     } finally {
       this.isActionLoading.set(null);
     }
   }
 
-  async revokeAssignment(assignmentId: string) {
+  async confirmDisable(): Promise<void> {
     const id = this.userId();
-    if (!id) return;
+    const currentUser = this.user();
+    if (!id || !currentUser || this.isActionLoading()) return;
 
-    if (confirm('¿Seguro que quieres revocar este rol?')) {
-      this.isActionLoading.set(`revoke-${assignmentId}`);
-      try {
-        await firstValueFrom(this.userService.revokeRole(id, assignmentId));
-        await this.loadAssignments();
-      } catch (e: any) {
-        alert(e.error?.message || 'Error revocando rol');
-      } finally {
-        this.isActionLoading.set(null);
-      }
+    this.isActionLoading.set('disable');
+    this.pageError.set('');
+    try {
+      const request = currentUser.state === 'DISABLED'
+        ? this.userService.enableUser(id)
+        : this.userService.disableUser(id);
+      const response = await firstValueFrom(request);
+      this.pageMessage.set(response.message);
+      this.closeDisableModal();
+      await this.loadUser();
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cambiar el estado del usuario.'));
+    } finally {
+      this.isActionLoading.set(null);
     }
+  }
+
+  async forcePasswordChange(): Promise<void> {
+    const id = this.userId();
+    if (!id || !window.confirm('¿Exigir el cambio de contraseña en el próximo inicio de sesión?')) return;
+    try {
+      const response = await firstValueFrom(this.userService.requirePasswordChange(id));
+      this.pageMessage.set(response.message);
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible exigir el cambio de contraseña.'));
+    }
+  }
+
+  async resendInvitation(): Promise<void> {
+    const id = this.userId();
+    if (!id || !window.confirm('¿Reenviar el correo de invitación a este usuario?')) return;
+    this.isActionLoading.set('resend');
+    try {
+      const response = await firstValueFrom(this.userService.sendInvitation(id));
+      this.pageMessage.set(response.message);
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible reenviar la invitación.'));
+    } finally {
+      this.isActionLoading.set(null);
+    }
+  }
+
+  openAssignModal(): void {
+    this.newAssignment.set({ role_id: '', branch_id: '' });
+    this.isAssignModalOpen.set(true);
+  }
+
+  closeAssignModal(): void { this.isAssignModalOpen.set(false); }
+
+  onAssignmentRoleChange(roleId: string): void {
+    this.newAssignment.set({ role_id: roleId, branch_id: '' });
+  }
+
+  async submitAssignment(): Promise<void> {
+    const id = this.userId();
+    const assignment = this.newAssignment();
+    if (!id || !assignment.role_id || (this.assignmentRequiresBranch() && !assignment.branch_id)) {
+      this.pageError.set('Seleccione el rol y la sucursal requerida para su alcance.');
+      return;
+    }
+
+    this.isActionLoading.set('assign');
+    try {
+      const response = await firstValueFrom(this.userService.assignRole(id, {
+        role_id: assignment.role_id,
+        branch_id: assignment.branch_id || null,
+      }));
+      this.pageMessage.set(response.message);
+      this.closeAssignModal();
+      await this.loadAssignments();
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible asignar el rol.'));
+    } finally {
+      this.isActionLoading.set(null);
+    }
+  }
+
+  async revokeAssignment(assignmentId: string): Promise<void> {
+    const id = this.userId();
+    if (!id || !window.confirm('¿Seguro que quiere revocar este rol?')) return;
+
+    this.isActionLoading.set(`revoke-${assignmentId}`);
+    try {
+      const response = await firstValueFrom(this.userService.revokeRole(id, assignmentId));
+      this.pageMessage.set(response.message);
+      await this.loadAssignments();
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible revocar el rol.'));
+    } finally {
+      this.isActionLoading.set(null);
+    }
+  }
+
+  private hasPermission(permission: string): boolean {
+    const permissions = this.sessionStore.permissions();
+    return permissions.includes(permission) || permissions.includes('all');
   }
 }

@@ -1,10 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { PasskeysComponent } from '../passkeys/passkeys.component';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { SecurityService } from '../../data-access/security.service';
+import * as QRCode from 'qrcode';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../../../core/api/api-error';
+import { SecurityService } from '../../data-access/security.service';
+import { PasskeysComponent } from '../passkeys/passkeys.component';
 
 @Component({
   selector: 'app-mfa',
@@ -13,87 +15,99 @@ import { firstValueFrom } from 'rxjs';
   templateUrl: './mfa.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MfaComponent {
-  private securityService = inject(SecurityService);
-  private fb = inject(FormBuilder);
+export class MfaComponent implements OnDestroy {
+  private readonly securityService = inject(SecurityService);
 
-  isTotpModalOpen = signal(false);
-  totpStep = signal<'validate' | 'setup'>('validate'); // validate current vs setup new
-  isProcessing = signal(false);
-  error = signal('');
-  
-  // Validation form
-  validateForm: FormGroup = this.fb.group({
-    password: ['', Validators.required],
-    code: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]]
+  readonly isTotpModalOpen = signal(false);
+  readonly totpStep = signal<'validate' | 'setup'>('validate');
+  readonly isProcessing = signal(false);
+  readonly error = signal('');
+  readonly success = signal('');
+  readonly qrCodeUrl = signal('');
+  readonly secret = signal('');
+  readonly isSecretVisible = signal(false);
+
+  readonly validateForm = new FormGroup({
+    password: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    code: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.pattern(/^\d{6}$/)] }),
+  });
+  readonly setupForm = new FormGroup({
+    code: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.pattern(/^\d{6}$/)] }),
   });
 
-  // Setup form
-  setupForm: FormGroup = this.fb.group({
-    code: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]]
-  });
+  ngOnDestroy(): void { this.clearSecrets(); }
 
-  qrCodeUrl = signal('');
-  secret = signal('');
-  isSecretVisible = signal(false);
-
-  openTotpModal() {
+  openTotpModal(): void {
     this.isTotpModalOpen.set(true);
     this.totpStep.set('validate');
     this.validateForm.reset();
     this.setupForm.reset();
     this.error.set('');
+    this.success.set('');
+    this.clearSecrets();
   }
 
-  closeTotpModal() {
+  closeTotpModal(): void {
     this.isTotpModalOpen.set(false);
+    this.validateForm.reset();
+    this.setupForm.reset();
+    this.clearSecrets();
   }
 
-  async validateCurrent() {
-    if (this.validateForm.invalid) return;
+  async validateCurrent(): Promise<void> {
+    if (this.validateForm.invalid) {
+      this.validateForm.markAllAsTouched();
+      return;
+    }
+
     this.isProcessing.set(true);
     this.error.set('');
-    
     try {
+      const credentials = this.validateForm.getRawValue();
       await firstValueFrom(this.securityService.validateCurrentTotp({
-        current_password: this.validateForm.value.password,
-        totp_code: this.validateForm.value.code
+        current_password: credentials.password,
+        totp_code: credentials.code,
       }));
-      
-      // Validation successful, fetch new TOTP setup
       const data = await firstValueFrom(this.securityService.getTotpSetup());
       this.secret.set(data.totp_secret);
-      this.qrCodeUrl.set(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.totp_uri)}`);
-      
+      this.qrCodeUrl.set(await QRCode.toDataURL(data.totp_uri, { margin: 1, width: 256 }));
       this.totpStep.set('setup');
-    } catch (err: any) {
-      this.error.set(err.error?.message || 'Error al validar. Verifique su contraseña y código actual.');
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No fue posible validar la contraseña y el código TOTP actuales.'));
     } finally {
       this.isProcessing.set(false);
     }
   }
 
-  async confirmNewTotp() {
-    if (this.setupForm.invalid) return;
+  async confirmNewTotp(): Promise<void> {
+    if (this.setupForm.invalid) {
+      this.setupForm.markAllAsTouched();
+      return;
+    }
+
     this.isProcessing.set(true);
     this.error.set('');
-    
     try {
-      await firstValueFrom(this.securityService.confirmTotpSetup({
-        current_password: this.validateForm.value.password, // Reusing validated password
-        new_totp_code: this.setupForm.value.code
+      const response = await firstValueFrom(this.securityService.confirmTotpSetup({
+        current_password: this.validateForm.controls.password.value,
+        new_totp_code: this.setupForm.controls.code.value,
       }));
-      
       this.closeTotpModal();
-      alert('Autenticación TOTP cambiada exitosamente.');
-    } catch (err: any) {
-      this.error.set(err.error?.message || 'Error al confirmar el nuevo código.');
+      this.success.set(response.message);
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No fue posible confirmar el nuevo código TOTP.'));
     } finally {
       this.isProcessing.set(false);
     }
   }
 
-  toggleSecretVisibility() {
-    this.isSecretVisible.update(v => !v);
+  toggleSecretVisibility(): void {
+    this.isSecretVisible.update((visible) => !visible);
+  }
+
+  private clearSecrets(): void {
+    this.qrCodeUrl.set('');
+    this.secret.set('');
+    this.isSecretVisible.set(false);
   }
 }

@@ -1,9 +1,9 @@
 export interface LoginReq {
-  email?: string;
-  password?: string;
-  totpCode?: string; // Optional if MFA is active
-  webauthnResponse?: any; // For passkey login
+  email: string;
+  password: string;
 }
+
+export type MfaMethod = 'PASSKEY' | 'RECOVERY_CODE' | 'TOTP';
 
 export interface LoginRes {
   message?: string;
@@ -11,7 +11,7 @@ export interface LoginRes {
   expires_in?: number;
   access_token?: string;
   refresh_token?: string;
-  available_mfa?: string[];
+  available_mfa?: MfaMethod[];
   next_step?: 'PASSKEY';
   user?: {
     id: number | string;
@@ -51,7 +51,7 @@ export interface InspectInvitationRes {
     email: string;
     roles?: string[];
   };
-  totp_setup: {
+  totp_setup?: {
     qr_code_url: string;
     secret?: string;
     secret_key?: string;
@@ -98,5 +98,9 @@ export interface PasskeyVerifyReq {
   clientDataJSON: string;
   authenticatorData: string;
   signature: string;
+}
+
+export interface ApiMessageRes {
+  message: string;
 }
 

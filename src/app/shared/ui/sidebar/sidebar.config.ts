@@ -1,195 +1,179 @@
 /**
- * sidebar.config.ts
+ * Árbol único de navegación de MisVales.
  *
- * Un solo árbol de navegación universal.
- * Cada item declara el permiso requerido; el sidebar filtra dinámicamente
- * según effective_permissions del usuario (/api/v1/me).
- *
- * NO hay perfiles duplicados por rol.
- * NO hay estados, filtros ni pestañas — solo categorías y páginas navegables.
+ * `roles` define la audiencia funcional entregada por el negocio. Cuando una
+ * opción también declara `permissions`, ambos controles deben cumplirse. La
+ * autorización definitiva permanece en Laravel.
  */
 
-// ─── Interfaces ──────────────────────────────────────────────
+export type RoleCode =
+  | 'general_manager'
+  | 'admin'
+  | 'branch_manager'
+  | 'coordinator'
+  | 'verifier'
+  | 'distributor'
+  | 'cashier';
 
 export interface NavItemData {
   id: string;
   title: string;
   icon: string;
-  route?: string;          // Ruta real del router Angular
-  permission?: string;     // Permiso requerido (effective_permissions)
+  route?: string;
+  roles?: readonly RoleCode[];
+  permissions?: readonly string[];
+  permissionMode?: 'all' | 'any';
   badge?: number | string;
-  shortcut?: string;
-  action?: 'search' | 'logout'; // Acciones especiales sin ruta
+  action?: 'logout';
   children?: NavItemData[];
 }
 
 export interface NavGroupData {
-  heading?: string;
+  heading: string;
+  icon: string;
   items: NavItemData[];
 }
 
-// ─── Navegación principal ────────────────────────────────────
+const ALL: readonly RoleCode[] = [
+  'general_manager',
+  'admin',
+  'branch_manager',
+  'coordinator',
+  'verifier',
+  'distributor',
+  'cashier',
+];
+const GG_AD_GS: readonly RoleCode[] = ['general_manager', 'admin', 'branch_manager'];
+const GG_AD_GS_CO: readonly RoleCode[] = [...GG_AD_GS, 'coordinator'];
+const GG_AD_GS_CO_VE: readonly RoleCode[] = [...GG_AD_GS_CO, 'verifier'];
+const GG_AD_GS_CO_DI: readonly RoleCode[] = [...GG_AD_GS_CO, 'distributor'];
+const GG_AD_GS_CO_DI_CA: readonly RoleCode[] = [...GG_AD_GS_CO_DI, 'cashier'];
 
 export const NAV_GROUPS: NavGroupData[] = [
-  // ━━━ GENERAL ━━━
   {
-    heading: 'General',
+    heading: 'Inicio',
+    icon: 'layout-dashboard',
     items: [
-      { id: 'search', title: 'Buscar', icon: 'search', action: 'search', shortcut: '⌘K' },
-      { id: 'home', title: 'Inicio', icon: 'layout-dashboard', route: '/inicio' },
-      { id: 'inbox', title: 'Bandeja', icon: 'inbox', route: '/bandeja' },
-      { id: 'notifications', title: 'Notificaciones', icon: 'bell', route: '/notificaciones' },
+      { id: 'dashboard', title: 'Dashboard', icon: 'layout-dashboard', route: '/inicio', roles: ALL },
     ],
   },
-
-  // ━━━ OPERACIÓN ━━━
   {
-    heading: 'Operación',
+    heading: 'Organización',
+    icon: 'building-2',
     items: [
-      {
-        id: 'distributors', title: 'Distribuidoras', icon: 'store',
-        permission: 'distributors.view',
-        children: [
-          { id: 'dist-apps', title: 'Solicitudes', icon: 'file-text', route: '/distribuidoras/solicitudes', permission: 'applications.view' },
-          { id: 'dist-verif', title: 'Verificaciones', icon: 'clipboard-check', route: '/distribuidoras/verificaciones', permission: 'verifications.view' },
-          { id: 'dist-auth', title: 'Autorizaciones y activación', icon: 'shield-check', route: '/distribuidoras/autorizaciones', permission: 'applications.authorize' },
-          { id: 'dist-dir', title: 'Directorio', icon: 'book-open', route: '/distribuidoras/directorio', permission: 'distributors.view' },
-          { id: 'dist-cats', title: 'Categorías asignadas', icon: 'tags', route: '/distribuidoras/categorias', permission: 'categories.view' },
-        ],
-      },
-      {
-        id: 'clients', title: 'Clientes y vales', icon: 'users-round',
-        permission: 'clients.view',
-        children: [
-          { id: 'cli-final', title: 'Clientes finales', icon: 'user-round', route: '/clientes/finales', permission: 'clients.view' },
-          { id: 'cli-dup', title: 'Prevención de duplicados', icon: 'scan-search', route: '/clientes/duplicados', permission: 'clients.view' },
-          { id: 'cli-portfolio', title: 'Cartera informativa', icon: 'wallet', route: '/clientes/cartera', permission: 'portfolio.view' },
-          { id: 'cli-prevals', title: 'Prevales', icon: 'ticket', route: '/clientes/prevales', permission: 'vouchers.view' },
-          { id: 'cli-vouchers', title: 'Vales digitales', icon: 'ticket-check', route: '/clientes/vales', permission: 'vouchers.view' },
-          { id: 'cli-cash', title: 'Caja y feriado', icon: 'banknote', route: '/clientes/caja', permission: 'cashier.view' },
-          { id: 'cli-mods', title: 'Modificaciones autorizadas', icon: 'file-pen-line', route: '/clientes/modificaciones', permission: 'modifications.view' },
-          { id: 'cli-engine', title: 'Motor financiero', icon: 'calculator', route: '/clientes/motor', permission: 'financial_engine.view' },
-        ],
-      },
-      {
-        id: 'credit', title: 'Crédito', icon: 'credit-card',
-        permission: 'credit_lines.view',
-        children: [
-          { id: 'crd-lines', title: 'Líneas de crédito', icon: 'trending-up', route: '/credito/lineas', permission: 'credit_lines.view' },
-          { id: 'crd-initial', title: 'Líneas iniciales', icon: 'circle-plus', route: '/credito/iniciales', permission: 'credit_lines.view' },
-          { id: 'crd-incr', title: 'Incrementos', icon: 'circle-arrow-up', route: '/credito/incrementos', permission: 'credit_increments.view' },
-          { id: 'crd-rest', title: 'Restricciones del 50 %', icon: 'alert-triangle', route: '/credito/restricciones', permission: 'credit_lines.view' },
-          { id: 'crd-mov', title: 'Movimientos de línea', icon: 'arrow-left-right', route: '/credito/movimientos', permission: 'credit_lines.view' },
-        ],
-      },
-      {
-        id: 'collection', title: 'Relaciones y cobranza', icon: 'receipt-text',
-        permission: 'relations.view',
-        children: [
-          { id: 'col-cuts', title: 'Cortes', icon: 'calendar-range', route: '/cobranza/cortes', permission: 'cuts.view' },
-          { id: 'col-rels', title: 'Relaciones', icon: 'file-stack', route: '/cobranza/relaciones', permission: 'relations.view' },
-          { id: 'col-part', title: 'Parcialidades', icon: 'split', route: '/cobranza/parcialidades', permission: 'relations.view' },
-          { id: 'col-refs', title: 'Referencias de pago', icon: 'hash', route: '/cobranza/referencias', permission: 'payment_refs.view' },
-          { id: 'col-bank', title: 'Archivo bancario', icon: 'file-down', route: '/cobranza/archivo-bancario', permission: 'bank_files.view' },
-          { id: 'col-auto', title: 'Conciliación automática', icon: 'git-merge', route: '/cobranza/conciliacion-auto', permission: 'reconciliation.view' },
-          { id: 'col-manual', title: 'Conciliación manual', icon: 'git-pull-request', route: '/cobranza/conciliacion-manual', permission: 'reconciliation.manual' },
-          { id: 'col-clar', title: 'Aclaraciones', icon: 'message-square-warning', route: '/cobranza/aclaraciones', permission: 'clarifications.view' },
-          { id: 'col-pays', title: 'Pagos', icon: 'banknote', route: '/cobranza/pagos', permission: 'payments.view' },
-          { id: 'col-apply', title: 'Aplicación financiera', icon: 'circle-check', route: '/cobranza/aplicacion', permission: 'payments.view' },
-          { id: 'col-sur', title: 'Recargos', icon: 'percent', route: '/cobranza/recargos', permission: 'surcharges.view' },
-          { id: 'col-exc', title: 'Excedentes y devoluciones', icon: 'undo-2', route: '/cobranza/excedentes', permission: 'refunds.view' },
-        ],
-      },
-      {
-        id: 'points-risk', title: 'Puntos y riesgo', icon: 'gift',
-        permission: 'points.view',
-        children: [
-          { id: 'pr-points', title: 'Puntos', icon: 'star', route: '/puntos/saldos', permission: 'points.view' },
-          { id: 'pr-periods', title: 'Periodos de canje', icon: 'calendar-clock', route: '/puntos/periodos', permission: 'redemption_periods.view' },
-          { id: 'pr-redemptions', title: 'Solicitudes de canje', icon: 'package-check', route: '/puntos/canjes', permission: 'redemptions.view' },
-          { id: 'pr-alerts', title: 'Alertas de riesgo', icon: 'shield-alert', route: '/riesgo/alertas', permission: 'risk_alerts.view' },
-          { id: 'pr-delinq', title: 'Morosidad', icon: 'octagon-alert', route: '/riesgo/morosidad', permission: 'delinquency.view' },
-          { id: 'pr-reg', title: 'Regularización', icon: 'check-square', route: '/riesgo/regularizacion', permission: 'regularization.view' },
-        ],
-      },
-      {
-        id: 'mobility', title: 'Movilidad', icon: 'arrow-right-left',
-        permission: 'transfers.view',
-        children: [
-          { id: 'mob-trans', title: 'Transferencias de clientes', icon: 'move', route: '/movilidad/transferencias', permission: 'transfers.view' },
-          { id: 'mob-reass', title: 'Reasignaciones de clientes', icon: 'user-round-x', route: '/movilidad/reasignaciones', permission: 'reassignments.view' },
-          { id: 'mob-branch', title: 'Cambios de sucursal', icon: 'building', route: '/movilidad/cambio-sucursal', permission: 'branch_changes.view' },
-          { id: 'mob-coord', title: 'Cambios de coordinador', icon: 'user-cog', route: '/movilidad/cambio-coordinador', permission: 'coordinator_changes.view' },
-          { id: 'mob-hist', title: 'Historial organizacional', icon: 'history', route: '/movilidad/historial', permission: 'org_history.view' },
-        ],
-      },
+      { id: 'branches', title: 'Sucursales', icon: 'map-pin', route: '/organizacion/sucursales', roles: GG_AD_GS, permissions: ['branches.view'] },
+      { id: 'users', title: 'Usuarios y personal', icon: 'users', route: '/usuarios', roles: GG_AD_GS, permissions: ['users.view'] },
+      { id: 'roles', title: 'Roles y permisos', icon: 'shield-check', route: '/roles', roles: ['general_manager', 'admin'], permissions: ['roles.view'] },
+      { id: 'assignments', title: 'Asignaciones', icon: 'link', route: '/organizacion/asignaciones', roles: GG_AD_GS, permissions: ['roles.assign', 'branches.view'], permissionMode: 'any' },
     ],
   },
-
-  // ━━━ ADMINISTRACIÓN ━━━
   {
-    heading: 'Administración',
+    heading: 'Configuración y catálogos',
+    icon: 'settings',
     items: [
-      {
-        id: 'org', title: 'Organización', icon: 'building-2',
-        permission: 'branches.view',
-        children: [
-          { id: 'org-branches', title: 'Sucursales', icon: 'map-pin', route: '/organizacion/sucursales', permission: 'branches.view' },
-          { id: 'org-staff', title: 'Personal', icon: 'users', route: '/organizacion/personal', permission: 'staff.view' },
-          { id: 'org-assign', title: 'Asignaciones', icon: 'link', route: '/organizacion/asignaciones', permission: 'assignments.view' },
-          { id: 'org-struct', title: 'Estructura organizacional', icon: 'network', route: '/organizacion/estructura', permission: 'org_structure.view' },
-        ],
-      },
-      {
-        id: 'access', title: 'Usuarios y acceso', icon: 'user-cog',
-        permission: 'users.view',
-        children: [
-          { id: 'acc-users', title: 'Usuarios', icon: 'users', route: '/usuarios', permission: 'users.view' },
-          { id: 'acc-invites', title: 'Invitaciones', icon: 'mail-plus', route: '/invitaciones', permission: 'invitations.view' }
-        ],
-      },
-      {
-        id: 'config', title: 'Configuración global', icon: 'settings',
-        permission: 'config.view',
-        children: [
-          { id: 'cfg-general', title: 'Configuraciones', icon: 'sliders-horizontal', route: '/configuracion/general', permission: 'config.view' },
-          { id: 'cfg-cuts', title: 'Cortes y vencimientos', icon: 'calendar-range', route: '/configuracion/cortes', permission: 'config.cuts' },
-          { id: 'cfg-credit', title: 'Crédito', icon: 'credit-card', route: '/configuracion/credito', permission: 'config.credit' },
-          { id: 'cfg-surcharges', title: 'Recargos', icon: 'percent', route: '/configuracion/recargos', permission: 'config.surcharges' },
-          { id: 'cfg-points', title: 'Puntos', icon: 'star', route: '/configuracion/puntos', permission: 'config.points' },
-          { id: 'cfg-products', title: 'Productos', icon: 'package', route: '/productos', permission: 'products.view' },
-          { id: 'cfg-categories', title: 'Categorías', icon: 'layers', route: '/categorias', permission: 'categories.manage' },
-          { id: 'cfg-redemption', title: 'Periodos de canje', icon: 'calendar-clock', route: '/configuracion/periodos-canje', permission: 'config.redemption_periods' },
-          { id: 'cfg-banking', title: 'Datos bancarios', icon: 'landmark', route: '/configuracion/datos-bancarios', permission: 'config.banking' },
-          { id: 'cfg-publish', title: 'Publicación y vigencias', icon: 'globe', route: '/configuracion/publicacion', permission: 'config.publish' },
-        ],
-      },
+      { id: 'configurations', title: 'Configuraciones globales', icon: 'sliders-horizontal', route: '/configuraciones', roles: GG_AD_GS },
+      { id: 'categories', title: 'Categorías', icon: 'layers', route: '/categorias', roles: GG_AD_GS },
+      { id: 'products', title: 'Productos', icon: 'package', route: '/productos', roles: GG_AD_GS },
+      { id: 'exchange-periods', title: 'Periodos de canje', icon: 'calendar-clock', route: '/periodos-canje', roles: GG_AD_GS },
     ],
   },
-
-  // ━━━ CONTROL ━━━
   {
-    heading: 'Control',
+    heading: 'Incorporación de distribuidoras',
+    icon: 'file-text',
     items: [
-      { id: 'ctrl-reports', title: 'Reportes', icon: 'chart-no-axes-combined', route: '/reportes', permission: 'reports.view' },
-      { id: 'ctrl-audit', title: 'Auditoría', icon: 'scroll-text', route: '/auditoria', permission: 'audit.view' },
-      { id: 'ctrl-logs', title: 'Logs', icon: 'file-terminal', route: '/logs', permission: 'logs.view' },
-      { id: 'ctrl-files', title: 'Archivos', icon: 'folder-archive', route: '/archivos', permission: 'files.view' },
-      { id: 'ctrl-procs', title: 'Procesos', icon: 'workflow', route: '/procesos', permission: 'processes.view' },
-      { id: 'ctrl-status', title: 'Estado operativo', icon: 'activity', route: '/estado-operativo', permission: 'system_status.view' },
+      { id: 'applications', title: 'Solicitudes', icon: 'file-text', route: '/solicitudes-distribuidoras', roles: GG_AD_GS_CO_VE },
+      { id: 'verifications', title: 'Verificaciones', icon: 'clipboard-check', route: '/verificacion-distribuidoras', roles: GG_AD_GS_CO_VE },
+    ],
+  },
+  {
+    heading: 'Distribuidoras',
+    icon: 'store',
+    items: [
+      { id: 'distributors', title: 'Distribuidoras', icon: 'store', route: '/distribuidoras', roles: GG_AD_GS_CO },
+      { id: 'credit-lines', title: 'Líneas de crédito', icon: 'credit-card', route: '/distribuidoras/lineas-credito', roles: GG_AD_GS_CO_DI },
+      { id: 'credit-increases', title: 'Incrementos de línea', icon: 'circle-arrow-up', route: '/distribuidoras/incrementos-linea', roles: GG_AD_GS_CO_DI },
+      { id: 'risk', title: 'Riesgo y morosidad', icon: 'shield-alert', route: '/distribuidoras/riesgo-morosidad', roles: GG_AD_GS_CO },
+    ],
+  },
+  {
+    heading: 'Clientes',
+    icon: 'users-round',
+    items: [
+      { id: 'clients', title: 'Clientes finales', icon: 'user-round', route: '/clientes', roles: GG_AD_GS_CO_DI },
+      { id: 'portfolio', title: 'Cartera informativa', icon: 'wallet', route: '/clientes/cartera', roles: GG_AD_GS_CO_DI },
+    ],
+  },
+  {
+    heading: 'Vales',
+    icon: 'ticket',
+    items: [
+      { id: 'vouchers', title: 'Prevales y vales', icon: 'ticket-check', route: '/vales', roles: GG_AD_GS_CO_DI_CA },
+      { id: 'cashier', title: 'Caja y feriado', icon: 'banknote', route: '/vales/caja-feriado', roles: ['general_manager', 'admin', 'branch_manager', 'cashier'] },
+    ],
+  },
+  {
+    heading: 'Relaciones y pagos',
+    icon: 'receipt-text',
+    items: [
+      { id: 'relations', title: 'Relaciones', icon: 'file-stack', route: '/relaciones-pagos/relaciones', roles: GG_AD_GS_CO_DI_CA },
+      { id: 'bank-file', title: 'Archivo bancario', icon: 'file-down', route: '/relaciones-pagos/archivo-bancario', roles: ['general_manager', 'admin', 'branch_manager', 'cashier'] },
+      { id: 'reconciliation', title: 'Conciliación', icon: 'git-merge', route: '/relaciones-pagos/conciliacion', roles: ['general_manager', 'admin', 'branch_manager', 'coordinator', 'cashier'] },
+      { id: 'payments', title: 'Pagos y recuperación de línea', icon: 'banknote', route: '/relaciones-pagos/pagos', roles: GG_AD_GS_CO_DI_CA },
+      { id: 'surpluses', title: 'Excedentes y devoluciones', icon: 'undo-2', route: '/relaciones-pagos/excedentes', roles: ['general_manager', 'admin', 'branch_manager', 'distributor', 'cashier'] },
+    ],
+  },
+  {
+    heading: 'Puntos',
+    icon: 'star',
+    items: [
+      { id: 'points', title: 'Puntos', icon: 'star', route: '/puntos', roles: ['general_manager', 'admin', 'branch_manager', 'distributor'] },
+      { id: 'redemptions', title: 'Canjes', icon: 'package-check', route: '/puntos/canjes', roles: ['general_manager', 'admin', 'branch_manager', 'distributor'] },
+    ],
+  },
+  {
+    heading: 'Movilidad',
+    icon: 'arrow-right-left',
+    items: [
+      { id: 'client-transfers', title: 'Transferencias de clientes', icon: 'move', route: '/movilidad/transferencias-clientes', roles: GG_AD_GS_CO_DI },
+      { id: 'client-reassignments', title: 'Reasignación de clientes', icon: 'user-round-x', route: '/movilidad/reasignacion-clientes', roles: GG_AD_GS },
+      { id: 'branch-changes', title: 'Cambios de sucursal', icon: 'building', route: '/movilidad/cambios-sucursal', roles: GG_AD_GS },
+      { id: 'coordinator-reassignments', title: 'Reasignación de coordinadores', icon: 'user-cog', route: '/movilidad/reasignacion-coordinadores', roles: GG_AD_GS },
+    ],
+  },
+  {
+    heading: 'Reportes',
+    icon: 'chart-no-axes-combined',
+    items: [
+      { id: 'reports', title: 'Reportes', icon: 'chart-no-axes-combined', route: '/reportes', roles: GG_AD_GS_CO },
+    ],
+  },
+  {
+    heading: 'Auditoría y control',
+    icon: 'shield',
+    items: [
+      { id: 'audit', title: 'Auditoría', icon: 'scroll-text', route: '/auditoria', roles: ['general_manager', 'admin'], permissions: ['audit.view'] },
+      { id: 'logs', title: 'Logs', icon: 'file-terminal', route: '/logs', roles: ['general_manager', 'admin'] },
+    ],
+  },
+  {
+    heading: 'Notificaciones',
+    icon: 'bell',
+    items: [
+      { id: 'notifications', title: 'Notificaciones', icon: 'bell', route: '/notificaciones', roles: ALL },
     ],
   },
 ];
 
-// ─── Navegación inferior fija ────────────────────────────────
-
 export const BOTTOM_ITEMS: NavItemData[] = [
   {
-    id: 'my-account', title: 'Mi cuenta', icon: 'circle-user-round',
+    id: 'my-account',
+    title: 'Mi cuenta',
+    icon: 'circle-user-round',
+    roles: ALL,
     children: [
-      { id: 'my-profile', title: 'Mi perfil', icon: 'user', route: '/perfil' },
-      { id: 'my-security', title: 'Seguridad', icon: 'shield-check', route: '/seguridad' },
+      { id: 'profile-security', title: 'Perfil y seguridad', icon: 'shield-check', route: '/seguridad', roles: ALL },
+      { id: 'active-sessions', title: 'Sesiones activas', icon: 'monitor', route: '/seguridad/sessions', roles: ALL },
     ],
   },
-  { id: 'logout', title: 'Cerrar sesión', icon: 'log-out', action: 'logout' },
+  { id: 'logout', title: 'Cerrar sesión', icon: 'log-out', action: 'logout', roles: ALL },
 ];

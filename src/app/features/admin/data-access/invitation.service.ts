@@ -2,13 +2,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
+import { UserCreateReq, UserCreateRes } from './admin.dtos';
 
 export interface InvitationRes {
   id: string;
   user_id?: string;
   user_email: string;
   user_name: string;
-  state: 'PENDING' | 'ACCEPTED' | 'EXPIRED';
+  state: 'ACTIVE' | 'PREPARED' | 'CONSUMED' | 'EXPIRED' | 'REVOKED';
   expires_at: string;
   inspected_at?: string;
   mfa_setup_completed_at?: string;
@@ -40,8 +41,8 @@ export class InvitationService {
     return this.http.get<PaginatedInvitations>(this.baseUrl, { params });
   }
 
-  sendInvitation(data: { name: string; email: string; role_id?: string; branch_id?: string | null; send_invitation: boolean }): Observable<any> {
+  sendInvitation(data: UserCreateReq): Observable<UserCreateRes> {
     // Note: Creating a user with send_invitation: true is how we send invitations according to backend docs
-    return this.http.post(this.usersUrl, data);
+    return this.http.post<UserCreateRes>(this.usersUrl, data);
   }
 }

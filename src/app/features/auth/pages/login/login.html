@@ -30,7 +30,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <input type="email" id="email" formControlName="email"
+            <input type="email" id="email" formControlName="email" autocomplete="username"
                    class="block w-full pl-10 pr-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors placeholder-gray-400"
                    placeholder="nombre@empresa.com">
           </div>
@@ -38,6 +38,7 @@
             <span *ngIf="loginForm.get('email')?.errors?.['required']">El correo es obligatorio.</span>
             <span *ngIf="loginForm.get('email')?.errors?.['email']">Ingrese un correo válido.</span>
           </div>
+          <div *ngIf="fieldError('email') as message" class="mt-2 text-xs text-red-500">{{ message }}</div>
         </div>
 
         <!-- Campo: Contraseña -->
@@ -56,13 +57,14 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <input type="password" id="password" formControlName="password"
+            <input type="password" id="password" formControlName="password" autocomplete="current-password"
                    class="block w-full pl-10 pr-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors placeholder-gray-400"
                    placeholder="••••••••">
           </div>
           <div *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="mt-2 text-xs text-red-500">
             <span *ngIf="loginForm.get('password')?.errors?.['required']">La contraseña es obligatoria.</span>
           </div>
+          <div *ngIf="fieldError('password') as message" class="mt-2 text-xs text-red-500">{{ message }}</div>
         </div>
 
         <!-- Botón Ingresar -->

@@ -1,25 +1,65 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import type { startRegistration } from '@simplewebauthn/browser';
 import { Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
 
-export interface TotpSetupRes {
-  message?: string;
-  totp_secret: string;
-  totp_uri: string;
-}
+type RegistrationOptionsJSON = Parameters<typeof startRegistration>[0]['optionsJSON'];
 
+export interface SecurityMessageRes { message: string; }
+export interface ChangePasswordReq {
+  current_password: string;
+  new_password: string;
+  new_password_confirmation: string;
+  totp_code?: string;
+}
+export interface RecoveryCodesReq { current_password: string; totp_code?: string; }
+export interface RecoveryCodesRes extends SecurityMessageRes { recovery_codes: string[]; }
+export interface TotpValidationReq { current_password: string; totp_code: string; }
+export interface TotpConfirmationReq { current_password: string; new_totp_code: string; }
+export interface TotpSetupRes { message?: string; totp_secret: string; totp_uri: string; }
 export interface SessionDeviceRes {
   id: string;
-  device: string;
-  ip: string;
-  lastActive: string;
+  authentication_method?: string;
+  mfa_method?: string | null;
+  ip_address: string;
+  user_agent: string;
+  device_name?: string | null;
+  last_activity_at: string;
+  expires_at?: string | null;
   is_current: boolean;
 }
+export interface SecurityEventFilters {
+  user_id?: string;
+  actor_user_id?: string;
+  event_type?: string;
+  severity?: string;
+  date_from?: string;
+  date_to?: string;
+  page?: number;
+}
+export interface SecurityEventRes {
+  id: string;
+  user_id?: string | null;
+  actor_user_id?: string | null;
+  event_type: string;
+  severity: string;
+  outcome: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  metadata?: Record<string, unknown> | null;
+  occurred_at: string;
+}
+export interface PaginatedSecurityEvents {
+  data: SecurityEventRes[];
+  current_page: number;
+  last_page: number;
+  total: number;
+}
+export interface PasskeyRes { id: string; created_at: string; last_used_at?: string | null; }
+export interface PasskeyRegisterReq { clientDataJSON: string; attestationObject: string; }
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class SecurityService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
@@ -29,57 +69,55 @@ export class SecurityService {
     return this.http.get<SessionDeviceRes[]>(`${this.baseUrl}/sessions`);
   }
 
-  closeSession(id: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/sessions/${id}`);
+  closeSession(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/sessions/${id}`);
   }
 
-  closeAllOtherSessions(): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/sessions`);
+  closeAllOtherSessions(): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/sessions`);
   }
 
-  changePassword(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/security/password`, data);
+  changePassword(data: ChangePasswordReq): Observable<SecurityMessageRes> {
+    return this.http.post<SecurityMessageRes>(`${this.baseUrl}/security/password`, data);
   }
 
-  regenerateRecoveryCodes(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/security/recovery-codes`, data);
+  regenerateRecoveryCodes(data: RecoveryCodesReq): Observable<RecoveryCodesRes> {
+    return this.http.post<RecoveryCodesRes>(`${this.baseUrl}/security/recovery-codes`, data);
   }
 
   getTotpSetup(): Observable<TotpSetupRes> {
     return this.http.get<TotpSetupRes>(`${this.baseUrl}/security/totp/setup`);
   }
 
-  validateCurrentTotp(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/security/totp/validate-current`, data);
+  validateCurrentTotp(data: TotpValidationReq): Observable<SecurityMessageRes> {
+    return this.http.post<SecurityMessageRes>(`${this.baseUrl}/security/totp/validate-current`, data);
   }
 
-  confirmTotpSetup(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/security/totp/confirm`, data);
+  confirmTotpSetup(data: TotpConfirmationReq): Observable<SecurityMessageRes> {
+    return this.http.post<SecurityMessageRes>(`${this.baseUrl}/security/totp/confirm`, data);
   }
 
-  getSecurityEvents(params: any): Observable<any> {
-    let httpParams = new HttpParams();
-    Object.keys(params).forEach(key => {
-      if (params[key]) {
-        httpParams = httpParams.set(key, params[key]);
-      }
-    });
-    return this.http.get(`${this.config.baseUrl}/security-events`, { params: httpParams });
+  getSecurityEvents(filters: SecurityEventFilters): Observable<PaginatedSecurityEvents> {
+    let params = new HttpParams();
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== null && value !== '') params = params.set(key, String(value));
+    }
+    return this.http.get<PaginatedSecurityEvents>(`${this.config.baseUrl}/security-events`, { params });
   }
 
-  getPasskeys(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/security/passkeys`);
+  getPasskeys(): Observable<PasskeyRes[]> {
+    return this.http.get<PasskeyRes[]>(`${this.baseUrl}/security/passkeys`);
   }
 
-  registerPasskeyOptions(): Observable<any> {
-    return this.http.post(`${this.baseUrl}/security/passkeys/options`, {});
+  registerPasskeyOptions(): Observable<RegistrationOptionsJSON> {
+    return this.http.post<RegistrationOptionsJSON>(`${this.baseUrl}/security/passkeys/options`, {});
   }
 
-  registerPasskeyConfirm(data: any): Observable<any> {
-    return this.http.post(`${this.baseUrl}/security/passkeys/register`, data);
+  registerPasskeyConfirm(data: PasskeyRegisterReq): Observable<SecurityMessageRes> {
+    return this.http.post<SecurityMessageRes>(`${this.baseUrl}/security/passkeys/register`, data);
   }
 
-  deletePasskey(id: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/security/passkeys/${id}`);
+  deletePasskey(id: string): Observable<SecurityMessageRes> {
+    return this.http.delete<SecurityMessageRes>(`${this.baseUrl}/security/passkeys/${id}`);
   }
 }

@@ -16,7 +16,8 @@ export const authRoutes: Routes = [
   },
   {
     path: 'activar-cuenta',
-    component: ActivateAccount
+    component: ActivateAccount,
+    canDeactivate: [(component: ActivateAccount) => component.canLeave()]
   },
   {
     path: 'recuperar-acceso',

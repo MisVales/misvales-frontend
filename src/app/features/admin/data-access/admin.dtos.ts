@@ -33,9 +33,18 @@ export interface UserListRes {
 export interface UserCreateReq {
   name: string;
   email: string;
-  role_id: string;
-  branch_id: string | null;
+  role_id?: string;
+  branch_id?: string | null;
   send_invitation: boolean;
+}
+
+export interface UserCreateRes {
+  message: string;
+  user: UserRes;
+}
+
+export interface AdminMessageRes {
+  message: string;
 }
 
 export interface UserUpdateReq {
@@ -55,9 +64,25 @@ export interface UserAssignmentRes {
   created_at?: string;
 }
 
+export interface UserAssignmentCommandRes extends AdminMessageRes {
+  assignment?: UserAssignmentRes;
+}
+
 export interface RoleRes {
   id: string;
+  code: string;
   name: string;
-  is_mutable?: boolean;
-  permissions: string[];
+  description?: string;
+  default_scope?: 'GLOBAL' | 'BRANCH' | 'ASSIGNED';
+  is_system?: boolean;
+  is_active?: boolean;
+  permissions?: PermissionRes[];
+}
+
+export interface PermissionRes {
+  id: string;
+  module: string;
+  action: string;
+  code: string;
+  description?: string;
 }

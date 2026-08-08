@@ -7,11 +7,18 @@ export interface UserInfo {
   email: string;
 }
 
+export interface SessionScope {
+  role: string;
+  roleName: string;
+  branchId: string | null;
+  permissions: string[];
+}
+
 export interface SessionState {
   user: UserInfo | null;
   roles: string[];
   permissions: string[];
-  scopes: any[];
+  scopes: SessionScope[];
   activeBranch: string | null;
   isAuthenticated: boolean;
   layoutPreference: 'desktop' | 'tablet' | 'mobile' | null;
@@ -31,7 +38,7 @@ export const SessionStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
   withMethods((store) => ({
-    setSession(user: UserInfo, roles: string[], permissions: string[], activeBranch: string | null, layoutPreference?: 'desktop' | 'tablet' | 'mobile', scopes: any[] = []) {
+    setSession(user: UserInfo, roles: string[], permissions: string[], activeBranch: string | null, layoutPreference?: 'desktop' | 'tablet' | 'mobile', scopes: SessionScope[] = []) {
       patchState(store, {
         user,
         roles,

@@ -5,6 +5,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { AuthFacade } from '../../../auth/state/auth.facade';
 import { firstValueFrom } from 'rxjs';
 import { SecurityService } from '../../data-access/security.service';
+import { apiErrorMessage } from '../../../../core/api/api-error';
 
 @Component({
   selector: 'app-password-change',
@@ -74,8 +75,8 @@ export class PasswordChange {
       setTimeout(() => {
         this.authFacade.logout();
       }, 3000);
-    } catch (err: any) {
-      this.error.set(err.error?.message || 'Hubo un error al cambiar la contraseña. Revisa tu contraseña actual.');
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No fue posible cambiar la contraseña. Revise su contraseña actual.'));
     } finally {
       this.loading.set(false);
     }

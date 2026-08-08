@@ -2,8 +2,17 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
-import { 
-  UserListFilterReq, UserListRes, UserRes, UserCreateReq, UserUpdateReq, UserAssignmentReq, UserAssignmentRes
+import {
+  AdminMessageRes,
+  UserAssignmentCommandRes,
+  UserAssignmentReq,
+  UserAssignmentRes,
+  UserCreateReq,
+  UserCreateRes,
+  UserListFilterReq,
+  UserListRes,
+  UserRes,
+  UserUpdateReq,
 } from './admin.dtos';
 
 @Injectable({
@@ -29,44 +38,44 @@ export class UserService {
     return this.http.get<UserRes>(`${this.baseUrl}/${id}`);
   }
 
-  createAccount(data: UserCreateReq): Observable<UserRes> {
-    return this.http.post<UserRes>(this.baseUrl, data);
+  createAccount(data: UserCreateReq): Observable<UserCreateRes> {
+    return this.http.post<UserCreateRes>(this.baseUrl, data);
   }
 
-  sendInvitation(id: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${id}/invite`, {});
+  sendInvitation(id: string): Observable<AdminMessageRes> {
+    return this.http.post<AdminMessageRes>(`${this.baseUrl}/${id}/invite`, {});
   }
 
   updateUser(id: string, data: UserUpdateReq): Observable<UserRes> {
     return this.http.patch<UserRes>(`${this.baseUrl}/${id}`, data);
   }
 
-  requirePasswordChange(id: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${id}/require-password-change`, {});
+  requirePasswordChange(id: string): Observable<AdminMessageRes> {
+    return this.http.post<AdminMessageRes>(`${this.baseUrl}/${id}/require-password-change`, {});
   }
 
-  assignRole(id: string, data: UserAssignmentReq): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${id}/assignments`, data);
+  assignRole(id: string, data: UserAssignmentReq): Observable<UserAssignmentCommandRes> {
+    return this.http.post<UserAssignmentCommandRes>(`${this.baseUrl}/${id}/assignments`, data);
   }
 
-  revokeRole(id: string, assignmentId: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/${id}/assignments/${assignmentId}`);
+  revokeRole(id: string, assignmentId: string): Observable<AdminMessageRes> {
+    return this.http.delete<AdminMessageRes>(`${this.baseUrl}/${id}/assignments/${assignmentId}`);
   }
 
-  blockUser(id: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${id}/block`, {});
+  blockUser(id: string): Observable<AdminMessageRes> {
+    return this.http.post<AdminMessageRes>(`${this.baseUrl}/${id}/block`, {});
   }
 
-  unblockUser(id: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${id}/unblock`, {});
+  unblockUser(id: string): Observable<AdminMessageRes> {
+    return this.http.post<AdminMessageRes>(`${this.baseUrl}/${id}/unblock`, {});
   }
 
-  disableUser(id: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${id}/disable`, {});
+  disableUser(id: string): Observable<AdminMessageRes> {
+    return this.http.post<AdminMessageRes>(`${this.baseUrl}/${id}/disable`, {});
   }
 
-  enableUser(id: string): Observable<any> {
-    return this.http.post(`${this.baseUrl}/${id}/enable`, {});
+  enableUser(id: string): Observable<AdminMessageRes> {
+    return this.http.post<AdminMessageRes>(`${this.baseUrl}/${id}/enable`, {});
   }
 
   getAssignments(id: string): Observable<UserAssignmentRes[]> {

@@ -1,10 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { startRegistration } from '@simplewebauthn/browser';
 import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
-import { SecurityService } from '../../data-access/security.service';
-import { startRegistration } from '@simplewebauthn/browser';
+import { apiErrorMessage } from '../../../../core/api/api-error';
+import { PasskeyRes, SecurityService } from '../../data-access/security.service';
 
 @Component({
   selector: 'app-passkeys',
@@ -14,125 +15,126 @@ import { startRegistration } from '@simplewebauthn/browser';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PasskeysComponent implements OnInit {
-  private securityService = inject(SecurityService);
+  private readonly securityService = inject(SecurityService);
 
-  passkeys = signal<any[]>([]);
-  loading = signal(true);
-  error = signal('');
-  isRegistering = signal(false);
+  readonly passkeys = signal<PasskeyRes[]>([]);
+  readonly loading = signal(true);
+  readonly error = signal('');
+  readonly success = signal('');
+  readonly isRegistering = signal(false);
+  readonly showAuthPrompt = signal(false);
+  readonly authAction = signal<'register' | 'delete'>('register');
+  readonly authPasskeyId = signal<string | null>(null);
+  readonly authPassword = signal('');
+  readonly authTotp = signal('');
+  readonly authLoading = signal(false);
+  readonly authError = signal('');
 
-  showAuthPrompt = signal(false);
-  authAction = signal<'register' | 'delete'>('register');
-  authPasskeyId = signal<string | null>(null);
-  authPassword = signal('');
-  authTotp = signal('');
-  authLoading = signal(false);
-  authError = signal('');
-
-  async ngOnInit() {
+  async ngOnInit(): Promise<void> {
     await this.loadPasskeys();
   }
 
-  async loadPasskeys() {
+  async loadPasskeys(): Promise<void> {
     this.loading.set(true);
     this.error.set('');
     try {
-      const response = await firstValueFrom(this.securityService.getPasskeys());
-      this.passkeys.set(response);
-    } catch (err: any) {
-      this.error.set('No se pudieron cargar las llaves de acceso.');
+      this.passkeys.set(await firstValueFrom(this.securityService.getPasskeys()));
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No se pudieron cargar las llaves de acceso.'));
     } finally {
       this.loading.set(false);
     }
   }
 
-  registerPasskey() {
-    this.authAction.set('register');
-    this.authPassword.set('');
-    this.authTotp.set('');
-    this.authError.set('');
-    this.showAuthPrompt.set(true);
+  registerPasskey(): void {
+    this.openAuthPrompt('register');
   }
 
-  deletePasskey(id: string) {
-    this.authAction.set('delete');
-    this.authPasskeyId.set(id);
-    this.authPassword.set('');
-    this.authTotp.set('');
-    this.authError.set('');
-    this.showAuthPrompt.set(true);
+  deletePasskey(id: string): void {
+    this.openAuthPrompt('delete', id);
   }
 
-  cancelAuth() {
+  cancelAuth(): void {
     this.showAuthPrompt.set(false);
-    this.authPassword.set('');
-    this.authTotp.set('');
+    this.clearAuthSecrets();
   }
 
-  async confirmAuth() {
-    if (!this.authPassword() || !this.authTotp()) return;
-    
+  async confirmAuth(): Promise<void> {
+    const password = this.authPassword();
+    const code = this.authTotp();
+    if (!password || !/^\d{6}$/.test(code)) {
+      this.authError.set('Ingrese la contraseña actual y un código TOTP de exactamente 6 dígitos.');
+      return;
+    }
+
     this.authLoading.set(true);
     this.authError.set('');
     try {
       await firstValueFrom(this.securityService.validateCurrentTotp({
-        current_password: this.authPassword(),
-        totp_code: this.authTotp()
+        current_password: password,
+        totp_code: code,
       }));
-      
+
+      const action = this.authAction();
+      const passkeyId = this.authPasskeyId();
       this.showAuthPrompt.set(false);
-      this.authPassword.set('');
-      this.authTotp.set('');
-      
-      if (this.authAction() === 'register') {
-        await this.executeRegisterPasskey();
-      } else if (this.authAction() === 'delete') {
-        await this.executeDeletePasskey(this.authPasskeyId()!);
-      }
-    } catch (err: any) {
-      this.authError.set(err?.error?.message || 'Contraseña o código TOTP incorrectos.');
+      this.clearAuthSecrets();
+
+      if (action === 'register') await this.executeRegisterPasskey();
+      if (action === 'delete' && passkeyId) await this.executeDeletePasskey(passkeyId);
+    } catch (error: unknown) {
+      this.authError.set(apiErrorMessage(error, 'La contraseña o el código TOTP son incorrectos.'));
     } finally {
       this.authLoading.set(false);
     }
   }
 
-  async executeRegisterPasskey() {
+  async executeRegisterPasskey(): Promise<void> {
     this.error.set('');
+    this.success.set('');
     this.isRegistering.set(true);
     try {
-      const options = await firstValueFrom(this.securityService.registerPasskeyOptions());
-      
-      let attResp;
-      try {
-        attResp = await startRegistration({ optionsJSON: options });
-      } catch (err: any) {
-        this.isRegistering.set(false);
-        return; // Usuario canceló
-      }
-
-      await firstValueFrom(this.securityService.registerPasskeyConfirm({
-        clientDataJSON: (attResp.response as any).clientDataJSON,
-        attestationObject: (attResp.response as any).attestationObject
+      const optionsJSON = await firstValueFrom(this.securityService.registerPasskeyOptions());
+      const credential = await startRegistration({ optionsJSON });
+      const response = await firstValueFrom(this.securityService.registerPasskeyConfirm({
+        clientDataJSON: credential.response.clientDataJSON,
+        attestationObject: credential.response.attestationObject,
       }));
-
+      this.success.set(response.message);
       await this.loadPasskeys();
-    } catch (err: any) {
-      const fallback = err?.error?.message || 'Error al registrar Passkey.';
-      this.error.set(fallback);
-      alert(fallback);
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'El registro de la Passkey fue cancelado o no pudo completarse.'));
     } finally {
       this.isRegistering.set(false);
     }
   }
 
-  async executeDeletePasskey(id: string) {
+  async executeDeletePasskey(id: string): Promise<void> {
     this.error.set('');
+    this.success.set('');
     try {
-      await firstValueFrom(this.securityService.deletePasskey(id));
-      this.passkeys.update(pk => pk.filter(p => p.id !== id));
-    } catch (err: any) {
-      const fallback = err?.error?.message || 'Error al eliminar la llave de acceso.';
-      alert(fallback);
+      const response = await firstValueFrom(this.securityService.deletePasskey(id));
+      this.passkeys.update((passkeys) => passkeys.filter((passkey) => passkey.id !== id));
+      this.success.set(response.message);
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No fue posible eliminar la llave de acceso.'));
     }
+  }
+
+  normalizeTotp(value: string): void {
+    this.authTotp.set(value.replace(/\D/g, '').slice(0, 6));
+  }
+
+  private openAuthPrompt(action: 'register' | 'delete', passkeyId: string | null = null): void {
+    this.authAction.set(action);
+    this.authPasskeyId.set(passkeyId);
+    this.authError.set('');
+    this.clearAuthSecrets();
+    this.showAuthPrompt.set(true);
+  }
+
+  private clearAuthSecrets(): void {
+    this.authPassword.set('');
+    this.authTotp.set('');
   }
 }

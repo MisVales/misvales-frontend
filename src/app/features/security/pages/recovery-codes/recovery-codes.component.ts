@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import { SecurityService } from '../../data-access/security.service';
+import { apiErrorMessage } from '../../../../core/api/api-error';
 
 @Component({
   selector: 'app-recovery-codes',
@@ -48,19 +49,22 @@ export class RecoveryCodesComponent {
       this.codes.set(response.recovery_codes);
       this.isGenerating.set(false);
       this.currentPassword.set('');
-    } catch (err: any) {
-      this.error.set(err.error?.message || 'Error al generar códigos de recuperación. Verifica tu contraseña.');
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No fue posible generar los códigos de recuperación. Verifique su contraseña.'));
     } finally {
       this.loading.set(false);
     }
   }
 
-  copyCodes() {
+  async copyCodes(): Promise<void> {
     const text = this.codes().join('\n');
-    navigator.clipboard.writeText(text).then(() => {
+    try {
+      await navigator.clipboard.writeText(text);
       this.hasCopied.set(true);
       setTimeout(() => this.hasCopied.set(false), 3000);
-    });
+    } catch {
+      this.error.set('No fue posible copiar los códigos. Guárdelos manualmente en un lugar seguro.');
+    }
   }
 
   canLeave(): boolean {
@@ -71,7 +75,7 @@ export class RecoveryCodesComponent {
   }
 
   @HostListener('window:beforeunload', ['$event'])
-  unloadNotification($event: any) {
+  unloadNotification($event: BeforeUnloadEvent): void {
     if (this.codes().length > 0 && !this.hasConfirmedSaved()) {
       $event.returnValue = true;
     }

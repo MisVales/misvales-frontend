@@ -54,7 +54,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               </div>
-              <input type="email" id="email" formControlName="email"
+              <input type="email" id="email" formControlName="email" autocomplete="email"
                      class="block w-full pl-10 pr-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors placeholder-gray-400"
                      placeholder="nombre@empresa.com">
             </div>
@@ -67,6 +67,9 @@
               <span>Ingrese un correo válido.</span>
               }
             </div>
+            }
+            @if (fieldError('email'); as message) {
+            <div class="mt-2 text-xs text-red-500">{{ message }}</div>
             }
           </div>
 

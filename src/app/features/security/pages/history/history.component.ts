@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@ang
 import { CommonModule, DatePipe } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
-import { SecurityService } from '../../data-access/security.service';
+import { SecurityEventRes, SecurityService } from '../../data-access/security.service';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
+import { apiErrorMessage } from '../../../../core/api/api-error';
 
 @Component({
   selector: 'app-history',
@@ -16,7 +17,7 @@ export class HistoryComponent implements OnInit {
   private securityService = inject(SecurityService);
   private fb = inject(FormBuilder);
 
-  events = signal<any[]>([]);
+  events = signal<SecurityEventRes[]>([]);
   loading = signal(true);
   error = signal('');
   
@@ -36,14 +37,12 @@ export class HistoryComponent implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const filters = this.filterForm.value;
+      const severity = this.filterForm.controls.severity.value;
+      const filters = { severity: severity || undefined };
       const response = await firstValueFrom(this.securityService.getSecurityEvents(filters));
-      
-      // Assuming paginated response from backend (data array) or direct array
-      const items = response.data ? response.data : response;
-      this.events.set(items);
-    } catch (err: any) {
-      this.error.set('No se pudo cargar el historial de eventos.');
+      this.events.set(response.data);
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No se pudo cargar el historial de eventos.'));
     } finally {
       this.loading.set(false);
     }

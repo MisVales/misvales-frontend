@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { AuthService } from '../../../auth/data-access/auth.service';
-import { firstValueFrom } from 'rxjs';
 import { LucideAngularModule } from 'lucide-angular';
+import * as QRCode from 'qrcode';
+import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../../../core/api/api-error';
 import { SecurityService } from '../../data-access/security.service';
 
 @Component({
@@ -13,58 +14,69 @@ import { SecurityService } from '../../data-access/security.service';
   templateUrl: './totp-setup.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TotpSetupComponent implements OnInit {
-  private securityService = inject(SecurityService);
-  private authService = inject(AuthService);
+export class TotpSetupComponent implements OnInit, OnDestroy {
+  private readonly securityService = inject(SecurityService);
 
-  qrCodeUrl = signal('');
-  secret = signal('');
-  isSecretVisible = signal(false);
-  isLoading = signal(true);
-  isConfirming = signal(false);
-  isRegisteringPasskey = signal(false);
-  error = signal('');
-  success = signal(false);
-  
-  form = new FormGroup({
-    password: new FormControl('', [Validators.required]),
-    code: new FormControl('', [Validators.required, Validators.minLength(6), Validators.maxLength(6)])
+  readonly qrCodeUrl = signal('');
+  readonly secret = signal('');
+  readonly isSecretVisible = signal(false);
+  readonly isLoading = signal(true);
+  readonly isConfirming = signal(false);
+  readonly isRegisteringPasskey = signal(false);
+  readonly error = signal('');
+  readonly success = signal(false);
+
+  readonly form = new FormGroup({
+    password: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
+    code: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required, Validators.pattern(/^\d{6}$/)],
+    }),
   });
 
-  async ngOnInit() {
+  async ngOnInit(): Promise<void> {
     try {
       const data = await firstValueFrom(this.securityService.getTotpSetup());
       this.secret.set(data.totp_secret);
-      // Generate a QR code using an external service
-      this.qrCodeUrl.set(`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(data.totp_uri)}`);
-    } catch (err) {
-      this.error.set('No se pudo cargar la configuración TOTP.');
+      this.qrCodeUrl.set(await QRCode.toDataURL(data.totp_uri, { margin: 1, width: 256 }));
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No se pudo cargar la configuración TOTP.'));
     } finally {
       this.isLoading.set(false);
     }
   }
 
-  toggleSecretVisibility() {
-    this.isSecretVisible.update(v => !v);
+  ngOnDestroy(): void {
+    this.secret.set('');
+    this.qrCodeUrl.set('');
+    this.form.reset();
   }
 
-  async verifyTotp() {
-    if (this.form.invalid) return;
+  toggleSecretVisibility(): void {
+    this.isSecretVisible.update((visible) => !visible);
+  }
+
+  async verifyTotp(): Promise<void> {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
     this.isConfirming.set(true);
     this.error.set('');
     this.success.set(false);
-    
     try {
-      await firstValueFrom(
-        this.securityService.confirmTotpSetup({
-          current_password: this.form.value.password,
-          new_totp_code: this.form.value.code
-        })
-      );
+      const value = this.form.getRawValue();
+      await firstValueFrom(this.securityService.confirmTotpSetup({
+        current_password: value.password,
+        new_totp_code: value.code,
+      }));
       this.success.set(true);
+      this.secret.set('');
+      this.qrCodeUrl.set('');
       this.form.reset();
-    } catch (err: any) {
-      this.error.set(err.error?.message || 'Error al verificar el código. Intenta de nuevo.');
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No fue posible verificar el código TOTP.'));
     } finally {
       this.isConfirming.set(false);
     }

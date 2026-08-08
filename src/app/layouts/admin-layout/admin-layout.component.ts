@@ -3,12 +3,11 @@ import { RouterOutlet } from '@angular/router';
 import { SessionStore } from '../../core/session/session.store';
 import { AuthFacade } from '../../features/auth/state/auth.facade';
 import { SidebarComponent } from '../../shared/ui/sidebar/sidebar.component';
-import { MfaModal } from '../../shared/ui/mfa-modal/mfa-modal';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent, MfaModal],
+  imports: [RouterOutlet, SidebarComponent],
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

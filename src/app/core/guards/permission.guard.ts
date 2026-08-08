@@ -16,3 +16,15 @@ export const permissionGuard = (requiredPermission: string): CanActivateFn => {
     return router.createUrlTree(['/']);
   };
 };
+
+export const anyPermissionGuard = (requiredPermissions: readonly string[]): CanActivateFn => {
+  return () => {
+    const sessionStore = inject(SessionStore);
+    const router = inject(Router);
+    const permissions = sessionStore.permissions();
+
+    return permissions.includes('all') || requiredPermissions.some((permission) => permissions.includes(permission))
+      ? true
+      : router.createUrlTree(['/inicio']);
+  };
+};

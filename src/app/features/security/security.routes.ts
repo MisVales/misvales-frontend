@@ -1,4 +1,10 @@
-import { Routes } from '@angular/router';
+import { CanDeactivateFn, Routes } from '@angular/router';
+
+interface CanLeaveComponent {
+  canLeave(): boolean;
+}
+
+const unsavedSecuritySecretsGuard: CanDeactivateFn<CanLeaveComponent> = (component) => component.canLeave();
 
 export const SECURITY_ROUTES: Routes = [
   {
@@ -20,7 +26,7 @@ export const SECURITY_ROUTES: Routes = [
       {
         path: 'recovery-codes',
         loadComponent: () => import('./pages/recovery-codes/recovery-codes.component').then(c => c.RecoveryCodesComponent),
-        canDeactivate: [(c: any) => c.canLeave ? c.canLeave() : true]
+        canDeactivate: [unsavedSecuritySecretsGuard]
       },
       {
         path: 'sessions',

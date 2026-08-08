@@ -1,8 +1,7 @@
-import { Component, inject, OnInit, computed, effect, signal } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, effect, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { DomSanitizer } from '@angular/platform-browser';
 import { AuthFacade } from '../../state/auth.facade';
 import * as QRCode from 'qrcode';
 
@@ -13,12 +12,11 @@ import * as QRCode from 'qrcode';
   templateUrl: './activate-account.html',
   styleUrls: ['./activate-account.css'],
 })
-export class ActivateAccount implements OnInit {
+export class ActivateAccount implements OnInit, OnDestroy {
   private fb = inject(FormBuilder);
   private authFacade = inject(AuthFacade);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private sanitizer = inject(DomSanitizer);
 
   activationForm: FormGroup = this.fb.group({
     password: ['', [
@@ -60,25 +58,8 @@ export class ActivateAccount implements OnInit {
         QRCode.toDataURL(qr, { margin: 1, width: 256 })
           .then(url => this.generatedQrCodeUrl.set(url))
           .catch(console.error);
-      } else {
-        this.generatedQrCodeUrl.set(qr);
       }
     });
-  }
-
-  get isSvgQr(): boolean {
-    const qr = this.generatedQrCodeUrl() || this.qrCodeUrl();
-    return !!qr && qr.trim().startsWith('<svg');
-  }
-
-  get safeQrCodeHtml() {
-    const qr = this.generatedQrCodeUrl() || this.qrCodeUrl();
-    return qr ? this.sanitizer.bypassSecurityTrustHtml(qr) : null;
-  }
-
-  get safeQrCodeUrl() {
-    const qr = this.generatedQrCodeUrl();
-    return qr ? this.sanitizer.bypassSecurityTrustResourceUrl(qr) : null;
   }
 
   get passwordCriteria() {
@@ -94,12 +75,28 @@ export class ActivateAccount implements OnInit {
   }
 
   ngOnInit() {
-    const token = this.route.snapshot.queryParams['token'];
+    const token = this.route.snapshot.queryParamMap.get('token');
     if (token) {
+      void this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { token: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
       this.authFacade.inspectInvitation(token);
     } else {
       this.authFacade.inspectInvitation('');
     }
+  }
+
+  ngOnDestroy(): void {
+    this.authFacade.resetState();
+  }
+
+  canLeave(): boolean {
+    return this.phase() !== 2 || window.confirm(
+      'Los códigos de recuperación solo se muestran una vez. ¿Confirmas que deseas salir?',
+    );
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {
@@ -146,10 +143,7 @@ export class ActivateAccount implements OnInit {
   }
 
   resendInvitation() {
-    const token = this.route.snapshot.queryParams['token'];
-    if (token) {
-      this.authFacade.resendInvitation(token);
-    }
+    this.authFacade.resendInvitation();
   }
 
   copyCodes() {
@@ -159,9 +153,7 @@ export class ActivateAccount implements OnInit {
       navigator.clipboard.writeText(textToCopy).then(() => {
         this.copiedCodes.set(true);
         setTimeout(() => this.copiedCodes.set(false), 2000);
-      }).catch(err => {
-        console.error('Error al copiar al portapapeles: ', err);
-      });
+      }).catch(() => this.copiedCodes.set(false));
     }
   }
 

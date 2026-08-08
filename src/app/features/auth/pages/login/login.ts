@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, Validators, FormGroup } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthFacade } from '../../state/auth.facade';
 
@@ -15,7 +15,7 @@ export class Login {
   private fb = inject(FormBuilder);
   private authFacade = inject(AuthFacade);
 
-  loginForm: FormGroup = this.fb.group({
+  loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required]]
   });
@@ -30,9 +30,13 @@ export class Login {
     return this.authFacade.error();
   }
 
+  fieldError(field: string): string | null {
+    return this.authFacade.validationErrors()[field]?.[0] ?? null;
+  }
+
   onSubmit() {
     if (this.loginForm.valid && !this.isLoading) {
-      this.authFacade.login(this.loginForm.value);
+      this.authFacade.login(this.loginForm.getRawValue());
     } else {
       this.loginForm.markAllAsTouched();
     }

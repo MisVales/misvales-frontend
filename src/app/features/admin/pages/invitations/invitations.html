@@ -13,6 +13,10 @@
     </button>
   </div>
 
+  @if (success()) {
+    <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700" role="status">{{ success() }}</div>
+  }
+
   <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
     @if (loading()) {
       <div class="flex justify-center items-center py-12">
@@ -39,20 +43,30 @@
                 <td class="px-6 py-4 font-medium">{{ inv.user_name }}</td>
                 <td class="px-6 py-4 text-gray-500">{{ inv.user_email }}</td>
                 <td class="px-6 py-4">
-                  @if (inv.state === 'PENDING') {
+                  @if (inv.state === 'ACTIVE') {
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium">
                       <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                      Pendiente
+                      Activa
                     </span>
-                  } @else if (inv.state === 'ACCEPTED') {
+                  } @else if (inv.state === 'PREPARED') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Preparada
+                    </span>
+                  } @else if (inv.state === 'CONSUMED') {
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs font-medium">
                       <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-                      Aceptada
+                      Consumida
                     </span>
                   } @else if (inv.state === 'EXPIRED') {
                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-xs font-medium">
                       <span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
                       Expirada
+                    </span>
+                  } @else if (inv.state === 'REVOKED') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                      Revocada
                     </span>
                   }
                 </td>

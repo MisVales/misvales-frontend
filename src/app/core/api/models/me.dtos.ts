@@ -1,7 +1,8 @@
 export interface Scope {
-  branchId: string;
-  branchName: string;
+  branch_id: string | null;
+  role_name: string;
   role: string;
+  permissions: string[];
 }
 
 export interface MeRes {
@@ -9,10 +10,9 @@ export interface MeRes {
     id: string;
     name: string;
     email: string;
-    status: string;
+    state: string;
     layoutPreference?: 'desktop' | 'tablet' | 'mobile';
   };
   scopes: Scope[];
   effective_permissions: string[];
-  activeBranch?: string;
 }
