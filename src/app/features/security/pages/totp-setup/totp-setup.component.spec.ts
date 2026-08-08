@@ -1,49 +1,63 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { CheckCircle, Loader2, LucideAngularModule } from 'lucide-angular';
+import { importProvidersFrom } from '@angular/core';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
+import { SecurityService } from '../../data-access/security.service';
 import { TotpSetupComponent } from './totp-setup.component';
-import { ReactiveFormsModule } from '@angular/forms';
-import { describe, it, expect, beforeEach } from 'vitest';
-import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
-import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('TotpSetupComponent', () => {
   let component: TotpSetupComponent;
   let fixture: ComponentFixture<TotpSetupComponent>;
+  const securityService = {
+    getTotpSetup: vi.fn().mockReturnValue(of({
+      totp_secret: 'SECRET',
+      totp_uri: 'otpauth://totp/MisVales:test@example.com?secret=SECRET',
+    })),
+    confirmTotpSetup: vi.fn().mockReturnValue(of({ message: 'Configurado' })),
+  };
 
   beforeEach(async () => {
+    vi.clearAllMocks();
     await TestBed.configureTestingModule({
-      imports: [TotpSetupComponent, ReactiveFormsModule, HttpClientTestingModule],
+      imports: [TotpSetupComponent],
       providers: [
-        { provide: API_CONFIG, useValue: defaultApiConfig }
-      ]
-    })
-    .compileComponents();
-    
+        importProvidersFrom(LucideAngularModule.pick({ Loader2, CheckCircle })),
+        { provide: SecurityService, useValue: securityService },
+      ],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(TotpSetupComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should create', () => {
+  it('obtiene la configuración únicamente mediante el servicio propio', () => {
     expect(component).toBeTruthy();
+    expect(securityService.getTotpSetup).toHaveBeenCalledOnce();
+    expect(component.secret()).toBe('SECRET');
   });
 
-  it('should toggle secret visibility', () => {
-    expect(component.isSecretVisible()).toBe(false);
+  it('alterna la visibilidad del secreto', () => {
     component.toggleSecretVisibility();
     expect(component.isSecretVisible()).toBe(true);
   });
 
-  it('should prevent verification if form is invalid', () => {
-    component.form.controls.code.setValue('123'); // invalid length
-    component.verifyTotp();
-    expect(component.isLoading()).toBe(false);
+  it('no confirma un formulario inválido', async () => {
+    component.form.controls.code.setValue('123');
+    await component.verifyTotp();
+    expect(securityService.confirmTotpSetup).not.toHaveBeenCalled();
   });
 
-  it('should set loading state on successful verify', async () => {
-    component.form.controls.code.setValue('123456');
-    component.verifyTotp();
-    expect(component.isLoading()).toBe(true);
-    await new Promise(r => setTimeout(r, 1500));
-    expect(component.isLoading()).toBe(false);
+  it('confirma un código válido y limpia los secretos', async () => {
+    component.form.setValue({ password: 'current-password', code: '123456' });
+    await component.verifyTotp();
+    expect(securityService.confirmTotpSetup).toHaveBeenCalledWith({
+      current_password: 'current-password',
+      new_totp_code: '123456',
+    });
+    expect(component.success()).toBe(true);
+    expect(component.secret()).toBe('');
   });
 });

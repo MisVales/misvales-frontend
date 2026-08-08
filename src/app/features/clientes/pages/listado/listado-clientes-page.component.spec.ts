@@ -3,6 +3,7 @@ import { ListadoClientesPageComponent } from './listado-clientes-page.component'
 import { ClientesStore } from '../../state/clientes.store';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 describe('ListadoClientesPageComponent', () => {
   let component: ListadoClientesPageComponent;
@@ -11,10 +12,10 @@ describe('ListadoClientesPageComponent', () => {
 
   beforeEach(async () => {
     mockStore = {
-      listado: jasmine.createSpy('listado').and.returnValue([]),
-      cargandoListado: jasmine.createSpy('cargandoListado').and.returnValue(false),
-      filtros: jasmine.createSpy('filtros').and.returnValue({}),
-      cargarListado: jasmine.createSpy('cargarListado')
+      listado: vi.fn().mockReturnValue([]),
+      cargandoListado: vi.fn().mockReturnValue(false),
+      filtros: vi.fn().mockReturnValue({}),
+      cargarListado: vi.fn()
     };
 
     await TestBed.configureTestingModule({

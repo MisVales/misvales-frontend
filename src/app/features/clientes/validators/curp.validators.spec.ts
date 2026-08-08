@@ -17,6 +17,6 @@ describe('CurpValidator', () => {
   });
 
   it('should return null for valid CURP', () => {
-    expect(validator(new FormControl('PELJ800101HJCXXA0'))).toBeNull();
+    expect(validator(new FormControl('PELJ800101HJCXXA09'))).toBeNull();
   });
 });

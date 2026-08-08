@@ -34,7 +34,7 @@ describe('PeriodosCanjeService', () => {
       expect(data).toEqual(mockData);
     });
 
-    const req = httpMock.expectOne('/api/exchange-periods?page=1&perPage=10');
+    const req = httpMock.expectOne('/api/v1/exchange-periods?page=1&perPage=10');
     expect(req.request.method).toBe('GET');
     req.flush(mockData);
   });

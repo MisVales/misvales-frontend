@@ -41,8 +41,7 @@ describe('OrganizationFacade', () => {
   });
 
   it('should load branches successfully', async () => {
-    const mockRes = { data: [mockBranch], total: 1, page: 1, perPage: 10 };
-    apiServiceMock.getBranches.mockReturnValue(of(mockRes));
+    apiServiceMock.getBranches.mockReturnValue(of([mockBranch]));
 
     await facade.loadBranches();
 

@@ -35,7 +35,7 @@ describe('ConfiguracionesService', () => {
       expect(data).toEqual(mockData);
     });
 
-    const req = httpMock.expectOne('/api/configurations?page=1&perPage=10');
+    const req = httpMock.expectOne('/api/v1/configurations?page=1&perPage=10');
     expect(req.request.method).toBe('GET');
     req.flush(mockData);
   });

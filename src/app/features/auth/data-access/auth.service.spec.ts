@@ -1,65 +1,61 @@
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { AuthService } from './auth.service';
+import { firstValueFrom } from 'rxjs';
 import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
+import { AuthTokenStore } from '@core/session/auth-token.store';
+import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let httpTestingController: HttpTestingController;
+  let http: HttpTestingController;
+  let tokenStore: AuthTokenStore;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         AuthService,
-        { provide: API_CONFIG, useValue: defaultApiConfig }
-      ]
+        { provide: API_CONFIG, useValue: defaultApiConfig },
+      ],
     });
     service = TestBed.inject(AuthService);
-    httpTestingController = TestBed.inject(HttpTestingController);
+    http = TestBed.inject(HttpTestingController);
+    tokenStore = TestBed.inject(AuthTokenStore);
   });
 
-  afterEach(() => {
-    httpTestingController.verify();
-  });
+  afterEach(() => http.verify());
 
-  it('should get csrf cookie', () => {
+  it('solicita la cookie CSRF sin exponer secretos', () => {
     service.getCsrfCookie().subscribe();
-
-    const req = httpTestingController.expectOne('/api/sanctum/csrf-cookie');
-    expect(req.request.method).toEqual('GET');
-    req.flush({});
+    const request = http.expectOne('/sanctum/csrf-cookie');
+    expect(request.request.method).toBe('GET');
+    request.flush({});
   });
 
-  it('should login', async () => {
-    const mockCredentials = { email: 'test@test.com', password: 'password' };
-    
-    const res = await new Promise<any>((resolve) => {
-      service.login(mockCredentials).subscribe(resolve);
-    });
+  it('inicia sesión y conserva los tokens solo en memoria', async () => {
+    const result = firstValueFrom(service.login({ email: 'test@example.com', password: 'secret' }));
+    const request = http.expectOne('/api/v1/auth/login');
+    request.flush({ access_token: 'access', refresh_token: 'refresh', expires_in: 3600 });
 
-    expect(res.user?.email).toBe(mockCredentials.email);
-    expect(res.token).toBeDefined();
+    await result;
+    expect(tokenStore.accessToken()).toBe('access');
   });
 
-  it('should verify MFA', () => {
-    const mockMfaReq = { totpCode: '123456' };
-    
-    service.verifyMfa(mockMfaReq).subscribe();
-
-    const req = httpTestingController.expectOne('/api/auth/mfa/verify');
-    expect(req.request.method).toEqual('POST');
-    expect(req.request.body).toEqual(mockMfaReq);
-    req.flush({});
+  it('envía el TOTP al endpoint contractual', () => {
+    const payload = { mfa_challenge_token: 'challenge', totp_code: '123456' };
+    service.verifyMfa(payload).subscribe();
+    const request = http.expectOne('/api/v1/auth/mfa/totp/verify');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ access_token: 'access', refresh_token: 'refresh', expires_in: 3600 });
   });
 
-  it('should check invitation', () => {
-    const token = 'fake-token-123';
-    
-    service.checkInvitation(token).subscribe();
-
-    const req = httpTestingController.expectOne(`/api/auth/invitation/${token}`);
-    expect(req.request.method).toEqual('GET');
-    req.flush({});
+  it('inspecciona una invitación mediante POST sin incluir el token en la URL', () => {
+    service.inspectInvitation({ token: 'invitation-token' }).subscribe();
+    const request = http.expectOne('/api/v1/auth/invitations/inspect');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ token: 'invitation-token' });
+    request.flush({ exchange_token: 'exchange', user: { name: 'User', email: 'u@example.com' } });
   });
 });
