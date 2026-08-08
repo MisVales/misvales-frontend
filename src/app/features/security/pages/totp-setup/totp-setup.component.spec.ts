@@ -1,6 +1,9 @@
-import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TotpSetupComponent } from './totp-setup.component';
 import { ReactiveFormsModule } from '@angular/forms';
+import { describe, it, expect, beforeEach } from 'vitest';
+import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('TotpSetupComponent', () => {
   let component: TotpSetupComponent;
@@ -8,7 +11,10 @@ describe('TotpSetupComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [TotpSetupComponent, ReactiveFormsModule]
+      imports: [TotpSetupComponent, ReactiveFormsModule, HttpClientTestingModule],
+      providers: [
+        { provide: API_CONFIG, useValue: defaultApiConfig }
+      ]
     })
     .compileComponents();
     
@@ -22,22 +28,22 @@ describe('TotpSetupComponent', () => {
   });
 
   it('should toggle secret visibility', () => {
-    expect(component.isSecretVisible()).toBeFalse();
+    expect(component.isSecretVisible()).toBe(false);
     component.toggleSecretVisibility();
-    expect(component.isSecretVisible()).toBeTrue();
+    expect(component.isSecretVisible()).toBe(true);
   });
 
   it('should prevent verification if form is invalid', () => {
     component.form.controls.code.setValue('123'); // invalid length
     component.verifyTotp();
-    expect(component.isLoading()).toBeFalse();
+    expect(component.isLoading()).toBe(false);
   });
 
-  it('should set loading state on successful verify', fakeAsync(() => {
+  it('should set loading state on successful verify', async () => {
     component.form.controls.code.setValue('123456');
     component.verifyTotp();
-    expect(component.isLoading()).toBeTrue();
-    tick(1500);
-    expect(component.isLoading()).toBeFalse();
-  }));
+    expect(component.isLoading()).toBe(true);
+    await new Promise(r => setTimeout(r, 1500));
+    expect(component.isLoading()).toBe(false);
+  });
 });

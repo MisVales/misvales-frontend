@@ -31,15 +31,15 @@ describe('AuthService', () => {
     req.flush({});
   });
 
-  it('should login', () => {
+  it('should login', async () => {
     const mockCredentials = { email: 'test@test.com', password: 'password' };
     
-    service.login(mockCredentials).subscribe();
+    const res = await new Promise<any>((resolve) => {
+      service.login(mockCredentials).subscribe(resolve);
+    });
 
-    const req = httpTestingController.expectOne('/api/auth/login');
-    expect(req.request.method).toEqual('POST');
-    expect(req.request.body).toEqual(mockCredentials);
-    req.flush({});
+    expect(res.user?.email).toBe(mockCredentials.email);
+    expect(res.token).toBeDefined();
   });
 
   it('should verify MFA', () => {

@@ -1,0 +1,98 @@
+.timeline {
+  display: flex;
+  flex-direction: column;
+  padding: 1rem 0;
+}
+
+.timeline-item {
+  display: flex;
+  position: relative;
+  min-height: 4rem;
+}
+
+.timeline-item:last-child .marker-line {
+  display: none;
+}
+
+.timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-right: 1rem;
+  min-width: 1.5rem;
+}
+
+.marker-dot {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: var(--color-gray-200, #e5e7eb);
+  border: 2px solid white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  z-index: 10;
+  box-shadow: 0 0 0 1px var(--color-gray-300, #d1d5db);
+}
+
+.marker-dot svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.marker-line {
+  width: 2px;
+  flex: 1;
+  background-color: var(--color-gray-200, #e5e7eb);
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-content {
+  padding-bottom: 1.5rem;
+  flex: 1;
+}
+
+.timeline-title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary, #374151);
+}
+
+.timeline-date {
+  font-size: 0.75rem;
+  color: var(--text-muted, #6b7280);
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.timeline-desc {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--text-primary, #4b5563);
+}
+
+/* Status: DONE */
+.status-done .marker-dot {
+  background-color: var(--color-green-500, #22c55e);
+  box-shadow: 0 0 0 1px var(--color-green-500, #22c55e);
+}
+.status-done .marker-line {
+  background-color: var(--color-green-500, #22c55e);
+}
+
+/* Status: CURRENT */
+.status-current .marker-dot {
+  background-color: var(--color-blue-500, #3b82f6);
+  box-shadow: 0 0 0 3px var(--color-blue-100, #dbeafe);
+}
+.status-current .timeline-title {
+  color: var(--color-blue-700, #1d4ed8);
+}
+
+/* Status: PENDING */
+.status-pending {
+  opacity: 0.5;
+}

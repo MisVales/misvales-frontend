@@ -1,0 +1,91 @@
+.comparador-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.comparador-card {
+  background-color: var(--bg-surface, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.card-header {
+  background-color: var(--color-gray-50, #f9fafb);
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.campo-title {
+  margin: 0;
+  font-size: 1.125rem;
+  color: var(--text-primary, #111827);
+}
+
+.meta-info {
+  font-size: 0.875rem;
+  color: var(--text-muted, #6b7280);
+}
+
+.comparacion-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1px;
+  background-color: var(--border-color, #e2e8f0);
+}
+
+@media (min-width: 768px) {
+  .comparacion-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.valor-box {
+  background-color: white;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.box-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+  color: var(--text-muted, #6b7280);
+}
+
+.box-value {
+  font-size: 1rem;
+  color: var(--text-primary, #1f2937);
+  word-break: break-word;
+}
+
+.box-value.highlight {
+  font-weight: 700;
+  color: var(--color-primary-700, #1d4ed8);
+}
+
+.motivo-box {
+  padding: 1rem;
+  background-color: var(--color-blue-50, #eff6ff);
+  border-top: 1px solid var(--color-blue-100, #dbeafe);
+  font-size: 0.875rem;
+  color: var(--color-blue-900, #1e3a8a);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted, #6b7280);
+  background-color: var(--color-gray-50, #f9fafb);
+  border-radius: 0.5rem;
+  border: 1px dashed var(--color-gray-300, #d1d5db);
+}

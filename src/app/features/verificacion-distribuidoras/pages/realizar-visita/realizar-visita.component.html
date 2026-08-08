@@ -1,0 +1,176 @@
+<div class="page-container">
+  @if (facade.isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando visita...</p>
+    </div>
+  }
+
+  @if (facade.error()) {
+    <div class="alert alert-danger">
+      {{ facade.error() }}
+      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">Cerrar</button>
+    </div>
+  }
+
+  @if (facade.visitaSeleccionada(); as visita) {
+    <div class="wizard-header">
+      <div class="wizard-title-area">
+        <h1 class="page-title">Visita Física</h1>
+        <p class="page-desc">Solicitud: {{ visita.solicitudId }}</p>
+      </div>
+      
+      @if (visita.estado === 'ASSIGNED') {
+        <button class="btn btn-primary" (click)="iniciarVisita()">Iniciar Visita</button>
+      } @else if (visita.estado === 'IN_PROGRESS' || visita.estado === 'COMPLETED') {
+        <span class="badge" [class.badge-warning]="visita.estado === 'IN_PROGRESS'" [class.badge-success]="visita.estado === 'COMPLETED'">
+          {{ visita.estado === 'IN_PROGRESS' ? 'EN PROGRESO' : 'FINALIZADA' }}
+        </span>
+      }
+    </div>
+
+    @if (visita.estado !== 'ASSIGNED') {
+      <!-- Wizard Navigation -->
+      <div class="wizard-tabs">
+        <button class="tab-btn" [class.active]="step() === 1" (click)="setStep(1)">1. Comprobación</button>
+        <button class="tab-btn" [class.active]="step() === 2" (click)="setStep(2)">2. Evidencias</button>
+        <button class="tab-btn" [class.active]="step() === 3" (click)="setStep(3)">3. Diferencias</button>
+        <button class="tab-btn" [class.active]="step() === 4" (click)="setStep(4)">4. Resultado Final</button>
+      </div>
+
+      <!-- Step 1: Comprobación -->
+      @if (step() === 1) {
+        <div class="step-content">
+          <h2 class="step-title">Lista de Comprobación</h2>
+          <app-lista-comprobacion-visita 
+            [puntos]="puntosComprobacion()"
+            [isReadonly]="visita.estado === 'COMPLETED'"
+            (cambiarEstadoPunto)="onEstadoPuntoChange($event)"
+            (registrarDiferencia)="abrirEditorDiferencia($event)">
+          </app-lista-comprobacion-visita>
+        </div>
+      }
+
+      <!-- Step 2: Evidencias -->
+      @if (step() === 2) {
+        <div class="step-content">
+          <h2 class="step-title">Captura de Evidencias</h2>
+          
+          @if (visita.estado !== 'COMPLETED') {
+            <app-captura-evidencia
+              [tiposPermitidos]="tiposEvidencia"
+              [isUploading]="facade.isUploading()"
+              [progress]="facade.uploadProgress()"
+              (fileSelected)="onSubirEvidencia($event)">
+            </app-captura-evidencia>
+            
+            <hr class="divider">
+          }
+          
+          <h3 class="section-subtitle">Evidencias Adjuntas ({{ visita.evidencias.length }})</h3>
+          <app-galeria-evidencias
+            [evidencias]="visita.evidencias"
+            [permitirEliminar]="visita.estado !== 'COMPLETED'"
+            [permitirDescargar]="true"
+            [tiposPermitidos]="tiposEvidencia"
+            [isProcessing]="facade.isLoading()"
+            (delete)="onEliminarEvidencia($event)"
+            (download)="onDescargarEvidencia($event)">
+          </app-galeria-evidencias>
+        </div>
+      }
+
+      <!-- Step 3: Diferencias (Registro Manual) -->
+      @if (step() === 3) {
+        <div class="step-content">
+          <h2 class="step-title">Diferencias Registradas</h2>
+          
+          @if (visita.estado !== 'COMPLETED') {
+            <button class="btn btn-secondary mb-4" (click)="abrirEditorDiferencia()">+ Nueva Diferencia Manual</button>
+          }
+
+          <div class="diferencias-list">
+            @for (dif of visita.diferencias; track dif.id) {
+              <div class="diferencia-card">
+                <h4>{{ dif.seccion }} - {{ dif.campo }}</h4>
+                <p><strong>Declarado:</strong> {{ dif.datoDeclarado }}</p>
+                <p><strong>Observado:</strong> {{ dif.datoObservado || 'N/A' }}</p>
+                <p><strong>Descripción:</strong> {{ dif.descripcion }}</p>
+              </div>
+            }
+            @if (visita.diferencias.length === 0) {
+              <p class="text-muted">No se han registrado diferencias.</p>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Step 4: Resultado Final -->
+      @if (step() === 4) {
+        <div class="step-content final-step">
+          <h2 class="step-title">Finalizar Visita</h2>
+          
+          <div class="summary-box">
+            <p><strong>Evidencias cargadas:</strong> {{ visita.evidencias.length }}</p>
+            <p><strong>Diferencias reportadas:</strong> {{ visita.diferencias.length }}</p>
+          </div>
+
+          @if (visita.estado !== 'COMPLETED') {
+            <div class="form-group mt-4">
+              <label>Resultado Físico de la Visita</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="resultado" value="FAVORABLE" [ngModel]="resultadoFinal()" (ngModelChange)="resultadoFinal.set($event)">
+                  <span>Favorable</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="resultado" value="UNFAVORABLE" [ngModel]="resultadoFinal()" (ngModelChange)="resultadoFinal.set($event)">
+                  <span>Desfavorable</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group mt-4">
+              <label>Observaciones Generales</label>
+              <textarea class="form-control" rows="4" placeholder="Observaciones generales de la visita..." [ngModel]="observacionesFila()" (ngModelChange)="observacionesFila.set($event)"></textarea>
+            </div>
+
+            <div class="alert alert-warning mt-4">
+              <strong>Atención:</strong> Una vez finalizada la visita, no podrás modificar los datos ni agregar más evidencias.
+            </div>
+
+            <button class="btn btn-primary btn-block mt-4 btn-lg" (click)="finalizarVisita()">Finalizar Visita Definitivamente</button>
+          } @else {
+            <div class="form-group mt-4 readonly-group">
+              <label>Resultado Físico</label>
+              <div class="badge" [class.badge-success]="visita.resultadoFisico === 'FAVORABLE'" [class.badge-danger]="visita.resultadoFisico === 'UNFAVORABLE'">
+                {{ visita.resultadoFisico }}
+              </div>
+            </div>
+            @if (visita.observacionesGenerales) {
+              <div class="form-group mt-4 readonly-group">
+                <label>Observaciones Generales</label>
+                <p>{{ visita.observacionesGenerales }}</p>
+              </div>
+            }
+          }
+        </div>
+      }
+    }
+  }
+
+  <!-- Modal/Overlay para Editor de Diferencias -->
+  @if (mostrarEditorDiferencia()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <app-editor-diferencias
+          [seccionesDisponibles]="seccionesDiferencias"
+          [camposDisponibles]="camposDiferencias"
+          [isProcessing]="facade.isLoading()"
+          (cancelar)="cerrarEditorDiferencia()"
+          (guardar)="onGuardarDiferencia($event)">
+        </app-editor-diferencias>
+      </div>
+    </div>
+  }
+</div>

@@ -25,6 +25,7 @@ export class AdminLayoutComponent {
   // Default to desktop if none provided
   layoutPreference = computed(() => this.sessionStore.layoutPreference() || 'desktop');
 
+
   logout() {
     this.authFacade.logout();
   }

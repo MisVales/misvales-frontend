@@ -40,6 +40,6 @@ describe('authGuard', () => {
     });
 
     expect(result).toBe(mockUrlTree);
-    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/login']);
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
   });
 });

@@ -54,6 +54,30 @@ export const routes: Routes = [
         loadChildren: () => import('./features/productos/productos.routes').then(m => m.PRODUCTOS_ROUTES)
       },
       {
+        path: 'configuraciones',
+        loadChildren: () => import('./features/configurations/configurations.routes').then(m => m.configurationsRoutes)
+      },
+      {
+        path: 'periodos-canje',
+        loadChildren: () => import('./features/exchange-periods/exchange-periods.routes').then(m => m.exchangePeriodsRoutes)
+      },
+      {
+        path: 'verificacion-distribuidoras',
+        loadChildren: () => import('./features/verificacion-distribuidoras/verificacion-distribuidoras.routes').then(m => m.VERIFICACION_DISTRIBUIDORAS_ROUTES)
+      },
+      {
+        path: 'solicitudes-distribuidoras',
+        loadChildren: () => import('./features/applications/applications.routes').then(m => m.applicationsRoutes)
+      },
+      {
+        path: 'distribuidoras',
+        loadChildren: () => import('./features/distribuidoras/distribuidoras.routes').then(m => m.distribuidorasRoutes)
+      },
+      {
+        path: 'clientes',
+        loadChildren: () => import('./features/clientes/clientes.routes').then(m => m.CLIENTES_ROUTES)
+      },
+      {
         path: '**',
         loadComponent: () => import('./shared/ui/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
       }
