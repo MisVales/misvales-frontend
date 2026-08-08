@@ -76,13 +76,4 @@ export interface RoleRes {
   default_scope?: 'GLOBAL' | 'BRANCH' | 'ASSIGNED';
   is_system?: boolean;
   is_active?: boolean;
-  permissions?: PermissionRes[];
-}
-
-export interface PermissionRes {
-  id: string;
-  module: string;
-  action: string;
-  code: string;
-  description?: string;
 }

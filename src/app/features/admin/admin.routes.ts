@@ -17,11 +17,6 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () => import('./pages/user-detail/user-detail.component').then(c => c.UserDetailComponent)
   },
   {
-    path: 'roles',
-    canActivate: [permissionGuard('roles.view')],
-    loadComponent: () => import('./pages/roles-permissions/roles-permissions.component').then(c => c.RolesPermissionsComponent)
-  },
-  {
     path: 'invitaciones',
     canActivate: [permissionGuard('users.manage_state')],
     loadComponent: () => import('./pages/invitations/invitations').then(c => c.Invitations)

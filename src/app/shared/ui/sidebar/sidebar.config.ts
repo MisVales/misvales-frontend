@@ -63,7 +63,6 @@ export const NAV_GROUPS: NavGroupData[] = [
     items: [
       { id: 'branches', title: 'Sucursales', icon: 'map-pin', route: '/organizacion/sucursales', roles: GG_AD_GS, permissions: ['branches.view'] },
       { id: 'users', title: 'Usuarios y personal', icon: 'users', route: '/usuarios', roles: GG_AD_GS, permissions: ['users.view'] },
-      { id: 'roles', title: 'Roles y permisos', icon: 'shield-check', route: '/roles', roles: ['general_manager', 'admin'], permissions: ['roles.view'] },
       { id: 'assignments', title: 'Asignaciones', icon: 'link', route: '/organizacion/asignaciones', roles: GG_AD_GS, permissions: ['roles.assign', 'branches.view'], permissionMode: 'any' },
     ],
   },
