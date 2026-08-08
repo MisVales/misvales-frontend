@@ -1,10 +1,10 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { errorHandlingInterceptor } from './error-handling.interceptor';
+import { errorHandlingInterceptor, sanitizeServerError } from './error-handling.interceptor';
 import { Router } from '@angular/router';
 import { SessionStore } from '../session/session.store';
-import { vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('errorHandlingInterceptor', () => {
   let http: HttpClient;
@@ -65,5 +65,23 @@ describe('errorHandlingInterceptor', () => {
     req.flush('Page Expired', { status: 419, statusText: 'Page Expired' });
 
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
+  });
+});
+
+describe('sanitizeServerError', () => {
+  const sqlMessage = 'SQLSTATE[42703]: Undefined column: valid_to does not exist';
+
+  it('keeps technical server details in development', () => {
+    const error = new HttpErrorResponse({ error: { message: sqlMessage }, status: 500 });
+
+    expect(sanitizeServerError(error, true).error.message).toBe(sqlMessage);
+  });
+
+  it('hides technical server details in production', () => {
+    const error = new HttpErrorResponse({ error: { message: sqlMessage }, status: 500 });
+    const sanitized = sanitizeServerError(error, false);
+
+    expect(sanitized.error.message).toBe('Ocurrió un error interno. Intenta nuevamente más tarde.');
+    expect(JSON.stringify(sanitized.error)).not.toContain('SQLSTATE');
   });
 });

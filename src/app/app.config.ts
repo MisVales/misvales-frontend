@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideZonelessChangeDetection, ErrorHandler, Injectable, APP_INITIALIZER, inject, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideZonelessChangeDetection, ErrorHandler, Injectable, APP_INITIALIZER, inject, importProvidersFrom, isDevMode } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { routes } from './app.routes';
@@ -46,12 +46,17 @@ import {
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
   handleError(error: any): void {
-    console.error('GLOBAL ERROR:', error);
-    document.body.innerHTML = `<div style="color:red; padding:20px; font-family:monospace; background:white; position:fixed; top:0; left:0; right:0; z-index:9999; word-break: break-all;">
-      <h2>Application Error</h2>
-      <pre>${error.message || error.toString()}</pre>
-      <pre>${error.stack || ''}</pre>
-    </div>`;
+    if (isDevMode()) {
+      console.error('GLOBAL ERROR:', error);
+      document.body.innerHTML = `<div style="color:red; padding:20px; font-family:monospace; background:white; position:fixed; top:0; left:0; right:0; z-index:9999; word-break: break-all;">
+        <h2>Application Error</h2>
+        <pre>${error.message || error.toString()}</pre>
+        <pre>${error.stack || ''}</pre>
+      </div>`;
+      return;
+    }
+
+    console.error('Ocurrió un error inesperado en la aplicación.');
   }
 }
 

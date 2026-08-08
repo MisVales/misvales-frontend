@@ -1,10 +1,26 @@
 import { HttpInterceptorFn, HttpErrorResponse, HttpClient } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, isDevMode } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, switchMap, throwError, from } from 'rxjs';
 import { SessionStore } from '../session/session.store';
 import { MfaReauthService } from '../services/mfa-reauth.service';
 import { AlertService } from '../../shared/services/alert.service';
+
+const PRODUCTION_SERVER_ERROR_MESSAGE = 'Ocurrió un error interno. Intenta nuevamente más tarde.';
+
+export function sanitizeServerError(error: HttpErrorResponse, developmentMode: boolean): HttpErrorResponse {
+  if (developmentMode || error.status < 500) {
+    return error;
+  }
+
+  return new HttpErrorResponse({
+    error: { message: PRODUCTION_SERVER_ERROR_MESSAGE },
+    headers: error.headers,
+    status: error.status,
+    statusText: error.statusText,
+    url: error.url ?? undefined,
+  });
+}
 
 export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
   const sessionStore = inject(SessionStore);
@@ -15,7 +31,9 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
-      console.error('HTTP Error occurred:', error);
+      if (isDevMode()) {
+        console.error('HTTP Error occurred:', error);
+      }
       
       // Manejo de Reautenticación MFA (Zero Trust)
       if (error.status === 403 && error.error?.mfa_required === true) {
@@ -48,7 +66,7 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
         router.navigate(['/auth/login']);
       }
 
-      return throwError(() => error);
+      return throwError(() => sanitizeServerError(error, isDevMode()));
     })
   );
 };
