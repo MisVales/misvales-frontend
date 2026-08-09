@@ -1,0 +1,172 @@
+<div class="min-h-screen bg-[#2D2D2D] p-4 lg:p-8 flex justify-center pb-20 font-sans">
+  <div class="w-full max-w-4xl bg-[#FDFDF9] rounded-[24px] shadow-xl overflow-hidden flex flex-col p-6 lg:p-10">
+    
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
+      <div class="flex items-center gap-3">
+        <a routerLink="/clientes" class="text-gray-900 hover:text-gray-600 p-1 -ml-1 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </a>
+        <h1 class="text-lg font-bold text-gray-900">Detalle del Cliente</h1>
+      </div>
+    </div>
+
+    <!-- LOADING STATE -->
+    @if (store.cargandoDetalle()) {
+    <div class="py-20 text-center text-gray-500">
+      <svg class="animate-spin h-8 w-8 text-[#386641] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      Cargando detalle...
+    </div>
+    }
+
+    <!-- CONTENIDO -->
+    @if (!store.cargandoDetalle() && store.detalle()) {
+    <div class="space-y-6">
+      
+      <!-- PERFIL RÁPIDO -->
+      <div class="flex items-center gap-4 mb-8">
+        <div class="w-16 h-16 rounded-full bg-[#386641] text-white flex items-center justify-center text-2xl font-bold">
+          {{ store.detalle()!.nombreCompleto.charAt(0) }}
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900">{{ store.detalle()!.nombreCompleto }}</h2>
+          <div class="flex items-center gap-3 mt-1">
+            @switch (store.detalle()!.estado) {
+              @case ('ACTIVE') {
+                <span class="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-[#DCE8B4] text-[#386641]">ACTIVO</span>
+              }
+              @case ('PENDING') {
+                <span class="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-red-100 text-red-700">PENDIENTE</span>
+              }
+              @case ('INACTIVE') {
+                <span class="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-gray-200 text-gray-600">INACTIVO</span>
+              }
+            }
+            <span class="text-xs text-gray-500 font-mono tracking-wider">ID: {{ store.detalle()!.numero }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- RESUMEN -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4">
+          <div class="flex items-center gap-2 text-[#2D452F]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+            <h3 class="text-sm font-bold text-gray-900">Resumen</h3>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-1">Distribuidora Asignada</p>
+              <p class="text-sm font-medium text-gray-900">{{ store.detalle()!.asignacionVigente.distribuidoraId }} (Simulado)</p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-1">Sucursal Asignada</p>
+              <p class="text-sm font-medium text-gray-900">{{ store.detalle()!.asignacionVigente.sucursalId }} (Simulado)</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- IDENTIDAD -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col gap-4">
+          <div class="flex items-center gap-2 text-[#2D452F]">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2"></path></svg>
+            <h3 class="text-sm font-bold text-gray-900">Identidad</h3>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-gray-500 uppercase mb-1">CURP</p>
+            <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-gray-500 w-full text-sm font-mono tracking-widest">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              <span>{{ store.detalle()!.curpEnmascarada }}</span>
+            </div>
+          </div>
+          <div>
+            <p class="text-[10px] font-bold text-gray-500 uppercase mb-1">RFC</p>
+            <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-gray-500 w-full text-sm font-mono tracking-widest">
+              <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              <span>{{ store.detalle()!.rfcEnmascarado || 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DOMICILIO -->
+        <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6 relative">
+          <div class="absolute top-6 right-6">
+             <span class="px-2 py-1 text-[10px] font-bold uppercase rounded bg-gray-100 text-gray-600 border border-gray-200">Vigente</span>
+          </div>
+          <div class="flex items-center gap-2 text-[#2D452F] mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+            <h3 class="text-sm font-bold text-gray-900">Domicilio</h3>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="col-span-2">
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-0.5">Calle y Número</p>
+              <p class="text-sm font-medium text-gray-900">{{ store.detalle()!.domicilioVigente.calle }} {{ store.detalle()!.domicilioVigente.numeroExterior }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-0.5">Colonia</p>
+              <p class="text-sm font-medium text-gray-900">{{ store.detalle()!.domicilioVigente.colonia }}</p>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-0.5">Código Postal</p>
+              <p class="text-sm font-medium text-gray-900">{{ store.detalle()!.domicilioVigente.codigoPostal }}</p>
+            </div>
+            <div class="col-span-2">
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-0.5">Ciudad</p>
+              <p class="text-sm font-medium text-gray-900">{{ store.detalle()!.domicilioVigente.ciudad }}</p>
+            </div>
+            <div class="col-span-2">
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-0.5">Estado</p>
+              <p class="text-sm font-medium text-gray-900">{{ store.detalle()!.domicilioVigente.estado }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CUENTA BANCARIA -->
+        <div class="md:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-center gap-2 text-[#2D452F] mb-4">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
+            <h3 class="text-sm font-bold text-gray-900">Cuenta Bancaria</h3>
+          </div>
+          
+          @if (store.detalle()!.cuentaBancariaVigente) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-1">Banco</p>
+              <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-gray-900 w-full text-sm font-medium">
+                <svg class="w-4 h-4 shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <span>{{ store.detalle()!.cuentaBancariaVigente!.banco }}</span>
+              </div>
+            </div>
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase mb-1">CLABE Interbancaria</p>
+              <div class="flex items-center gap-2 bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 text-gray-500 w-full text-sm font-mono tracking-widest">
+                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                <span>{{ store.detalle()!.cuentaBancariaVigente!.clabeEnmascarada }}</span>
+              </div>
+            </div>
+          </div>
+          } @else {
+          <div class="text-sm text-gray-500 italic px-3 py-2">
+            El cliente no ha registrado una cuenta bancaria.
+          </div>
+          }
+        </div>
+
+      </div>
+
+      <!-- BOTÓN VER CARTERA -->
+      <div class="flex justify-end mt-8">
+        <a [routerLink]="['/clientes', store.detalle()!.id, 'cartera']" class="px-6 py-3 bg-[#2D452F] hover:bg-[#1a2f20] text-white text-sm font-bold rounded-lg shadow-md transition-colors flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          Ver Cartera
+        </a>
+      </div>
+
+    </div>
+    }
+  </div>
+</div>

@@ -1,6 +1,6 @@
 import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { BranchRes } from '../../../features/organization/data-access/organization.dtos';
+import { Branch } from '../../../features/organization/data-access/organization.dtos';
 import { FormsModule } from '@angular/forms';
 
 @Component({
@@ -24,7 +24,7 @@ import { FormsModule } from '@angular/forms';
   styles: []
 })
 export class BranchSelectorComponent {
-  @Input() branches: BranchRes[] = [];
+  @Input() branches: Branch[] = [];
   @Input() selectedBranchId: string | null = null;
   @Output() selectionChange = new EventEmitter<string>();
 

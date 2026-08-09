@@ -1,28 +1,76 @@
 <div class="max-w-6xl mx-auto space-y-6">
-  <div class="flex items-center justify-between mb-6">
-    <h2 class="text-2xl font-extrabold text-[#386641] tracking-tight">Gestión de Usuarios</h2>
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-2xl font-extrabold text-[#386641] tracking-tight">Gestión de Usuarios y Roles</h2>
+    @if (canInviteUsers()) {
     <button class="bg-[#386641] hover:bg-[#6A994E] text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2" (click)="showInviteModal.set(true)">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
       </svg>
       Invitar Usuario
     </button>
+    }
   </div>
 
+  @if (pageError()) {
+    <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status">{{ pageError() }}</div>
+  }
+
+  <div class="border-b border-gray-200 mb-6">
+    <nav class="-mb-px flex gap-6" aria-label="Tabs">
+      <button 
+        (click)="activeTab.set('directory')"
+        [class.border-[#386641]]="activeTab() === 'directory'"
+        [class.text-[#386641]]="activeTab() === 'directory'"
+        [class.border-transparent]="activeTab() !== 'directory'"
+        [class.text-gray-500]="activeTab() !== 'directory'"
+        class="hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+        Directorio de Usuarios
+      </button>
+      @if (canViewRoles()) {
+      <button 
+        (click)="activeTab.set('roles')"
+        [class.border-[#386641]]="activeTab() === 'roles'"
+        [class.text-[#386641]]="activeTab() === 'roles'"
+        [class.border-transparent]="activeTab() !== 'roles'"
+        [class.text-gray-500]="activeTab() !== 'roles'"
+        class="hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
+        Resumen Organizacional (Roles)
+      </button>
+      }
+    </nav>
+  </div>
+
+  @if (activeTab() === 'directory') {
+
   <div class="flex gap-4 mb-6">
-    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event)" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+    <input type="search" [ngModel]="filterSearch()" (ngModelChange)="filterSearch.set($event); onFilterChange(true)" aria-label="Buscar usuarios" placeholder="Buscar por nombre o correo" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1">
+    
+    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
       <option value="">Todos los Estados</option>
-      <option value="active">Activo</option>
-      <option value="invited">Invitado</option>
-      <option value="blocked">Bloqueado</option>
+      <option value="ACTIVE">Activo</option>
+      <option value="INVITED">Invitado</option>
+      <option value="PENDING_ACTIVATION">Pendiente Activación</option>
+      <option value="BLOCKED">Bloqueado</option>
+      <option value="DISABLED">Deshabilitado</option>
     </select>
     
-    <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event)" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+    @if (canViewRoles()) {
+    <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
       <option value="">Todos los Roles</option>
-      <option value="admin">Administrador</option>
-      <option value="gerente">Gerente</option>
-      <option value="cajero">Cajero</option>
+      @for (role of availableRoles(); track role.id) {
+        <option [value]="role.id">{{ role.name }}</option>
+      }
     </select>
+    }
+
+    @if (availableBranches().length) {
+    <select [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+      <option value="">Todas las Sucursales</option>
+      @for (branch of availableBranches(); track branch.id) {
+        <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
+      }
+    </select>
+    }
   </div>
 
   <div class="overflow-x-auto bg-white shadow-sm rounded-xl border border-gray-200">
@@ -32,24 +80,40 @@
           <th scope="col" class="px-6 py-4">Nombre</th>
           <th scope="col" class="px-6 py-4">Email</th>
           <th scope="col" class="px-6 py-4">Rol</th>
+          <th scope="col" class="px-6 py-4">Sucursal</th>
           <th scope="col" class="px-6 py-4">Estado</th>
           <th scope="col" class="px-6 py-4">Acciones</th>
         </tr>
       </thead>
       <tbody>
-        @for (user of filteredUsers(); track user.id) {
+        @for (user of users(); track user.id) {
           <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
             <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.name }}</td>
             <td class="px-6 py-4">{{ user.email }}</td>
             <td class="px-6 py-4">
-              <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ user.roles[0] }}</span>
+              @if (user.role_scopes?.length) {
+                @for (scope of user.role_scopes; track $index) {
+                  <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full mr-1">{{ scope.role.name }}</span>
+                }
+              } @else {
+                <span class="text-gray-400 italic text-xs">Sin roles</span>
+              }
+            </td>
+            <td class="px-6 py-4">
+              @if (user.role_scopes?.length) {
+                @for (scope of user.role_scopes; track $index) {
+                  <span class="block text-xs text-gray-600">{{ scope.branch?.name || 'Alcance global' }}</span>
+                }
+              } @else {
+                <span class="text-xs italic text-gray-400">Sin sucursal</span>
+              }
             </td>
             <td class="px-6 py-4">
               <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                    [class.bg-green-100]="user.status === 'active'" [class.text-green-800]="user.status === 'active'"
-                    [class.bg-yellow-100]="user.status === 'invited'" [class.text-yellow-800]="user.status === 'invited'"
-                    [class.bg-red-100]="user.status === 'blocked'" [class.text-red-800]="user.status === 'blocked'">
-                {{ user.status }}
+                    [class.bg-green-100]="user.state === 'ACTIVE'" [class.text-green-800]="user.state === 'ACTIVE'"
+                    [class.bg-yellow-100]="user.state === 'INVITED' || user.state === 'PENDING_ACTIVATION'" [class.text-yellow-800]="user.state === 'INVITED' || user.state === 'PENDING_ACTIVATION'"
+                    [class.bg-red-100]="user.state === 'BLOCKED' || user.state === 'DISABLED'" [class.text-red-800]="user.state === 'BLOCKED' || user.state === 'DISABLED'">
+                {{ stateLabel(user.state) }}
               </span>
             </td>
             <td class="px-6 py-4 flex items-center gap-3">
@@ -60,49 +124,114 @@
                 </svg>
                 Ver
               </a>
-              <button class="text-[#386641] hover:text-[#6A994E] font-medium text-sm transition-colors disabled:opacity-50" 
-                      [disabled]="isActionLoading() === 'block-' + user.id"
-                      (click)="openBlockModal(user)">
-                @if (isActionLoading() === 'block-' + user.id) {
-                  Procesando...
-                } @else {
-                  {{ user.status === 'blocked' ? 'Desbloquear' : 'Bloquear' }}
-                }
-              </button>
+              @if (canManageUserState() && user.state !== 'DISABLED') {
+                <button class="text-[#386641] hover:text-[#6A994E] font-medium text-sm transition-colors disabled:opacity-50" 
+                        [disabled]="isActionLoading() === 'block-' + user.id"
+                        (click)="openBlockModal(user)">
+                  @if (isActionLoading() === 'block-' + user.id) {
+                    Procesando...
+                  } @else {
+                    {{ user.state === 'BLOCKED' ? 'Desbloquear' : 'Bloquear' }}
+                  }
+                </button>
+              }
             </td>
           </tr>
         } @empty {
           <tr>
-            <td colspan="5" class="px-6 py-8 text-center text-gray-500">No se encontraron usuarios.</td>
+            <td colspan="6" class="px-6 py-8 text-center text-gray-500">No se encontraron usuarios.</td>
           </tr>
         }
       </tbody>
     </table>
   </div>
+} @else if (activeTab() === 'roles') {
+  <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-8 text-center min-h-[40vh] flex flex-col justify-center items-center">
+    <div class="w-16 h-16 bg-[#386641]/10 text-[#386641] rounded-full flex items-center justify-center mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      </svg>
+    </div>
+    <h3 class="text-xl font-bold text-gray-800 mb-2">Resumen Organizacional</h3>
+    <p class="text-gray-500 max-w-md mx-auto mb-6">Esta vista proporciona un desglose de los roles y niveles de acceso a través de la organización. Actualmente está en desarrollo.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left w-full max-w-4xl mt-4">
+      @for (role of availableRoles(); track role.id) {
+        <div class="p-4 border border-gray-100 rounded-lg bg-gray-50">
+          <h4 class="font-bold text-gray-800 mb-1">{{ role.name }}</h4>
+          <div class="flex justify-between items-center text-sm mt-3">
+            <span class="text-gray-500">Nivel de Acceso:</span>
+            <span class="font-medium" [class.text-red-600]="role.is_system" [class.text-[#386641]]="!role.is_system">
+              {{ role.is_system ? 'Sistema' : 'Personalizado' }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+}
 </div>
 
 @if (showInviteModal()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="invite-user-title">
     <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
-      <h3 class="text-xl font-bold text-gray-900 mb-6">Invitar Nuevo Usuario</h3>
-      <div class="mb-6">
-        <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Email del usuario</label>
-        <input type="email" [ngModel]="inviteEmail()" (ngModelChange)="inviteEmail.set($event)" placeholder="correo@ejemplo.com"
+      <h3 id="invite-user-title" class="text-xl font-bold text-gray-900 mb-6">Invitar nuevo usuario</h3>
+
+      @if (inviteError()) {
+        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{{ inviteError() }}</div>
+      }
+      
+      <div class="mb-4">
+        <label for="invite-name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Nombre</label>
+        <input id="invite-name" type="text" [ngModel]="inviteName()" (ngModelChange)="inviteName.set($event)" maxlength="255" autocomplete="name" placeholder="Juan Pérez"
                class="block w-full px-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
+        @if (inviteValidationErrors()['name']; as errors) { <p class="mt-1 text-xs text-red-600">{{ errors[0] }}</p> }
       </div>
+      
+      <div class="mb-4">
+        <label for="invite-email" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Correo electrónico</label>
+        <input id="invite-email" type="email" [ngModel]="inviteEmail()" (ngModelChange)="inviteEmail.set($event)" autocomplete="email" maxlength="255" placeholder="correo@ejemplo.com"
+               class="block w-full px-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
+        @if (inviteValidationErrors()['email']; as errors) { <p class="mt-1 text-xs text-red-600">{{ errors[0] }}</p> }
+      </div>
+      
+      <div class="mb-6">
+        <label for="invite-role" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Rol a asignar</label>
+        <select id="invite-role" [ngModel]="inviteRoleId()" (ngModelChange)="onInviteRoleChange($event)"
+                class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
+          <option value="" disabled>Selecciona un rol...</option>
+          @for (role of availableRoles(); track role.id) {
+            <option [value]="role.id">{{ role.name }}</option>
+          }
+        </select>
+      </div>
+
+      @if (inviteRequiresBranch()) {
+        <div class="mb-6">
+          <label for="invite-branch" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Sucursal</label>
+          <select id="invite-branch" [ngModel]="inviteBranchId()" (ngModelChange)="inviteBranchId.set($event)"
+                  class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
+            <option value="" disabled>Selecciona una sucursal...</option>
+            @for (branch of availableBranches(); track branch.id) {
+              <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
+            }
+          </select>
+          @if (inviteValidationErrors()['branch_id']; as errors) { <p class="mt-1 text-xs text-red-600">{{ errors[0] }}</p> }
+        </div>
+      }
+
       <div class="flex justify-end gap-3">
-        <button class="bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors" (click)="showInviteModal.set(false)">Cancelar</button>
+        <button type="button" class="bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors" (click)="closeInviteModal()">Cancelar</button>
         <button class="bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/70 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2" 
-                [disabled]="!inviteEmail() || isActionLoading() === 'invite'" 
+                [disabled]="!inviteIsValid() || isActionLoading() === 'invite'"
                 (click)="inviteUser()">
           @if (isActionLoading() === 'invite') {
             <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
-            Enviando...
+            Creando...
           } @else {
-            Enviar Invitación
+            Invitar
           }
         </button>
       </div>
@@ -120,7 +249,7 @@
         </svg>
       </div>
       <h3 class="text-lg font-bold text-gray-900 text-center mb-2">
-        ¿{{ userToBlock()?.status === 'blocked' ? 'Desbloquear' : 'Bloquear' }} a {{ userToBlock()?.name }}?
+        ¿{{ userToBlock()?.state === 'BLOCKED' ? 'Desbloquear' : 'Bloquear' }} a {{ userToBlock()?.name }}?
       </h3>
       <p class="text-sm text-gray-500 text-center mb-6">
         Al bloquear un usuario, perderá el acceso al sistema inmediatamente.

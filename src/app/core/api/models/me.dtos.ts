@@ -1,16 +1,18 @@
+export interface Scope {
+  branch_id: string | null;
+  role_name: string;
+  role: string;
+  permissions: string[];
+}
+
 export interface MeRes {
   user: {
     id: string;
     name: string;
     email: string;
     state: string;
-    layoutPreference?: 'desktop' | 'tablet' | 'mobile'; // Keep for frontend state if needed
+    layoutPreference?: 'desktop' | 'tablet' | 'mobile';
   };
-  scopes: {
-    role: string;
-    role_name: string;
-    branch_id: string | null;
-    permissions: string[];
-  }[];
+  scopes: Scope[];
   effective_permissions: string[];
 }

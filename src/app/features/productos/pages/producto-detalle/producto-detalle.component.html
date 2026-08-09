@@ -1,0 +1,60 @@
+<div class="container mx-auto p-4 max-w-2xl">
+  <div class="mb-4">
+    <a routerLink="/productos" class="text-blue-500 hover:underline flex items-center">
+      &larr; Volver a Productos
+    </a>
+  </div>
+  <h2 class="text-2xl font-bold mb-4">{{ isNew() ? 'Nuevo Producto' : 'Detalle de Producto' }}</h2>
+  
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="nombre">
+        Nombre
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+             id="nombre" type="text" formControlName="nombre">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="descripcion">
+        Descripción
+      </label>
+      <textarea class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+                id="descripcion" formControlName="descripcion"></textarea>
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="sku">
+        SKU
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+             id="sku" type="text" formControlName="sku">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="categoriaId">
+        Categoría (ID temporal)
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+             id="categoriaId" type="text" formControlName="categoriaId">
+    </div>
+
+    <div class="mb-4">
+      <label class="block text-gray-700 text-sm font-bold mb-2" for="precioBase">
+        Precio Base
+      </label>
+      <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
+             id="precioBase" type="text" formControlName="precioBase" placeholder="Ej: 15.0">
+    </div>
+
+    @if (canWrite()) {
+      <div class="flex items-center justify-between mt-6">
+        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" 
+                type="submit" [disabled]="form.invalid || store.operacionEnProceso() !== null">
+          Guardar Cambios
+        </button>
+      </div>
+    }
+  </form>
+</div>

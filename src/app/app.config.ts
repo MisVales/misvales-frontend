@@ -1,20 +1,135 @@
-import { ApplicationConfig, provideZonelessChangeDetection, ErrorHandler, Injectable } from '@angular/core';
+import {
+  ApplicationConfig,
+  ErrorHandler,
+  Injectable,
+  importProvidersFrom,
+  isDevMode,
+  provideZonelessChangeDetection,
+} from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
 import { routes } from './app.routes';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { errorHandlingInterceptor } from '@core/interceptors/error-handling.interceptor';
 import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
+import {
+  LucideAngularModule,
+  Activity,
+  AlertTriangle,
+  ArrowLeftRight,
+  ArrowRightLeft,
+  Banknote,
+  Bell,
+  BookOpen,
+  Briefcase,
+  Building,
+  Building2,
+  Calculator,
+  CalendarClock,
+  CalendarRange,
+  ChartNoAxesCombined,
+  CheckCircle,
+  CheckCircle2,
+  CheckSquare,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Circle,
+  CircleArrowUp,
+  CircleCheck,
+  CirclePlus,
+  CircleUserRound,
+  ClipboardCheck,
+  ClipboardList,
+  Clock,
+  CreditCard,
+  Eye,
+  EyeOff,
+  File,
+  FileCheck,
+  FileDown,
+  FilePenLine,
+  FileStack,
+  FileTerminal,
+  FileText,
+  FolderArchive,
+  FolderKanban,
+  Gift,
+  GitMerge,
+  GitPullRequest,
+  Globe,
+  Grid3x3,
+  Hash,
+  History,
+  Inbox,
+  Info,
+  Key,
+  KeyRound,
+  Landmark,
+  Layers,
+  LayoutDashboard,
+  Link,
+  Loader2,
+  Lock,
+  LogOut,
+  MailPlus,
+  MapPin,
+  MessageSquare,
+  MessageSquareWarning,
+  Monitor,
+  MonitorSmartphone,
+  Move,
+  Network,
+  OctagonAlert,
+  Package,
+  PackageCheck,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Percent,
+  Plus,
+  ReceiptText,
+  RefreshCw,
+  Save,
+  ScanSearch,
+  ScrollText,
+  Search,
+  Settings,
+  Shield,
+  ShieldAlert,
+  ShieldCheck,
+  SlidersHorizontal,
+  Smartphone,
+  Split,
+  Star,
+  Store,
+  Tags,
+  Target,
+  Terminal,
+  Ticket,
+  TicketCheck,
+  TrendingUp,
+  Undo2,
+  User,
+  UserCheck,
+  UserCog,
+  UserRound,
+  UserRoundX,
+  Users,
+  UsersRound,
+  Wallet,
+  Workflow,
+  X,
+} from 'lucide-angular';
 
 @Injectable()
 export class GlobalErrorHandler implements ErrorHandler {
-  handleError(error: any): void {
-    console.error('GLOBAL ERROR:', error);
-    document.body.innerHTML = `<div style="color:red; padding:20px; font-family:monospace; background:white; position:fixed; top:0; left:0; right:0; z-index:9999; word-break: break-all;">
-      <h2>Application Error</h2>
-      <pre>${error.message || error.toString()}</pre>
-      <pre>${error.stack || ''}</pre>
-    </div>`;
+  handleError(error: unknown): void {
+    if (isDevMode()) {
+      console.error('GLOBAL ERROR:', error);
+      return;
+    }
+
+    console.error('Ocurrió un error inesperado en la aplicación.');
   }
 }
 
@@ -24,13 +139,30 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withFetch(),
-      withXsrfConfiguration({ cookieName: 'XSRF-TOKEN', headerName: 'X-XSRF-TOKEN' }),
-      withInterceptors([
-        authInterceptor,
-        errorHandlingInterceptor
-      ])
+      withInterceptors([authInterceptor, errorHandlingInterceptor]),
+    ),
+    importProvidersFrom(
+      LucideAngularModule.pick({
+        Activity, AlertTriangle, ArrowLeftRight, ArrowRightLeft, Banknote, Bell,
+        BookOpen, Briefcase, Building, Building2, Calculator, CalendarClock,
+        CalendarRange, ChartNoAxesCombined, CheckCircle, CheckCircle2,
+        CheckSquare, ChevronDown, ChevronLeft, ChevronRight, Circle,
+        CircleArrowUp, CircleCheck, CirclePlus, CircleUserRound, ClipboardCheck,
+        ClipboardList, Clock, CreditCard, Eye, EyeOff, File, FileCheck, FileDown,
+        FilePenLine, FileStack, FileTerminal, FileText, FolderArchive,
+        FolderKanban, Gift, GitMerge, GitPullRequest, Globe, Grid3x3, Hash,
+        History, Inbox, Info, Key, KeyRound, Landmark, Layers, LayoutDashboard,
+        Link, Loader2, Lock, LogOut, MailPlus, MapPin, MessageSquare,
+        MessageSquareWarning, Monitor, MonitorSmartphone, Move, Network,
+        OctagonAlert, Package, PackageCheck, PanelLeftClose, PanelLeftOpen,
+        Percent, Plus, ReceiptText, RefreshCw, Save, ScanSearch, ScrollText,
+        Search, Settings, Shield, ShieldAlert, ShieldCheck, SlidersHorizontal,
+        Smartphone, Split, Star, Store, Tags, Target, Terminal, Ticket,
+        TicketCheck, TrendingUp, Undo2, User, UserCheck, UserCog, UserRound,
+        UserRoundX, Users, UsersRound, Wallet, Workflow, X,
+      }),
     ),
     { provide: API_CONFIG, useValue: defaultApiConfig },
-    { provide: ErrorHandler, useClass: GlobalErrorHandler }
-  ]
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
+  ],
 };

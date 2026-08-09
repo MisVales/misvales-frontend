@@ -1,148 +1,66 @@
-import { TestBed } from '@angular/core/testing';
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { OrganizationApiService } from './organization-api.service';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { firstValueFrom } from 'rxjs';
 import { API_CONFIG } from '@core/api/api.config';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { BranchRes } from './organization.dtos';
+import { Branch } from './organization.dtos';
+import { OrganizationApiService } from './organization-api.service';
 
 describe('OrganizationApiService', () => {
   let service: OrganizationApiService;
-  let httpMock: HttpTestingController;
-
-  const mockApiConfig = {
-    baseUrl: 'http://test-api.com',
-    clientId: 'test-client'
-  };
-
-  const mockBranch: BranchRes = {
-    id: '1',
-    code: 'SUC-001',
-    name: 'Sede Principal',
-    isHeadquarters: true,
-    isActive: true,
-    activeStaffCount: 45,
-    lockVersion: 1,
-    createdAt: '2024-01-01',
-    updatedAt: '2024-01-01'
+  let http: HttpTestingController;
+  const branch: Branch = {
+    id: '1', code: 'SUC-001', name: 'Sede Principal', is_headquarters: true,
+    address: 'Blvd. Independencia 100, Torreón, Coahuila, 27000',
+    status: 'ACTIVE', lock_version: 1, created_at: '2026-01-01', updated_at: '2026-01-01',
   };
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        OrganizationApiService,
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: API_CONFIG, useValue: mockApiConfig }
-      ]
+        OrganizationApiService,
+        { provide: API_CONFIG, useValue: { baseUrl: '/api/v1' } },
+      ],
     });
-
     service = TestBed.inject(OrganizationApiService);
-    httpMock = TestBed.inject(HttpTestingController);
+    http = TestBed.inject(HttpTestingController);
   });
 
-  afterEach(() => {
-    httpMock.verify();
+  afterEach(() => http.verify());
+
+  it('lista las sucursales autorizadas por el backend', async () => {
+    const result = firstValueFrom(service.getBranches());
+    const request = http.expectOne('/api/v1/branches');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: [branch], meta: { current_page: 1, last_page: 1, per_page: 15, total: 1 } });
+    expect((await result).data).toEqual([branch]);
   });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
+  it('crea una sucursal con el contrato vigente', async () => {
+    const payload = { name: 'Sede Principal', address: 'Blvd. Independencia 100, Torreón, Coahuila, 27000' };
+    const result = firstValueFrom(service.createBranch(payload));
+    const request = http.expectOne('/api/v1/branches');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual(payload);
+    request.flush({ data: branch });
+    expect(await result).toEqual(branch);
   });
 
-  it('should get paginated branches', async () => {
-    const mockResponse = { data: [mockBranch], total: 1, page: 1, perPage: 10 };
-    
-    const promise = new Promise(resolve => {
-      service.getBranches(1, 10, 'Sede', 'active').subscribe(resolve);
-    });
-
-    const req = httpMock.expectOne('http://test-api.com/organization/branches?page=1&perPage=10&search=Sede&status=active');
-    expect(req.request.method).toBe('GET');
-    req.flush(mockResponse);
-
-    const res = await promise;
-    expect(res).toEqual(mockResponse);
+  it('actualiza nombre y dirección de una sucursal', async () => {
+    service.updateBranch('1', { name: 'Sede Norte', address: branch.address!, lock_version: 1 }).subscribe();
+    const request = http.expectOne('/api/v1/branches/1');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.headers.get('If-Match')).toBe('"1"');
+    request.flush({ data: { ...branch, name: 'Sede Norte', lock_version: 2 } });
   });
 
-  it('should create a branch', async () => {
-    const reqData = { code: 'SUC-001', name: 'Sede Principal', isHeadquarters: true };
-    
-    const promise = new Promise(resolve => {
-      service.createBranch(reqData).subscribe(resolve);
-    });
-
-    const req = httpMock.expectOne('http://test-api.com/organization/branches');
-    expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual(reqData);
-    req.flush(mockBranch);
-
-    const res = await promise;
-    expect(res).toEqual(mockBranch);
-  });
-
-  it('should update a branch and send If-Match header', async () => {
-    const reqData = { name: 'Sede Principal 2', isHeadquarters: true };
-    
-    const promise = new Promise(resolve => {
-      service.updateBranch('1', reqData, 2).subscribe(resolve);
-    });
-
-    const req = httpMock.expectOne('http://test-api.com/organization/branches/1');
-    expect(req.request.method).toBe('PUT');
-    expect(req.request.headers.get('If-Match')).toBe('2');
-    expect(req.request.body).toEqual(reqData);
-    req.flush({ ...mockBranch, name: 'Sede Principal 2', lockVersion: 3 });
-
-    const res: any = await promise;
-    expect(res.name).toBe('Sede Principal 2');
-    expect(res.lockVersion).toBe(3);
-  });
-
-  it('should toggle branch status and send If-Match header', async () => {
-    const promise = new Promise(resolve => {
-      service.toggleBranchStatus('1', false, 1).subscribe(resolve);
-    });
-
-    const req = httpMock.expectOne('http://test-api.com/organization/branches/1/status');
-    expect(req.request.method).toBe('PATCH');
-    expect(req.request.headers.get('If-Match')).toBe('1');
-    expect(req.request.body).toEqual({ isActive: false });
-    req.flush({ ...mockBranch, isActive: false, lockVersion: 2 });
-
-    const res: any = await promise;
-    expect(res.isActive).toBe(false);
-    expect(res.lockVersion).toBe(2);
-  });
-
-  // Tests for Mock Staff Endpoints
-  it('should get paginated staff', async () => {
-    const promise = new Promise(resolve => {
-      service.getStaff(1, 10).subscribe(resolve);
-    });
-    
-    // We skip HTTP mocking since it's a mocked endpoint
-    const res: any = await promise;
-    expect(res.data.length).toBeGreaterThan(0);
-    expect(res.total).toBe(3);
-  });
-
-  it('should get staff by id', async () => {
-    const promise = new Promise(resolve => {
-      service.getStaffById('1').subscribe(resolve);
-    });
-    
-    const res: any = await promise;
-    expect(res.id).toBe('1');
-    expect(res.name).toBe('Gerente Norte');
-  });
-
-  it('should assign staff', async () => {
-    const req = { userId: '101', role: 'admin', branchId: null, scopeType: 'global', startDate: '2026-08-01', reason: 'test' };
-    const promise = new Promise(resolve => {
-      service.assignStaff('1', req).subscribe(resolve);
-    });
-    
-    const res: any = await promise;
-    expect(res.success).toBe(true);
+  it('cambia el estado de una sucursal', async () => {
+    service.changeBranchStatus(branch, false).subscribe();
+    const request = http.expectOne('/api/v1/branches/1/deactivate');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.headers.get('If-Match')).toBe('"1"');
+    request.flush({ data: { ...branch, status: 'INACTIVE', lock_version: 2 } });
   });
 });

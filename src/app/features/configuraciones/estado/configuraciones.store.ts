@@ -1,0 +1,167 @@
+import { inject } from '@angular/core';
+import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
+import { firstValueFrom } from 'rxjs';
+import { ConfiguracionesService } from '../data-access/configuraciones.service';
+import { ConfiguracionesMapper } from '../data-access/configuraciones.mapper';
+import { 
+  ConfiguracionDefinicion, 
+  ConfiguracionVersion, 
+  CreateConfigurationVersionRequestDto, 
+  UpdateConfigurationVersionRequestDto 
+} from '../data-access/configuraciones.dtos';
+
+export interface ConfiguracionesFiltros {
+  grupo?: string;
+  estado?: string;
+}
+
+export interface ConfiguracionesState {
+  definiciones: ConfiguracionDefinicion[];
+  definicionSeleccionada: ConfiguracionDefinicion | null;
+  versiones: ConfiguracionVersion[];
+  filtros: ConfiguracionesFiltros;
+  paginacion: {
+    pagina: number;
+    total: number;
+    porPagina: number;
+  };
+  estadoCarga: boolean;
+  error: string | null;
+  operacionEnProceso: string | null;
+}
+
+const initialState: ConfiguracionesState = {
+  definiciones: [],
+  definicionSeleccionada: null,
+  versiones: [],
+  filtros: {},
+  paginacion: { pagina: 1, total: 0, porPagina: 10 },
+  estadoCarga: false,
+  error: null,
+  operacionEnProceso: null
+};
+
+export const ConfiguracionesStore = signalStore(
+  { providedIn: 'root' },
+  withState(initialState),
+  withMethods((store) => {
+    const service = inject(ConfiguracionesService);
+
+    return {
+      async listar(pagina: number = 1, porPagina: number = 10, grupo?: string, estado?: string) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'listar' });
+        try {
+          const res = await firstValueFrom(service.listar(pagina, porPagina));
+          patchState(store, {
+            definiciones: res.data.map(ConfiguracionesMapper.fromDefinitionDto),
+            paginacion: { pagina: res.meta.current_page, total: res.meta.total, porPagina },
+            filtros: { grupo, estado },
+            estadoCarga: false,
+            operacionEnProceso: null
+          });
+        } catch (err: any) {
+          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al listar configuraciones', operacionEnProceso: null });
+        }
+      },
+      
+      async consultarDefinicion(clave: string) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'consultarDefinicion' });
+        try {
+          const res = await firstValueFrom(service.consultarDefinicion(clave));
+          patchState(store, { definicionSeleccionada: ConfiguracionesMapper.fromDefinitionDto(res), estadoCarga: false, operacionEnProceso: null });
+        } catch (err: any) {
+          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al consultar definición', operacionEnProceso: null });
+        }
+      },
+
+      async consultarVersiones(clave: string) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'consultarVersiones' });
+        try {
+          const res = await firstValueFrom(service.consultarVersiones(clave));
+          patchState(store, { 
+            versiones: res.data.map(ConfiguracionesMapper.fromVersionDto), 
+            estadoCarga: false, 
+            operacionEnProceso: null 
+          });
+        } catch (err: any) {
+          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al consultar versiones', operacionEnProceso: null });
+        }
+      },
+
+      async crearVersion(clave: string, datos: CreateConfigurationVersionRequestDto) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'crearVersion' });
+        try {
+          await firstValueFrom(service.crearVersion(clave, datos));
+          // Recargar versiones
+          this.consultarVersiones(clave);
+          patchState(store, { operacionEnProceso: 'crearVersionSuccess' });
+        } catch (err: any) {
+          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al crear versión', operacionEnProceso: null });
+        }
+      },
+
+      async modificarVersion(idVersion: string, datos: UpdateConfigurationVersionRequestDto) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'modificarVersion' });
+        try {
+          await firstValueFrom(service.modificarVersion(idVersion, datos));
+          if (store.definicionSeleccionada()) {
+            this.consultarVersiones(store.definicionSeleccionada()!.clave);
+          }
+          patchState(store, { operacionEnProceso: 'modificarVersionSuccess' });
+        } catch (err: any) {
+          this.manejarErrorConcurrencia(err, 'Error al modificar versión');
+        }
+      },
+
+      async publicarVersion(idVersion: string, versionRegistro: number, motivo: string) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'publicarVersion' });
+        try {
+          await firstValueFrom(service.publicarVersion(idVersion, versionRegistro, motivo));
+          if (store.definicionSeleccionada()) {
+            this.consultarVersiones(store.definicionSeleccionada()!.clave);
+          }
+          patchState(store, { operacionEnProceso: 'publicarVersionSuccess' });
+        } catch (err: any) {
+          this.manejarErrorConcurrencia(err, 'Error al publicar versión');
+        }
+      },
+
+      async desactivarVersion(idVersion: string, versionRegistro: number, motivo: string) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'desactivarVersion' });
+        try {
+          await firstValueFrom(service.desactivarVersion(idVersion, versionRegistro, motivo));
+          if (store.definicionSeleccionada()) {
+            this.consultarVersiones(store.definicionSeleccionada()!.clave);
+          }
+          patchState(store, { operacionEnProceso: 'desactivarVersionSuccess' });
+        } catch (err: any) {
+          this.manejarErrorConcurrencia(err, 'Error al desactivar versión');
+        }
+      },
+
+      manejarErrorConcurrencia(err: any, mensajePorDefecto: string) {
+        if (err?.status === 409 || err?.error?.code === 'RESOURCE_VERSION_CONFLICT') {
+          // Forzar la recarga de los datos de la vista actual si hubo un conflicto de concurrencia
+          if (store.definicionSeleccionada()) {
+            this.consultarVersiones(store.definicionSeleccionada()!.clave);
+          }
+          patchState(store, { 
+            estadoCarga: false, 
+            error: 'Conflicto de concurrencia: El registro ha sido modificado por otro usuario. Se ha recargado la versión más reciente.', 
+            operacionEnProceso: null 
+          });
+        } else {
+          patchState(store, { estadoCarga: false, error: err?.error?.message || mensajePorDefecto, operacionEnProceso: null });
+        }
+      },
+
+      limpiarError() {
+        patchState(store, { error: null });
+      },
+
+      limpiarStore() {
+        patchState(store, initialState);
+      }
+    };
+  })
+);

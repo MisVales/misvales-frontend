@@ -1,0 +1,172 @@
+<!-- ═══════════════════════════════════════════════════════════
+     SIDEBAR — MisVales
+     ═══════════════════════════════════════════════════════════ -->
+
+<nav
+  class="sidebar"
+  [class.sidebar--collapsed]="isCollapsed()"
+  role="navigation"
+  aria-label="Navegación principal"
+>
+  <!-- ─── Encabezado ────────────────────────────────────── -->
+  <div class="sidebar__header">
+    <div class="sidebar__brand">
+      <div class="sidebar__logo">MV</div>
+      @if (!isCollapsed()) {
+        <div class="sidebar__brand-text">
+          <span class="sidebar__brand-name">MisVales</span>
+          <span class="sidebar__brand-role">{{ userName() }}</span>
+        </div>
+      }
+    </div>
+    <button
+      class="sidebar__collapse-btn"
+      (click)="toggleCollapse()"
+      [attr.aria-label]="isCollapsed() ? 'Expandir menú' : 'Colapsar menú'"
+    >
+      <lucide-icon [name]="isCollapsed() ? 'panel-left-open' : 'panel-left-close'" class="sidebar__collapse-icon" [strokeWidth]="1.5"></lucide-icon>
+    </button>
+  </div>
+
+  <!-- ─── Menú central (scroll) ─────────────────────────── -->
+  <div class="sidebar__content">
+    @for (group of filteredNavGroups(); track group.heading) {
+      <div class="sidebar__group">
+        @if (group.heading && !isCollapsed()) {
+          <span class="sidebar__group-heading">{{ group.heading }}</span>
+        }
+
+        @for (item of group.items; track item.id) {
+          <ng-container
+            *ngTemplateOutlet="navItemTpl; context: { $implicit: item, level: 0, parentId: null }"
+          ></ng-container>
+        }
+      </div>
+    }
+  </div>
+
+  <!-- ─── Sección inferior fija ─────────────────────────── -->
+  <div class="sidebar__footer">
+    @for (item of filteredBottomItems(); track item.id) {
+      <ng-container
+        *ngTemplateOutlet="navItemTpl; context: { $implicit: item, level: 0, parentId: null }"
+      ></ng-container>
+    }
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════
+     TEMPLATE RECURSIVO — NavItem
+     ═══════════════════════════════════════════════════════════ -->
+
+<ng-template #navItemTpl let-item let-level="level" let-parentId="parentId">
+  @if (item.children && item.children.length > 0) {
+    <!-- ── Categoría con hijos (acordeón) ────────────────── -->
+    <div class="nav-category" [class.nav-category--open]="isGroupOpen(item.id, parentId)" [class.nav-category--has-active]="hasActiveDescendant(item)">
+      <button
+        class="nav-item nav-item--category"
+        [class.nav-item--open]="isGroupOpen(item.id, parentId)"
+        [class.nav-item--has-active]="hasActiveDescendant(item)"
+        [style.padding-left.px]="isCollapsed() ? 12 : (level * 16 + 12)"
+        (click)="toggleGroup(item, parentId ?? undefined)"
+        (keydown.enter)="toggleGroup(item, parentId ?? undefined)"
+        (keydown.space)="toggleGroup(item, parentId ?? undefined); $event.preventDefault()"
+        [attr.aria-expanded]="isGroupOpen(item.id, parentId)"
+        [attr.aria-controls]="'submenu-' + item.id"
+        type="button"
+      >
+        <div class="nav-item__left">
+          <lucide-icon
+            [name]="item.icon"
+            class="nav-item__icon"
+            [class.nav-item__icon--active]="hasActiveDescendant(item)"
+            [strokeWidth]="1.5"
+          ></lucide-icon>
+          @if (!isCollapsed()) {
+            <span class="nav-item__label">{{ item.title }}</span>
+          }
+        </div>
+        @if (!isCollapsed()) {
+          <lucide-icon
+            name="chevron-right"
+            class="nav-item__chevron"
+            [class.nav-item__chevron--open]="isGroupOpen(item.id, parentId)"
+            [strokeWidth]="2"
+          ></lucide-icon>
+        }
+      </button>
+
+      <!-- Hijos -->
+      @if (!isCollapsed()) {
+        <div
+          [id]="'submenu-' + item.id"
+          class="nav-submenu"
+          [class.nav-submenu--open]="isGroupOpen(item.id, parentId)"
+          role="group"
+        >
+          <div class="nav-submenu__inner">
+            @for (child of item.children; track child.id) {
+              <ng-container
+                *ngTemplateOutlet="navItemTpl; context: { $implicit: child, level: level + 1, parentId: item.id }"
+              ></ng-container>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  } @else if (item.action) {
+    <!-- ── Acción (Buscar / Logout) ──────────────────────── -->
+    <button
+      class="nav-item nav-item--action"
+      [class.nav-item--logout]="item.action === 'logout'"
+      [style.padding-left.px]="isCollapsed() ? 12 : (level * 16 + 12)"
+      (click)="onItemClick(item)"
+      type="button"
+      [attr.title]="isCollapsed() ? item.title : null"
+    >
+      <div class="nav-item__left">
+        <lucide-icon [name]="item.icon" class="nav-item__icon" [strokeWidth]="1.5"></lucide-icon>
+        @if (!isCollapsed()) {
+          <span class="nav-item__label">{{ item.title }}</span>
+        }
+      </div>
+      @if (!isCollapsed() && item.shortcut) {
+        <kbd class="nav-item__shortcut">{{ item.shortcut }}</kbd>
+      }
+    </button>
+  } @else if (item.route) {
+    <!-- ── Página navegable ──────────────────────────────── -->
+    <a
+      class="nav-item nav-item--page"
+      [class.nav-item--active]="isActive(item)"
+      [routerLink]="item.route"
+      [style.padding-left.px]="isCollapsed() ? 12 : (level * 16 + 12)"
+      [attr.aria-current]="isActive(item) ? 'page' : null"
+      [attr.title]="isCollapsed() ? item.title : null"
+    >
+      <div class="nav-item__left">
+        @if (level > 0 && !isCollapsed()) {
+          <span class="nav-item__dot" [class.nav-item__dot--active]="isActive(item)"></span>
+        } @else {
+          <lucide-icon
+            [name]="item.icon"
+            class="nav-item__icon"
+            [class.nav-item__icon--active]="isActive(item)"
+            [strokeWidth]="1.5"
+          ></lucide-icon>
+        }
+        @if (!isCollapsed()) {
+          <span class="nav-item__label">{{ item.title }}</span>
+        }
+      </div>
+      @if (!isCollapsed() && item.badge) {
+        <span class="nav-item__badge">{{ item.badge }}</span>
+      }
+
+      <!-- Indicador lateral de página activa -->
+      @if (isActive(item)) {
+        <span class="nav-item__active-indicator"></span>
+      }
+    </a>
+  }
+</ng-template>

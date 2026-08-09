@@ -1,13 +1,11 @@
-import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { inject, Injectable } from '@angular/core';
+import { Observable, tap } from 'rxjs';
 import { API_CONFIG } from '../api/api.config';
 import { MeRes } from '../api/models/me.dtos';
-import { Observable, tap } from 'rxjs';
 import { SessionStore } from '../session/session.store';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class MeService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
@@ -15,18 +13,25 @@ export class MeService {
 
   fetchMe(): Observable<MeRes> {
     return this.http.get<MeRes>(`${this.config.baseUrl}/me`).pipe(
-      tap((res) => {
-        const roles = res.scopes.map(s => s.role);
-        const activeBranch = res.scopes.find(s => s.branch_id)?.branch_id || null;
-        
+      tap((response) => {
+        const roles = Array.from(new Set(response.scopes.map((scope) => scope.role)));
+        const scopes = response.scopes.map((scope) => ({
+          role: scope.role,
+          roleName: scope.role_name,
+          branchId: scope.branch_id,
+          permissions: scope.permissions,
+        }));
+        const activeBranch = scopes.find((scope) => scope.branchId)?.branchId ?? null;
+
         this.sessionStore.setSession(
-          { id: res.user.id, name: res.user.name, email: res.user.email },
+          response.user,
           roles,
-          res.effective_permissions,
+          response.effective_permissions,
           activeBranch,
-          res.user.layoutPreference || 'desktop'
+          response.user.layoutPreference,
+          scopes,
         );
-      })
+      }),
     );
   }
 }

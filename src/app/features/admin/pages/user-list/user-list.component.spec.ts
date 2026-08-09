@@ -1,43 +1,54 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { UserListComponent } from './user-list.component';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
+import { SessionStore } from '../../../../core/session/session.store';
+import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
+import { RoleService } from '../../data-access/role.service';
+import { UserService } from '../../data-access/user.service';
+import { UserListComponent } from './user-list.component';
 
 describe('UserListComponent', () => {
   let component: UserListComponent;
   let fixture: ComponentFixture<UserListComponent>;
+  const userService = {
+    getUsers: () => of({ data: [], current_page: 1, total: 0 }),
+    createAccount: vi.fn(),
+    blockUser: vi.fn(),
+    unblockUser: vi.fn(),
+  };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [UserListComponent],
-      providers: [provideRouter([])]
-    })
-    .compileComponents();
-    
+      providers: [
+        provideRouter([]),
+        { provide: UserService, useValue: userService },
+        { provide: RoleService, useValue: { getRoles: () => of([]) } },
+        { provide: OrganizationApiService, useValue: { getBranches: () => of([]) } },
+        { provide: SessionStore, useValue: { permissions: () => ['users.view'] } },
+      ],
+    }).compileComponents();
+
     fixture = TestBed.createComponent(UserListComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
+    await fixture.whenStable();
   });
 
-  it('should create', () => {
+  it('se crea y consulta el directorio', () => {
     expect(component).toBeTruthy();
+    expect(component.totalUsers()).toBe(0);
   });
 
-  it('should filter users by status', () => {
-    component.filterStatus.set('blocked');
-    expect(component.filteredUsers().every(u => u.status === 'blocked')).toBe(true);
-  });
+  it('rechaza una invitación con correo inválido', async () => {
+    component.inviteName.set('Usuario');
+    component.inviteEmail.set('correo-invalido');
+    component.inviteRoleId.set('role-id');
 
-  it('should show loading state when inviting user', () => {
-    component.inviteEmail.set('test@test.com');
-    component.inviteUser();
-    expect(component.isActionLoading()).toBe('invite');
-  });
+    await component.inviteUser();
 
-  it('should toggle user block status', () => {
-    const user = component.users()[0];
-    component.openBlockModal(user);
-    component.confirmBlock();
-    expect(component.isActionLoading()).toBe(`block-${user.id}`);
+    expect(component.inviteError()).toContain('datos válidos');
+    expect(userService.createAccount).not.toHaveBeenCalled();
   });
 });

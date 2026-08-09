@@ -1,125 +1,124 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_CONFIG } from '@core/api/api.config';
-import { Observable } from 'rxjs';
-import { BranchRes, CreateBranchReq, PaginatedRes, UpdateBranchReq } from './organization.dtos';
+import { map, Observable } from 'rxjs';
+import {
+  AssignCoordinatorDistributorPayload,
+  AssignPersonnelPayload,
+  Branch,
+  CoordinatorDistributorAssignment,
+  CreateBranchPayload,
+  DataRes,
+  DistributorCandidate,
+  PaginatedRes,
+  PersonnelAssignment,
+  UpdateBranchPayload,
+  UserAssignment,
+} from './organization.dtos';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class OrganizationApiService {
-  private http = inject(HttpClient);
-  private apiConfig = inject(API_CONFIG);
+  private readonly http = inject(HttpClient);
+  private readonly apiConfig = inject(API_CONFIG);
+  private readonly baseUrl = this.apiConfig.baseUrl;
 
-  private get baseUrl() {
-    return `${this.apiConfig.baseUrl}/organization`;
+  getBranches(filters: { page?: number; per_page?: number; search?: string; status?: string } = {}): Observable<PaginatedRes<Branch>> {
+    let params = new HttpParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') params = params.set(key, String(value));
+    });
+    return this.http.get<PaginatedRes<Branch>>(`${this.baseUrl}/branches`, { params });
   }
 
-  getBranches(page: number = 1, perPage: number = 10, search?: string, status?: string): Observable<PaginatedRes<BranchRes>> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('perPage', perPage.toString());
-      
-    if (search) params = params.set('search', search);
-    if (status) params = params.set('status', status);
-
-    return this.http.get<PaginatedRes<BranchRes>>(`${this.baseUrl}/branches`, { params });
+  getBranch(id: string): Observable<Branch> {
+    return this.http.get<DataRes<Branch>>(`${this.baseUrl}/branches/${id}`).pipe(map((response) => response.data));
   }
 
-  getBranchById(id: string): Observable<BranchRes> {
-    return this.http.get<BranchRes>(`${this.baseUrl}/branches/${id}`);
+  createBranch(data: CreateBranchPayload): Observable<Branch> {
+    return this.http.post<DataRes<Branch>>(`${this.baseUrl}/branches`, data).pipe(map((response) => response.data));
   }
 
-  createBranch(data: CreateBranchReq): Observable<BranchRes> {
-    return this.http.post<BranchRes>(`${this.baseUrl}/branches`, data);
+  updateBranch(id: string, data: UpdateBranchPayload): Observable<Branch> {
+    const headers = new HttpHeaders().set('If-Match', `"${data.lock_version}"`);
+    return this.http.patch<DataRes<Branch>>(`${this.baseUrl}/branches/${id}`, data, { headers })
+      .pipe(map((response) => response.data));
   }
 
-  updateBranch(id: string, data: UpdateBranchReq, lockVersion: number): Observable<BranchRes> {
-    const headers = new HttpHeaders().set('If-Match', lockVersion.toString());
-    return this.http.put<BranchRes>(`${this.baseUrl}/branches/${id}`, data, { headers });
+  changeBranchStatus(branch: Branch, active: boolean): Observable<Branch> {
+    const action = active ? 'activate' : 'deactivate';
+    const headers = new HttpHeaders().set('If-Match', `"${branch.lock_version}"`);
+    return this.http.post<DataRes<Branch>>(`${this.baseUrl}/branches/${branch.id}/${action}`, {}, { headers })
+      .pipe(map((response) => response.data));
   }
 
-  toggleBranchStatus(id: string, isActive: boolean, lockVersion: number): Observable<BranchRes> {
-    const headers = new HttpHeaders().set('If-Match', lockVersion.toString());
-    return this.http.patch<BranchRes>(`${this.baseUrl}/branches/${id}/status`, { isActive }, { headers });
-  }
-
-  // --- STAFF ENDPOINTS ---
-
-  getStaff(page: number = 1, perPage: number = 10, search?: string, status?: string, role?: string, branchId?: string): Observable<PaginatedRes<any>> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('perPage', perPage.toString());
-      
-    if (search) params = params.set('search', search);
-    if (status) params = params.set('status', status);
-    if (role) params = params.set('role', role);
-    if (branchId) params = params.set('branchId', branchId);
-
-    // MOCK RESPONSE PARA LISTADO
-    return new Observable(observer => {
-      setTimeout(() => {
-        observer.next({
-          data: [
-            { id: '1', userId: '101', name: 'Administrador Demo', email: 'admin@demo.com', branch: null, effectiveRole: 'admin', assignmentStatus: 'active', assignments: [] },
-            { id: '2', userId: '102', name: 'Gerente Norte', email: 'gerente@demo.com', branch: { id: 'b1', name: 'Sucursal Norte' }, effectiveRole: 'gerente', assignmentStatus: 'active', assignments: [] },
-            { id: '3', userId: '103', name: 'Cajero Centro', email: 'cajero@demo.com', branch: { id: 'b2', name: 'Sucursal Centro' }, effectiveRole: 'cajero', assignmentStatus: 'active', assignments: [] }
-          ],
-          total: 3,
-          page,
-          perPage
-        });
-        observer.complete();
-      }, 500);
+  getPersonnel(filters: {
+    page?: number;
+    per_page?: number;
+    branch_id?: string;
+    role_id?: string;
+    user_state?: string;
+    assignment_status?: string;
+  } = {}): Observable<PaginatedRes<PersonnelAssignment>> {
+    return this.http.get<PaginatedRes<PersonnelAssignment>>(`${this.baseUrl}/personnel`, {
+      params: this.params(filters),
     });
   }
 
-  getStaffById(id: string): Observable<any> {
-    // MOCK RESPONSE PARA DETALLE
-    return new Observable(observer => {
-      setTimeout(() => {
-        observer.next({
-          id,
-          userId: '102',
-          name: 'Gerente Norte',
-          email: 'gerente@demo.com',
-          branch: { id: 'b1', name: 'Sucursal Norte' },
-          effectiveRole: 'gerente',
-          assignmentStatus: 'active',
-          assignments: [
-            {
-              id: 'a1',
-              role: 'gerente',
-              branch: { id: 'b1', name: 'Sucursal Norte' },
-              scopeType: 'branch',
-              startDate: '2026-08-01T00:00:00Z',
-              reason: 'Reasignación por apertura de sucursal',
-              assignedBy: 'Administrador Demo'
-            },
-            {
-              id: 'a2',
-              role: 'cajero',
-              branch: { id: 'b2', name: 'Sucursal Centro' },
-              scopeType: 'branch',
-              startDate: '2025-01-15T00:00:00Z',
-              endDate: '2026-08-01T00:00:00Z',
-              reason: 'Ingreso',
-              assignedBy: 'Administrador Demo'
-            }
-          ]
-        });
-        observer.complete();
-      }, 500);
+  getBranchPersonnel(branchId: string, page = 1, perPage = 100): Observable<PaginatedRes<PersonnelAssignment>> {
+    return this.http.get<PaginatedRes<PersonnelAssignment>>(`${this.baseUrl}/branches/${branchId}/personnel`, {
+      params: this.params({ page, per_page: perPage }),
     });
   }
 
-  assignStaff(userId: string, data: any): Observable<any> {
-    // MOCK RESPONSE PARA ASIGNAR
-    return new Observable(observer => {
-      setTimeout(() => {
-        observer.next({ success: true, message: 'Asignación actualizada correctamente' });
-        observer.complete();
-      }, 800);
+  getBranchAssignments(branchId: string, includeHistory = true): Observable<PaginatedRes<PersonnelAssignment>> {
+    return this.http.get<PaginatedRes<PersonnelAssignment>>(`${this.baseUrl}/branches/${branchId}/assignments`, {
+      params: this.params({ include_history: includeHistory, per_page: 100 }),
     });
+  }
+
+  getUserAssignments(userId: string, includeHistory = false): Observable<UserAssignment[]> {
+    return this.http.get<UserAssignment[]>(`${this.baseUrl}/users/${userId}/assignments`, {
+      params: this.params({ include_history: includeHistory }),
+    });
+  }
+
+  assignPersonnel(userId: string, data: AssignPersonnelPayload): Observable<UserAssignment> {
+    return this.http.post<{ assignment: UserAssignment }>(`${this.baseUrl}/users/${userId}/assignments`, data)
+      .pipe(map((response) => response.assignment));
+  }
+
+  endPersonnelAssignment(userId: string, assignmentId: string, reason: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/users/${userId}/assignments/${assignmentId}`, { body: { reason } });
+  }
+
+  getCoordinatorDistributorAssignments(branchId: string, includeHistory = true): Observable<CoordinatorDistributorAssignment[]> {
+    return this.http.get<{ data: CoordinatorDistributorAssignment[] }>(`${this.baseUrl}/assignments/coordinator-distributor`, {
+      params: this.params({ branch_id: branchId, include_history: includeHistory }),
+    }).pipe(map((response) => response.data));
+  }
+
+  assignCoordinatorDistributor(data: AssignCoordinatorDistributorPayload): Observable<CoordinatorDistributorAssignment> {
+    return this.http.post<DataRes<CoordinatorDistributorAssignment>>(`${this.baseUrl}/assignments/coordinator-distributor`, data)
+      .pipe(map((response) => response.data));
+  }
+
+  terminateCoordinatorDistributorAssignment(assignmentId: string, endReason: string): Observable<CoordinatorDistributorAssignment> {
+    return this.http.delete<DataRes<CoordinatorDistributorAssignment>>(`${this.baseUrl}/assignments/coordinator-distributor/${assignmentId}`, {
+      body: { end_reason: endReason },
+    }).pipe(map((response) => response.data));
+  }
+
+  getActiveDistributorCandidates(branchId: string): Observable<DistributorCandidate[]> {
+    return this.http.get<{ data: DistributorCandidate[] }>(`${this.baseUrl}/assignments/distributors`, {
+      params: this.params({ branch_id: branchId }),
+    }).pipe(map((response) => response.data));
+  }
+
+  private params(values: Record<string, string | number | boolean | undefined>): HttpParams {
+    let params = new HttpParams();
+    Object.entries(values).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') params = params.set(key, String(value));
+    });
+    return params;
   }
 }

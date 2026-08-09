@@ -1,7 +1,16 @@
-import { ChangeDetectionStrategy, Component, signal, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { UserRes } from '../../data-access/admin.dtos';
+import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage, apiValidationErrors, ValidationErrorsByField } from '../../../../core/api/api-error';
+import { SessionStore } from '../../../../core/session/session.store';
+import { Branch } from '../../../organization/data-access/organization.dtos';
+import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
+import { RoleRes, UserRes, UserState } from '../../data-access/admin.dtos';
+import { RoleService } from '../../data-access/role.service';
+import { UserService } from '../../data-access/user.service';
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 @Component({
   selector: 'app-user-list',
@@ -11,65 +20,204 @@ import { UserRes } from '../../data-access/admin.dtos';
   styleUrl: './user-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class UserListComponent {
-  users = signal<UserRes[]>([
-    { id: '1', name: 'Juan Perez', email: 'juan@example.com', status: 'active', roles: ['admin'], branchId: 'suc-1' },
-    { id: '2', name: 'Maria Lopez', email: 'maria@example.com', status: 'invited', roles: ['gerente'], branchId: 'suc-2' },
-    { id: '3', name: 'Carlos Slim', email: 'carlos@example.com', status: 'blocked', roles: ['cajero'], branchId: 'suc-1' },
-  ]);
+export class UserListComponent implements OnInit, OnDestroy {
+  private readonly userService = inject(UserService);
+  private readonly roleService = inject(RoleService);
+  private readonly organizationApi = inject(OrganizationApiService);
+  private readonly sessionStore = inject(SessionStore);
 
-  filterStatus = signal<string>('');
-  filterRole = signal<string>('');
+  readonly users = signal<UserRes[]>([]);
+  readonly totalUsers = signal(0);
+  readonly loading = signal(false);
+  readonly pageError = signal('');
+  readonly filterStatus = signal<UserState | ''>('');
+  readonly filterRole = signal('');
+  readonly filterBranch = signal('');
+  readonly filterSearch = signal('');
+  readonly page = signal(1);
+  readonly isActionLoading = signal<string | null>(null);
+  readonly activeTab = signal<'directory' | 'roles'>('directory');
 
-  filteredUsers = computed(() => {
-    return this.users().filter(u => {
-      const matchStatus = !this.filterStatus() || u.status === this.filterStatus();
-      const matchRole = !this.filterRole() || u.roles.includes(this.filterRole());
-      return matchStatus && matchRole;
-    });
+  readonly showInviteModal = signal(false);
+  readonly inviteName = signal('');
+  readonly inviteEmail = signal('');
+  readonly inviteRoleId = signal('');
+  readonly inviteBranchId = signal('');
+  readonly inviteError = signal('');
+  readonly inviteValidationErrors = signal<ValidationErrorsByField>({});
+  readonly availableRoles = signal<RoleRes[]>([]);
+  readonly availableBranches = signal<Branch[]>([]);
+  readonly userToBlock = signal<UserRes | null>(null);
+
+  readonly selectedInviteRole = computed(
+    () => this.availableRoles().find((role) => role.id === this.inviteRoleId()) ?? null,
+  );
+  readonly inviteRequiresBranch = computed(() => {
+    const role = this.selectedInviteRole();
+    return role ? role.default_scope !== 'GLOBAL' : false;
+  });
+  readonly inviteIsValid = computed(() => {
+    const name = this.inviteName().trim();
+    const branchValid = !this.inviteRequiresBranch() || Boolean(this.inviteBranchId());
+    return name.length > 0 && name.length <= 255 && EMAIL_PATTERN.test(this.inviteEmail().trim())
+      && Boolean(this.inviteRoleId()) && branchValid;
   });
 
-  isActionLoading = signal<string | null>(null);
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // Modal State for Inviting
-  showInviteModal = signal(false);
-  inviteEmail = signal('');
-
-  inviteUser() {
-    if (!this.inviteEmail()) return;
-    this.isActionLoading.set('invite');
-    setTimeout(() => {
-      this.isActionLoading.set(null);
-      this.showInviteModal.set(false);
-      alert(`Invitación enviada a ${this.inviteEmail()}`);
-      this.inviteEmail.set('');
-    }, 1500);
+  async ngOnInit(): Promise<void> {
+    await this.loadUsers();
+    if (this.canViewRoles()) await this.loadRoles();
+    if (this.hasPermission('branches.view')) await this.loadBranches();
   }
 
-  userToBlock = signal<UserRes | null>(null);
+  ngOnDestroy(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+  }
 
-  openBlockModal(user: UserRes) {
+  canViewRoles(): boolean {
+    return this.hasPermission('roles.view');
+  }
+
+  canInviteUsers(): boolean {
+    return this.hasPermission('users.create') && this.canViewRoles();
+  }
+
+  canManageUserState(): boolean {
+    return this.hasPermission('users.manage_state');
+  }
+
+  async loadRoles(): Promise<void> {
+    try {
+      const roles = await firstValueFrom(this.roleService.getRoles());
+      this.availableRoles.set(roles.filter((role) => role.is_active !== false && role.code !== 'general_manager'));
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar los roles disponibles.'));
+    }
+  }
+
+  async loadBranches(): Promise<void> {
+    try {
+      const response = await firstValueFrom(this.organizationApi.getBranches({ per_page: 100 }));
+      this.availableBranches.set(response.data.filter((branch) => branch.status === 'ACTIVE'));
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar las sucursales disponibles.'));
+    }
+  }
+
+  async loadUsers(): Promise<void> {
+    this.loading.set(true);
+    this.pageError.set('');
+    try {
+      const response = await firstValueFrom(this.userService.getUsers({
+        search: this.filterSearch().trim() || undefined,
+        state: this.filterStatus() || undefined,
+        role_id: this.filterRole() || undefined,
+        branch_id: this.filterBranch() || undefined,
+        page: this.page(),
+      }));
+      this.users.set(response.data);
+      this.totalUsers.set(response.total);
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar los usuarios.'));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  onFilterChange(debounce = false): void {
+    this.page.set(1);
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    if (debounce) {
+      this.searchTimer = setTimeout(() => void this.loadUsers(), 300);
+      return;
+    }
+    void this.loadUsers();
+  }
+
+  onInviteRoleChange(roleId: string): void {
+    this.inviteRoleId.set(roleId);
+    this.inviteBranchId.set('');
+  }
+
+  closeInviteModal(): void {
+    this.showInviteModal.set(false);
+    this.inviteName.set('');
+    this.inviteEmail.set('');
+    this.inviteRoleId.set('');
+    this.inviteBranchId.set('');
+    this.inviteError.set('');
+    this.inviteValidationErrors.set({});
+  }
+
+  async inviteUser(): Promise<void> {
+    if (!this.inviteIsValid() || this.isActionLoading()) {
+      this.inviteError.set('Complete nombre, correo, rol y el alcance requerido con datos válidos.');
+      return;
+    }
+
+    this.isActionLoading.set('invite');
+    this.inviteError.set('');
+    this.inviteValidationErrors.set({});
+    try {
+      const response = await firstValueFrom(this.userService.createAccount({
+        name: this.inviteName().trim(),
+        email: this.inviteEmail().trim().toLowerCase(),
+        role_id: this.inviteRoleId(),
+        branch_id: this.inviteBranchId() || null,
+        send_invitation: true,
+      }));
+      this.closeInviteModal();
+      await this.loadUsers();
+      this.pageError.set(response.message);
+    } catch (error: unknown) {
+      this.inviteError.set(apiErrorMessage(error, 'No fue posible crear y enviar la invitación.'));
+      this.inviteValidationErrors.set(apiValidationErrors(error));
+    } finally {
+      this.isActionLoading.set(null);
+    }
+  }
+
+  openBlockModal(user: UserRes): void {
     this.userToBlock.set(user);
   }
 
-  closeBlockModal() {
+  closeBlockModal(): void {
     this.userToBlock.set(null);
   }
 
-  confirmBlock() {
+  async confirmBlock(): Promise<void> {
     const user = this.userToBlock();
-    if (!user) return;
-    this.closeBlockModal();
-    
+    if (!user || this.isActionLoading()) return;
+
     this.isActionLoading.set(`block-${user.id}`);
-    setTimeout(() => {
-      this.users.update(list => list.map(u => {
-        if (u.id === user.id) {
-          return { ...u, status: u.status === 'blocked' ? 'active' : 'blocked' };
-        }
-        return u;
-      }));
+    this.pageError.set('');
+    try {
+      const request = user.state === 'BLOCKED'
+        ? this.userService.unblockUser(user.id)
+        : this.userService.blockUser(user.id);
+      await firstValueFrom(request);
+      this.closeBlockModal();
+      await this.loadUsers();
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cambiar el estado del usuario.'));
+    } finally {
       this.isActionLoading.set(null);
-    }, 1000);
+    }
+  }
+
+  stateLabel(state: UserState): string {
+    return ({
+      ACTIVE: 'Activo',
+      INVITED: 'Invitado',
+      PENDING_ACTIVATION: 'Pendiente de activación',
+      BLOCKED: 'Bloqueado',
+      DISABLED: 'Deshabilitado',
+    } satisfies Record<UserState, string>)[state];
+  }
+
+  private hasPermission(permission: string): boolean {
+    const permissions = this.sessionStore.permissions();
+    return permissions.includes(permission) || permissions.includes('all');
   }
 }

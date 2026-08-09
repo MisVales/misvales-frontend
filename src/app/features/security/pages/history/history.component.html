@@ -1,0 +1,90 @@
+<div class="max-w-4xl mx-auto space-y-6 mt-6">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+    <div>
+      <h2 class="text-xl font-bold text-gray-900">Historial de Seguridad</h2>
+      <p class="text-sm text-gray-500 mt-1">Revisa la actividad de seguridad reciente en tu cuenta.</p>
+    </div>
+    
+    <form [formGroup]="filterForm" class="w-full sm:w-auto">
+      <select formControlName="severity" class="w-full sm:w-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+        <option value="">Todas las severidades</option>
+        <option value="CRITICAL">Crítica</option>
+        <option value="WARNING">Advertencia</option>
+        <option value="INFO">Informativa</option>
+      </select>
+    </form>
+  </div>
+
+  @if (loading()) {
+    <div class="flex justify-center items-center py-12">
+      <lucide-icon name="loader-2" class="w-8 h-8 animate-spin text-[#386641]"></lucide-icon>
+    </div>
+  } @else if (error()) {
+    <div class="p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
+      <lucide-icon name="alert-triangle" class="w-5 h-5 flex-shrink-0"></lucide-icon>
+      {{ error() }}
+    </div>
+  } @else {
+    <div class="space-y-4">
+      @for (event of events(); track event.id) {
+        <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row gap-4 transition-all hover:shadow-md items-start">
+          <div class="p-3 rounded-full flex-shrink-0" [ngClass]="getColorForSeverity(event.severity)">
+            <lucide-icon [name]="getIconForSeverity(event.severity)" class="w-6 h-6"></lucide-icon>
+          </div>
+          
+          <div class="flex-grow">
+            <h3 class="font-bold text-gray-900">{{ event.event_type }}</h3>
+            
+            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mt-2">
+              <span class="flex items-center gap-1">
+                <lucide-icon name="calendar-clock" class="w-4 h-4"></lucide-icon>
+                {{ event.occurred_at | date:'medium' }}
+              </span>
+              
+              @if (event.ip_address) {
+                <span class="hidden sm:inline">•</span>
+                <span class="flex items-center gap-1">
+                  <lucide-icon name="map-pin" class="w-4 h-4"></lucide-icon>
+                  {{ event.ip_address }}
+                </span>
+              }
+              
+              @if (event.user_agent) {
+                <span class="hidden sm:inline">•</span>
+                <span class="flex items-center gap-1">
+                  <lucide-icon name="monitor-smartphone" class="w-4 h-4"></lucide-icon>
+                  {{ event.user_agent }}
+                </span>
+              }
+            </div>
+            
+            @if (event.metadata) {
+              <div class="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100 text-xs text-gray-600 font-mono break-all overflow-x-auto">
+                {{ event.metadata | json }}
+              </div>
+            }
+          </div>
+          
+          <div class="flex-shrink-0 self-start sm:self-center">
+            <span 
+              class="px-2.5 py-1 text-xs font-medium rounded-full"
+              [ngClass]="{
+                'bg-green-100 text-green-800': event.outcome === 'SUCCESS',
+                'bg-red-100 text-red-800': event.outcome === 'FAILURE',
+                'bg-gray-100 text-gray-800': event.outcome !== 'SUCCESS' && event.outcome !== 'FAILURE'
+              }"
+            >
+              {{ event.outcome }}
+            </span>
+          </div>
+        </div>
+      } @empty {
+        <div class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+          <lucide-icon name="history" class="w-12 h-12 text-gray-400 mx-auto mb-3"></lucide-icon>
+          <h3 class="text-lg font-medium text-gray-900 mb-1">No hay eventos registrados</h3>
+          <p class="text-sm text-gray-500">No se encontraron eventos de seguridad para mostrar.</p>
+        </div>
+      }
+    </div>
+  }
+</div>

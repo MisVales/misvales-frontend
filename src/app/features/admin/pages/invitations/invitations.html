@@ -1,0 +1,202 @@
+<div class="max-w-6xl mx-auto p-6">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Invitaciones</h1>
+      <p class="text-gray-500 mt-1">Administra las invitaciones enviadas a nuevos usuarios.</p>
+    </div>
+    <button 
+      (click)="openModal()"
+      class="flex items-center gap-2 px-4 py-2 bg-[#386641] hover:bg-[#2c5234] text-white text-sm font-medium rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#386641]"
+    >
+      <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
+      Nueva Invitación
+    </button>
+  </div>
+
+  @if (success()) {
+    <div class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700" role="status">{{ success() }}</div>
+  }
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    @if (loading()) {
+      <div class="flex justify-center items-center py-12">
+        <lucide-icon name="loader-2" class="w-8 h-8 animate-spin text-[#386641]"></lucide-icon>
+      </div>
+    } @else if (error()) {
+      <div class="p-6 text-center text-red-600">
+        {{ error() }}
+      </div>
+    } @else {
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm whitespace-nowrap">
+          <thead class="bg-gray-50 text-gray-600 font-medium border-b border-gray-100 uppercase tracking-wider text-xs">
+            <tr>
+              <th class="px-6 py-4">Usuario</th>
+              <th class="px-6 py-4">Email</th>
+              <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4">Vence</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100 text-gray-700">
+            @for (inv of invitations(); track inv.id) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4 font-medium">{{ inv.user_name }}</td>
+                <td class="px-6 py-4 text-gray-500">{{ inv.user_email }}</td>
+                <td class="px-6 py-4">
+                  @if (inv.state === 'ACTIVE') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                      Activa
+                    </span>
+                  } @else if (inv.state === 'PREPARED') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 text-xs font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                      Preparada
+                    </span>
+                  } @else if (inv.state === 'CONSUMED') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                      Consumida
+                    </span>
+                  } @else if (inv.state === 'EXPIRED') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200 text-xs font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-gray-500"></span>
+                      Expirada
+                    </span>
+                  } @else if (inv.state === 'REVOKED') {
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200 text-xs font-medium">
+                      <span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                      Revocada
+                    </span>
+                  }
+                </td>
+                <td class="px-6 py-4 text-gray-500">{{ inv.expires_at | date:'short' }}</td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="4" class="px-6 py-12 text-center text-gray-500 italic">No hay invitaciones registradas.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      @if (lastPage() > 1) {
+        <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
+          <span class="text-sm text-gray-600">
+            Página <strong>{{ currentPage() }}</strong> de <strong>{{ lastPage() }}</strong>
+          </span>
+          <div class="flex items-center gap-2">
+            <button 
+              (click)="setPage(currentPage() - 1)"
+              [disabled]="currentPage() === 1"
+              class="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <lucide-icon name="chevron-left" class="w-4 h-4"></lucide-icon>
+            </button>
+            <button 
+              (click)="setPage(currentPage() + 1)"
+              [disabled]="currentPage() === lastPage()"
+              class="p-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- Modal Nueva Invitación -->
+@if (isModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity">
+    <div class="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md transform transition-all duration-300">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-xl font-bold text-gray-900">Enviar Invitación</h2>
+        <button (click)="closeModal()" class="text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-colors">
+          <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+        </button>
+      </div>
+      
+      <form (submit)="submitInvitation(); $event.preventDefault()" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+          <input 
+            type="text" 
+            [ngModel]="newInvitation().name"
+            (ngModelChange)="newInvitation.set({ ...newInvitation(), name: $event })"
+            name="name"
+            placeholder="Nombre completo"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#386641] focus:border-[#386641] outline-none"
+            required
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Correo Electrónico</label>
+          <input 
+            type="email" 
+            [ngModel]="newInvitation().email"
+            (ngModelChange)="newInvitation.set({ ...newInvitation(), email: $event })"
+            name="email"
+            placeholder="ejemplo@empresa.com"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#386641] focus:border-[#386641] outline-none"
+            required
+          />
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Rol (Opcional)</label>
+          <select 
+            [ngModel]="newInvitation().role_id"
+            (ngModelChange)="newInvitation.set({ ...newInvitation(), role_id: $event })"
+            name="role"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#386641] focus:border-[#386641] outline-none bg-white"
+          >
+            <option value="">Ninguno (Asignación manual)</option>
+            @for (r of roles(); track r.id) {
+              <option [value]="r.id">{{ r.name }}</option>
+            }
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">ID Sucursal</label>
+          <input 
+            type="text" 
+            [ngModel]="newInvitation().branch_id"
+            (ngModelChange)="newInvitation.set({ ...newInvitation(), branch_id: $event })"
+            name="branch_id"
+            placeholder="Ej: SUC-001"
+            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-[#386641] focus:border-[#386641] outline-none"
+            required
+          />
+          <p class="text-xs text-gray-500 mt-1">Usa "*" si es un rol global.</p>
+        </div>
+
+        <div class="pt-4 flex justify-end gap-3 border-t border-gray-100 mt-6">
+          <button
+            type="button"
+            (click)="closeModal()"
+            class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            [disabled]="isSubmitting() || !newInvitation().name || !newInvitation().email"
+            class="px-4 py-2 flex items-center justify-center min-w-[120px] text-sm font-medium text-white bg-[#386641] hover:bg-[#2c5234] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#386641]"
+          >
+            @if (isSubmitting()) {
+              <lucide-icon name="loader-2" class="w-4 h-4 animate-spin"></lucide-icon>
+            } @else {
+              Enviar
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

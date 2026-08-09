@@ -1,0 +1,67 @@
+<div class="min-h-screen bg-[#F8FAF9] p-4 lg:p-8">
+  <div class="max-w-[1400px] mx-auto">
+    
+    <!-- Top Bar -->
+    <div class="mb-6">
+      <button (click)="volver()" class="flex items-center gap-2 text-gray-500 hover:text-gray-700 font-medium transition-colors mb-4 text-sm">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Regresar
+      </button>
+
+      <div class="flex items-start justify-between">
+        <div>
+          <h1 class="text-3xl font-bold text-gray-900">Detalle de Distribuidora</h1>
+          <p class="text-gray-500 font-medium mt-1">ID: D-{{ store.detalle()?.numero || '...' }}</p>
+        </div>
+
+        <div class="flex items-center gap-3" *ngIf="!store.cargandoDetalle() && store.detalle()">
+          <button class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+            Editar Información
+          </button>
+          
+          <button *ngIf="store.detalle()?.estado === 'PENDING_ACTIVATION'" (click)="irAActivacion()" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
+            Completar Activación
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading / Error States... -->
+    <div *ngIf="store.cargandoDetalle()" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500 flex flex-col items-center">
+      <svg class="animate-spin h-8 w-8 text-[#1A4D2E] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+      Cargando detalle...
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!store.cargandoDetalle() && store.detalle()" class="space-y-6">
+      
+      <!-- Top Grid: Profile | Organization | Category -->
+      <app-resumen-distribuidora 
+        [distribuidora]="store.detalle()!" 
+        (abrirCambioCategoria)="abrirModalCategoria()"
+        (abrirReenvio)="abrirModalReenvio()">
+      </app-resumen-distribuidora>
+
+      <!-- Bottom: Historial -->
+      <div class="mt-6">
+        <app-historial-categorias [distribuidoraId]="store.detalle()!.id"></app-historial-categorias>
+      </div>
+  </div>
+
+  <app-asignar-categoria-dialog 
+    *ngIf="mostrarModalCategoria" 
+    [categoriaActualId]="store.detalle()?.categoria?.id || undefined"
+    (cerrar)="cerrarModalCategoria()" 
+    (guardar)="guardarCategoria($event)">
+  </app-asignar-categoria-dialog>
+
+  <app-reenviar-invitacion-dialog
+    *ngIf="mostrarModalReenvio"
+    (cancelar)="cerrarModalReenvio()"
+    (confirmar)="reenviarInvitacion($event)">
+  </app-reenviar-invitacion-dialog>
+</div>
