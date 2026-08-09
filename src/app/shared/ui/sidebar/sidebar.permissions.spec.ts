@@ -38,4 +38,16 @@ describe('sidebar permission filtering', () => {
 
     expect(collectIds(filteredItems)).toEqual(collectIds(allItems));
   });
+
+  it('muestra verificaciones solo con una capacidad efectiva de M05', () => {
+    const sinCapacidad = filterNavigationItems(allItems, [], ['verifier']);
+    const conCapacidad = filterNavigationItems(
+      allItems,
+      ['verification.visits.view'],
+      ['verifier'],
+    );
+
+    expect(collectIds(sinCapacidad)).not.toContain('verifications');
+    expect(collectIds(conCapacidad)).toContain('verifications');
+  });
 });
