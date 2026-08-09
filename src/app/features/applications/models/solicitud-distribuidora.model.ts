@@ -4,6 +4,8 @@ export interface SolicitudDistribuidora {
   estado: EstadoSolicitudDistribuidora;
   sucursalId: string; // Simplificando por ahora
   coordinadorId: string; // Simplificando por ahora
+  sucursal?: { id: string; nombre: string };
+  coordinador?: { id: string; nombre: string };
   solicitante: ResumenSolicitante | null;
   declaracionesSeccion: DeclaracionesSeccion;
   avance: AvanceExpediente;
@@ -32,6 +34,7 @@ export interface ResumenSolicitante {
   apellidoPaterno: string;
   apellidoMaterno: string;
   curpEnmascarada: string; 
+  nombreCompleto?: string;
 }
 
 export interface DeclaracionesSeccion {

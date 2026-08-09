@@ -3,34 +3,39 @@ import { SolicitudDistribuidora, PaginacionRespuesta } from '../../models/solici
 
 export class SolicitudDistribuidoraMapper {
   
-  static mapToModel(dto: SolicitudDistribuidoraResponseDTO): SolicitudDistribuidora {
+  static mapToModel(response: any): SolicitudDistribuidora {
+    const dto: SolicitudDistribuidoraResponseDTO = response.data ? response.data : response;
+    const completion = dto.completion ?? (dto as any).progress;
     return {
       id: dto.id,
       folio: dto.application_number,
       estado: dto.status,
       sucursalId: dto.branch_id,
       coordinadorId: dto.coordinator_id,
-      solicitante: dto.applicant ? {
+      sucursal: dto.branch ? { id: dto.branch.id, nombre: dto.branch.name } : undefined,
+      coordinador: dto.coordinator ? { id: dto.coordinator.id, nombre: dto.coordinator.name } : undefined,
+      solicitante: (dto.applicant && (dto.applicant.full_name || dto.applicant.first_name)) ? {
         id: dto.applicant.id,
-        nombre: dto.applicant.first_name,
-        apellidoPaterno: dto.applicant.first_last_name,
-        apellidoMaterno: dto.applicant.second_last_name,
-        curpEnmascarada: dto.applicant.curp_masked
+        nombre: dto.applicant.first_name || '',
+        apellidoPaterno: dto.applicant.first_last_name || '',
+        apellidoMaterno: dto.applicant.second_last_name || '',
+        curpEnmascarada: dto.applicant.curp_masked || '',
+        nombreCompleto: dto.applicant.full_name ?? [dto.applicant.first_name, dto.applicant.first_last_name, dto.applicant.second_last_name].filter(Boolean).join(' ')
       } : null,
       declaracionesSeccion: {
-        datosPersonales: dto.section_declarations.personal_data,
-        referenciasFamiliares: dto.section_declarations.family_references,
-        domicilios: dto.section_declarations.residences,
-        vehiculos: dto.section_declarations.vehicles,
-        bienes: dto.section_declarations.assets,
-        pasivos: dto.section_declarations.liabilities,
-        empleos: dto.section_declarations.employments,
-        creditosComerciales: dto.section_declarations.commercial_credits
+        datosPersonales: dto.section_declarations?.personal_data,
+        referenciasFamiliares: dto.section_declarations?.family_references,
+        domicilios: dto.section_declarations?.residences,
+        vehiculos: dto.section_declarations?.vehicles,
+        bienes: dto.section_declarations?.assets,
+        pasivos: dto.section_declarations?.liabilities,
+        empleos: dto.section_declarations?.employments,
+        creditosComerciales: dto.section_declarations?.commercial_credits
       },
       avance: {
-        seccionesCompletadas: dto.progress.completed_sections,
-        seccionesTotales: dto.progress.total_sections,
-        puedeEnviarse: dto.progress.can_submit
+        seccionesCompletadas: completion?.completed_sections ?? 0,
+        seccionesTotales: completion?.total_sections ?? 0,
+        puedeEnviarse: completion?.can_submit ?? false
       },
       versionBloqueo: dto.lock_version,
       enviadaPor: dto.submitted_by,

@@ -8,19 +8,16 @@ export const applicationsRoutes: Routes = [
   {
     path: '',
     component: ListadoSolicitudesPageComponent,
-    // canActivate: [permissionGuard],
-    // data: { permissions: ['distributor_applications.view'] }
+    canActivate: [permissionGuard('distributor_applications.view')]
   },
   {
     path: 'nueva',
     component: CrearSolicitudPageComponent,
-    // canActivate: [permissionGuard],
-    // data: { permissions: ['distributor_applications.create'] }
+    canActivate: [permissionGuard('distributor_applications.create')]
   },
   {
     path: ':application_id',
     component: DetalleSolicitudPageComponent,
-    // canActivate: [permissionGuard],
-    // data: { permissions: ['distributor_applications.view', 'distributor_applications.update'] }
+    canActivate: [permissionGuard('distributor_applications.view')]
   }
 ];

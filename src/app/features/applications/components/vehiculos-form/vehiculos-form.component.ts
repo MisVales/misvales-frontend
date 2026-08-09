@@ -26,7 +26,21 @@ export class VehiculosFormComponent implements OnInit {
   }
 
   async ngOnInit() {
+    await this.esperarDetalle();
     await this.cargarVehiculos();
+  }
+
+  private esperarDetalle(): Promise<void> {
+    return new Promise((resolve) => {
+      const check = () => {
+        if (this.store.detalle()?.id) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   }
 
   async cargarVehiculos() {
@@ -37,7 +51,7 @@ export class VehiculosFormComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.api.listarVehiculos(id));
       this.vehiculosArray.clear();
-      data.forEach((vehiculo: any) => {
+      (data || []).forEach((vehiculo: any) => {
         const form = VehiculoFormFactory.create(this.fb);
         form.patchValue(vehiculo);
         this.vehiculosArray.push(form);
@@ -65,24 +79,24 @@ export class VehiculosFormComponent implements OnInit {
     }
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
-    const payload = formGroup.value;
+    const payload = { ...formGroup.value };
     const idVehiculo = payload.id;
     delete payload.id;
 
     try {
       if (idVehiculo) {
-        await firstValueFrom(this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, version));
+        await firstValueFrom(this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, this.store.detalle()!.versionBloqueo));
       } else {
-        await firstValueFrom(this.api.crearVehiculo(idSolicitud, payload, version));
+        await firstValueFrom(this.api.crearVehiculo(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
       }
+      await this.store.cargarDetalle(idSolicitud);
       await this.cargarVehiculos();
-      this.store.cargarDetalle(idSolicitud);
     } catch (e: any) {
       if (e?.status === 409) {
-        alert('El expediente fue modificado por otro usuario. Recarga la información antes de continuar.');
+        await this.store.cargarDetalle(idSolicitud);
+        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       }
     }
   }
@@ -92,13 +106,12 @@ export class VehiculosFormComponent implements OnInit {
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarVehiculo(idSolicitud, idVehiculo, version));
+      await firstValueFrom(this.api.eliminarVehiculo(idSolicitud, idVehiculo, this.store.detalle()!.versionBloqueo));
       this.removerVehiculoVisual(index);
-      this.store.cargarDetalle(idSolicitud);
+      await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
     }

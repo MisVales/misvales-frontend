@@ -26,7 +26,21 @@ export class FamiliaresFormComponent implements OnInit {
   }
 
   async ngOnInit() {
+    await this.esperarDetalle();
     await this.cargarFamiliares();
+  }
+
+  private esperarDetalle(): Promise<void> {
+    return new Promise((resolve) => {
+      const check = () => {
+        if (this.store.detalle()?.id) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   }
 
   async cargarFamiliares() {
@@ -37,7 +51,7 @@ export class FamiliaresFormComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.api.listarFamiliares(id));
       this.familiaresArray.clear();
-      data.forEach((familiar: any) => {
+      (data || []).forEach((familiar: any) => {
         const form = FamiliarFormFactory.create(this.fb);
         form.patchValue(familiar);
         this.familiaresArray.push(form);
@@ -65,27 +79,24 @@ export class FamiliaresFormComponent implements OnInit {
     }
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
-    const payload = formGroup.value;
+    const payload = { ...formGroup.value };
     const idFamiliar = payload.id;
     delete payload.id;
 
     try {
       if (idFamiliar) {
-        await firstValueFrom(this.api.actualizarFamiliar(idSolicitud, idFamiliar, payload, version));
+        await firstValueFrom(this.api.actualizarFamiliar(idSolicitud, idFamiliar, payload, this.store.detalle()!.versionBloqueo));
       } else {
-        await firstValueFrom(this.api.crearFamiliar(idSolicitud, payload, version));
+        await firstValueFrom(this.api.crearFamiliar(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
       }
-      // Re-cargar para obtener IDs frescos
+      await this.store.cargarDetalle(idSolicitud);
       await this.cargarFamiliares();
-      
-      // Update local store locking version effectively (handled by store usually or we just reload detail)
-      this.store.cargarDetalle(idSolicitud);
     } catch (e: any) {
       if (e?.status === 409) {
-        alert('El expediente fue modificado por otro usuario. Recarga la información antes de continuar.');
+        await this.store.cargarDetalle(idSolicitud);
+        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       }
     }
   }
@@ -95,13 +106,12 @@ export class FamiliaresFormComponent implements OnInit {
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarFamiliar(idSolicitud, idFamiliar, version));
+      await firstValueFrom(this.api.eliminarFamiliar(idSolicitud, idFamiliar, this.store.detalle()!.versionBloqueo));
       this.removerFamiliarVisual(index);
-      this.store.cargarDetalle(idSolicitud); // Refresca avance y version
+      await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
     }

@@ -14,7 +14,7 @@ export class DomicilioFormFactory {
       municipality: ['', [Validators.required, Validators.maxLength(100)]],
       city: ['', [Validators.required, Validators.maxLength(100)]],
       state: ['', [Validators.required, Validators.maxLength(50)]],
-      country: ['México', [Validators.required]],
+      country: ['MX', [Validators.required]],
       housing_tenure: ['', [Validators.required]],
       financing_status: ['', [Validators.required]],
       width_meters: ['', [Validators.required, decimalStringValidator()]],

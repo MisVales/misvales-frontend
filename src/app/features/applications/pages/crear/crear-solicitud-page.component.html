@@ -1,77 +1,61 @@
-<div class="min-h-screen bg-[#1F2937] flex items-center justify-center p-4" style="background-image: radial-gradient(#374151 1px, transparent 1px); background-size: 20px 20px;">
-  <!-- Mockup background mimicking the dark UI surrounding the main app area -->
-  <div class="w-full max-w-[1200px] bg-[#F8F9F5] rounded-xl overflow-hidden min-h-[700px] relative shadow-2xl">
-    
-    <!-- App Header Mock -->
-    <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-      <div class="text-[#1A4D2E] font-bold text-xl">MisVales</div>
-      <div class="flex items-center gap-6 text-sm font-medium text-gray-500">
-        <span>Dashboard</span>
-        <span>Relaciones</span>
-        <span class="text-[#1A4D2E] border-b-2 border-[#1A4D2E] pb-4 -mb-4">Solicitudes</span>
-      </div>
+<div class="flex items-center justify-center min-h-full p-6">
+  <div class="bg-white rounded-xl shadow-lg border-t-4 border-[#C1E1C1] w-full max-w-md p-8">
+    <div class="flex items-center gap-3 mb-2">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#1A4D2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <h2 class="text-xl font-bold text-gray-900">Crear Solicitud</h2>
     </div>
+    <p class="text-xs text-gray-500 mb-6">Complete los detalles para iniciar un nuevo expediente de vale.</p>
 
-    <!-- Main Content Centered -->
-    <div class="flex items-center justify-center h-[calc(100%-73px)]">
+    <form [formGroup]="crearForm" (ngSubmit)="onSubmit()" class="space-y-5">
       
-      <div class="bg-white rounded-xl shadow-lg border-t-4 border-[#C1E1C1] w-full max-w-md p-8">
-        <div class="flex items-center gap-3 mb-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#1A4D2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <h2 class="text-xl font-bold text-gray-900">Crear Solicitud</h2>
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Sucursal</label>
+        <div class="relative">
+          <select formControlName="branch_id" (change)="onBranchChange($any($event.target).value)" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white">
+            <option value="">Seleccione una sucursal</option>
+            <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.name }}</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
         </div>
-        <p class="text-xs text-gray-500 mb-6">Complete los detalles para iniciar un nuevo expediente de vale.</p>
-
-        <form [formGroup]="crearForm" (ngSubmit)="onSubmit()" class="space-y-5">
-          
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Sucursal</label>
-            <div class="relative">
-              <select formControlName="branch_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white">
-                <option value="">Seleccione una sucursal</option>
-                <option value="SUC-001">Sucursal Norte</option>
-                <option value="SUC-002">Sucursal Centro</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
-            </div>
-            <p *ngIf="crearForm.controls.branch_id.touched && crearForm.controls.branch_id.invalid" class="text-red-500 text-xs mt-1">Este campo es requerido.</p>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Coordinador</label>
-            <div class="relative">
-              <select formControlName="coordinator_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white">
-                <option value="">Primero seleccione una sucursal</option>
-                <option value="COORD-001">Juan Pérez</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-              </div>
-            </div>
-            <p *ngIf="crearForm.controls.coordinator_id.touched && crearForm.controls.coordinator_id.invalid" class="text-red-500 text-xs mt-1">Este campo es requerido.</p>
-          </div>
-
-          <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
-            <button type="button" (click)="cancelar()" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-              Cancelar
-            </button>
-            <button type="submit" [disabled]="store.guardandoSeccion()" class="px-5 py-2.5 bg-[#1A4D2E] hover:bg-[#133c23] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
-              <span *ngIf="store.guardandoSeccion()">Creando...</span>
-              <span *ngIf="!store.guardandoSeccion()">Crear Expediente</span>
-            </button>
-          </div>
-
-          <div *ngIf="store.error()" class="p-3 bg-red-50 text-red-700 text-sm rounded-lg mt-4 border border-red-200">
-            {{ store.error() }}
-          </div>
-
-        </form>
+        <p *ngIf="crearForm.controls.branch_id.touched && crearForm.controls.branch_id.invalid" class="text-red-500 text-xs mt-1">Este campo es requerido.</p>
       </div>
 
-    </div>
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Coordinador</label>
+        <div class="relative">
+          <select formControlName="coordinator_id" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white" [disabled]="!selectedBranchId || !coordinators.length">
+            <option value="" *ngIf="!selectedBranchId">Primero seleccione una sucursal</option>
+            <option value="" *ngIf="selectedBranchId && !coordinators.length">No hay coordinadores en esta sucursal</option>
+            <option value="" *ngIf="selectedBranchId && coordinators.length">Seleccione un coordinador</option>
+            <option *ngFor="let coordinator of coordinators" [value]="coordinator.user.id">{{ coordinator.user.name }}</option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </div>
+        </div>
+        <p *ngIf="crearForm.controls.coordinator_id.touched && crearForm.controls.coordinator_id.invalid" class="text-red-500 text-xs mt-1">Este campo es requerido.</p>
+      </div>
+
+
+
+      <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
+        <button type="button" (click)="cancelar()" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+          Cancelar
+        </button>
+        <button type="submit" [disabled]="store.guardandoSeccion()" class="px-5 py-2.5 bg-[#1A4D2E] hover:bg-[#133c23] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+          <span *ngIf="store.guardandoSeccion()">Creando...</span>
+          <span *ngIf="!store.guardandoSeccion()">Crear Expediente</span>
+        </button>
+      </div>
+
+      <div *ngIf="store.error()" class="p-3 bg-red-50 text-red-700 text-sm rounded-lg mt-4 border border-red-200">
+        {{ store.error() }}
+      </div>
+
+    </form>
   </div>
 </div>

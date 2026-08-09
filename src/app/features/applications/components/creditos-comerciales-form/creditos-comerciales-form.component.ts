@@ -26,7 +26,21 @@ export class CreditosComercialesFormComponent implements OnInit {
   }
 
   async ngOnInit() {
+    await this.esperarDetalle();
     await this.cargarCreditos();
+  }
+
+  private esperarDetalle(): Promise<void> {
+    return new Promise((resolve) => {
+      const check = () => {
+        if (this.store.detalle()?.id) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   }
 
   async cargarCreditos() {
@@ -37,7 +51,7 @@ export class CreditosComercialesFormComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.api.listarCreditosComerciales(id));
       this.creditosArray.clear();
-      data.forEach((item: any) => {
+      (data || []).forEach((item: any) => {
         const form = CreditoComercialFormFactory.create(this.fb);
         form.patchValue(item);
         this.creditosArray.push(form);
@@ -65,24 +79,24 @@ export class CreditosComercialesFormComponent implements OnInit {
     }
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
-    const payload = formGroup.value;
+    const payload = { ...formGroup.value };
     const idRegistro = payload.id;
     delete payload.id;
 
     try {
       if (idRegistro) {
-        await firstValueFrom(this.api.actualizarCreditoComercial(idSolicitud, idRegistro, payload, version));
+        await firstValueFrom(this.api.actualizarCreditoComercial(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo));
       } else {
-        await firstValueFrom(this.api.crearCreditoComercial(idSolicitud, payload, version));
+        await firstValueFrom(this.api.crearCreditoComercial(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
       }
+      await this.store.cargarDetalle(idSolicitud);
       await this.cargarCreditos();
-      this.store.cargarDetalle(idSolicitud);
     } catch (e: any) {
       if (e?.status === 409) {
-        alert('El expediente fue modificado por otro usuario. Recarga la información antes de continuar.');
+        await this.store.cargarDetalle(idSolicitud);
+        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       }
     }
   }
@@ -92,13 +106,12 @@ export class CreditosComercialesFormComponent implements OnInit {
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarCreditoComercial(idSolicitud, idRegistro, version));
+      await firstValueFrom(this.api.eliminarCreditoComercial(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo));
       this.removerCreditoVisual(index);
-      this.store.cargarDetalle(idSolicitud);
+      await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
     }

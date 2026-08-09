@@ -25,7 +25,21 @@ export class DomiciliosFormComponent implements OnInit {
   indiceEdicion: number | null = null;
 
   async ngOnInit() {
+    await this.esperarDetalle();
     await this.cargarDomicilios();
+  }
+
+  private esperarDetalle(): Promise<void> {
+    return new Promise((resolve) => {
+      const check = () => {
+        if (this.store.detalle()?.id) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   }
 
   get domiciliosGroups(): FormGroup[] {
@@ -40,7 +54,7 @@ export class DomiciliosFormComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.api.listarDomicilios(id));
       this.domiciliosArray.clear();
-      data.forEach((domicilio: any) => {
+      (data || []).forEach((domicilio: any) => {
         const form = DomicilioFormFactory.create(this.fb);
         form.patchValue(domicilio);
         this.domiciliosArray.push(form);
@@ -71,7 +85,6 @@ export class DomiciliosFormComponent implements OnInit {
   }
 
   marcarComoActual(index: number) {
-    // Si marcamos uno como actual, avisamos de posible conflicto
     const yaExisteActual = this.domiciliosGroups.some((g, i) => i !== index && g.value.is_current);
     if (yaExisteActual) {
       alert('Ya existe un domicilio marcado como actual. Al guardar este, el backend podría rechazarlo si no permite dos. Asegúrate de desmarcar el otro primero.');
@@ -94,24 +107,24 @@ export class DomiciliosFormComponent implements OnInit {
 
   async guardarDomicilioDirecto(formGroup: FormGroup) {
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
-    const payload = formGroup.value;
+    const payload = { ...formGroup.value };
     const idDomicilio = payload.id;
     delete payload.id;
 
     try {
       if (idDomicilio) {
-        await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, version));
+        await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, this.store.detalle()!.versionBloqueo));
       } else {
-        await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, version));
+        await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
       }
+      await this.store.cargarDetalle(idSolicitud);
       await this.cargarDomicilios();
-      this.store.cargarDetalle(idSolicitud);
     } catch (e: any) {
       if (e?.status === 409) {
-        alert('El expediente fue modificado por otro usuario. Recarga la información antes de continuar.');
+        await this.store.cargarDetalle(idSolicitud);
+        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       } else {
         alert(e?.error?.message || 'Error al guardar domicilio');
       }
@@ -123,13 +136,12 @@ export class DomiciliosFormComponent implements OnInit {
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarDomicilio(idSolicitud, idDomicilio, version));
+      await firstValueFrom(this.api.eliminarDomicilio(idSolicitud, idDomicilio, this.store.detalle()!.versionBloqueo));
+      await this.store.cargarDetalle(idSolicitud);
       await this.cargarDomicilios();
-      this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
     }

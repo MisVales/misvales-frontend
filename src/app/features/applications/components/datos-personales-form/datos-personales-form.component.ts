@@ -20,29 +20,27 @@ export class DatosPersonalesFormComponent implements OnInit {
   
   // View states
   isCurpMasked = false;
-  isRfcMasked = false; // In a real app we might mask RFC as well, keeping it simple here
+  isRfcMasked = false;
+  guardadoExitoso = false;
 
   ngOnInit() {
     this.cargarDatosActuales();
   }
 
   cargarDatosActuales() {
-    // If we had the full details we would patch them here. 
-    // Right now, the API only sends summary applicant in the main detail, 
-    // real implementation requires GET /personal-data or similar, or it comes included in the summary if we have access.
-    
     const solicitante = this.store.detalle()?.solicitante;
     if (solicitante) {
       this.form.patchValue({
         first_name: solicitante.nombre,
         first_last_name: solicitante.apellidoPaterno,
         second_last_name: solicitante.apellidoMaterno,
-        curp: solicitante.curpEnmascarada // Setting the masked curp for UI only
+        curp: solicitante.curpEnmascarada
       });
       
-      if (solicitante.curpEnmascarada.includes('*')) {
+      if (solicitante.curpEnmascarada && solicitante.curpEnmascarada.includes('*')) {
          this.isCurpMasked = true;
       }
+      this.guardadoExitoso = true;
     }
   }
 
@@ -77,10 +75,11 @@ export class DatosPersonalesFormComponent implements OnInit {
 
     try {
       await this.store.guardarDatosPersonales(payload);
-      // Reset dirty state
       this.form.markAsPristine();
+      this.guardadoExitoso = true;
     } catch (e) {
       // Error handled by store
     }
   }
 }
+

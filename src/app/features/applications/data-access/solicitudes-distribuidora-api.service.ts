@@ -19,6 +19,13 @@ export class SolicitudesDistribuidoraApiService {
     return `${this.apiConfig.baseUrl}/distributor-applications`;
   }
 
+  private withLockVersion<T extends Record<string, any>>(payload: T, versionBloqueo: number): T & { lock_version: number } {
+    return {
+      ...payload,
+      lock_version: versionBloqueo,
+    };
+  }
+
   // ==== 1. SOLICITUD PRINCIPAL ====
   
   listarSolicitudes(
@@ -28,7 +35,7 @@ export class SolicitudesDistribuidoraApiService {
   ): Observable<PaginacionRespuesta<SolicitudDistribuidora>> {
     let params = new HttpParams()
       .set('page', pagina.toString())
-      .set('perPage', porPagina.toString());
+      .set('per_page', porPagina.toString());
       
     if (filtros) {
       Object.keys(filtros).forEach(key => {
@@ -56,8 +63,7 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   enviarARevision(id: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${id}/submit`, {}, { headers }).pipe(
+    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${id}/submit`, { lock_version: versionBloqueo }).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
@@ -65,8 +71,7 @@ export class SolicitudesDistribuidoraApiService {
   // ==== 2. DATOS PERSONALES ====
 
   guardarDatosPersonales(id: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.put<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${id}/personal-data`, datos, { headers }).pipe(
+    return this.http.put<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${id}/personal-data`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
@@ -74,156 +79,150 @@ export class SolicitudesDistribuidoraApiService {
   // ==== 3. REFERENCIAS FAMILIARES ====
 
   listarFamiliares(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/${idSolicitud}/family-members`);
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/family-members`).pipe(map(res => res.data));
   }
 
   crearFamiliar(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members`, datos, { headers }).pipe(
+    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   actualizarFamiliar(idSolicitud: string, idFamiliar: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, datos, { headers }).pipe(
+    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   eliminarFamiliar(idSolicitud: string, idFamiliar: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, { headers }).pipe(
+    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, {
+      body: { lock_version: versionBloqueo },
+    }).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   // ==== DOMICILIOS ====
   listarDomicilios(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/${idSolicitud}/residences`);
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/residences`).pipe(map(res => res.data));
   }
 
   crearDomicilio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences`, datos, { headers }).pipe(
+    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   actualizarDomicilio(idSolicitud: string, idDomicilio: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, datos, { headers }).pipe(
+    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   eliminarDomicilio(idSolicitud: string, idDomicilio: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, { headers }).pipe(
+    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, {
+      body: { lock_version: versionBloqueo },
+    }).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   // ==== VEHÍCULOS ====
   listarVehiculos(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/${idSolicitud}/vehicles`);
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/vehicles`).pipe(map(res => res.data));
   }
 
   crearVehiculo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles`, datos, { headers }).pipe(
+    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   actualizarVehiculo(idSolicitud: string, idVehiculo: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, datos, { headers }).pipe(
+    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   eliminarVehiculo(idSolicitud: string, idVehiculo: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, { headers }).pipe(
+    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, {
+      body: { lock_version: versionBloqueo },
+    }).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   // ==== BIENES Y COMPROMISOS ====
   listarPatrimonio(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`);
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`).pipe(map(res => res.data));
   }
 
   crearPatrimonio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`, datos, { headers }).pipe(
+    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   actualizarPatrimonio(idSolicitud: string, idPatrimonio: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, datos, { headers }).pipe(
+    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   eliminarPatrimonio(idSolicitud: string, idPatrimonio: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, { headers }).pipe(
+    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, {
+      body: { lock_version: versionBloqueo },
+    }).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   // ==== EMPLEOS ====
   listarEmpleos(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/${idSolicitud}/employments`);
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/employments`).pipe(map(res => res.data));
   }
 
   crearEmpleo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments`, datos, { headers }).pipe(
+    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   actualizarEmpleo(idSolicitud: string, idEmpleo: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, datos, { headers }).pipe(
+    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   eliminarEmpleo(idSolicitud: string, idEmpleo: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, { headers }).pipe(
+    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, {
+      body: { lock_version: versionBloqueo },
+    }).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   // ==== CRÉDITOS COMERCIALES ====
   listarCreditosComerciales(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/${idSolicitud}/commercial-credits`);
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits`).pipe(map(res => res.data));
   }
 
   crearCreditoComercial(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits`, datos, { headers }).pipe(
+    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   actualizarCreditoComercial(idSolicitud: string, idCredito: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, datos, { headers }).pipe(
+    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, this.withLockVersion(datos, versionBloqueo)).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   eliminarCreditoComercial(idSolicitud: string, idCredito: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    const headers = new HttpHeaders().set('If-Match', versionBloqueo.toString());
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, { headers }).pipe(
+    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, {
+      body: { lock_version: versionBloqueo },
+    }).pipe(
       map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }

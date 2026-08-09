@@ -3,22 +3,22 @@
     <div class="text-gray-500">Cargando expediente...</div>
   </div>
 
-  <div *ngIf="!store.estadoCarga()">
+  <div *ngIf="!store.estadoCarga() && store.detalle()">
     <!-- Header del Expediente -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
         <div class="flex items-center gap-3 mb-2">
-          <h1 class="text-2xl font-bold text-gray-900">Folio: {{ store.detalle()?.folio || '2023-98745' }}</h1>
-          <span class="inline-flex px-2.5 py-1 rounded text-xs font-bold bg-[#FCE8E8] text-[#9A3B3B] border border-[#F3D5D5]">BORRADOR</span>
+          <h1 class="text-2xl font-bold text-gray-900">Folio: {{ store.detalle()?.folio }}</h1>
+          <span class="inline-flex px-2.5 py-1 rounded text-xs font-bold bg-[#FCE8E8] text-[#9A3B3B] border border-[#F3D5D5]">{{ store.detalle()?.estado }}</span>
         </div>
         <div class="flex items-center gap-4 text-sm text-gray-500">
           <div class="flex items-center gap-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-            Sucursal {{ store.detalle()?.sucursalId || 'Norte' }}
+            {{ store.detalle()?.sucursal?.nombre || 'Sin sucursal' }}
           </div>
           <div class="flex items-center gap-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-            Coord: {{ store.detalle()?.coordinadorId || 'Juan Pérez' }}
+            Coord: {{ store.detalle()?.coordinador?.nombre || 'Sin coordinador' }}
           </div>
         </div>
       </div>
@@ -26,10 +26,10 @@
       <div class="w-full md:w-64">
         <div class="flex justify-between text-xs font-semibold mb-1 text-gray-700">
           <span>Progreso de Solicitud</span>
-          <span>45%</span>
+          <span>{{ getProgresoPorcentaje() }}%</span>
         </div>
         <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-          <div class="h-full bg-[#82B965] rounded-full" style="width: 45%;"></div>
+          <div class="h-full bg-[#82B965] rounded-full transition-all duration-300" [style.width]="getProgresoAncho()"></div>
         </div>
       </div>
     </div>
@@ -55,15 +55,15 @@
                     [class.pl-3]="pasoActual !== paso.id"
                     class="w-full flex items-center gap-3 py-2.5 pr-3 rounded-r-lg text-sm font-medium transition-colors text-left border-transparent">
               
-              <!-- Check Icon -->
-              <svg *ngIf="paso.completado && paso.icon === 'check'" class="w-5 h-5 text-[#82B965]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-              <!-- Circle Icon -->
-              <svg *ngIf="!paso.completado && paso.icon === 'circle'" class="w-5 h-5" [class.text-[#1A4D2E]]="pasoActual === paso.id" [class.text-gray-300]="pasoActual !== paso.id" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <!-- Check Icon (completed) -->
+              <svg *ngIf="getPasoCompletado(paso.id)" class="w-5 h-5 text-[#82B965]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <!-- Circle Icon (pending) -->
+              <svg *ngIf="!getPasoCompletado(paso.id) && paso.id !== 'resumen'" class="w-5 h-5" [class.text-[#1A4D2E]]="pasoActual === paso.id" [class.text-gray-300]="pasoActual !== paso.id" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <circle cx="12" cy="12" r="8" stroke-width="2"></circle>
                 <circle *ngIf="pasoActual === paso.id" cx="12" cy="12" r="3" fill="currentColor"></circle>
               </svg>
-              <!-- Lock Icon -->
-              <svg *ngIf="paso.icon === 'lock'" class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+              <!-- Lock Icon (resumen) -->
+              <svg *ngIf="paso.id === 'resumen' && !getPasoCompletado(paso.id)" class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
               
               {{ paso.label }}
             </button>

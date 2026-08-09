@@ -31,16 +31,19 @@
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Sucursal</label>
         <select formControlName="branch_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent bg-white">
           <option value="">Todas</option>
-          <!-- Sucursales dinámicas en el futuro -->
+          <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.name }}</option>
         </select>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Coordinador</label>
-        <input type="text" formControlName="coordinator_id" placeholder="Nombre..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent">
+        <select formControlName="coordinator_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent bg-white">
+          <option value="">Todos</option>
+          <option *ngFor="let coordinator of coordinators" [value]="coordinator.user.id">{{ coordinator.user.name }}</option>
+        </select>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fechas</label>
-        <input type="date" formControlName="date_from" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent">
+          <input type="date" formControlName="created_from" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent">
       </div>
     </form>
   </div>
@@ -71,7 +74,7 @@
             <td class="px-6 py-4 text-sm font-bold text-gray-900">{{ sol.folio }}</td>
             <td class="px-6 py-4">
               <div class="text-sm font-medium text-gray-900">
-                <ng-container *ngIf="sol.solicitante">{{ sol.solicitante.nombre }} {{ sol.solicitante.apellidoPaterno }} {{ sol.solicitante.apellidoMaterno }}</ng-container>
+                <ng-container *ngIf="sol.solicitante">{{ sol.solicitante.nombreCompleto || (sol.solicitante.nombre + ' ' + sol.solicitante.apellidoPaterno + ' ' + sol.solicitante.apellidoMaterno) }}</ng-container>
                 <ng-container *ngIf="!sol.solicitante">Sin capturar</ng-container>
               </div>
               <div class="text-xs text-gray-500 mt-0.5">{{ sol.solicitante?.curpEnmascarada || 'N/A' }}</div>
@@ -81,7 +84,7 @@
               <span *ngIf="sol.estado === 'ACTIVE'" class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E]">Aprobada</span>
               <!-- Más estados aquí -->
             </td>
-            <td class="px-6 py-4 text-sm text-gray-700">Centro</td> <!-- Sucursal Mock -->
+            <td class="px-6 py-4 text-sm text-gray-700">{{ sol.sucursal?.nombre || sol.sucursalId }}</td>
             <td class="px-6 py-4">
               <div class="flex items-center gap-3">
                 <span class="text-xs font-medium text-gray-700 w-12">{{ sol.avance.seccionesCompletadas }} de {{ sol.avance.seccionesTotales }}</span>

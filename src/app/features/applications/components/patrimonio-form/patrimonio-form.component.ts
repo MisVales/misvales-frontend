@@ -32,7 +32,21 @@ export class PatrimonioFormComponent implements OnInit {
   }
 
   async ngOnInit() {
+    await this.esperarDetalle();
     await this.cargarPatrimonio();
+  }
+
+  private esperarDetalle(): Promise<void> {
+    return new Promise((resolve) => {
+      const check = () => {
+        if (this.store.detalle()?.id) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   }
 
   async cargarPatrimonio() {
@@ -43,7 +57,7 @@ export class PatrimonioFormComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.api.listarPatrimonio(id));
       this.patrimonioArray.clear();
-      data.forEach((item: any) => {
+      (data || []).forEach((item: any) => {
         const form = PatrimonioFormFactory.create(this.fb);
         form.patchValue(item);
         this.patrimonioArray.push(form);
@@ -79,24 +93,24 @@ export class PatrimonioFormComponent implements OnInit {
     }
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
-    const payload = formGroup.value;
+    const payload = { ...formGroup.value };
     const idRegistro = payload.id;
     delete payload.id;
 
     try {
       if (idRegistro) {
-        await firstValueFrom(this.api.actualizarPatrimonio(idSolicitud, idRegistro, payload, version));
+        await firstValueFrom(this.api.actualizarPatrimonio(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo));
       } else {
-        await firstValueFrom(this.api.crearPatrimonio(idSolicitud, payload, version));
+        await firstValueFrom(this.api.crearPatrimonio(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
       }
+      await this.store.cargarDetalle(idSolicitud);
       await this.cargarPatrimonio();
-      this.store.cargarDetalle(idSolicitud);
     } catch (e: any) {
       if (e?.status === 409) {
-        alert('El expediente fue modificado por otro usuario. Recarga la información antes de continuar.');
+        await this.store.cargarDetalle(idSolicitud);
+        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       }
     }
   }
@@ -106,13 +120,12 @@ export class PatrimonioFormComponent implements OnInit {
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarPatrimonio(idSolicitud, idRegistro, version));
+      await firstValueFrom(this.api.eliminarPatrimonio(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo));
       this.removerRegistroVisual(formGroup);
-      this.store.cargarDetalle(idSolicitud);
+      await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
     }

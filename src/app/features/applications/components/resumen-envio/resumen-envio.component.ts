@@ -20,8 +20,8 @@ export class ResumenEnvioComponent {
   enviando = false;
 
   get canSubmit(): boolean {
-    return this.store.detalle()?.estado === 'DRAFT' && 
-           this.store.detalle()?.avance.seccionesCompletadas === this.store.detalle()?.avance.seccionesTotales;
+    return this.store.detalle()?.estado === 'DRAFT' &&
+      !!this.store.detalle()?.avance.puedeEnviarse;
   }
 
   get secciones(): any {

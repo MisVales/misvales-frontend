@@ -5,9 +5,12 @@ export interface SolicitudDistribuidoraResponseDTO {
   status: EstadoSolicitudDistribuidoraDTO;
   branch_id: string;
   coordinator_id: string;
+  branch?: { id: string; name: string };
+  coordinator?: { id: string; name: string };
   applicant: ResumenSolicitanteDTO | null;
   section_declarations: DeclaracionesSeccionDTO;
-  progress: AvanceExpedienteDTO;
+  progress?: AvanceExpedienteDTO;
+  completion?: AvanceExpedienteDTO;
   lock_version: number;
   submitted_by: string | null;
   submitted_at: string | null;
@@ -33,6 +36,7 @@ export interface ResumenSolicitanteDTO {
   first_last_name: string;
   second_last_name: string;
   curp_masked: string; // The API only returns masked curp if we don't have full read permissions, or maybe just full curp? The doc says "No mostrar CURP completa. Mostrar únicamente curp_masked cuando sea entregada por la API"
+  full_name?: string;
 }
 
 export interface DeclaracionesSeccionDTO {

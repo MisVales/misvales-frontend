@@ -26,7 +26,21 @@ export class EmpleosFormComponent implements OnInit {
   }
 
   async ngOnInit() {
+    await this.esperarDetalle();
     await this.cargarEmpleos();
+  }
+
+  private esperarDetalle(): Promise<void> {
+    return new Promise((resolve) => {
+      const check = () => {
+        if (this.store.detalle()?.id) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
   }
 
   async cargarEmpleos() {
@@ -37,7 +51,7 @@ export class EmpleosFormComponent implements OnInit {
     try {
       const data = await firstValueFrom(this.api.listarEmpleos(id));
       this.empleosArray.clear();
-      data.forEach((item: any) => {
+      (data || []).forEach((item: any) => {
         const form = EmpleoFormFactory.create(this.fb);
         form.patchValue(item);
         this.empleosArray.push(form);
@@ -65,24 +79,24 @@ export class EmpleosFormComponent implements OnInit {
     }
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
-    const payload = formGroup.value;
+    const payload = { ...formGroup.value };
     const idRegistro = payload.id;
     delete payload.id;
 
     try {
       if (idRegistro) {
-        await firstValueFrom(this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, version));
+        await firstValueFrom(this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo));
       } else {
-        await firstValueFrom(this.api.crearEmpleo(idSolicitud, payload, version));
+        await firstValueFrom(this.api.crearEmpleo(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
       }
+      await this.store.cargarDetalle(idSolicitud);
       await this.cargarEmpleos();
-      this.store.cargarDetalle(idSolicitud);
     } catch (e: any) {
       if (e?.status === 409) {
-        alert('El expediente fue modificado por otro usuario. Recarga la información antes de continuar.');
+        await this.store.cargarDetalle(idSolicitud);
+        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       }
     }
   }
@@ -92,13 +106,12 @@ export class EmpleosFormComponent implements OnInit {
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
+    if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarEmpleo(idSolicitud, idRegistro, version));
+      await firstValueFrom(this.api.eliminarEmpleo(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo));
       this.removerEmpleoVisual(index);
-      this.store.cargarDetalle(idSolicitud);
+      await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
     }

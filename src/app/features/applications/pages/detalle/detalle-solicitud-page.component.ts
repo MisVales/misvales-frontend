@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -34,17 +34,17 @@ export class DetalleSolicitudPageComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private route = inject(ActivatedRoute);
 
-  pasoActual: StepName = 'domicilios'; // Set 'domicilios' default as per mockup
+  pasoActual: StepName = 'datos-personales';
 
-  pasos: { id: StepName; label: string; icon: string; completado: boolean }[] = [
-    { id: 'datos-personales', label: 'Datos Personales', icon: 'check', completado: true },
-    { id: 'familiares', label: 'Familiares', icon: 'check', completado: true },
-    { id: 'domicilios', label: 'Domicilios', icon: 'circle', completado: false },
-    { id: 'vehiculos', label: 'Vehículos', icon: 'circle', completado: false },
-    { id: 'patrimonio', label: 'Patrimonio', icon: 'circle', completado: false },
-    { id: 'empleos', label: 'Empleos', icon: 'circle', completado: false },
-    { id: 'creditos', label: 'Créditos', icon: 'circle', completado: false },
-    { id: 'resumen', label: 'Resumen', icon: 'lock', completado: false },
+  pasos: { id: StepName; label: string }[] = [
+    { id: 'datos-personales', label: 'Datos Personales' },
+    { id: 'familiares', label: 'Familiares' },
+    { id: 'domicilios', label: 'Domicilios' },
+    { id: 'vehiculos', label: 'Vehículos' },
+    { id: 'patrimonio', label: 'Patrimonio' },
+    { id: 'empleos', label: 'Empleos' },
+    { id: 'creditos', label: 'Créditos' },
+    { id: 'resumen', label: 'Resumen' },
   ];
 
   ngOnInit() {
@@ -60,8 +60,31 @@ export class DetalleSolicitudPageComponent implements OnInit {
     this.pasoActual = paso;
   }
 
-  getProgresoAncho(completadas: number, totales: number): string {
-    if (!totales) return '0%';
-    return `${(completadas / totales) * 100}%`;
+  getPasoCompletado(pasoId: StepName): boolean {
+    const decl = this.store.detalle()?.declaracionesSeccion;
+    if (!decl) return false;
+    const map: Record<StepName, string | undefined> = {
+      'datos-personales': decl.datosPersonales,
+      'familiares': decl.referenciasFamiliares,
+      'domicilios': decl.domicilios,
+      'vehiculos': decl.vehiculos,
+      'patrimonio': decl.bienes,
+      'empleos': decl.empleos,
+      'creditos': decl.creditosComerciales,
+      'resumen': undefined,
+    };
+    return map[pasoId] === 'COMPLETED';
+  }
+
+  getProgresoAncho(): string {
+    const avance = this.store.detalle()?.avance;
+    if (!avance || !avance.seccionesTotales) return '0%';
+    return `${Math.round((avance.seccionesCompletadas / avance.seccionesTotales) * 100)}%`;
+  }
+
+  getProgresoPorcentaje(): number {
+    const avance = this.store.detalle()?.avance;
+    if (!avance || !avance.seccionesTotales) return 0;
+    return Math.round((avance.seccionesCompletadas / avance.seccionesTotales) * 100);
   }
 }
