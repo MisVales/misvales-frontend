@@ -5,20 +5,17 @@ import { permissionGuard } from '../../core/guards/permission.guard';
 export const distribuidorasRoutes: Routes = [
   {
     path: '',
-    // component: ListadoDistribuidorasPageComponent,
-    canActivate: [permissionGuard],
-    data: { permissions: ['distributors.view_any', 'distributors.view'] }
+    loadComponent: () => import('./pages/listado/listado-distribuidoras-page.component').then(m => m.ListadoDistribuidorasPageComponent),
+    canActivate: [permissionGuard('distributors.view_any')]
+  },
+  {
+    path: 'altas/:id',
+    loadComponent: () => import('./pages/activacion/activacion-distribuidora-page.component').then(m => m.ActivacionDistribuidoraPageComponent),
+    canActivate: [permissionGuard('distributors.activate')]
   },
   {
     path: ':id',
-    // component: DetalleDistribuidoraPageComponent,
-    canActivate: [permissionGuard],
-    data: { permissions: ['distributors.view_any', 'distributors.view'] }
-  },
-  {
-    path: ':id/activacion',
-    // component: ActivacionDistribuidoraPageComponent,
-    canActivate: [permissionGuard],
-    data: { permissions: ['distributors.activate'] } // Or appropriate permission
+    loadComponent: () => import('./pages/detalle/detalle-distribuidora-page.component').then(m => m.DetalleDistribuidoraPageComponent),
+    canActivate: [permissionGuard('distributors.view')]
   }
 ];

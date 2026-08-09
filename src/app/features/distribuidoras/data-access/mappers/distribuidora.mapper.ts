@@ -8,23 +8,21 @@ export class DistribuidoraMapper {
   static fromDto(dto: DistributorListItemResponseDto | DistributorDetailResponseDto): Distribuidora {
     return {
       id: dto.id,
-      numero: dto.number,
+      numero: dto.distributor_number,
       nombreCompleto: dto.full_name,
       estado: dto.status,
-      estadoAcceso: dto.access_status,
+      estadoAcceso: dto.activation_status,
       sucursal: {
         id: dto.branch.id,
         nombre: dto.branch.name
       },
       coordinador: dto.coordinator ? {
         id: dto.coordinator.id,
-        nombreCompleto: dto.coordinator.full_name
+        nombreCompleto: dto.coordinator.name
       } : null,
       categoria: dto.category ? this.mapCategoria(dto.category) : null,
-      lineaInicial: dto.initial_credit_limit,
-      restriccionInicialActiva: dto.initial_credit_restriction_active,
-      creadaEn: dto.created_at,
-      activadaEn: dto.activated_at,
+      creadaEn: dto.created_at ?? null,
+      activadaEn: dto.activated_at ?? null,
       versionBloqueo: dto.lock_version
     };
   }

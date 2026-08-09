@@ -38,7 +38,7 @@
             {{ item.nombre }}
           </span>
         </td>
-        <td class="py-4 px-6 text-sm font-medium text-gray-900">12%</td> <!-- Mock value since API doesn't return commission -->
+        <td class="py-4 px-6 text-sm font-medium text-gray-900">{{ item.porcentajeGanancia }}</td>
         <td class="py-4 px-6 text-sm text-gray-700">
           {{ item.inicioVigencia | date:'dd MMM yyyy' }} - {{ item.finVigencia ? (item.finVigencia | date:'dd MMM yyyy') : 'Actual' }}
         </td>

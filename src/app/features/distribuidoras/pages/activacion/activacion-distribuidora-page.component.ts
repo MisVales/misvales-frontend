@@ -1,88 +1,50 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DistribuidorasStore } from '../../state/distribuidoras.store';
-import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 import { firstValueFrom } from 'rxjs';
+import { CandidatoActivacion, CategoriaDisponible, DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 
 @Component({
-  selector: 'app-activacion-distribuidora-page',
-  standalone: true,
+  selector: 'app-activacion-distribuidora-page', standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './activacion-distribuidora-page.component.html',
   styleUrls: ['./activacion-distribuidora-page.component.css']
 })
-export class ActivacionDistribuidoraPageComponent implements OnInit, OnDestroy {
-  store = inject(DistribuidorasStore);
-  route = inject(ActivatedRoute);
-  router = inject(Router);
-  api = inject(DistribuidorasApiService);
-  fb = inject(FormBuilder);
+export class ActivacionDistribuidoraPageComponent implements OnInit {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly api = inject(DistribuidorasApiService);
+  private readonly fb = inject(FormBuilder);
+  readonly form = this.fb.nonNullable.group({ category_version_id: ['', Validators.required] });
+  candidato?: CandidatoActivacion;
+  categorias: CategoriaDisponible[] = [];
+  cargando = true;
+  guardando = false;
+  error = '';
 
-  form: FormGroup;
-  activando = false;
-  errorActivacion: string | null = null;
-  exito = false;
-
-  categoriasSimuladas = [
-    { id: 'cat-1', nombre: 'Plata', porcentaje: '10.0' },
-    { id: 'cat-2', nombre: 'Oro', porcentaje: '12.5' }
-  ];
-
-  constructor() {
-    this.form = this.fb.group({
-      category_version_id: ['', Validators.required],
-      reason: [''] // Es opcional o requerido según regla de negocio
-    });
-  }
-
-  ngOnInit() {
-    this.route.paramMap.subscribe(params => {
-      const id = params.get('id');
-      if (id) {
-        this.store.cargarDetalle(id);
-      }
-    });
-  }
-
-  ngOnDestroy() {
-    this.store.limpiarDetalle();
-  }
-
-  async confirmarActivacion() {
-    const distribuidora = this.store.detalle();
-    if (!distribuidora || this.form.invalid) return;
-
-    this.activando = true;
-    this.errorActivacion = null;
+  async ngOnInit(): Promise<void> {
     try {
-      const { category_version_id, reason } = this.form.value;
-      // Idealmente, el endpoint activarSolicitud en un módulo completo aceptaría la categoría.
-      // Aquí simulamos que se envía junto o inmediatamente después.
-      await firstValueFrom(this.api.activarSolicitud(distribuidora.id, distribuidora.versionBloqueo));
-      await firstValueFrom(this.api.asignarCategoria(distribuidora.id, distribuidora.versionBloqueo, { category_version_id, reason, starts_at: new Date().toISOString().split('T')[0] }));
-      this.exito = true;
-      setTimeout(() => {
-        this.router.navigate(['/distribuidoras', distribuidora.id]);
-      }, 2000);
-    } catch (e: any) {
-      if (e?.status === 409) {
-        this.errorActivacion = 'El registro fue modificado. Recarga la página y vuelve a intentarlo.';
-      } else {
-        this.errorActivacion = e.error?.message || e.message || 'Error al activar.';
-      }
-    } finally {
-      this.activando = false;
-    }
+      const id = this.route.snapshot.paramMap.get('id');
+      const [candidatos, categorias] = await Promise.all([
+        firstValueFrom(this.api.candidatosActivacion()), firstValueFrom(this.api.categoriasDisponibles())
+      ]);
+      this.candidato = candidatos.find(item => item.id === id);
+      this.categorias = categorias;
+      if (!this.candidato) this.error = 'La solicitud no está autorizada, ya fue utilizada o está fuera de tu alcance.';
+    } catch { this.error = 'No fue posible cargar los datos de alta.'; }
+    finally { this.cargando = false; }
   }
 
-  volver() {
-    const id = this.store.detalle()?.id;
-    if (id) {
-      this.router.navigate(['/distribuidoras', id]);
-    } else {
-      this.router.navigate(['/distribuidoras']);
-    }
+  async confirmar(): Promise<void> {
+    if (!this.candidato || this.form.invalid) return;
+    this.guardando = true; this.error = '';
+    try {
+      const distribuidora = await firstValueFrom(this.api.activarSolicitud(this.candidato.id, this.form.getRawValue().category_version_id));
+      await this.router.navigate(['/distribuidoras', distribuidora.id]);
+    } catch (error: any) { this.error = error?.error?.message ?? 'No fue posible completar el alta.'; }
+    finally { this.guardando = false; }
   }
+
+  volver(): void { void this.router.navigate(['/distribuidoras']); }
 }

@@ -1,111 +1,32 @@
-<div class="min-h-screen bg-[#F8FAF9] p-4 lg:p-8 flex items-center justify-center">
-  <div class="max-w-3xl w-full">
-    
-    <button (click)="volver()" class="flex items-center gap-2 text-gray-500 hover:text-gray-700 font-medium transition-colors mb-6 text-sm">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
-      Volver a Activaciones
-    </button>
-
-    <div *ngIf="store.cargandoDetalle()" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-12 text-center text-gray-500 flex flex-col items-center">
-      <svg class="animate-spin h-8 w-8 text-[#1A4D2E] mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-      </svg>
-      Cargando información de activación...
-    </div>
-
-    <div *ngIf="!store.cargandoDetalle() && store.detalle()" class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative">
-      <!-- Decoración Top -->
-      <div class="absolute top-0 left-0 right-0 h-2 bg-[#E8F3E8]"></div>
-
-      <div class="p-8 pb-4">
-        <h2 class="text-3xl font-bold text-gray-900 mb-2">Activación de Distribuidora</h2>
-        <p class="text-sm text-gray-600">Revise los datos de la distribuidora antes de confirmar la activación en el sistema.</p>
-      </div>
-
-      <form [formGroup]="form" (ngSubmit)="confirmarActivacion()" class="p-8 pt-4 space-y-6">
-        
-        <!-- Grid de 4 Cajas -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          
-          <div class="bg-[#F8FAF9] p-4 rounded-xl border border-[#E8EEE8]">
-            <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Sucursal Asignada</p>
-            <div class="flex items-center gap-2 text-gray-900 font-medium">
-              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
-              {{ store.detalle()!.sucursal.nombre }}
-            </div>
-          </div>
-
-          <div class="bg-[#F8FAF9] p-4 rounded-xl border border-[#E8EEE8]">
-            <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Coordinador de Zona</p>
-            <div class="flex items-center gap-2 text-gray-900 font-medium">
-              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
-              {{ store.detalle()!.coordinador?.nombreCompleto || 'Ninguno' }}
-            </div>
-          </div>
-
-          <div class="bg-[#F8FAF9] p-4 rounded-xl border border-[#E8EEE8]">
-            <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Correo Electrónico</p>
-            <div class="flex items-center gap-2 text-gray-900 font-medium">
-              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
-              c***@misvales.mx
-            </div>
-          </div>
-
-          <div class="bg-[#F8FAF9] p-4 rounded-xl border border-[#E8EEE8]">
-            <p class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Línea de Crédito Inicial</p>
-            <div class="flex items-center gap-2 text-[#1A4D2E] font-bold text-lg">
-              <svg class="w-5 h-5 text-[#1A4D2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
-              ${{ store.detalle()!.lineaInicial || '0.00' }} MXN
-            </div>
-          </div>
-
-        </div>
-
-        <!-- Formularios Adicionales -->
-        <div class="bg-[#F8FAF9] p-6 rounded-2xl border border-[#E8EEE8] space-y-4">
-          <div class="flex items-center gap-2 text-gray-900 font-bold mb-2">
-            <svg class="w-5 h-5 text-[#1A4D2E]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
-            Parámetros de Activación
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Categoría de Distribuidora <span class="text-red-500">*</span></label>
-            <select formControlName="category_version_id" class="w-full px-4 py-3 bg-white border border-[#E8EEE8] rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm text-gray-700 transition-colors">
-              <option value="">Seleccione una categoría</option>
-              <option *ngFor="let cat of categoriasSimuladas" [value]="cat.id">{{ cat.nombre }}</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="block text-xs font-semibold text-gray-700 mb-1">Motivo o Notas de Activación</label>
-            <textarea formControlName="reason" rows="3" class="w-full px-4 py-3 bg-white border border-[#E8EEE8] rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm resize-none text-gray-700 transition-colors" placeholder="Ej. Activación estándar tras verificación de documentos en sucursal..."></textarea>
-          </div>
-        </div>
-
-        <!-- Alertas -->
-        <div *ngIf="errorActivacion" class="p-4 bg-red-50 border border-red-200 text-red-800 rounded-xl text-sm flex gap-3">
-          <svg class="w-5 h-5 shrink-0 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          {{ errorActivacion }}
-        </div>
-
-        <div *ngIf="exito" class="p-4 bg-[#E8F3E8] border border-[#1A4D2E]/20 text-[#1A4D2E] rounded-xl text-sm flex items-center gap-3 font-bold">
-          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-          Activación Exitosa! Redirigiendo al perfil...
-        </div>
-
-        <div class="flex justify-end gap-3 pt-4">
-          <button type="button" (click)="volver()" [disabled]="activando || exito" class="px-6 py-3 border border-gray-200 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50">
-            Cancelar
-          </button>
-          <button type="submit" [disabled]="form.invalid || activando || exito" class="px-6 py-3 bg-[#1A4D2E] hover:bg-[#133c23] text-white rounded-xl text-sm font-bold transition-colors disabled:opacity-50 flex items-center gap-2">
-            <svg *ngIf="activando" class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>
-            <svg *ngIf="!activando" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            Activar Distribuidora
+<section class="mx-auto max-w-3xl p-6">
+  <button type="button" (click)="volver()" class="mb-5 text-sm font-semibold text-gray-600">← Volver a distribuidoras</button>
+  <div class="rounded-2xl border border-gray-200 bg-white p-7 shadow-sm">
+    <h1 class="text-2xl font-bold text-gray-900">Alta operativa de distribuidora</h1>
+    <p class="mt-1 text-sm text-gray-600">La autorización de M05 habilita este expediente; aquí se crea el registro y su acceso.</p>
+    @if (cargando) { <p class="py-10 text-center text-gray-500">Cargando expediente autorizado…</p> }
+    @if (error) { <div class="my-5 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{{ error }}</div> }
+    @if (candidato) {
+      <dl class="my-6 grid gap-4 rounded-xl bg-gray-50 p-5 sm:grid-cols-2">
+        <div><dt class="text-xs font-semibold uppercase text-gray-500">Solicitante</dt><dd>{{ candidato.applicant_name }}</dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-gray-500">Decisión M05</dt><dd class="font-semibold text-green-700">{{ candidato.authorization.decision }}</dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-gray-500">Sucursal</dt><dd>{{ candidato.branch.name }}</dd></div>
+        <div><dt class="text-xs font-semibold uppercase text-gray-500">Coordinador</dt><dd>{{ candidato.coordinator.name }}</dd></div>
+      </dl>
+      <form [formGroup]="form" (ngSubmit)="confirmar()">
+        <label for="category" class="mb-1 block text-sm font-semibold">Categoría activa y publicada</label>
+        <select id="category" formControlName="category_version_id" class="w-full rounded-lg border border-gray-300 p-3">
+          <option value="">Selecciona una categoría</option>
+          @for (categoria of categorias; track categoria.category_version_id) {
+            <option [value]="categoria.category_version_id">{{ categoria.code }} — {{ categoria.name }}</option>
+          }
+        </select>
+        <div class="mt-6 flex justify-end gap-3">
+          <button type="button" (click)="volver()" class="rounded-lg border px-5 py-2.5">Cancelar</button>
+          <button type="submit" [disabled]="form.invalid || guardando" class="rounded-lg bg-[#1A4D2E] px-5 py-2.5 font-semibold text-white disabled:opacity-50">
+            {{ guardando ? 'Creando…' : 'Crear distribuidora e invitar' }}
           </button>
         </div>
-
       </form>
-    </div>
+    }
   </div>
-</div>
+</section>

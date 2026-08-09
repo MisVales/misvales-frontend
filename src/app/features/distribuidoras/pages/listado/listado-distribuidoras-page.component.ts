@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { DistribuidorasStore } from '../../state/distribuidoras.store';
 import { FiltrosDistribuidorasComponent } from '../../components/filtros-distribuidoras/filtros-distribuidoras.component';
 import { Router } from '@angular/router';
-// Import some auth context if needed to detect role, for now we will assume a mock context
-// import { AuthService } from '../../../core/auth/auth.service'; 
+import { SessionStore } from '../../../../core/session/session.store';
+import { CandidatoActivacion, DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 
 @Component({
   selector: 'app-listado-distribuidoras-page',
@@ -17,11 +17,15 @@ export class ListadoDistribuidorasPageComponent implements OnInit {
   store = inject(DistribuidorasStore);
   router = inject(Router);
   
-  // Mocking auth context for structure
-  userRole: 'GERENTE' | 'COORDINADOR' | 'DISTRIBUIDORA' = 'GERENTE'; 
+  private readonly session = inject(SessionStore);
+  private readonly api = inject(DistribuidorasApiService);
+  candidatos: CandidatoActivacion[] = [];
+  readonly esVistaGlobal = this.session.permissions().includes('distributors.view_any');
+  readonly puedeActivar = this.session.permissions().includes('distributors.activate');
   
   ngOnInit() {
     this.store.listar(1, 10, {});
+    if (this.puedeActivar) this.api.candidatosActivacion().subscribe({ next: items => this.candidatos = items });
   }
 
   onFiltrosCambiados(filtros: any) {
@@ -37,4 +41,6 @@ export class ListadoDistribuidorasPageComponent implements OnInit {
   irADetalle(id: string) {
     this.router.navigate(['/distribuidoras', id]);
   }
+
+  completarAlta(id: string) { this.router.navigate(['/distribuidoras/altas', id]); }
 }

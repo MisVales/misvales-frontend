@@ -1,7 +1,8 @@
-import { Component, Output, EventEmitter, Input } from '@angular/core';
+import { Component, Output, EventEmitter, Input, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AssignDistributorCategoryRequestDto } from '../../data-access/dtos/assign-distributor-category-request.dto';
+import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 
 @Component({
   selector: 'app-asignar-categoria-dialog',
@@ -10,22 +11,26 @@ import { AssignDistributorCategoryRequestDto } from '../../data-access/dtos/assi
   templateUrl: './asignar-categoria-dialog.component.html',
   styleUrls: ['./asignar-categoria-dialog.component.css']
 })
-export class AsignarCategoriaDialogComponent {
+export class AsignarCategoriaDialogComponent implements OnInit {
   @Input() categoriaActualId?: string;
   @Output() confirmar = new EventEmitter<AssignDistributorCategoryRequestDto>();
   @Output() cancelar = new EventEmitter<void>();
 
   form: FormGroup;
-  categoriasSimuladas = [
-    { id: 'cat-1', nombre: 'Plata', porcentaje: '10.0', inicioVigencia: '2023-01-01' },
-    { id: 'cat-2', nombre: 'Oro', porcentaje: '12.5', inicioVigencia: '2023-01-01' }
-  ]; // In a real scenario, these would come from an API endpoint for published categories
+  private readonly api = inject(DistribuidorasApiService);
+  categoriasDisponibles: Array<{ id: string; nombre: string }> = [];
 
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       category_version_id: ['', Validators.required],
       starts_at: ['', Validators.required],
       reason: ['', Validators.required]
+    });
+  }
+
+  ngOnInit(): void {
+    this.api.categoriasDisponibles().subscribe({
+      next: categorias => this.categoriasDisponibles = categorias.map(item => ({ id: item.category_version_id, nombre: item.name }))
     });
   }
 
