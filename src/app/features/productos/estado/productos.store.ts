@@ -1,88 +1,101 @@
 import { inject } from '@angular/core';
 import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
-import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { catchError, exhaustMap, pipe, tap, of } from 'rxjs';
-import { Producto } from '../../../core/models/catalogos.models';
-import { PaginationMeta } from '../../../core/api/models/api.dtos';
+import { Producto, CreateProductRequestDto, UpdateProductRequestDto } from '../data-access/productos.dtos';
+import { ProductosMapper } from '../data-access/productos.mapper';
 import { ProductosService } from '../data-access/productos.service';
-import { ProductoReq } from '../../../core/api/models/catalogos.dtos';
-import { CatalogosMapper } from '../../../core/mappers/catalogos.mapper';
+import { firstValueFrom } from 'rxjs';
 
 export interface ProductosFiltros {
-  nombre?: string;
-  estado?: string;
-  vigencia?: string;
-  montoNominal?: string;
+  busqueda?: string;
 }
 
 export interface ProductosState {
   datos: Producto[];
   filtros: ProductosFiltros;
-  paginacion: PaginationMeta;
+  paginacion: { pagina: number; total: number; porPagina: number; };
   estadoCarga: boolean;
   error: string | null;
-  versionRegistro: number | null;
-  operacionEnProceso: 'crear' | 'modificar' | 'publicar' | 'desactivar' | 'ninguna';
+  operacionEnProceso: string | null;
 }
 
 const initialState: ProductosState = {
   datos: [],
   filtros: {},
-  paginacion: { current_page: 1, from: 0, last_page: 1, path: '', per_page: 10, to: 0, total: 0 },
+  paginacion: { pagina: 1, total: 0, porPagina: 10 },
   estadoCarga: false,
   error: null,
-  versionRegistro: null,
-  operacionEnProceso: 'ninguna',
+  operacionEnProceso: null,
 };
 
 export const ProductosStore = signalStore(
   { providedIn: 'root' },
   withState(initialState),
-  withMethods((store, productosService = inject(ProductosService)) => ({
-    actualizarFiltros(filtros: Partial<ProductosFiltros>) {
-      patchState(store, (state) => ({ filtros: { ...state.filtros, ...filtros } }));
+  withMethods((store, service = inject(ProductosService)) => ({
+    
+    async listar(pagina: number = 1, porPagina: number = 10, busqueda?: string) {
+      patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'listar' });
+      try {
+        const res = await firstValueFrom(service.listar(pagina, porPagina, busqueda));
+        patchState(store, {
+          datos: res.data.map(ProductosMapper.fromDto),
+          paginacion: { pagina: res.meta.current_page, total: res.meta.total, porPagina },
+          filtros: { busqueda },
+          estadoCarga: false,
+          operacionEnProceso: null
+        });
+      } catch (err: any) {
+        patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al listar productos', operacionEnProceso: null });
+      }
     },
 
-    limpiarFormulario() {
-      patchState(store, { operacionEnProceso: 'ninguna', error: null, versionRegistro: null });
+    async crear(datos: CreateProductRequestDto) {
+      patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'crear' });
+      try {
+        await firstValueFrom(service.crear(datos));
+        this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
+        patchState(store, { operacionEnProceso: 'crearSuccess' });
+      } catch (err: any) {
+        patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al crear producto', operacionEnProceso: null });
+      }
     },
 
-    cargarProductos: rxMethod<void>(
-      pipe(
-        tap(() => patchState(store, { estadoCarga: true, error: null })),
-        exhaustMap(() =>
-          productosService.listar(store.filtros(), store.paginacion().current_page).pipe(
-            tap((res: { data: any[]; meta: PaginationMeta }) => {
-              patchState(store, {
-                datos: res.data.map(CatalogosMapper.mapProductoResToModel),
-                paginacion: res.meta,
-                estadoCarga: false,
-              });
-            }),
-            catchError((err: any) => {
-              patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al cargar productos' });
-              return of([]);
-            })
-          )
-        )
-      )
-    ),
+    async actualizar(id: string, datos: UpdateProductRequestDto) {
+      patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'actualizar' });
+      try {
+        await firstValueFrom(service.actualizar(id, datos));
+        this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
+        patchState(store, { operacionEnProceso: 'actualizarSuccess' });
+      } catch (err: any) {
+        this.manejarErrorConcurrencia(err, 'Error al actualizar producto');
+      }
+    },
 
-    crearProducto: rxMethod<ProductoReq>(
-      pipe(
-        tap(() => patchState(store, { operacionEnProceso: 'crear', error: null })),
-        exhaustMap((req) =>
-          productosService.crear(req).pipe(
-            tap((res: any) => {
-              patchState(store, { operacionEnProceso: 'ninguna' });
-            }),
-            catchError((err: any) => {
-              patchState(store, { operacionEnProceso: 'ninguna', error: err?.error?.message || 'Error al crear producto' });
-              return of(null);
-            })
-          )
-        )
-      )
-    ),
+    async cambiarEstado(id: string, nuevoEstado: 'ACTIVE' | 'INACTIVE', versionRegistro: number) {
+      patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'cambiarEstado' });
+      try {
+        await firstValueFrom(service.cambiarEstado(id, nuevoEstado, versionRegistro));
+        this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
+        patchState(store, { operacionEnProceso: 'cambiarEstadoSuccess' });
+      } catch (err: any) {
+        this.manejarErrorConcurrencia(err, 'Error al cambiar estado de producto');
+      }
+    },
+
+    manejarErrorConcurrencia(err: any, mensajePorDefecto: string) {
+      if (err?.status === 409 || err?.error?.code === 'RESOURCE_VERSION_CONFLICT') {
+        this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
+        patchState(store, { 
+          estadoCarga: false, 
+          error: 'Conflicto de concurrencia: El registro ha sido modificado por otro usuario. Se ha recargado la lista.', 
+          operacionEnProceso: null 
+        });
+      } else {
+        patchState(store, { estadoCarga: false, error: err?.error?.message || mensajePorDefecto, operacionEnProceso: null });
+      }
+    },
+
+    limpiarError() {
+      patchState(store, { error: null });
+    }
   }))
 );
