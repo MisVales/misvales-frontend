@@ -4,6 +4,7 @@ import { SolicitudDistribuidora, PaginacionRespuesta } from '../../models/solici
 export class SolicitudDistribuidoraMapper {
   
   static mapToModel(response: any): SolicitudDistribuidora {
+    if (!response) return null as any;
     const dto: SolicitudDistribuidoraResponseDTO = response.data ? response.data : response;
     const completion = dto.completion ?? (dto as any).progress;
     return {

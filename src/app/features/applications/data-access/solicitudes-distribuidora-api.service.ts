@@ -8,6 +8,13 @@ import { CrearSolicitudRequestDTO } from './dtos/solicitud-distribuidora-request
 import { SolicitudDistribuidoraMapper } from './mappers/solicitud-distribuidora.mapper';
 import { PaginacionRespuesta, SolicitudDistribuidora } from '../models/solicitud-distribuidora.model';
 
+function unwrapArray(res: any): any[] {
+  if (Array.isArray(res)) return res;
+  if (res && Array.isArray(res.data)) return res.data;
+  console.warn('unwrapArray: unexpected response shape', res);
+  return [];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -79,7 +86,7 @@ export class SolicitudesDistribuidoraApiService {
   // ==== 3. REFERENCIAS FAMILIARES ====
 
   listarFamiliares(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/family-members`).pipe(map(res => res.data));
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/family-members`).pipe(map(unwrapArray));
   }
 
   crearFamiliar(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -104,7 +111,7 @@ export class SolicitudesDistribuidoraApiService {
 
   // ==== DOMICILIOS ====
   listarDomicilios(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/residences`).pipe(map(res => res.data));
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/residences`).pipe(map(unwrapArray));
   }
 
   crearDomicilio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -129,7 +136,7 @@ export class SolicitudesDistribuidoraApiService {
 
   // ==== VEHÍCULOS ====
   listarVehiculos(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/vehicles`).pipe(map(res => res.data));
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/vehicles`).pipe(map(unwrapArray));
   }
 
   crearVehiculo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -154,7 +161,7 @@ export class SolicitudesDistribuidoraApiService {
 
   // ==== BIENES Y COMPROMISOS ====
   listarPatrimonio(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`).pipe(map(res => res.data));
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`).pipe(map(unwrapArray));
   }
 
   crearPatrimonio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -179,7 +186,7 @@ export class SolicitudesDistribuidoraApiService {
 
   // ==== EMPLEOS ====
   listarEmpleos(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/employments`).pipe(map(res => res.data));
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/employments`).pipe(map(unwrapArray));
   }
 
   crearEmpleo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -204,7 +211,7 @@ export class SolicitudesDistribuidoraApiService {
 
   // ==== CRÉDITOS COMERCIALES ====
   listarCreditosComerciales(idSolicitud: string): Observable<any[]> {
-    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits`).pipe(map(res => res.data));
+    return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits`).pipe(map(unwrapArray));
   }
 
   crearCreditoComercial(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
