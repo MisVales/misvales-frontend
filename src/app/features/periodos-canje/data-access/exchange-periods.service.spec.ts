@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
-import { PeriodosCanjeService } from './exchange-periods.service';
+import { PeriodosCanjeService } from './periodos-canje.service';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
 
@@ -26,15 +26,15 @@ describe('PeriodosCanjeService', () => {
 
   it('debería listar periodos de canje', () => {
     const mockData = {
-      datos: [{ id: '1', nombre: 'Periodo 1', fechaInicio: '2023-01-01', fechaFin: '2023-01-31', valorPunto: '1.5', estado: 'vigente', responsable: 'Admin' }],
-      total: 1, pagina: 1, porPagina: 10
+      data: [{ id: '1', name: 'Periodo 1', start_date: '2023-01-01', end_date: '2023-01-31', status: 'CLOSED' as const, created_at: '2022-12-01', lock_version: 0 }],
+      meta: { current_page: 1, last_page: 1, total: 1 }
     };
 
     service.listar().subscribe(data => {
       expect(data).toEqual(mockData);
     });
 
-    const req = httpMock.expectOne('/api/v1/exchange-periods?page=1&perPage=10');
+    const req = httpMock.expectOne('/api/v1/redemption-periods?page=1&per_page=10');
     expect(req.request.method).toBe('GET');
     req.flush(mockData);
   });
