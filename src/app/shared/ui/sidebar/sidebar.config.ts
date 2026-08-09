@@ -81,7 +81,7 @@ export const NAV_GROUPS: NavGroupData[] = [
     icon: 'file-text',
     items: [
       { id: 'applications', title: 'Solicitudes', icon: 'file-text', route: '/solicitudes-distribuidoras', roles: GG_AD_GS_CO_VE },
-      { id: 'verifications', title: 'Verificaciones', icon: 'clipboard-check', route: '/verificacion-distribuidoras', roles: GG_AD_GS_CO_VE },
+      { id: 'verifications', title: 'Verificaciones', icon: 'clipboard-check', route: '/verificacion-distribuidoras', roles: GG_AD_GS_CO_VE, permissions: ['verification.applications.view', 'verification.visits.view'], permissionMode: 'any' },
     ],
   },
   {

@@ -1,9 +1,3 @@
-export interface DevolverSolicitudCapturaRequestDto {
-  motivo: string;
-  seccionesPendientes: string[];
-  lock_version: number;
-}
-
 export interface AsignarVerificadorRequestDto {
   verifier_id: string;
   lock_version: number;
@@ -18,8 +12,8 @@ export interface ActualizarVisitaRequestDto {
   diferencias?: {
     seccion: string;
     campo: string;
-    dato_declarado: string;
-    dato_observado: string;
+    dato_declarado: unknown;
+    dato_observado: unknown;
     descripcion: string;
   }[];
   lock_version: number;
@@ -40,9 +34,8 @@ export interface FinalizarVisitaRequestDto {
 export interface AplicarCorreccionRequestDto {
   seccion: string;
   campo: string;
-  valor_original: string;
-  valor_observado: string;
-  valor_corregido: string;
+  valor_observado: unknown;
+  valor_corregido: unknown;
   motivo: string;
   lock_version: number;
 }
@@ -58,9 +51,8 @@ export interface EvaluarSolicitudRequestDto {
 }
 
 export interface AutorizarSolicitudRequestDto {
-  decision: 'APPROVED' | 'REJECTED';
+  decision: 'AUTORIZADA' | 'RECHAZADA';
   motivo: string;
-  linea_inicial?: string; // Como decimal en string
   lock_version: number;
 }
 
@@ -82,7 +74,7 @@ export interface VisitaVerificacionResponseDto {
   fecha_asignacion: string | null;
   fecha_inicio: string | null;
   fecha_fin: string | null;
-  diferencias: any[];
+  diferencias: DiferenciaVerificacionResponseDto[];
   evidencias: EvidenciaVerificacionResponseDto[];
   lock_version: number;
 }
@@ -91,9 +83,9 @@ export interface CorreccionSolicitudResponseDto {
   id: string;
   seccion: string;
   campo: string;
-  valor_original: string;
-  valor_observado: string;
-  valor_corregido: string;
+  valor_original: unknown;
+  valor_observado: unknown;
+  valor_corregido: unknown;
   motivo: string;
   corregido_por: string;
   fecha_correccion: string;
@@ -110,15 +102,14 @@ export interface EvaluacionSolicitudResponseDto {
 export interface AutorizacionSolicitudResponseDto {
   id: string;
   gerente_id: string;
-  decision: string;
+  decision: 'AUTORIZADA' | 'RECHAZADA';
   motivo: string;
-  linea_inicial: string | null;
   fecha_autorizacion: string;
 }
 
 export interface SolicitudDistribuidoraResponseDto {
   id: string;
-  folio: string;
+  folio: string | null;
   aspirante: {
     nombre_completo: string;
     curp_enmascarado: string;
@@ -132,12 +123,21 @@ export interface SolicitudDistribuidoraResponseDto {
   estado: string;
   fecha_envio: string;
   avance: number;
-  datos_declarados: any;
+  datos_declarados: Record<string, unknown>;
   visitas: VisitaVerificacionResponseDto[];
   correcciones: CorreccionSolicitudResponseDto[];
   evaluacion: EvaluacionSolicitudResponseDto | null;
   autorizacion: AutorizacionSolicitudResponseDto | null;
   lock_version: number;
+}
+
+export interface DiferenciaVerificacionResponseDto {
+  id?: string;
+  seccion: string;
+  campo: string;
+  dato_declarado: unknown;
+  dato_observado: unknown;
+  descripcion: string;
 }
 
 export interface ErrorApiResponseDto {

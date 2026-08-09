@@ -28,7 +28,7 @@ export class LineaTiempoSolicitudComponent {
     events.push({
       title: 'Solicitud Enviada',
       date: s.fechaEnvio,
-      status: s.fechaEnvio ? 'DONE' : 'PENDING'
+      status: s.fechaEnvio ? 'DONE' : 'PENDING',
     });
 
     // 2. Revisión / Asignación
@@ -37,8 +37,10 @@ export class LineaTiempoSolicitudComponent {
     events.push({
       title: 'Verificador Asignado',
       date: isAssigned ? s.visitas[0].fechaAsignacion : null,
-      status: isAssigned ? 'DONE' : (s.estado === 'COORDINATOR_REVIEW' ? 'CURRENT' : 'PENDING'),
-      description: isAssigned ? 'Asignado para visita física' : 'Pendiente de asignación por el coordinador'
+      status: isAssigned ? 'DONE' : s.estado === 'COORDINATOR_REVIEW' ? 'CURRENT' : 'PENDING',
+      description: isAssigned
+        ? 'Asignado para visita física'
+        : 'Pendiente de asignación por el coordinador',
     });
 
     // 3. Visita Física
@@ -46,8 +48,12 @@ export class LineaTiempoSolicitudComponent {
     events.push({
       title: 'Visita Física Completada',
       date: visitCompleted ? s.visitas[0].fechaFin : null,
-      status: visitCompleted ? 'DONE' : (s.estado === 'VERIFIER_ASSIGNED' || s.estado === 'VERIFICATION_IN_PROGRESS' ? 'CURRENT' : 'PENDING'),
-      description: visitCompleted ? `Resultado: ${s.visitas[0].resultadoFisico}` : ''
+      status: visitCompleted
+        ? 'DONE'
+        : s.estado === 'VERIFIER_ASSIGNED' || s.estado === 'PHYSICAL_VERIFICATION'
+          ? 'CURRENT'
+          : 'PENDING',
+      description: visitCompleted ? `Resultado: ${s.visitas[0].resultadoFisico}` : '',
     });
 
     // 4. Evaluación del Coordinador
@@ -55,8 +61,10 @@ export class LineaTiempoSolicitudComponent {
     events.push({
       title: 'Evaluación del Coordinador',
       date: hasEval ? s.evaluacion!.fechaEvaluacion : null,
-      status: hasEval ? 'DONE' : (s.estado === 'COORDINATOR_EVALUATION' ? 'CURRENT' : 'PENDING'),
-      description: hasEval ? `Dictamen: ${s.evaluacion!.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple'}` : ''
+      status: hasEval ? 'DONE' : s.estado === 'COORDINATOR_EVALUATION' ? 'CURRENT' : 'PENDING',
+      description: hasEval
+        ? `Dictamen: ${s.evaluacion!.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple'}`
+        : '',
     });
 
     // 5. Autorización Gerencial
@@ -64,8 +72,8 @@ export class LineaTiempoSolicitudComponent {
     events.push({
       title: 'Decisión Gerencial',
       date: hasAuth ? s.autorizacion!.fechaAutorizacion : null,
-      status: hasAuth ? 'DONE' : (s.estado === 'MANAGER_AUTHORIZATION' ? 'CURRENT' : 'PENDING'),
-      description: hasAuth ? `Decisión: ${s.autorizacion!.decision === 'APPROVED' ? 'Aprobado' : 'Rechazado'}` : ''
+      status: hasAuth ? 'DONE' : s.estado === 'MANAGER_AUTHORIZATION' ? 'CURRENT' : 'PENDING',
+      description: hasAuth ? `Decisión: ${s.autorizacion!.decision}` : '',
     });
 
     return events;

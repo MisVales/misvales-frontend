@@ -3,18 +3,20 @@ import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
 import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { VerificacionDistribuidorasApiService } from '../data-access/api/verificacion-distribuidoras-api.service';
 import { initialVerificacionDistribuidorasState } from './verificacion-distribuidoras.store';
-import { mapSolicitudToModel, mapVisitaToModel } from '../data-access/mappers/verificacion-distribuidoras.mappers';
+import {
+  mapSolicitudToModel,
+  mapVisitaToModel,
+} from '../data-access/mappers/verificacion-distribuidoras.mappers';
 import { HttpErrorResponse } from '@angular/common/http';
-import { 
-  ActualizarVisitaRequestDto, 
-  AplicarCorreccionRequestDto, 
-  AsignarVerificadorRequestDto, 
-  AutorizarSolicitudRequestDto, 
-  DevolverSolicitudCapturaRequestDto, 
-  EvaluarSolicitudRequestDto, 
-  FinalizarCorreccionesRequestDto, 
-  FinalizarVisitaRequestDto, 
-  IniciarVisitaRequestDto 
+import {
+  ActualizarVisitaRequestDto,
+  AplicarCorreccionRequestDto,
+  AsignarVerificadorRequestDto,
+  AutorizarSolicitudRequestDto,
+  EvaluarSolicitudRequestDto,
+  FinalizarCorreccionesRequestDto,
+  FinalizarVisitaRequestDto,
+  IniciarVisitaRequestDto,
 } from '../data-access/dtos/verificacion-distribuidoras.dtos';
 
 export const VerificacionDistribuidorasFacade = signalStore(
@@ -23,14 +25,15 @@ export const VerificacionDistribuidorasFacade = signalStore(
   withMethods((store) => {
     const apiService = inject(VerificacionDistribuidorasApiService);
 
-    const handleError = (err: any) => {
+    const handleError = (err: unknown) => {
       let errorMsg = 'Ha ocurrido un error inesperado.';
       let isConflict = false;
       let isDenied = false;
 
       if (err instanceof HttpErrorResponse) {
         if (err.status === 409) {
-          errorMsg = 'Conflicto de versión: Los datos han sido modificados por otro usuario. Por favor, recarga la página.';
+          errorMsg =
+            'Conflicto de versión: Los datos han sido modificados por otro usuario. Por favor, recarga la página.';
           isConflict = true;
         } else if (err.status === 403) {
           errorMsg = 'Acceso denegado a esta operación.';
@@ -42,12 +45,12 @@ export const VerificacionDistribuidorasFacade = signalStore(
         }
       }
 
-      patchState(store, { 
-        isLoading: false, 
+      patchState(store, {
+        isLoading: false,
         isUploading: false,
         error: errorMsg,
         conflictoVersion: isConflict,
-        accesoDenegado: isDenied
+        accesoDenegado: isDenied,
       });
       return false;
     };
@@ -56,16 +59,28 @@ export const VerificacionDistribuidorasFacade = signalStore(
       // --------------------------------------------------
       // SOLICITUDES
       // --------------------------------------------------
-      async cargarSolicitudes(page: number = 1, perPage: number = 10, status?: string, search?: string) {
-        patchState(store, { isLoading: true, error: null, conflictoVersion: false, accesoDenegado: false });
+      async cargarSolicitudes(
+        page: number = 1,
+        perPage: number = 10,
+        status?: string,
+        search?: string,
+      ) {
+        patchState(store, {
+          isLoading: true,
+          error: null,
+          conflictoVersion: false,
+          accesoDenegado: false,
+        });
         try {
-          const response = await firstValueFrom(apiService.listarSolicitudes({ page, perPage, status, search }));
+          const response = await firstValueFrom(
+            apiService.listarSolicitudes({ page, perPage, status, search }),
+          );
           patchState(store, {
             solicitudes: response.data.map(mapSolicitudToModel),
             totalSolicitudes: response.total,
             pageSolicitudes: response.page,
             perPageSolicitudes: response.perPage,
-            isLoading: false
+            isLoading: false,
           });
         } catch (err) {
           handleError(err);
@@ -73,29 +88,20 @@ export const VerificacionDistribuidorasFacade = signalStore(
       },
 
       async cargarSolicitud(id: string) {
-        patchState(store, { isLoading: true, error: null, conflictoVersion: false, accesoDenegado: false });
+        patchState(store, {
+          isLoading: true,
+          error: null,
+          conflictoVersion: false,
+          accesoDenegado: false,
+        });
         try {
           const response = await firstValueFrom(apiService.consultarSolicitud(id));
           patchState(store, {
             solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
+            isLoading: false,
           });
         } catch (err) {
           handleError(err);
-        }
-      },
-
-      async devolverACaptura(id: string, req: DevolverSolicitudCapturaRequestDto) {
-        patchState(store, { isLoading: true, error: null });
-        try {
-          const response = await firstValueFrom(apiService.devolverACaptura(id, req));
-          patchState(store, {
-            solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
-          });
-          return true;
-        } catch (err) {
-          return handleError(err);
         }
       },
 
@@ -105,7 +111,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.asignarVerificador(id, req));
           patchState(store, {
             solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -113,18 +119,20 @@ export const VerificacionDistribuidorasFacade = signalStore(
         }
       },
 
-      async cargarVerificadoresDisponibles() {
+      async cargarVerificadoresDisponibles(solicitudId: string) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.listarVerificadoresDisponibles());
+          const response = await firstValueFrom(
+            apiService.listarVerificadoresDisponibles(solicitudId),
+          );
           patchState(store, {
-            verificadoresDisponibles: response.map(v => ({
+            verificadoresDisponibles: response.map((v) => ({
               id: v.id,
               nombreCompleto: v.nombre_completo,
               sucursalId: v.sucursal_id,
-              estado: v.estado as 'ACTIVE' | 'INACTIVE'
+              estado: v.estado as 'ACTIVE' | 'INACTIVE',
             })),
-            isLoading: false
+            isLoading: false,
           });
         } catch (err) {
           handleError(err);
@@ -134,16 +142,23 @@ export const VerificacionDistribuidorasFacade = signalStore(
       // --------------------------------------------------
       // VISITAS Y EVIDENCIAS
       // --------------------------------------------------
-      async cargarVisitasAsignadas(page: number = 1, perPage: number = 10, status?: string, search?: string) {
+      async cargarVisitasAsignadas(
+        page: number = 1,
+        perPage: number = 10,
+        status?: string,
+        search?: string,
+      ) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.listarVisitasAsignadas({ page, perPage, status, search }));
+          const response = await firstValueFrom(
+            apiService.listarVisitasAsignadas({ page, perPage, status, search }),
+          );
           patchState(store, {
             visitasAsignadas: response.data.map(mapVisitaToModel),
             totalVisitas: response.total,
             pageVisitas: response.page,
             perPageVisitas: response.perPage,
-            isLoading: false
+            isLoading: false,
           });
         } catch (err) {
           handleError(err);
@@ -154,9 +169,13 @@ export const VerificacionDistribuidorasFacade = signalStore(
         patchState(store, { isLoading: true, error: null });
         try {
           const response = await firstValueFrom(apiService.consultarVisita(id));
+          const application = await firstValueFrom(
+            apiService.consultarSolicitud(response.solicitud_id),
+          );
           patchState(store, {
             visitaSeleccionada: mapVisitaToModel(response),
-            isLoading: false
+            solicitudSeleccionada: mapSolicitudToModel(application),
+            isLoading: false,
           });
         } catch (err) {
           handleError(err);
@@ -169,7 +188,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.iniciarVisita(id, req));
           patchState(store, {
             visitaSeleccionada: mapVisitaToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -183,7 +202,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.actualizarVisita(id, req));
           patchState(store, {
             visitaSeleccionada: mapVisitaToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -197,7 +216,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.finalizarVisita(id, req));
           patchState(store, {
             visitaSeleccionada: mapVisitaToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -222,7 +241,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
             error: (err) => {
               handleError(err);
               resolve(false);
-            }
+            },
           });
         });
       },
@@ -261,7 +280,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.aplicarCorreccion(solicitudId, req));
           patchState(store, {
             solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -275,7 +294,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.finalizarCorrecciones(solicitudId, req));
           patchState(store, {
             solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -289,7 +308,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.evaluarSolicitud(solicitudId, req));
           patchState(store, {
             solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -303,7 +322,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.autorizarSolicitud(solicitudId, req));
           patchState(store, {
             solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
+            isLoading: false,
           });
           return true;
         } catch (err) {
@@ -320,7 +339,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
 
       clearError() {
         patchState(store, { error: null });
-      }
+      },
     };
-  })
+  }),
 );

@@ -12,38 +12,51 @@ export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
       // ------------------------------------------
       {
         path: 'solicitudes-distribuidora/revision',
-        canActivate: [permissionGuard('view_applications')],
-        loadComponent: () => import('./pages/revision-solicitudes/revision-solicitudes.component').then(m => m.RevisionSolicitudesComponent)
-      },
-      {
-        path: 'solicitudes-distribuidora/autorizaciones',
-        canActivate: [permissionGuard('authorize_applications')],
-        loadComponent: () => import('./pages/autorizacion-gerencial/autorizacion-gerencial.component').then(m => m.AutorizacionGerencialComponent)
+        canActivate: [permissionGuard('verification.applications.view')],
+        loadComponent: () =>
+          import('./pages/revision-solicitudes/revision-solicitudes.component').then(
+            (m) => m.RevisionSolicitudesComponent,
+          ),
       },
       {
         path: 'solicitudes-distribuidora/:id',
-        canActivate: [permissionGuard('view_applications')],
-        loadComponent: () => import('./pages/detalle-solicitud/detalle-solicitud.component').then(m => m.DetalleSolicitudComponent)
+        canActivate: [permissionGuard('verification.applications.view')],
+        loadComponent: () =>
+          import('./pages/detalle-solicitud/detalle-solicitud.component').then(
+            (m) => m.DetalleSolicitudComponent,
+          ),
       },
       {
         path: 'solicitudes-distribuidora/:id/asignar-verificador',
-        canActivate: [permissionGuard('verify_applications')], // O el permiso que decida el backend para el coordinador
-        loadComponent: () => import('./pages/asignar-verificador/asignar-verificador.component').then(m => m.AsignarVerificadorComponent)
+        canActivate: [permissionGuard('verification.verifiers.assign')],
+        loadComponent: () =>
+          import('./pages/asignar-verificador/asignar-verificador.component').then(
+            (m) => m.AsignarVerificadorComponent,
+          ),
       },
       {
         path: 'solicitudes-distribuidora/:id/correcciones',
-        canActivate: [permissionGuard('evaluate_applications')],
-        loadComponent: () => import('./pages/correcciones-solicitud/correcciones-solicitud.component').then(m => m.CorreccionesSolicitudComponent)
+        canActivate: [permissionGuard('verification.corrections.manage')],
+        loadComponent: () =>
+          import('./pages/correcciones-solicitud/correcciones-solicitud.component').then(
+            (m) => m.CorreccionesSolicitudComponent,
+          ),
       },
       {
         path: 'solicitudes-distribuidora/:id/evaluacion',
-        canActivate: [permissionGuard('evaluate_applications')],
-        loadComponent: () => import('./pages/evaluacion-coordinador/evaluacion-coordinador.component').then(m => m.EvaluacionCoordinadorComponent)
+        canActivate: [permissionGuard('verification.evaluations.decide')],
+        loadComponent: () =>
+          import('./pages/evaluacion-coordinador/evaluacion-coordinador.component').then(
+            (m) => m.EvaluacionCoordinadorComponent,
+          ),
       },
       {
         path: 'solicitudes-distribuidora/:id/autorizacion',
-        canActivate: [permissionGuard('authorize_applications')],
-        loadComponent: () => import('./pages/autorizacion-gerencial/autorizacion-gerencial.component').then(m => m.AutorizacionGerencialComponent) // Reutilizamos el mismo componente que manejará la vista simple y el wizard de decisión
+        canActivate: [permissionGuard('verification.authorizations.decide')],
+        loadComponent: () =>
+          import('./pages/autorizacion-gerencial/autorizacion-gerencial.component').then(
+            (m) => m.AutorizacionGerencialComponent,
+          ), // Reutilizamos el mismo componente que manejará la vista simple y el wizard de decisión
       },
 
       // ------------------------------------------
@@ -51,16 +64,29 @@ export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
       // ------------------------------------------
       {
         path: 'verificaciones/asignadas',
-        canActivate: [permissionGuard('verify_applications')],
-        loadComponent: () => import('./pages/visitas-asignadas/visitas-asignadas.component').then(m => m.VisitasAsignadasComponent)
+        canActivate: [permissionGuard('verification.visits.view')],
+        loadComponent: () =>
+          import('./pages/visitas-asignadas/visitas-asignadas.component').then(
+            (m) => m.VisitasAsignadasComponent,
+          ),
       },
       {
         path: 'verificaciones/:id/visita',
-        canActivate: [permissionGuard('verify_applications')],
-        loadComponent: () => import('./pages/realizar-visita/realizar-visita.component').then(m => m.RealizarVisitaComponent)
+        canActivate: [permissionGuard('verification.visits.perform')],
+        loadComponent: () =>
+          import('./pages/realizar-visita/realizar-visita.component').then(
+            (m) => m.RealizarVisitaComponent,
+          ),
       },
-      
-      { path: '', redirectTo: 'solicitudes-distribuidora/revision', pathMatch: 'full' }
-    ]
-  }
+
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () =>
+          import('./pages/inicio-verificaciones/inicio-verificaciones.component').then(
+            (m) => m.InicioVerificacionesComponent,
+          ),
+      },
+    ],
+  },
 ];

@@ -1,7 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { FormsModule } from '@angular/forms';
+import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 
 @Component({
   selector: 'app-autorizacion-gerencial',
@@ -16,65 +23,65 @@ export class AutorizacionGerencialComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
-  decision = signal<'APPROVED' | 'REJECTED' | null>(null);
-  comentarios = signal<string>('');
-  
-  // Simulated manager credentials for double auth in a real world scenario
-  password = signal<string>('');
+  decision = signal<'AUTORIZADA' | 'RECHAZADA' | null>(null);
+  comentarios = signal('');
 
-  ngOnInit() {
+  ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.facade.cargarSolicitud(id);
+      void this.facade.cargarSolicitud(id);
     }
   }
 
-  ngOnDestroy() {
+  ngOnDestroy(): void {
     this.facade.limpiarSeleccion();
   }
 
-  async onAuthorize() {
+  async onAuthorize(): Promise<void> {
     const solicitud = this.facade.solicitudSeleccionada();
-    if (!solicitud) return;
-
-    if (!this.decision()) {
+    const decision = this.decision();
+    if (!solicitud || !decision) {
       alert('Debes seleccionar una decisión.');
       return;
     }
-    
-    if (this.decision() === 'REJECTED' && !this.comentarios()) {
-      alert('Es obligatorio proporcionar un motivo de rechazo.');
+
+    if (!this.comentarios().trim()) {
+      alert('Es obligatorio proporcionar el motivo de la decisión.');
       return;
     }
 
-    // Example logic rule
-    if (this.decision() === 'APPROVED' && solicitud.evaluacion?.dictamen === 'DOES_NOT_COMPLY') {
-      if (!confirm('Advertencia: El coordinador dictaminó esta solicitud como DESFAVORABLE. ¿Seguro que deseas APROBARLA?')) {
-        return;
-      }
-    }
-
-    if (!confirm(`¿Estás seguro de emitir el dictamen final como ${this.decision() === 'APPROVED' ? 'APROBADO' : 'RECHAZADO'}? Esta acción cierra el proceso.`)) {
+    if (
+      !confirm(
+        `¿Estás seguro de emitir el dictamen final como ${decision}? Esta acción cierra el proceso.`,
+      )
+    ) {
       return;
     }
 
-    const req = {
-      decision: this.decision()!,
-      motivo: this.comentarios(),
-      lock_version: solicitud.lockVersion
-    };
+    const success = await this.facade.autorizarSolicitud(solicitud.id, {
+      decision,
+      motivo: this.comentarios().trim(),
+      lock_version: solicitud.lockVersion,
+    });
 
-    const success = await this.facade.autorizarSolicitud(solicitud.id, req);
     if (success) {
-      alert('Decisión gerencial registrada. Proceso de verificación finalizado.');
-      this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
+      alert(
+        'Decisión gerencial registrada. El Módulo 5 ha finalizado sin activar la distribuidora.',
+      );
+      await this.router.navigate([
+        '/verificacion-distribuidoras/solicitudes-distribuidora',
+        solicitud.id,
+      ]);
     }
   }
 
-  onCancel() {
+  onCancel(): void {
     const solicitud = this.facade.solicitudSeleccionada();
     if (solicitud) {
-      this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
+      void this.router.navigate([
+        '/verificacion-distribuidoras/solicitudes-distribuidora',
+        solicitud.id,
+      ]);
     }
   }
 }

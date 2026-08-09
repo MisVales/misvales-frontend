@@ -16,10 +16,10 @@ export class RevisionSolicitudesComponent implements OnInit {
   protected readonly facade = inject(VerificacionDistribuidorasFacade);
 
   ngOnInit() {
-    this.facade.cargarSolicitudes(1, 20); // Default parameters, we can add filters later
+    void this.facade.cargarSolicitudes(1, 20);
   }
 
   onPageChange(page: number) {
-    this.facade.cargarSolicitudes(page, this.facade.perPageSolicitudes());
+    void this.facade.cargarSolicitudes(page, this.facade.perPageSolicitudes());
   }
 }

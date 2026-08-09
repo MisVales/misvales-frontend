@@ -1,11 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 export interface PuntoComprobacion {
   id: string;
   seccion: string;
   campo: string;
   etiqueta: string;
-  datoDeclarado: string;
+  datoDeclarado: unknown;
   estado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA' | null;
   diferenciaRegistrada?: boolean;
 }
@@ -20,8 +20,11 @@ export interface PuntoComprobacion {
 export class ListaComprobacionVisitaComponent {
   puntos = input<PuntoComprobacion[]>([]);
   isReadonly = input<boolean>(false);
-  
-  cambiarEstadoPunto = output<{ puntoId: string; estado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA' }>();
+
+  cambiarEstadoPunto = output<{
+    puntoId: string;
+    estado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA';
+  }>();
   registrarDiferencia = output<PuntoComprobacion>();
 
   onEstadoChange(punto: PuntoComprobacion, nuevoEstado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA') {

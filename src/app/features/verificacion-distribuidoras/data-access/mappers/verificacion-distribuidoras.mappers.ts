@@ -1,21 +1,21 @@
-import { 
+import {
   AutorizacionSolicitudResponseDto,
   CorreccionSolicitudResponseDto,
   EvaluacionSolicitudResponseDto,
   EvidenciaVerificacionResponseDto,
-  SolicitudDistribuidoraResponseDto, 
-  VisitaVerificacionResponseDto 
+  SolicitudDistribuidoraResponseDto,
+  VisitaVerificacionResponseDto,
 } from '../dtos/verificacion-distribuidoras.dtos';
-import { 
+import {
   AutorizacionSolicitud,
   CorreccionSolicitud,
-  EstadoSolicitudDistribuidora, 
-  EstadoVisitaVerificacion, 
-  EvaluacionSolicitud, 
-  EvidenciaVerificacion, 
-  ResultadoVisitaVerificacion, 
+  EstadoSolicitudDistribuidora,
+  EstadoVisitaVerificacion,
+  EvaluacionSolicitud,
+  EvidenciaVerificacion,
+  ResultadoVisitaVerificacion,
   SolicitudDistribuidora,
-  VisitaVerificacion
+  VisitaVerificacion,
 } from '../../models/verificacion-distribuidoras.models';
 
 export function mapEvidenciaToModel(dto: EvidenciaVerificacionResponseDto): EvidenciaVerificacion {
@@ -24,7 +24,7 @@ export function mapEvidenciaToModel(dto: EvidenciaVerificacionResponseDto): Evid
     tipo: dto.tipo,
     nombreOriginal: dto.nombre_original,
     fechaCarga: dto.fecha_carga,
-    cargadoPor: dto.cargado_por
+    cargadoPor: dto.cargado_por,
   };
 }
 
@@ -39,16 +39,17 @@ export function mapVisitaToModel(dto: VisitaVerificacionResponseDto): VisitaVeri
     fechaAsignacion: dto.fecha_asignacion,
     fechaInicio: dto.fecha_inicio,
     fechaFin: dto.fecha_fin,
-    diferencias: dto.diferencias?.map((d: any) => ({
-      id: d.id,
-      seccion: d.seccion,
-      campo: d.campo,
-      datoDeclarado: d.dato_declarado,
-      datoObservado: d.dato_observado,
-      descripcion: d.descripcion
-    })) || [],
+    diferencias:
+      dto.diferencias?.map((d) => ({
+        id: d.id,
+        seccion: d.seccion,
+        campo: d.campo,
+        datoDeclarado: d.dato_declarado,
+        datoObservado: d.dato_observado,
+        descripcion: d.descripcion,
+      })) || [],
     evidencias: dto.evidencias?.map(mapEvidenciaToModel) || [],
-    lockVersion: dto.lock_version
+    lockVersion: dto.lock_version,
   };
 }
 
@@ -62,7 +63,7 @@ export function mapCorreccionToModel(dto: CorreccionSolicitudResponseDto): Corre
     valorCorregido: dto.valor_corregido,
     motivo: dto.motivo,
     corregidoPor: dto.corregido_por,
-    fechaCorreccion: dto.fecha_correccion
+    fechaCorreccion: dto.fecha_correccion,
   };
 }
 
@@ -72,22 +73,25 @@ export function mapEvaluacionToModel(dto: EvaluacionSolicitudResponseDto): Evalu
     coordinadorId: dto.coordinador_id,
     dictamen: dto.dictamen as 'COMPLIES' | 'DOES_NOT_COMPLY',
     motivo: dto.motivo,
-    fechaEvaluacion: dto.fecha_evaluacion
+    fechaEvaluacion: dto.fecha_evaluacion,
   };
 }
 
-export function mapAutorizacionToModel(dto: AutorizacionSolicitudResponseDto): AutorizacionSolicitud {
+export function mapAutorizacionToModel(
+  dto: AutorizacionSolicitudResponseDto,
+): AutorizacionSolicitud {
   return {
     id: dto.id,
     gerenteId: dto.gerente_id,
-    decision: dto.decision as 'APPROVED' | 'REJECTED',
+    decision: dto.decision,
     motivo: dto.motivo,
-    lineaInicialDecimal: dto.linea_inicial,
-    fechaAutorizacion: dto.fecha_autorizacion
+    fechaAutorizacion: dto.fecha_autorizacion,
   };
 }
 
-export function mapSolicitudToModel(dto: SolicitudDistribuidoraResponseDto): SolicitudDistribuidora {
+export function mapSolicitudToModel(
+  dto: SolicitudDistribuidoraResponseDto,
+): SolicitudDistribuidora {
   return {
     id: dto.id,
     folio: dto.folio,
@@ -106,6 +110,6 @@ export function mapSolicitudToModel(dto: SolicitudDistribuidoraResponseDto): Sol
     evaluacion: dto.evaluacion ? mapEvaluacionToModel(dto.evaluacion) : null,
     autorizacion: dto.autorizacion ? mapAutorizacionToModel(dto.autorizacion) : null,
     datosDeclarados: dto.datos_declarados || {},
-    lockVersion: dto.lock_version
+    lockVersion: dto.lock_version,
   };
 }

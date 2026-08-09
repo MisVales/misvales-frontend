@@ -1,8 +1,17 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnInit,
+  OnDestroy,
+  signal,
+  computed,
+} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { ComparadorCorreccionesComponent } from '../../components/comparador-correcciones/comparador-correcciones.component';
 import { FormsModule } from '@angular/forms';
+import { DiferenciaVerificacion } from '../../models/verificacion-distribuidoras.models';
 
 @Component({
   selector: 'app-correcciones-solicitud',
@@ -18,7 +27,7 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
 
   mostrarFormularioCorreccion = signal<boolean>(false);
-  diferenciaSeleccionada = signal<any>(null);
+  diferenciaSeleccionada = signal<DiferenciaVerificacion | null>(null);
 
   // Form State
   valorCorregido = signal<string>('');
@@ -39,19 +48,21 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   diferenciasPendientes = computed(() => {
     const solicitud = this.facade.solicitudSeleccionada();
     if (!solicitud) return [];
-    
+
     // Simplificación: juntar todas las diferencias de todas las visitas
-    const diferencias = solicitud.visitas.flatMap(v => v.diferencias);
-    
+    const diferencias = solicitud.visitas.flatMap((v) => v.diferencias);
+
     // Filtrar aquellas que no tengan una corrección aplicada ya (mismo seccion y campo)
-    return diferencias.filter(d => 
-      !solicitud.correcciones.some(c => c.seccion === d.seccion && c.campo === d.campo)
+    return diferencias.filter(
+      (d) => !solicitud.correcciones.some((c) => c.seccion === d.seccion && c.campo === d.campo),
     );
   });
 
-  abrirCorreccion(diferencia: any) {
+  abrirCorreccion(diferencia: DiferenciaVerificacion) {
     this.diferenciaSeleccionada.set(diferencia);
-    this.valorCorregido.set(diferencia.datoObservado || '');
+    this.valorCorregido.set(
+      diferencia.datoObservado == null ? '' : String(diferencia.datoObservado),
+    );
     this.motivoCorreccion.set('');
     this.mostrarFormularioCorreccion.set(true);
   }
@@ -74,11 +85,10 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     const req = {
       seccion: dif.seccion,
       campo: dif.campo,
-      valor_original: dif.datoDeclarado,
       valor_observado: dif.datoObservado,
       valor_corregido: this.valorCorregido(),
       motivo: this.motivoCorreccion(),
-      lock_version: solicitud.lockVersion
+      lock_version: solicitud.lockVersion,
     };
 
     const success = await this.facade.aplicarCorreccion(solicitud.id, req);
@@ -92,26 +102,33 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     if (!solicitud) return;
 
     if (this.diferenciasPendientes().length > 0) {
-      if (!confirm('Aún hay diferencias sin corregir. ¿Estás seguro de finalizar las correcciones y avanzar el proceso?')) {
-        return;
-      }
-    } else {
-      if (!confirm('¿Finalizar correcciones?')) {
-        return;
-      }
+      alert('Debes corregir todas las diferencias antes de finalizar esta etapa.');
+      return;
     }
 
-    const success = await this.facade.finalizarCorrecciones(solicitud.id, { lock_version: solicitud.lockVersion });
+    if (!confirm('¿Finalizar correcciones?')) {
+      return;
+    }
+
+    const success = await this.facade.finalizarCorrecciones(solicitud.id, {
+      lock_version: solicitud.lockVersion,
+    });
     if (success) {
       alert('Correcciones finalizadas.');
-      this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
+      this.router.navigate([
+        '/verificacion-distribuidoras/solicitudes-distribuidora',
+        solicitud.id,
+      ]);
     }
   }
 
   onCancel() {
     const solicitud = this.facade.solicitudSeleccionada();
     if (solicitud) {
-      this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
+      this.router.navigate([
+        '/verificacion-distribuidoras/solicitudes-distribuidora',
+        solicitud.id,
+      ]);
     }
   }
 }

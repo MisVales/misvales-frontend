@@ -1,13 +1,14 @@
-export type EstadoSolicitudDistribuidora = 
+export type EstadoSolicitudDistribuidora =
   | 'DRAFT'
   | 'COORDINATOR_REVIEW'
   | 'VERIFIER_ASSIGNED'
-  | 'VERIFICATION_IN_PROGRESS'
+  | 'PHYSICAL_VERIFICATION'
+  | 'COORDINATOR_CORRECTION'
   | 'COORDINATOR_EVALUATION'
   | 'MANAGER_AUTHORIZATION'
-  | 'AUTHORIZED_PENDING_ACTIVATION'
-  | 'REJECTED'
-  | 'CANCELLED';
+  | 'TERMINATED_UNFAVORABLE'
+  | 'AUTORIZADA'
+  | 'RECHAZADA';
 
 export type ResultadoVisitaVerificacion = 'FAVORABLE' | 'UNFAVORABLE' | null;
 export type EstadoVisitaVerificacion = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
@@ -16,8 +17,8 @@ export interface DiferenciaVerificacion {
   id?: string;
   seccion: string;
   campo: string;
-  datoDeclarado: string;
-  datoObservado: string;
+  datoDeclarado: unknown;
+  datoObservado: unknown;
   descripcion: string;
 }
 
@@ -49,9 +50,9 @@ export interface CorreccionSolicitud {
   id: string;
   seccion: string;
   campo: string;
-  valorOriginal: string;
-  valorObservado: string;
-  valorCorregido: string;
+  valorOriginal: unknown;
+  valorObservado: unknown;
+  valorCorregido: unknown;
   motivo: string;
   corregidoPor: string;
   fechaCorreccion: string;
@@ -68,15 +69,14 @@ export interface EvaluacionSolicitud {
 export interface AutorizacionSolicitud {
   id: string;
   gerenteId: string;
-  decision: 'APPROVED' | 'REJECTED';
+  decision: 'AUTORIZADA' | 'RECHAZADA';
   motivo: string;
-  lineaInicialDecimal: string | null;
   fechaAutorizacion: string;
 }
 
 export interface SolicitudDistribuidora {
   id: string;
-  folio: string;
+  folio: string | null;
   aspirante: {
     nombreCompleto: string;
     curpEnmascarado: string;
@@ -94,10 +94,10 @@ export interface SolicitudDistribuidora {
   correcciones: CorreccionSolicitud[];
   evaluacion: EvaluacionSolicitud | null;
   autorizacion: AutorizacionSolicitud | null;
-  
+
   // Datos crudos del expediente original (resumen)
-  datosDeclarados: Record<string, any>; // Estructura dependiente del backend
-  
+  datosDeclarados: Record<string, unknown>;
+
   lockVersion: number;
 }
 

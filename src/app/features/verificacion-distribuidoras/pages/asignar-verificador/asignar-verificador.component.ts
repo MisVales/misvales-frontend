@@ -21,8 +21,8 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.facade.cargarSolicitud(id);
-      this.facade.cargarVerificadoresDisponibles();
+      void this.facade.cargarSolicitud(id);
+      void this.facade.cargarVerificadoresDisponibles(id);
     }
   }
 
@@ -40,19 +40,25 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
 
     const req = {
       verifier_id: this.verifierId,
-      lock_version: solicitud.lockVersion
+      lock_version: solicitud.lockVersion,
     };
 
     const success = await this.facade.asignarVerificador(solicitud.id, req);
     if (success) {
-      this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
+      this.router.navigate([
+        '/verificacion-distribuidoras/solicitudes-distribuidora',
+        solicitud.id,
+      ]);
     }
   }
 
   onCancel() {
     const solicitud = this.facade.solicitudSeleccionada();
     if (solicitud) {
-      this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
+      this.router.navigate([
+        '/verificacion-distribuidoras/solicitudes-distribuidora',
+        solicitud.id,
+      ]);
     } else {
       this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora/revision']);
     }

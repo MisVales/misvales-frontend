@@ -1,7 +1,12 @@
 <div class="captura-container">
   <div class="form-group">
     <label for="evidencia-tipo">Tipo de Evidencia</label>
-    <select id="evidencia-tipo" class="form-control" (change)="onTipoChange($event)" [disabled]="isUploading()">
+    <select
+      id="evidencia-tipo"
+      class="form-control"
+      (change)="onTipoChange($event)"
+      [disabled]="isUploading()"
+    >
       <option value="">Seleccione...</option>
       @for (tipo of tiposPermitidos(); track tipo.id) {
         <option [value]="tipo.id">{{ tipo.label }}</option>
@@ -13,15 +18,14 @@
     <label class="btn-capture" [class.disabled]="!tipoSeleccionado() || isUploading()">
       <span class="icon">📷</span>
       <span>Tomar Fotografía / Seleccionar</span>
-      <input 
+      <input
         #fileInput
-        type="file" 
-        accept="image/*" 
-        capture="environment" 
-        (change)="onFileChange($event)" 
+        type="file"
+        accept="image/jpeg,image/png,application/pdf"
+        (change)="onFileChange($event)"
         [disabled]="!tipoSeleccionado() || isUploading()"
-        style="display: none;"
-      >
+        style="display: none"
+      />
     </label>
     <p class="help-text">Max. {{ maxSizeMB() }}MB</p>
   </div>
@@ -32,12 +36,28 @@
     </div>
   }
 
-  @if (previewUrl()) {
+  @if (archivoSeleccionado()) {
     <div class="preview-container">
-      <img [src]="previewUrl()" alt="Vista previa de evidencia" class="preview-image" />
+      @if (previewUrl()) {
+        <img [src]="previewUrl()" alt="Vista previa de evidencia" class="preview-image" />
+      } @else {
+        <p>{{ archivoSeleccionado()?.name }}</p>
+      }
       <div class="preview-actions">
-        <button type="button" class="btn btn-secondary" (click)="cancelar()" [disabled]="isUploading()">Cancelar</button>
-        <button type="button" class="btn btn-primary" (click)="subirEvidencia()" [disabled]="isUploading()">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="cancelar()"
+          [disabled]="isUploading()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="subirEvidencia()"
+          [disabled]="isUploading()"
+        >
           @if (isUploading()) {
             Subiendo... {{ progress() }}%
           } @else {
@@ -45,7 +65,7 @@
           }
         </button>
       </div>
-      
+
       @if (isUploading()) {
         <div class="progress-bar-container">
           <div class="progress-bar" [style.width]="progress() + '%'"></div>
