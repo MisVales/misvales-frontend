@@ -1,4 +1,4 @@
-export type TipoMovimientoCartera = 'CHARGE' | 'PAYMENT' | 'NOTE' | 'ADJUSTMENT' | 'STATUS_UPDATE';
+export type TipoMovimientoCartera = 'DEBT' | 'PAYMENT' | 'PARTIAL_PAYMENT' | 'STATUS_UPDATE' | 'NOTE' | 'ADJUSTMENT_INCREASE' | 'ADJUSTMENT_DECREASE';
 
 export interface MovimientoCartera {
   id: string;
@@ -8,4 +8,6 @@ export interface MovimientoCartera {
   concepto: string;
   saldoNuevo: string | null;
   registradoPor: string;
+  estadoInformativo: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | null;
+  versionBloqueo: number;
 }

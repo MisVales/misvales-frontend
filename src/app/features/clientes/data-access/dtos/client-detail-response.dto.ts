@@ -1,24 +1,19 @@
-import { ClientAddressResponseDto } from './client-address-response.dto';
-import { ClientBankAccountResponseDto } from './client-bank-account-response.dto';
-import { ClientPortfolioSummaryResponseDto } from './client-portfolio-summary-response.dto';
+import { ClientListItemResponseDto } from './client-list-item-response.dto';
 
-export interface ClientDetailResponseDto {
-  id: string;
-  client_number: string;
-  full_name: string;
-  masked_curp: string;
-  masked_rfc: string | null;
-  birth_date: string;
+export interface ClientDetailResponseDto extends ClientListItemResponseDto {
+  first_name: string;
+  first_last_name: string;
+  second_last_name: string | null;
+  curp?: string;
+  rfc_masked: string | null;
+  rfc?: string | null;
   birth_place: string;
-  active_address: ClientAddressResponseDto;
-  active_bank_account: ClientBankAccountResponseDto | null;
-  active_assignment: {
-    distributor_id: string;
-    branch_id: string;
-    start_date: string;
-  };
-  portfolio_summary: ClientPortfolioSummaryResponseDto;
-  created_at: string;
-  lock_version: number;
-  status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'PENDING';
+  birth_state: string;
+  birth_city: string;
+  official_id_type: string;
+  official_id_number_masked: string | null;
+  official_id_number?: string | null;
+  address_history: Array<Record<string, unknown>>;
+  bank_account_history: Array<Record<string, unknown>>;
+  assignment_history: Array<{ id: string; distributor_id: string; branch_id: string; starts_at: string; ends_at: string | null; reason: string | null }>;
 }

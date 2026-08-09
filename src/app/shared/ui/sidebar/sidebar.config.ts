@@ -98,8 +98,8 @@ export const NAV_GROUPS: NavGroupData[] = [
     heading: 'Clientes',
     icon: 'users-round',
     items: [
-      { id: 'clients', title: 'Clientes finales', icon: 'user-round', route: '/clientes', roles: GG_AD_GS_CO_DI },
-      { id: 'portfolio', title: 'Cartera informativa', icon: 'wallet', route: '/clientes/cartera', roles: GG_AD_GS_CO_DI },
+      { id: 'clients', title: 'Clientes finales', icon: 'user-round', route: '/clientes', roles: GG_AD_GS_CO_DI, permissions: ['clients.view'] },
+      { id: 'portfolio', title: 'Cartera informativa', icon: 'wallet', route: '/clientes/cartera', roles: GG_AD_GS_CO_DI, permissions: ['clients.view_portfolio'] },
     ],
   },
   {

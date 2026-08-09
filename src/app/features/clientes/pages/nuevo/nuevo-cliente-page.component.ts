@@ -31,17 +31,24 @@ export class NuevoClientePageComponent implements OnInit {
     this.form = this.fb.group({
       identidad: this.fb.group({
         first_name: ['', Validators.required],
-        last_name_1: ['', Validators.required],
-        last_name_2: [''],
+        first_last_name: ['', Validators.required],
+        second_last_name: [''],
         curp: ['', [Validators.required, curpValidator()]],
         rfc: ['', Validators.required],
+        birth_date: ['', Validators.required],
         birth_place: ['', Validators.required],
-        official_id: ['', Validators.required]
+        birth_state: ['', Validators.required],
+        birth_city: ['', Validators.required],
+        official_id_type: ['INE', Validators.required],
+        official_id_number: ['']
       }),
       domicilio: this.fb.group({
         street: ['', Validators.required],
         neighborhood: ['', Validators.required],
-        zip_code: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
+        exterior_number: ['', Validators.required],
+        interior_number: [''],
+        postal_code: ['', [Validators.required, Validators.pattern(/^\d{5}$/)]],
+        municipality: ['', Validators.required],
         city: ['', Validators.required],
         state: ['', Validators.required]
       }),
@@ -50,11 +57,18 @@ export class NuevoClientePageComponent implements OnInit {
         comprobanteFile: [null, Validators.required]
       }),
       cuentaBancaria: this.fb.group({
-        bank_name: [''],
-        account_holder: [''],
-        clabe: ['', Validators.pattern(/^\d{18}$/)]
+        bank_name: ['', Validators.required],
+        account_holder_name: ['', Validators.required],
+        account_number: ['', Validators.pattern(/^\d{4,30}$/)],
+        clabe: ['', [Validators.required, Validators.pattern(/^\d{18}$/)]]
       })
     });
+  }
+
+  seleccionarArchivo(control: 'identificacionFile' | 'comprobanteFile', event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    this.form.get(`documentos.${control}`)?.setValue(file);
+    this.form.get(`documentos.${control}`)?.markAsTouched();
   }
 
   ngOnInit() {
@@ -107,27 +121,34 @@ export class NuevoClientePageComponent implements OnInit {
 
     try {
       const val = this.form.value;
+      const identificacion = await firstValueFrom(this.api.subirDocumento(val.documentos.identificacionFile, 'OFFICIAL_ID'));
+      const comprobante = await firstValueFrom(this.api.subirDocumento(val.documentos.comprobanteFile, 'ADDRESS_PROOF'));
       const request: CreateClientRequestDto = {
         first_name: val.identidad.first_name,
-        last_name_1: val.identidad.last_name_1,
-        last_name_2: val.identidad.last_name_2,
+        first_last_name: val.identidad.first_last_name,
+        second_last_name: val.identidad.second_last_name,
         curp: val.identidad.curp,
         rfc: val.identidad.rfc,
         birth_place: val.identidad.birth_place,
-        birth_date: '1990-01-01', // Mock or add to form
-        official_id: val.identidad.official_id,
+        birth_date: val.identidad.birth_date,
+        birth_state: val.identidad.birth_state,
+        birth_city: val.identidad.birth_city,
+        official_id_type: val.identidad.official_id_type,
+        official_id_number: val.identidad.official_id_number,
+        official_id_media_id: identificacion.id,
         address: {
           street: val.domicilio.street,
-          exterior_number: 'SN', // Mock or add to form
-          interior_number: null,
+          exterior_number: val.domicilio.exterior_number,
+          interior_number: val.domicilio.interior_number || null,
           neighborhood: val.domicilio.neighborhood,
-          zip_code: val.domicilio.zip_code,
+          postal_code: val.domicilio.postal_code,
           city: val.domicilio.city,
-          municipality: val.domicilio.city,
+          municipality: val.domicilio.municipality,
           state: val.domicilio.state,
-          country: 'MX'
+          country: 'MX',
+          address_proof_media_id: comprobante.id
         },
-        bank_account: val.cuentaBancaria.clabe ? val.cuentaBancaria : undefined
+        bank_account: val.cuentaBancaria
       };
 
       const idempotencyKey = crypto.randomUUID();

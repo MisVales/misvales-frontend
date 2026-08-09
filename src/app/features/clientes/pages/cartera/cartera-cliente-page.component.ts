@@ -29,9 +29,9 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.form = this.fb.group({
-      type: ['', Validators.required],
+      entry_type: ['', Validators.required],
       amount: [''], // Note does not require amount
-      concept: ['', Validators.required]
+      note: ['', Validators.required]
     });
   }
 
@@ -49,9 +49,9 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
     this.store.limpiarDetalle();
   }
 
-  abrirRegistro(type: string = 'NOTE') {
+  abrirRegistro(entryType: string = 'NOTE') {
     this.form.reset();
-    this.form.patchValue({ type });
+    this.form.patchValue({ entry_type: entryType });
     this.mostrarModal.set(true);
   }
 
@@ -69,7 +69,7 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
     if (!clienteId) return;
 
     try {
-      const request = this.form.value;
+      const request = { ...this.form.value, occurred_at: new Date().toISOString() };
       const idempotencyKey = crypto.randomUUID();
 
       await firstValueFrom(this.store.registrarMovimiento(clienteId, request, idempotencyKey));
@@ -83,9 +83,9 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   getColorBadge(tipo: string): string {
     switch(tipo) {
-      case 'CHARGE': return 'bg-red-100 text-red-800';
+      case 'DEBT': return 'bg-red-100 text-red-800';
       case 'PAYMENT': return 'bg-green-100 text-green-800';
-      case 'CREDIT': return 'bg-blue-100 text-blue-800';
+      case 'PARTIAL_PAYMENT': return 'bg-blue-100 text-blue-800';
       case 'NOTE': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -93,11 +93,12 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   getNombreTipo(tipo: string): string {
     switch(tipo) {
-      case 'CHARGE': return 'Adeudo';
+      case 'DEBT': return 'Adeudo';
       case 'PAYMENT': return 'Pago';
-      case 'CREDIT': return 'Abono';
+      case 'PARTIAL_PAYMENT': return 'Pago parcial';
       case 'NOTE': return 'Nota';
-      case 'ADJUSTMENT': return 'Ajuste';
+      case 'ADJUSTMENT_INCREASE': return 'Ajuste de aumento';
+      case 'ADJUSTMENT_DECREASE': return 'Ajuste de disminuciÃ³n';
       case 'STATUS_UPDATE': return 'Act. Estado';
       default: return tipo;
     }

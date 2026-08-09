@@ -49,7 +49,7 @@
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
           <span class="text-xs font-bold">Registrar Pago</span>
         </button>
-        <button (click)="abrirRegistro('CHARGE')" class="bg-white hover:bg-gray-50 text-[#386641] border border-[#386641] rounded-xl py-3 flex flex-col items-center justify-center gap-1.5 transition-colors shadow-sm">
+        <button (click)="abrirRegistro('DEBT')" class="bg-white hover:bg-gray-50 text-[#386641] border border-[#386641] rounded-xl py-3 flex flex-col items-center justify-center gap-1.5 transition-colors shadow-sm">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           <span class="text-xs font-bold">Registrar Adeudo</span>
         </button>
@@ -74,11 +74,11 @@
         <div class="relative pl-6">
           <!-- Icon Node -->
           <div class="absolute -left-[17px] top-1 w-8 h-8 rounded-full border-4 border-[#FDFDF9] flex items-center justify-center"
-               [class.bg-red-100]="m.tipo === 'CHARGE'" [class.text-red-600]="m.tipo === 'CHARGE'"
+               [class.bg-red-100]="m.tipo === 'DEBT'" [class.text-red-600]="m.tipo === 'DEBT'"
                [class.bg-[#DCE8B4]]="m.tipo === 'PAYMENT'" [class.text-[#386641]]="m.tipo === 'PAYMENT'"
                [class.bg-gray-200]="m.tipo === 'NOTE'" [class.text-gray-600]="m.tipo === 'NOTE'">
             <!-- Icon Adeudo -->
-            @if (m.tipo === 'CHARGE') {
+            @if (m.tipo === 'DEBT') {
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
             }
             <!-- Icon Pago -->
@@ -93,14 +93,14 @@
           
           <!-- Card Content -->
           <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm border-l-4"
-               [class.border-l-red-600]="m.tipo === 'CHARGE'" 
+               [class.border-l-red-600]="m.tipo === 'DEBT'"
                [class.border-l-[#386641]]="m.tipo === 'PAYMENT'" 
                [class.border-l-gray-300]="m.tipo === 'NOTE'">
             <div class="flex justify-between items-start mb-1">
               <span class="text-[10px] font-bold text-gray-500 uppercase">{{ m.fecha | date:'dd MMM yyyy' }}</span>
               @if (m.tipo !== 'NOTE') {
-              <span class="text-sm font-bold" [class.text-red-600]="m.tipo === 'CHARGE'" [class.text-[#386641]]="m.tipo === 'PAYMENT'">
-                {{ m.tipo === 'CHARGE' ? '+' : '-' }}$ {{ m.importe }}
+              <span class="text-sm font-bold" [class.text-red-600]="m.tipo === 'DEBT'" [class.text-[#386641]]="m.tipo === 'PAYMENT'">
+                {{ m.tipo === 'DEBT' ? '+' : '-' }}$ {{ m.importe }}
               </span>
               }
               @if (m.tipo === 'NOTE') {
@@ -148,7 +148,7 @@
     
     <div class="px-6 py-5 flex justify-between items-center border-b border-gray-100">
       <h3 class="text-base font-bold text-gray-900">
-        {{ form.get('type')?.value === 'CHARGE' ? 'Registrar Adeudo' : form.get('type')?.value === 'PAYMENT' ? 'Registrar Pago' : 'Agregar Nota' }}
+        {{ form.get('entry_type')?.value === 'DEBT' ? 'Registrar Adeudo' : form.get('entry_type')?.value === 'PAYMENT' ? 'Registrar Pago' : 'Agregar Nota' }}
       </h3>
       <button (click)="cerrarRegistro()" class="text-gray-400 hover:text-gray-600 transition-colors">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -159,9 +159,9 @@
       <div class="p-6 space-y-4">
         
         <!-- Ocultamos el select si ya sabemos qué tipo es desde el botón -->
-        <input type="hidden" formControlName="type">
+        <input type="hidden" formControlName="entry_type">
 
-        @if (form.get('type')?.value !== 'NOTE') {
+        @if (form.get('entry_type')?.value !== 'NOTE') {
         <div>
           <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Importe ($)</label>
           <input type="number" formControlName="amount" min="1" step="0.01" placeholder="Ej. 1500.00" class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-lg font-bold text-gray-900">
@@ -170,7 +170,7 @@
 
         <div>
           <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Concepto / Descripción</label>
-          <textarea formControlName="concept" rows="3" placeholder="Detalle del movimiento..." class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-sm resize-none"></textarea>
+          <textarea formControlName="note" rows="3" placeholder="Detalle del movimiento..." class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-sm resize-none"></textarea>
         </div>
 
       </div>

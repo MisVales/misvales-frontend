@@ -111,10 +111,10 @@ export const ClientesStore = signalStore(
           const cuentaMapeada: CuentaBancariaCliente = {
             id: cuentaDto.id,
             banco: cuentaDto.bank_name,
-            titular: cuentaDto.account_holder,
-            cuentaEnmascarada: cuentaDto.masked_account_number,
-            clabeEnmascarada: cuentaDto.masked_clabe,
-            vigenteDesde: cuentaDto.valid_from
+            titular: cuentaDto.account_holder_name,
+            cuentaEnmascarada: cuentaDto.account_number_masked,
+            clabeEnmascarada: cuentaDto.clabe_masked,
+            vigenteDesde: cuentaDto.starts_at
           };
           patchState(store, { cuentasBancarias: [...store.cuentasBancarias(), cuentaMapeada], creandoCuenta: false });
           this.cargarDetalle(id); // Reload to update current account
@@ -129,7 +129,7 @@ export const ClientesStore = signalStore(
     cargarCartera(id: string) {
       patchState(store, { error: null });
       carteraApi.listarCartera(id).pipe(
-        tap(res => patchState(store, { movimientosCartera: res.data })),
+        tap(res => patchState(store, { movimientosCartera: res.data, resumenCartera: res.summary })),
         catchError(err => {
           patchState(store, { error: handleClientError(err) });
           return of(null);
