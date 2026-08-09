@@ -61,11 +61,11 @@ export const routes: Routes = [
       },
       {
         path: 'configuraciones',
-        loadChildren: () => import('./features/configurations/configurations.routes').then(m => m.configurationsRoutes)
+        loadChildren: () => import('./features/configuraciones/configuraciones.routes').then(m => m.CONFIGURACIONES_ROUTES)
       },
       {
         path: 'periodos-canje',
-        loadChildren: () => import('./features/exchange-periods/exchange-periods.routes').then(m => m.exchangePeriodsRoutes)
+        loadChildren: () => import('./features/periodos-canje/periodos-canje.routes').then(m => m.PERIODOS_CANJE_ROUTES)
       },
       {
         path: 'verificacion-distribuidoras',
