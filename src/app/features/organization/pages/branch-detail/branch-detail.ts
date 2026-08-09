@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
 import { BranchStatusBadgeComponent } from '@shared/ui/branch-status-badge/branch-status-badge.component';
+import { SessionStore } from '@core/session/session.store';
 
 @Component({
   selector: 'app-branch-detail',
@@ -29,14 +30,14 @@ import { BranchStatusBadgeComponent } from '@shared/ui/branch-status-badge/branc
         <h1 class="text-3xl font-extrabold text-[#386641] tracking-tight">Detalle de Sucursal</h1>
         
         <div class="flex gap-3" *ngIf="branch()">
-          <button [routerLink]="['/organizacion/sucursales', branch()!.id, 'editar']" class="px-4 py-2 bg-white border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
+          <button *ngIf="canUpdate()" [routerLink]="['/organizacion/sucursales', branch()!.id, 'editar']" class="px-4 py-2 bg-white border border-gray-300 rounded-xl shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
             Editar
           </button>
           
-          <button (click)="toggleStatus()" 
+          <button *ngIf="canManageState()" (click)="toggleStatus()"
                   [disabled]="branch()!.is_headquarters || facade.isLoading()"
                   [title]="branch()!.is_headquarters ? 'No se puede desactivar la Sede Principal' : ''"
                   class="px-4 py-2 rounded-xl shadow-sm text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border"
@@ -94,7 +95,7 @@ import { BranchStatusBadgeComponent } from '@shared/ui/branch-status-badge/branc
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-[#386641]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                {{ 0 }} Empleados
+                {{ branch()!.active_personnel_count ?? 0 }} Empleados
               </p>
             </div>
             
@@ -127,6 +128,7 @@ import { BranchStatusBadgeComponent } from '@shared/ui/branch-status-badge/branc
 export class BranchDetail implements OnInit {
   facade = inject(OrganizationFacade);
   route = inject(ActivatedRoute);
+  sessionStore = inject(SessionStore);
   
   branchId: string | null = null;
   branch = this.facade.selectedBranch;
@@ -143,5 +145,15 @@ export class BranchDetail implements OnInit {
     if (!currentBranch || currentBranch.is_headquarters) return;
 
     this.facade.toggleBranchStatus(currentBranch.id, currentBranch.status !== 'ACTIVE');
+  }
+
+  canUpdate(): boolean {
+    const permissions = this.sessionStore.permissions();
+    return permissions.includes('branches.update') || permissions.includes('all');
+  }
+
+  canManageState(): boolean {
+    const permissions = this.sessionStore.permissions();
+    return permissions.includes('branches.manage_state') || permissions.includes('all');
   }
 }

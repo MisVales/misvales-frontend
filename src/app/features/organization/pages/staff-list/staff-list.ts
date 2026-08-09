@@ -31,17 +31,19 @@ export class StaffList implements OnInit {
 
   loadStaff() {
     const branchId = this.filterBranch();
-    if (!branchId) {
-      this.staff.set([]);
-      this.total.set(0);
-      return;
-    }
-    
     this.isLoading.set(true);
-    this.api.getBranchPersonnel(branchId).subscribe({
+    const request = branchId
+      ? this.api.getBranchPersonnel(branchId)
+      : this.api.getPersonnel({ per_page: 100 });
+    request.subscribe({
       next: (res) => {
-        this.staff.set(res);
-        this.total.set(res.length);
+        const search = this.filterSearch().trim().toLowerCase();
+        const staff = search
+          ? res.data.filter((assignment) => assignment.user.name.toLowerCase().includes(search)
+              || assignment.user.email.toLowerCase().includes(search))
+          : res.data;
+        this.staff.set(staff);
+        this.total.set(res.meta.total);
         this.isLoading.set(false);
       },
       error: () => this.isLoading.set(false)

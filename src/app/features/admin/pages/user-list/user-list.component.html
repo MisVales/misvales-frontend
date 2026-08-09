@@ -62,6 +62,15 @@
       }
     </select>
     }
+
+    @if (availableBranches().length) {
+    <select [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+      <option value="">Todas las Sucursales</option>
+      @for (branch of availableBranches(); track branch.id) {
+        <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
+      }
+    </select>
+    }
   </div>
 
   <div class="overflow-x-auto bg-white shadow-sm rounded-xl border border-gray-200">
@@ -71,6 +80,7 @@
           <th scope="col" class="px-6 py-4">Nombre</th>
           <th scope="col" class="px-6 py-4">Email</th>
           <th scope="col" class="px-6 py-4">Rol</th>
+          <th scope="col" class="px-6 py-4">Sucursal</th>
           <th scope="col" class="px-6 py-4">Estado</th>
           <th scope="col" class="px-6 py-4">Acciones</th>
         </tr>
@@ -87,6 +97,15 @@
                 }
               } @else {
                 <span class="text-gray-400 italic text-xs">Sin roles</span>
+              }
+            </td>
+            <td class="px-6 py-4">
+              @if (user.role_scopes?.length) {
+                @for (scope of user.role_scopes; track $index) {
+                  <span class="block text-xs text-gray-600">{{ scope.branch?.name || 'Alcance global' }}</span>
+                }
+              } @else {
+                <span class="text-xs italic text-gray-400">Sin sucursal</span>
               }
             </td>
             <td class="px-6 py-4">
@@ -120,7 +139,7 @@
           </tr>
         } @empty {
           <tr>
-            <td colspan="5" class="px-6 py-8 text-center text-gray-500">No se encontraron usuarios.</td>
+            <td colspan="6" class="px-6 py-8 text-center text-gray-500">No se encontraron usuarios.</td>
           </tr>
         }
       </tbody>

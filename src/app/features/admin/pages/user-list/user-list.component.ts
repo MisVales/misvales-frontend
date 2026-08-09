@@ -32,6 +32,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   readonly pageError = signal('');
   readonly filterStatus = signal<UserState | ''>('');
   readonly filterRole = signal('');
+  readonly filterBranch = signal('');
   readonly filterSearch = signal('');
   readonly page = signal(1);
   readonly isActionLoading = signal<string | null>(null);
@@ -97,8 +98,8 @@ export class UserListComponent implements OnInit, OnDestroy {
 
   async loadBranches(): Promise<void> {
     try {
-      const branches = await firstValueFrom(this.organizationApi.getBranches());
-      this.availableBranches.set(branches.filter((branch) => branch.status === 'ACTIVE'));
+      const response = await firstValueFrom(this.organizationApi.getBranches({ per_page: 100 }));
+      this.availableBranches.set(response.data.filter((branch) => branch.status === 'ACTIVE'));
     } catch (error: unknown) {
       this.pageError.set(apiErrorMessage(error, 'No fue posible cargar las sucursales disponibles.'));
     }
@@ -112,6 +113,7 @@ export class UserListComponent implements OnInit, OnDestroy {
         search: this.filterSearch().trim() || undefined,
         state: this.filterStatus() || undefined,
         role_id: this.filterRole() || undefined,
+        branch_id: this.filterBranch() || undefined,
         page: this.page(),
       }));
       this.users.set(response.data);

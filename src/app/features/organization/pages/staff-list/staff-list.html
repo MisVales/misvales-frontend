@@ -51,7 +51,7 @@
             </td>
           </tr>
         } @else {
-          @for (user of staff(); track user.id) {
+          @for (user of staff(); track user.assignment_id) {
             <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.user?.name || 'Desconocido' }}</td>
               <td class="px-6 py-4">{{ user.user?.email || 'N/A' }}</td>
@@ -61,13 +61,13 @@
               </td>
               <td class="px-6 py-4">
                 <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                      [class.bg-green-100]="user.status === 'ACTIVE'" [class.text-green-800]="user.status === 'ACTIVE'"
-                      [class.bg-red-100]="user.status === 'ENDED'" [class.text-red-800]="user.status === 'ENDED'">
-                  {{ user.status }}
+                      [class.bg-green-100]="user.assignment_status === 'ACTIVE'" [class.text-green-800]="user.assignment_status === 'ACTIVE'"
+                      [class.bg-red-100]="user.assignment_status !== 'ACTIVE'" [class.text-red-800]="user.assignment_status !== 'ACTIVE'">
+                  {{ user.assignment_status }}
                 </span>
               </td>
               <td class="px-6 py-4 flex items-center gap-3">
-                <a [routerLink]="['/organizacion/personal', user.id]" class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1">
+                <a [routerLink]="['/usuarios', user.user.id]" class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />

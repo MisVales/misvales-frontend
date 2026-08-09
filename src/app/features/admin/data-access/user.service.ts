@@ -30,6 +30,7 @@ export class UserService {
     if (filters.role_id) params = params.set('role_id', filters.role_id);
     if (filters.branch_id) params = params.set('branch_id', filters.branch_id);
     if (filters.page) params = params.set('page', filters.page.toString());
+    if (filters.per_page) params = params.set('per_page', filters.per_page.toString());
 
     return this.http.get<UserListRes>(this.baseUrl, { params });
   }

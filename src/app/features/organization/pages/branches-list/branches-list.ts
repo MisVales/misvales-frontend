@@ -72,7 +72,7 @@ import { SessionStore } from '@core/session/session.store';
                     {{ branch.is_headquarters ? 'Matriz' : 'Foránea' }}
                   </span>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ 0 }}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ branch.active_personnel_count ?? 0 }}</td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <app-branch-status-badge [isActive]="branch.status === 'ACTIVE'"></app-branch-status-badge>
                 </td>
@@ -129,10 +129,8 @@ export class BranchesList implements OnInit {
   }
 
   canManage(): boolean {
-    const roles = this.sessionStore.roles();
     const permissions = this.sessionStore.permissions();
-    // Assuming 'Administrador' cannot edit (based on requirements) or only 'manage_branches' can.
-    return permissions.includes('manage_branches');
+    return permissions.includes('branches.create') || permissions.includes('all');
   }
 
   onSearch() {

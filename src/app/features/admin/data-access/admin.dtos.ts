@@ -8,11 +8,13 @@ export interface UserListFilterReq {
   role_id?: string;
   branch_id?: string;
   page?: number;
+  per_page?: number;
 }
 
 export interface RoleScopeRes {
-  role: { name: string };
-  branch_id?: string;
+  role: { id?: string; code?: string; name: string };
+  branch_id?: string | null;
+  branch?: { id: string; code: string; name: string } | null;
 }
 
 export interface UserRes {

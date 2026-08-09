@@ -28,6 +28,11 @@ export const organizationRoutes: Routes = [
         loadComponent: () => import('./pages/branch-detail/branch-detail').then(m => m.BranchDetail)
       },
       {
+        path: 'asignaciones',
+        canActivate: [anyPermissionGuard(['roles.assign', 'branches.view'])],
+        loadComponent: () => import('./pages/assignments/assignments').then(m => m.AssignmentsPage)
+      },
+      {
         path: 'personal',
         canActivate: [anyPermissionGuard(['users.view', 'roles.assign', 'branches.view'])],
         loadComponent: () => import('./pages/staff-list/staff-list').then(m => m.StaffList)

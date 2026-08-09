@@ -1,8 +1,9 @@
 import { inject } from '@angular/core';
-import { signalStore, withState, withMethods, patchState } from '@ngrx/signals';
+import { patchState, signalStore, withMethods, withState } from '@ngrx/signals';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '@core/api/api-error';
 import { OrganizationApiService } from '../data-access/organization-api.service';
-import { Branch, CreateBranchPayload, UpdateBranchPayload } from '../data-access/organization.dtos';
+import { Branch, CreateBranchPayload } from '../data-access/organization.dtos';
 
 export interface OrganizationState {
   branches: Branch[];
@@ -28,104 +29,103 @@ export const OrganizationFacade = signalStore(
   { providedIn: 'root' },
   withState(initialOrganizationState),
   withMethods((store) => {
-    const apiService = inject(OrganizationApiService);
+    const api = inject(OrganizationApiService);
 
     return {
-      async loadBranches(page: number = 1, perPage: number = 10, search?: string, status?: string) {
+      async loadBranches(page = 1, perPage = 10, search?: string, status?: string): Promise<void> {
         patchState(store, { isLoading: true, error: null });
         try {
-          // The API now returns the full array. We can simulate pagination client-side or just store all.
-          const response = await firstValueFrom(apiService.getBranches());
+          const response = await firstValueFrom(api.getBranches({
+            page,
+            per_page: perPage,
+            search: search?.trim() || undefined,
+            status: status ? status.toUpperCase() : undefined,
+          }));
           patchState(store, {
-            branches: response,
-            total: response.length,
-            page: 1,
-            perPage: response.length,
-            isLoading: false
+            branches: response.data,
+            total: response.meta.total,
+            page: response.meta.current_page,
+            perPage: response.meta.per_page,
+            isLoading: false,
           });
-        } catch (err: any) {
-          patchState(store, { isLoading: false, error: err?.error?.message || 'Error al cargar sucursales' });
+        } catch (error: unknown) {
+          patchState(store, { isLoading: false, error: apiErrorMessage(error, 'Error al cargar sucursales.') });
         }
       },
 
-      async getBranchById(id: string) {
-        patchState(store, { isLoading: true, error: null });
+      async getBranchById(id: string): Promise<Branch | null> {
+        patchState(store, { isLoading: true, error: null, selectedBranch: null });
         try {
-          // Find locally since getBranchById is not in API spec
-          // Or wait, if we must get it from API, the spec doesn't define GET /api/v1/branches/{id}.
-          // Let's fallback to searching in the currently loaded branches array
-          const branches = store.branches();
-          const branch = branches.find(b => b.id === id) || null;
-          if (branch) {
-            patchState(store, { selectedBranch: branch, isLoading: false });
-          } else {
-             patchState(store, { isLoading: false, error: 'Sucursal no encontrada' });
-          }
-        } catch (err: any) {
-          patchState(store, { isLoading: false, error: err?.error?.message || 'Error al obtener la sucursal' });
+          const branch = await firstValueFrom(api.getBranch(id));
+          patchState(store, { selectedBranch: branch, isLoading: false });
+          return branch;
+        } catch (error: unknown) {
+          patchState(store, { isLoading: false, error: apiErrorMessage(error, 'Error al obtener la sucursal.') });
+          return null;
         }
       },
 
-      async createBranch(data: CreateBranchPayload) {
+      async createBranch(data: CreateBranchPayload): Promise<boolean> {
         patchState(store, { isLoading: true, error: null });
         try {
-          const newBranch = await firstValueFrom(apiService.createBranch(data));
+          const branch = await firstValueFrom(api.createBranch(data));
           patchState(store, (state) => ({
-            branches: [newBranch, ...state.branches],
+            branches: [branch, ...state.branches],
             total: state.total + 1,
-            isLoading: false
+            isLoading: false,
           }));
           return true;
-        } catch (err: any) {
-          patchState(store, { isLoading: false, error: err?.error?.message || 'Error al crear la sucursal' });
+        } catch (error: unknown) {
+          patchState(store, { isLoading: false, error: apiErrorMessage(error, 'Error al crear la sucursal.') });
           return false;
         }
       },
 
-      async updateBranch(id: string, data: UpdateBranchPayload) {
+      async updateBranch(id: string, name: string, address: string): Promise<boolean> {
+        const current = store.selectedBranch();
+        if (!current || current.id !== id) return false;
+
         patchState(store, { isLoading: true, error: null });
         try {
-          const updatedBranch = await firstValueFrom(apiService.updateBranch(id, data));
+          const branch = await firstValueFrom(api.updateBranch(id, {
+            name,
+            address,
+            lock_version: current.lock_version,
+          }));
           patchState(store, (state) => ({
-            branches: state.branches.map(b => b.id === id ? updatedBranch : b),
-            selectedBranch: state.selectedBranch?.id === id ? updatedBranch : state.selectedBranch,
-            isLoading: false
+            branches: state.branches.map((item) => item.id === id ? { ...item, ...branch } : item),
+            selectedBranch: branch,
+            isLoading: false,
           }));
           return true;
-        } catch (err: any) {
-          if (err?.status === 409) {
-            patchState(store, { isLoading: false, error: 'Conflicto de concurrencia: Alguien más actualizó esta sucursal al mismo tiempo. Por favor, recargue y vuelva a intentarlo.' });
-          } else {
-            patchState(store, { isLoading: false, error: err?.error?.message || 'Error al actualizar la sucursal' });
-          }
+        } catch (error: unknown) {
+          patchState(store, { isLoading: false, error: apiErrorMessage(error, 'Error al actualizar la sucursal.') });
           return false;
         }
       },
 
-      async toggleBranchStatus(id: string, isActive: boolean) {
+      async toggleBranchStatus(id: string, active: boolean): Promise<boolean> {
+        const current = store.selectedBranch() ?? store.branches().find((branch) => branch.id === id) ?? null;
+        if (!current) return false;
+
         patchState(store, { isLoading: true, error: null });
         try {
-          const status = isActive ? 'ACTIVE' : 'INACTIVE';
-          const updatedBranch = await firstValueFrom(apiService.toggleBranchStatus(id, { status }));
+          const branch = await firstValueFrom(api.changeBranchStatus(current, active));
           patchState(store, (state) => ({
-            branches: state.branches.map(b => b.id === id ? updatedBranch : b),
-            selectedBranch: state.selectedBranch?.id === id ? updatedBranch : state.selectedBranch,
-            isLoading: false
+            branches: state.branches.map((item) => item.id === id ? { ...item, ...branch } : item),
+            selectedBranch: state.selectedBranch?.id === id ? { ...state.selectedBranch, ...branch } : state.selectedBranch,
+            isLoading: false,
           }));
           return true;
-        } catch (err: any) {
-          if (err?.status === 409) {
-            patchState(store, { isLoading: false, error: 'Conflicto de concurrencia: Alguien más actualizó esta sucursal al mismo tiempo.' });
-          } else {
-            patchState(store, { isLoading: false, error: err?.error?.message || 'Error al cambiar el estado de la sucursal' });
-          }
+        } catch (error: unknown) {
+          patchState(store, { isLoading: false, error: apiErrorMessage(error, 'Error al cambiar el estado de la sucursal.') });
           return false;
         }
       },
 
-      clearError() {
+      clearError(): void {
         patchState(store, { error: null });
-      }
+      },
     };
-  })
+  }),
 );

@@ -91,8 +91,8 @@ export class UserDetailComponent implements OnInit {
 
   async loadBranches(): Promise<void> {
     try {
-      const branches = await firstValueFrom(this.organizationApi.getBranches());
-      this.availableBranches.set(branches.filter((branch) => branch.status === 'ACTIVE'));
+      const response = await firstValueFrom(this.organizationApi.getBranches({ per_page: 100 }));
+      this.availableBranches.set(response.data.filter((branch) => branch.status === 'ACTIVE'));
     } catch (error: unknown) {
       this.pageError.set(apiErrorMessage(error, 'No fue posible cargar las sucursales.'));
     }

@@ -1,69 +1,117 @@
+export interface PaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export interface PaginatedRes<T> {
+  data: T[];
+  meta: PaginationMeta;
+}
+
+export interface DataRes<T> {
+  data: T;
+  message?: string;
+}
+
 export interface Branch {
   id: string;
   code: string;
   name: string;
+  address: string | null;
   is_headquarters: boolean;
   status: 'ACTIVE' | 'INACTIVE';
   lock_version: number;
-  created_at: string;
-  updated_at: string;
+  active_personnel_count?: number;
+  created_at?: string;
+  updated_at?: string | null;
 }
 
 export interface CreateBranchPayload {
-  code: string;
   name: string;
+  address: string;
 }
 
 export interface UpdateBranchPayload {
   name: string;
-}
-
-export interface UpdateBranchStatusPayload {
-  status: 'ACTIVE' | 'INACTIVE';
+  address: string;
+  lock_version: number;
 }
 
 export interface PersonnelAssignment {
+  assignment_id: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    state: string;
+  };
+  role: { id: string; code: string; name: string };
+  branch_id: string | null;
+  scope: 'GLOBAL' | 'BRANCH';
+  assignment_status: 'ACTIVE' | 'ENDED' | 'REVOKED';
+  assigned_at: string;
+  assignment_reason: string | null;
+  revoked_at: string | null;
+  revocation_reason: string | null;
+}
+
+export interface UserAssignment {
   id: string;
   user_id: string;
   role_id: string;
-  branch_id: string;
-  status: 'ACTIVE' | 'ENDED';
-  user: any; // Ajustar según modelo de User final
-  role: { code: string; name: string };
+  branch_id: string | null;
+  scope_type: 'GLOBAL' | 'BRANCH';
+  status: 'ACTIVE' | 'ENDED' | 'REVOKED';
+  assigned_at: string;
+  assignment_reason: string | null;
+  revoked_at: string | null;
+  revocation_reason: string | null;
+  role: { id: string; code: string; name: string };
+  branch: { id: string; code: string; name: string } | null;
 }
 
 export interface AssignPersonnelPayload {
-  user_id: string;
-  role_code: string;
-}
-
-export interface RemovePersonnelPayload {
-  reason?: string;
+  role_id: string;
+  branch_id: string | null;
+  scope?: 'GLOBAL' | 'BRANCH';
+  assigned_at?: string;
+  assignment_reason?: string | null;
 }
 
 export interface CoordinatorDistributorAssignment {
   id: string;
   coordinator_id: string;
   distributor_id: string;
+  branch_id: string;
+  valid_from: string;
+  valid_to: string | null;
   status: 'ACTIVE' | 'REASSIGNED' | 'ENDED';
-  coordinator: any; // Ajustar según modelo de Coordinator final
+  assignment_reason: string | null;
+  end_reason: string | null;
+  coordinator: { id: string; name: string; email?: string };
+  distributor: {
+    id: string;
+    application_number: string;
+    full_name: string | null;
+    status: string;
+    branch_id: string;
+  } | null;
 }
 
 export interface AssignCoordinatorDistributorPayload {
   coordinator_id: string;
   distributor_id: string;
   branch_id: string;
-  assignment_reason?: string;
+  assignment_reason?: string | null;
 }
 
-export interface TerminateCoordinatorDistributorPayload {
-  end_reason: string;
-}
-
-// Re-export PaginatedRes from here for backwards compatibility if needed in UI, or wait, it's not in the spec but UI might use it.
-export interface PaginatedRes<T> {
-  data: T[];
-  total: number;
-  page: number;
-  perPage: number;
+export interface DistributorCandidate {
+  id: string;
+  application_number: string;
+  status: string;
+  branch: { id: string; name?: string };
+  coordinator: { id: string; name: string | null };
+  applicant: { full_name: string | null } | null;
 }
