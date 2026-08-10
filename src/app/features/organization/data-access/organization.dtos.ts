@@ -31,11 +31,15 @@ export interface Branch {
 export interface CreateBranchPayload {
   name: string;
   address: string;
+  lat?: number | null;
+  lng?: number | null;
 }
 
 export interface UpdateBranchPayload {
   name: string;
   address: string;
+  lat?: number | null;
+  lng?: number | null;
   lock_version: number;
 }
 

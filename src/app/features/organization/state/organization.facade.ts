@@ -81,7 +81,7 @@ export const OrganizationFacade = signalStore(
         }
       },
 
-      async updateBranch(id: string, name: string, address: string): Promise<boolean> {
+      async updateBranch(id: string, name: string, address: string, lat?: number | null, lng?: number | null): Promise<boolean> {
         const current = store.selectedBranch();
         if (!current || current.id !== id) return false;
 
@@ -90,6 +90,8 @@ export const OrganizationFacade = signalStore(
           const branch = await firstValueFrom(api.updateBranch(id, {
             name,
             address,
+            lat,
+            lng,
             lock_version: current.lock_version,
           }));
           patchState(store, (state) => ({

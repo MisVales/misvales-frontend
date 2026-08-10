@@ -95,6 +95,8 @@ export class BranchForm implements OnInit {
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(150)]],
     address: ['', [Validators.required, Validators.maxLength(500)]],
+    lat: this.fb.control<number | null>(null),
+    lng: this.fb.control<number | null>(null),
   });
 
   async ngOnInit(): Promise<void> {
@@ -116,7 +118,11 @@ export class BranchForm implements OnInit {
   }
 
   onAddressChange(result: AddressResult): void {
-    this.form.patchValue({ address: result.full_address });
+    this.form.patchValue({ 
+      address: result.full_address,
+      lat: result.lat,
+      lng: result.lng
+    });
   }
 
   async onSubmit(): Promise<void> {
@@ -125,10 +131,10 @@ export class BranchForm implements OnInit {
       return;
     }
 
-    const { name, address } = this.form.getRawValue();
+    const { name, address, lat, lng } = this.form.getRawValue();
     const success = this.isEditMode && this.branchId
-      ? await this.facade.updateBranch(this.branchId, name.trim(), address.trim())
-      : await this.facade.createBranch({ name: name.trim(), address: address.trim() });
+      ? await this.facade.updateBranch(this.branchId, name.trim(), address.trim(), lat, lng)
+      : await this.facade.createBranch({ name: name.trim(), address: address.trim(), lat, lng });
 
     if (success) this.goBack();
   }
