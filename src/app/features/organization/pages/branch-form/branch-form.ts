@@ -3,11 +3,12 @@ import { Component, inject, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
+import { AddressFormComponent, AddressResult } from '../../../shared/components/address-form/address-form';
 
 @Component({
   selector: 'app-branch-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AddressFormComponent],
   template: `
     <main class="mx-auto max-w-3xl space-y-6 p-6 md:p-8">
       <nav aria-label="Ruta de navegación" class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
@@ -54,18 +55,16 @@ import { OrganizationFacade } from '../../state/organization.facade';
           </div>
 
           <div>
-            <label for="branch-address" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
+            <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
               Dirección *
             </label>
-            <textarea id="branch-address" formControlName="address" rows="3" autocomplete="street-address"
-                      placeholder="Calle, número, colonia, ciudad, estado y código postal"
-                      class="block w-full resize-y rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-[#386641] focus:outline-none focus:ring-1 focus:ring-[#386641] sm:text-sm"></textarea>
+            <app-address-form (addressChange)="onAddressChange($event)"></app-address-form>
             <p class="mt-2 flex items-start gap-2 text-xs text-gray-500">
               <span aria-hidden="true" class="text-[#6A994E]">✓</span>
-              La dirección se normalizará y validará con Google Maps Address Validation antes de guardarse.
+              La dirección se normalizará y validará con nuestro catálogo antes de guardarse.
             </p>
             @if (form.controls.address.touched && form.controls.address.invalid) {
-              <p class="mt-1 text-xs text-red-600">Ingrese una dirección completa de hasta 500 caracteres.</p>
+              <p class="mt-1 text-xs text-red-600">Complete la dirección correctamente.</p>
             }
           </div>
 
@@ -114,6 +113,10 @@ export class BranchForm implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/organizacion/sucursales']);
+  }
+
+  onAddressChange(result: AddressResult): void {
+    this.form.patchValue({ address: result.full_address });
   }
 
   async onSubmit(): Promise<void> {
