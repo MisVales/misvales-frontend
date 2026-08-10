@@ -40,15 +40,16 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     municipality: [{ value: null, disabled: true }, Validators.required],
     zipCode: ['', [Validators.required, Validators.pattern(/^[0-9]{5}$/)]],
     colony: [{ value: null, disabled: true }, Validators.required],
-    street: [{ value: '', disabled: true }, Validators.required],
-    exteriorNumber: [{ value: '', disabled: true }, Validators.required],
-    interiorNumber: [{ value: '', disabled: true }]
+    street: ['', Validators.required],
+    exteriorNumber: ['', Validators.required],
+    interiorNumber: ['']
   });
 
   states: State[] = [];
   municipalities: Municipality[] = [];
   colonies: Colony[] = [];
   streetSuggestions: any[] = [];
+  private pendingColonyName: string | null = null;
   
   ngOnInit() {
     this.loadStates();
@@ -106,9 +107,6 @@ export class AddressFormComponent implements OnInit, OnDestroy {
           next: (info) => {
             this.colonies = info.colonias;
             this.form.get('colony')?.enable();
-            this.form.get('street')?.enable();
-            this.form.get('exteriorNumber')?.enable();
-            this.form.get('interiorNumber')?.enable();
             
             // Auto select state and municipality if possible
             if (info.estado) {
@@ -120,6 +118,15 @@ export class AddressFormComponent implements OnInit, OnDestroy {
                      this.form.get('municipality')?.setValue(info.municipio.id, { emitEvent: false });
                   }
                });
+            }
+
+            if (this.pendingColonyName) {
+              const pendingStr = this.pendingColonyName.toLowerCase().trim();
+              const matched = this.colonies.find(c => c.name.toLowerCase().trim().includes(pendingStr) || pendingStr.includes(c.name.toLowerCase().trim()));
+              if (matched) {
+                this.form.get('colony')?.setValue(matched.id);
+              }
+              this.pendingColonyName = null;
             }
           },
           error: () => {
@@ -134,17 +141,19 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     // Street Autocomplete
     this.form.get('street')?.valueChanges.pipe(
       takeUntil(this.destroy$),
-      debounceTime(400),
+      debounceTime(800), // Esperar a que el usuario deje de escribir
       distinctUntilChanged(),
       switchMap(text => {
         if (!text || text.length < 3) {
           this.streetSuggestions = [];
           return of(null);
         }
-        const state = this.states.find(s => s.id === this.form.value.state)?.name || '';
-        const city = this.municipalities.find(m => m.id === this.form.value.municipality)?.name || '';
-        const cp = this.form.value.zipCode || '';
-        if (!state || !city) return of(null);
+        
+        const val = this.form.getRawValue();
+        const state = val.state ? (this.states.find(s => s.id === val.state)?.name || '') : '';
+        const city = val.municipality ? (this.municipalities.find(m => m.id === val.municipality)?.name || '') : '';
+        const cp = val.zipCode || '';
+        
         return this.addressApi.autocomplete(text, city, state, cp);
       })
     ).subscribe(res => {
@@ -166,14 +175,21 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     this.colonies = [];
     this.form.get('colony')?.setValue(null);
     this.form.get('colony')?.disable();
-    this.form.get('street')?.disable();
-    this.form.get('exteriorNumber')?.disable();
-    this.form.get('interiorNumber')?.disable();
   }
 
   selectSuggestion(feature: any) {
-    const streetName = feature.properties.street || feature.properties.name || feature.properties.formatted;
+    const props = feature.properties;
+    const streetName = props.street || props.name || props.formatted;
+    const postcode = props.postcode;
+    const neighborhood = props.neighborhood || props.suburb;
+
     this.form.patchValue({ street: streetName });
+    
+    if (postcode && postcode.length === 5) {
+      this.pendingColonyName = neighborhood || null;
+      this.form.patchValue({ zipCode: postcode });
+    }
+
     this.streetSuggestions = [];
   }
 
