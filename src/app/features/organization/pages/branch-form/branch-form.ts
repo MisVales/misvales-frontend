@@ -4,11 +4,13 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
 import { AddressFormComponent, AddressResult } from '../../../../shared/components/address-form/address-form';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
+import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
 
 @Component({
   selector: 'app-branch-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, AddressFormComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, AddressFormComponent, InputErrorComponent, AlertComponent],
   template: `
     <main class="mx-auto max-w-3xl space-y-6 p-6 md:p-8">
       <nav aria-label="Ruta de navegación" class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
@@ -20,14 +22,12 @@ import { AddressFormComponent, AddressResult } from '../../../../shared/componen
       </nav>
 
       @if (facade.error()) {
-        <div class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
-          <p>{{ facade.error() }}</p>
-          @if (facade.error()?.includes('concurrencia')) {
-            <button type="button" (click)="reload()" class="mt-2 font-semibold text-[#386641] hover:underline">
-              Recargar información
-            </button>
-          }
-        </div>
+        <app-alert 
+          type="error" 
+          [message]="facade.error()"
+          [actionText]="facade.error()?.includes('concurrencia') ? 'Recargar información' : undefined"
+          (onAction)="reload()">
+        </app-alert>
       }
 
       <section class="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl md:p-8">
@@ -46,12 +46,10 @@ import { AddressFormComponent, AddressResult } from '../../../../shared/componen
             <label for="branch-name" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
               Nombre de la sucursal *
             </label>
-            <input id="branch-name" type="text" formControlName="name" autocomplete="organization"
+            <input id="branch-name" type="text" formControlName="name" autocomplete="off"
                    placeholder="Nombre descriptivo de la ubicación"
                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-[#386641] focus:outline-none focus:ring-1 focus:ring-[#386641] sm:text-sm">
-            @if (form.controls.name.touched && form.controls.name.invalid) {
-              <p class="mt-1 text-xs text-red-600">Ingrese un nombre de hasta 150 caracteres.</p>
-            }
+            <app-input-error [control]="form.controls.name" label="El nombre"></app-input-error>
           </div>
 
           <div>
@@ -63,9 +61,7 @@ import { AddressFormComponent, AddressResult } from '../../../../shared/componen
               <span aria-hidden="true" class="text-[#6A994E]">✓</span>
               La dirección se normalizará y validará con nuestro catálogo antes de guardarse.
             </p>
-            @if (form.controls.address.touched && form.controls.address.invalid) {
-              <p class="mt-1 text-xs text-red-600">Complete la dirección correctamente.</p>
-            }
+            <app-input-error [control]="form.controls.address" label="La dirección"></app-input-error>
           </div>
 
           <div class="flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">

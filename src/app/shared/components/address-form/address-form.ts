@@ -40,9 +40,9 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     municipality: [{ value: null, disabled: true }, Validators.required],
     zipCode: ['', [Validators.required, Validators.pattern(/^[0-9]{5}$/)]],
     colony: [{ value: null, disabled: true }, Validators.required],
-    street: ['', Validators.required],
-    exteriorNumber: ['', Validators.required],
-    interiorNumber: ['']
+    street: [{ value: '', disabled: true }, Validators.required],
+    exteriorNumber: [{ value: '', disabled: true }, Validators.required],
+    interiorNumber: [{ value: '', disabled: true }]
   });
 
   states: State[] = [];
@@ -107,6 +107,9 @@ export class AddressFormComponent implements OnInit, OnDestroy {
           next: (info) => {
             this.colonies = info.colonias;
             this.form.get('colony')?.enable();
+            this.form.get('street')?.enable();
+            this.form.get('exteriorNumber')?.enable();
+            this.form.get('interiorNumber')?.enable();
             
             // Auto select state and municipality if possible
             if (info.estado) {
@@ -175,6 +178,9 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     this.colonies = [];
     this.form.get('colony')?.setValue(null);
     this.form.get('colony')?.disable();
+    this.form.get('street')?.disable();
+    this.form.get('exteriorNumber')?.disable();
+    this.form.get('interiorNumber')?.disable();
   }
 
   selectSuggestion(feature: any) {
@@ -217,10 +223,13 @@ export class AddressFormComponent implements OnInit, OnDestroy {
   }
 
   private emitChange(lat?: number, lng?: number) {
-    if (this.form.invalid) {
+    // Si la colonia u otro campo está deshabilitado, consideramos que el formulario aún está incompleto.
+    const rawVal = this.form.getRawValue();
+    if (this.form.invalid || !rawVal.colony || !rawVal.street) {
       return;
     }
-    const val = this.form.value;
+    
+    const val = rawVal;
     const stateName = this.states.find(s => s.id === val.state)?.name || '';
     const cityName = this.municipalities.find(m => m.id === val.municipality)?.name || '';
     const colonyName = this.colonies.find(c => c.id === val.colony)?.name || '';
