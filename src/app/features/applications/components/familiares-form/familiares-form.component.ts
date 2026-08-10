@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -17,6 +17,7 @@ export class FamiliaresFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
+  private cdr = inject(ChangeDetectorRef);
 
   familiaresArray: FormArray = FamiliarFormFactory.createArray(this.fb);
   cargando = false;
@@ -48,6 +49,7 @@ export class FamiliaresFormComponent implements OnInit {
     if (!id) return;
 
     this.cargando = true;
+    this.cdr.markForCheck();
     try {
       const data = await firstValueFrom(this.api.listarFamiliares(id));
       this.familiaresArray.clear();
@@ -60,21 +62,25 @@ export class FamiliaresFormComponent implements OnInit {
       console.error(e);
     } finally {
       this.cargando = false;
+      this.cdr.markForCheck();
     }
   }
 
   agregarFamiliar() {
     this.familiaresArray.push(FamiliarFormFactory.create(this.fb));
+    this.cdr.markForCheck();
   }
 
   removerFamiliarVisual(index: number) {
     this.familiaresArray.removeAt(index);
+    this.cdr.markForCheck();
   }
 
   async guardarFamiliar(index: number) {
     const formGroup = this.familiaresArray.at(index) as FormGroup;
     if (formGroup.invalid) {
       formGroup.markAllAsTouched();
+      this.cdr.markForCheck();
       return;
     }
 
@@ -98,6 +104,8 @@ export class FamiliaresFormComponent implements OnInit {
         await this.store.cargarDetalle(idSolicitud);
         alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       }
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -114,6 +122,8 @@ export class FamiliaresFormComponent implements OnInit {
       await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 }

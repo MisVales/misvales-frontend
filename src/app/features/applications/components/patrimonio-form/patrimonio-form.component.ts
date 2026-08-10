@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -17,6 +17,7 @@ export class PatrimonioFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
+  private cdr = inject(ChangeDetectorRef);
 
   patrimonioArray: FormArray = PatrimonioFormFactory.createArray(this.fb);
   cargando = false;
@@ -54,6 +55,7 @@ export class PatrimonioFormComponent implements OnInit {
     if (!id) return;
 
     this.cargando = true;
+    this.cdr.markForCheck();
     try {
       const data = await firstValueFrom(this.api.listarPatrimonio(id));
       this.patrimonioArray.clear();
@@ -66,17 +68,20 @@ export class PatrimonioFormComponent implements OnInit {
       console.error(e);
     } finally {
       this.cargando = false;
+      this.cdr.markForCheck();
     }
   }
 
   setTipoTab(tipo: 'ASSET' | 'LIABILITY' | 'ACTIVE_COMMITMENT') {
     this.tipoActivo = tipo;
+    this.cdr.markForCheck();
   }
 
   agregarRegistro() {
     const form = PatrimonioFormFactory.create(this.fb);
     form.patchValue({ entry_type: this.tipoActivo });
     this.patrimonioArray.push(form);
+    this.cdr.markForCheck();
   }
 
   removerRegistroVisual(formGroup: FormGroup) {
@@ -84,11 +89,13 @@ export class PatrimonioFormComponent implements OnInit {
     if (index !== -1) {
       this.patrimonioArray.removeAt(index);
     }
+    this.cdr.markForCheck();
   }
 
   async guardarRegistro(formGroup: FormGroup) {
     if (formGroup.invalid) {
       formGroup.markAllAsTouched();
+      this.cdr.markForCheck();
       return;
     }
 
@@ -112,6 +119,8 @@ export class PatrimonioFormComponent implements OnInit {
         await this.store.cargarDetalle(idSolicitud);
         alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
       }
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -128,6 +137,8 @@ export class PatrimonioFormComponent implements OnInit {
       await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
       console.error(e);
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 }

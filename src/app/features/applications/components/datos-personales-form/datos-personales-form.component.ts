@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Input } from '@angular/core';
+import { Component, inject, OnInit, Input, effect, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -16,6 +16,8 @@ export class DatosPersonalesFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private fb = inject(FormBuilder);
 
+  private cdr = inject(ChangeDetectorRef);
+
   form: FormGroup = DatosPersonalesFormFactory.create(this.fb);
   
   // View states
@@ -23,25 +25,40 @@ export class DatosPersonalesFormComponent implements OnInit {
   isRfcMasked = false;
   guardadoExitoso = false;
 
-  ngOnInit() {
-    this.cargarDatosActuales();
+  constructor() {
+    // Escuchar los cambios en detalle() para reaccionar asíncronamente
+    effect(() => {
+      const detalle = this.store.detalle();
+      if (detalle && detalle.solicitante) {
+        this.cargarDatosActuales(detalle.solicitante);
+        this.cdr.markForCheck();
+      }
+    });
   }
 
-  cargarDatosActuales() {
-    const solicitante = this.store.detalle()?.solicitante;
-    if (solicitante) {
-      this.form.patchValue({
-        first_name: solicitante.nombre,
-        first_last_name: solicitante.apellidoPaterno,
-        second_last_name: solicitante.apellidoMaterno,
-        curp: solicitante.curpEnmascarada
-      });
-      
-      if (solicitante.curpEnmascarada && solicitante.curpEnmascarada.includes('*')) {
-         this.isCurpMasked = true;
-      }
+  ngOnInit() {
+    // Removido, ahora se hace por medio de effect()
+  }
+
+  cargarDatosActuales(solicitante: ResumenSolicitante) {
+    this.form.patchValue({
+      first_name: solicitante.nombre,
+      first_last_name: solicitante.apellidoPaterno,
+      second_last_name: solicitante.apellidoMaterno,
+      curp: solicitante.curpEnmascarada
+    }, { emitEvent: false });
+    
+    if (solicitante.curpEnmascarada && solicitante.curpEnmascarada.includes('*')) {
+       this.isCurpMasked = true;
+    }
+    
+    // Si ya tiene curp, probablemente ya se guardó una vez (borrador parcial)
+    if (solicitante.curpEnmascarada) {
       this.guardadoExitoso = true;
     }
+    
+    // Al parchear valores desde un effect asíncrono, si estamos zoneless, 
+    // cdr.markForCheck() podría ser necesario dependiendo de cómo se actualice la vista.
   }
 
   editarCurp() {
@@ -79,6 +96,8 @@ export class DatosPersonalesFormComponent implements OnInit {
       this.guardadoExitoso = true;
     } catch (e) {
       // Error handled by store
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 }

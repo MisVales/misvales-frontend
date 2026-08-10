@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -17,6 +17,7 @@ export class DomiciliosFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
+  private cdr = inject(ChangeDetectorRef);
 
   domiciliosArray: FormArray = DomicilioFormFactory.createArray(this.fb);
   cargando = false;
@@ -51,6 +52,7 @@ export class DomiciliosFormComponent implements OnInit {
     if (!id) return;
 
     this.cargando = true;
+    this.cdr.markForCheck();
     try {
       const data = await firstValueFrom(this.api.listarDomicilios(id));
       this.domiciliosArray.clear();
@@ -63,6 +65,7 @@ export class DomiciliosFormComponent implements OnInit {
       console.error(e);
     } finally {
       this.cargando = false;
+      this.cdr.markForCheck();
     }
   }
 
@@ -76,12 +79,14 @@ export class DomiciliosFormComponent implements OnInit {
       this.indiceEdicion = null;
     }
     this.mostrandoFormulario = true;
+    this.cdr.markForCheck();
   }
 
   cancelarFormulario() {
     this.mostrandoFormulario = false;
     this.formularioActual = null;
     this.indiceEdicion = null;
+    this.cdr.markForCheck();
   }
 
   marcarComoActual(index: number) {
@@ -98,6 +103,7 @@ export class DomiciliosFormComponent implements OnInit {
     
     if (this.formularioActual.invalid) {
       this.formularioActual.markAllAsTouched();
+      this.cdr.markForCheck();
       return;
     }
 
@@ -128,6 +134,8 @@ export class DomiciliosFormComponent implements OnInit {
       } else {
         alert(e?.error?.message || 'Error al guardar domicilio');
       }
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 
@@ -144,6 +152,8 @@ export class DomiciliosFormComponent implements OnInit {
       await this.cargarDomicilios();
     } catch (e) {
       console.error(e);
+    } finally {
+      this.cdr.markForCheck();
     }
   }
 }
