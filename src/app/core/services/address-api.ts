@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { environment } from '../../../environments/environment';
+import { API_CONFIG } from '../api/api.config';
 
 export interface State {
   id: number;
@@ -37,7 +37,8 @@ export interface ZipCodeInfo {
 })
 export class AddressApiService {
   private http = inject(HttpClient);
-  private apiUrl = `${environment.apiUrl}/address`;
+  private config = inject(API_CONFIG);
+  private apiUrl = `${this.config.baseUrl}/address`;
 
   getStates(): Observable<State[]> {
     return this.http.get<State[]>(`${this.apiUrl}/states`);

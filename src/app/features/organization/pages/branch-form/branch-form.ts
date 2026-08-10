@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
-import { AddressFormComponent, AddressResult } from '../../../shared/components/address-form/address-form';
+import { AddressFormComponent, AddressResult } from '../../../../shared/components/address-form/address-form';
 
 @Component({
   selector: 'app-branch-form',
@@ -58,7 +58,7 @@ import { AddressFormComponent, AddressResult } from '../../../shared/components/
             <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
               Dirección *
             </label>
-            <app-address-form (addressChange)="onAddressChange($event)"></app-address-form>
+            <app-address-form #addressForm (addressChange)="onAddressChange($event)"></app-address-form>
             <p class="mt-2 flex items-start gap-2 text-xs text-gray-500">
               <span aria-hidden="true" class="text-[#6A994E]">✓</span>
               La dirección se normalizará y validará con nuestro catálogo antes de guardarse.
@@ -91,6 +91,8 @@ export class BranchForm implements OnInit {
 
   isEditMode = false;
   branchId: string | null = null;
+
+  @ViewChild('addressForm') addressForm!: AddressFormComponent;
 
   readonly form = this.fb.nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(150)]],
@@ -129,6 +131,12 @@ export class BranchForm implements OnInit {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
+    }
+
+    // Geocode at submission time to get coordinates
+    const coords = await this.addressForm.geocode();
+    if (coords) {
+      this.form.patchValue({ lat: coords.lat, lng: coords.lng });
     }
 
     const { name, address, lat, lng } = this.form.getRawValue();

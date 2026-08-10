@@ -3,17 +3,23 @@
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Estado</label>
-      <select formControlName="state" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
-        <option [ngValue]="null">Selecciona un estado...</option>
-        <option *ngFor="let s of states" [value]="s.id">{{ s.name }}</option>
-      </select>
+      <ng-select [items]="states"
+                 bindLabel="name"
+                 bindValue="id"
+                 formControlName="state"
+                 placeholder="Selecciona un estado..."
+                 class="w-full text-sm">
+      </ng-select>
     </div>
     <div>
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Municipio</label>
-      <select formControlName="municipality" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100">
-        <option [ngValue]="null">Selecciona un municipio...</option>
-        <option *ngFor="let m of municipalities" [value]="m.id">{{ m.name }}</option>
-      </select>
+      <ng-select [items]="municipalities"
+                 bindLabel="name"
+                 bindValue="id"
+                 formControlName="municipality"
+                 placeholder="Selecciona un municipio..."
+                 class="w-full text-sm">
+      </ng-select>
     </div>
   </div>
 
@@ -26,10 +32,13 @@
     </div>
     <div>
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Colonia</label>
-      <select formControlName="colony" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100">
-        <option [ngValue]="null">Selecciona una colonia...</option>
-        <option *ngFor="let c of colonies" [value]="c.id">{{ c.name }}</option>
-      </select>
+      <ng-select [items]="colonies"
+                 bindLabel="name"
+                 bindValue="id"
+                 formControlName="colony"
+                 placeholder="Selecciona una colonia..."
+                 class="w-full text-sm">
+      </ng-select>
     </div>
   </div>
 
@@ -38,7 +47,7 @@
     <div class="md:col-span-8 relative">
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Calle</label>
       <input type="text" formControlName="street" placeholder="Ej. Av. Morelos"
-        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
       
       <!-- Autocomplete Dropdown -->
       <ul *ngIf="streetSuggestions.length > 0" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
@@ -51,16 +60,12 @@
     <div class="md:col-span-2">
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Ext</label>
       <input type="text" formControlName="exteriorNumber"
-        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
     </div>
     <div class="md:col-span-2">
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Int</label>
       <input type="text" formControlName="interiorNumber" placeholder="Opcional"
-        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
     </div>
   </div>
 </form>
-
-<!-- Mapa Leaflet -->
-<div class="mt-4 border rounded-md overflow-hidden shadow-sm h-64 w-full" id="leaflet-map" style="z-index: 1;">
-</div>
