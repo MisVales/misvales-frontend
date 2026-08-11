@@ -65,11 +65,10 @@
         </table>
       </div>
       
-      <!-- Basic pagination placeholder -->
       <div class="pagination">
         <button class="btn btn-sm btn-secondary" [disabled]="facade.pageSolicitudes() === 1" (click)="onPageChange(facade.pageSolicitudes() - 1)">Anterior</button>
         <span class="page-info">Página {{ facade.pageSolicitudes() }}</span>
-        <button class="btn btn-sm btn-secondary" [disabled]="facade.solicitudes().length < facade.perPageSolicitudes()" (click)="onPageChange(facade.pageSolicitudes() + 1)">Siguiente</button>
+        <button class="btn btn-sm btn-secondary" [disabled]="facade.pageSolicitudes() * facade.perPageSolicitudes() >= facade.totalSolicitudes()" (click)="onPageChange(facade.pageSolicitudes() + 1)">Siguiente</button>
       </div>
     }
   </div>

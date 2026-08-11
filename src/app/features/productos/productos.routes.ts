@@ -14,7 +14,7 @@ export const PRODUCTOS_ROUTES: Routes = [
   },
   {
     path: ':id',
-    canActivate: [permissionGuard('view_products')],
+    canActivate: [permissionGuard('catalogs.manage')],
     loadComponent: () => import('./pages/producto-detalle/producto-detalle.component').then(m => m.ProductoDetalleComponent)
   }
 ];

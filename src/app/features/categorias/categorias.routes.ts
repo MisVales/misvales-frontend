@@ -14,7 +14,7 @@ export const CATEGORIAS_ROUTES: Routes = [
   },
   {
     path: ':id',
-    canActivate: [permissionGuard('view_categories')],
+    canActivate: [permissionGuard('catalogs.manage')],
     loadComponent: () => import('./pages/categoria-detalle/categoria-detalle.component').then(m => m.CategoriaDetalleComponent)
   }
 ];

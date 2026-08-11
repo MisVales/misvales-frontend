@@ -18,11 +18,11 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
 
   verifierId = '';
 
-  ngOnInit() {
+  async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.facade.cargarSolicitud(id);
-      this.facade.cargarVerificadoresDisponibles();
+      await this.facade.cargarSolicitud(id);
+      await this.facade.cargarVerificadoresDisponibles(id);
     }
   }
 

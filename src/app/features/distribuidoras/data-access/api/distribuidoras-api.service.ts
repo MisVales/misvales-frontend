@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Distribuidora } from '../../models/distribuidora.model';
@@ -53,19 +53,16 @@ export class DistribuidorasApiService {
     );
   }
 
-  activarSolicitud(solicitudId: string, versionBloqueo: number): Observable<Distribuidora> {
-    // Activa la solicitud autorizada en manager decision. Ruta según documento:
-    // POST /api/v1/distributor-applications/{id}/activation
-    const payload: ActivateDistributorRequestDto = { lock_version: versionBloqueo };
-    return this.http.post<DistributorDetailResponseDto>(`/api/v1/distributor-applications/${solicitudId}/activation`, payload).pipe(
-      map(dto => DistribuidoraMapper.fromDto(dto))
+  activarSolicitud(solicitudId: string, categoryVersionId: string): Observable<Distribuidora> {
+    const payload: ActivateDistributorRequestDto = { category_version_id: categoryVersionId };
+    const headers = new HttpHeaders().set('Idempotency-Key', crypto.randomUUID());
+    return this.http.post<{ data: DistributorDetailResponseDto }>(`/api/v1/distributor-applications/${solicitudId}/activation`, payload, { headers }).pipe(
+      map(({ data }) => DistribuidoraMapper.fromDto(data))
     );
   }
 
   asignarCategoria(distribuidoraId: string, versionBloqueo: number, entrada: AssignDistributorCategoryRequestDto): Observable<CategoriaDistribuidora> {
-    return this.http.post<any>(`${this.apiUrl}/${distribuidoraId}/category-assignments`, entrada, {
-      headers: { 'If-Match': `"${versionBloqueo}"` } // Assuming ETag pattern or sending lock_version in body if requested, but body doesn't strictly have lock_version in the request DTO. I'll send it in If-Match as per doc "Enviar If-Match o lock_version al cambiar categoría".
-    }).pipe(
+    return this.http.post<any>(`${this.apiUrl}/${distribuidoraId}/category-assignments`, { ...entrada, lock_version: versionBloqueo }).pipe(
       map(dto => DistribuidoraMapper.mapCategoria(dto.data))
     );
   }

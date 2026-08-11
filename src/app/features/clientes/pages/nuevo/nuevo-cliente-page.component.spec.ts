@@ -38,13 +38,13 @@ describe('NuevoClientePageComponent', () => {
   });
 
   it('should invalidate short CURP', () => {
-    component.form.get('identidad.curp')?.setValue('SHORT');
-    expect(component.form.get('identidad.curp')?.invalid).toBe(true);
+    component.form.controls.curp.setValue('SHORT');
+    expect(component.form.controls.curp.invalid).toBe(true);
   });
 
   it('should auto capitalize CURP on changes', () => {
-    component.form.get('identidad.curp')?.setValue('pelj800101hjcxxx');
-    expect(component.form.get('identidad.curp')?.value).toBe('PELJ800101HJCXXX');
+    component.form.controls.curp.setValue('pelj800101hjcxxx');
+    expect(component.form.controls.curp.value).toBe('PELJ800101HJCXXX');
   });
 
 });

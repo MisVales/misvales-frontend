@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '@core/guards/auth.guard';
 import { permissionGuard } from '@core/guards/permission.guard';
+import { roleGuard } from '@core/guards/role.guard';
 
 export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
   {
@@ -12,37 +13,37 @@ export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
       // ------------------------------------------
       {
         path: 'solicitudes-distribuidora/revision',
-        canActivate: [permissionGuard('view_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager', 'coordinator', 'admin'])],
         loadComponent: () => import('./pages/revision-solicitudes/revision-solicitudes.component').then(m => m.RevisionSolicitudesComponent)
       },
       {
         path: 'solicitudes-distribuidora/autorizaciones',
-        canActivate: [permissionGuard('authorize_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager'])],
         loadComponent: () => import('./pages/autorizacion-gerencial/autorizacion-gerencial.component').then(m => m.AutorizacionGerencialComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id',
-        canActivate: [permissionGuard('view_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager', 'coordinator', 'admin'])],
         loadComponent: () => import('./pages/detalle-solicitud/detalle-solicitud.component').then(m => m.DetalleSolicitudComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id/asignar-verificador',
-        canActivate: [permissionGuard('verify_applications')], // O el permiso que decida el backend para el coordinador
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
         loadComponent: () => import('./pages/asignar-verificador/asignar-verificador.component').then(m => m.AsignarVerificadorComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id/correcciones',
-        canActivate: [permissionGuard('evaluate_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
         loadComponent: () => import('./pages/correcciones-solicitud/correcciones-solicitud.component').then(m => m.CorreccionesSolicitudComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id/evaluacion',
-        canActivate: [permissionGuard('evaluate_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
         loadComponent: () => import('./pages/evaluacion-coordinador/evaluacion-coordinador.component').then(m => m.EvaluacionCoordinadorComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id/autorizacion',
-        canActivate: [permissionGuard('authorize_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager'])],
         loadComponent: () => import('./pages/autorizacion-gerencial/autorizacion-gerencial.component').then(m => m.AutorizacionGerencialComponent) // Reutilizamos el mismo componente que manejará la vista simple y el wizard de decisión
       },
 
@@ -51,12 +52,12 @@ export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
       // ------------------------------------------
       {
         path: 'verificaciones/asignadas',
-        canActivate: [permissionGuard('verify_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['verifier'])],
         loadComponent: () => import('./pages/visitas-asignadas/visitas-asignadas.component').then(m => m.VisitasAsignadasComponent)
       },
       {
         path: 'verificaciones/:id/visita',
-        canActivate: [permissionGuard('verify_applications')],
+        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['verifier'])],
         loadComponent: () => import('./pages/realizar-visita/realizar-visita.component').then(m => m.RealizarVisitaComponent)
       },
       

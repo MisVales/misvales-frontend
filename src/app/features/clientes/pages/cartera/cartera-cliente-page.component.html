@@ -25,14 +25,17 @@
       <div class="flex items-center gap-4 mb-6">
         <h1 class="text-3xl font-bold text-gray-900 leading-tight">{{ store.detalle()!.nombreCompleto }}</h1>
         @switch (store.detalle()!.estado) {
-          @case ('ACTIVE') {
-            <span class="px-3 py-1 text-xs font-bold uppercase rounded-full bg-[#DCE8B4] text-[#386641] shrink-0">ACTIVO</span>
+          @case ('PAID') {
+            <span class="px-3 py-1 text-xs font-bold uppercase rounded-full bg-[#DCE8B4] text-[#386641] shrink-0">PAGADO</span>
           }
           @case ('PENDING') {
             <span class="px-3 py-1 text-[11px] font-bold rounded-full bg-red-100 text-red-700">Pendiente</span>
           }
-          @case ('INACTIVE') {
-            <span class="px-3 py-1 text-[11px] font-bold rounded-full bg-gray-200 text-gray-600">Inactivo</span>
+          @case ('PARTIALLY_PAID') {
+            <span class="px-3 py-1 text-[11px] font-bold rounded-full bg-amber-100 text-amber-700">Pago parcial</span>
+          }
+          @case ('NO_RECORDS') {
+            <span class="px-3 py-1 text-[11px] font-bold rounded-full bg-gray-200 text-gray-600">Sin movimientos</span>
           }
         }
       </div>
@@ -148,7 +151,7 @@
     
     <div class="px-6 py-5 flex justify-between items-center border-b border-gray-100">
       <h3 class="text-base font-bold text-gray-900">
-        {{ form.get('type')?.value === 'CHARGE' ? 'Registrar Adeudo' : form.get('type')?.value === 'PAYMENT' ? 'Registrar Pago' : 'Agregar Nota' }}
+        {{ form.get('entry_type')?.value === 'DEBT' ? 'Registrar Adeudo' : form.get('entry_type')?.value === 'PAYMENT' ? 'Registrar Pago' : 'Agregar Nota' }}
       </h3>
       <button (click)="cerrarRegistro()" class="text-gray-400 hover:text-gray-600 transition-colors">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -159,9 +162,9 @@
       <div class="p-6 space-y-4">
         
         <!-- Ocultamos el select si ya sabemos qué tipo es desde el botón -->
-        <input type="hidden" formControlName="type">
+        <input type="hidden" formControlName="entry_type">
 
-        @if (form.get('type')?.value !== 'NOTE') {
+        @if (form.get('entry_type')?.value !== 'NOTE' && form.get('entry_type')?.value !== 'STATUS_UPDATE') {
         <div>
           <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Importe ($)</label>
           <input type="number" formControlName="amount" min="1" step="0.01" placeholder="Ej. 1500.00" class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-lg font-bold text-gray-900">
@@ -169,9 +172,11 @@
         }
 
         <div>
-          <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Concepto / Descripción</label>
-          <textarea formControlName="concept" rows="3" placeholder="Detalle del movimiento..." class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-sm resize-none"></textarea>
+          <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Nota</label>
+          <textarea formControlName="note" rows="3" placeholder="Detalle del movimiento..." class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-sm resize-none"></textarea>
         </div>
+        <div><label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Fecha del movimiento</label><input type="datetime-local" formControlName="occurred_at" class="w-full px-4 py-3 border rounded-xl"></div>
+        <div><label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Estado informativo</label><select formControlName="informational_status" class="w-full px-4 py-3 border rounded-xl"><option value="">Sin cambio</option><option value="PENDING">Pendiente</option><option value="PARTIALLY_PAID">Pago parcial</option><option value="PAID">Pagada</option></select></div>
 
       </div>
 

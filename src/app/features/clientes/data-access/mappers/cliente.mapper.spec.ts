@@ -67,7 +67,7 @@ describe('ClienteMapper', () => {
       },
       created_at: '2024-01-01T10:00:00Z',
       lock_version: 1,
-      status: 'ACTIVE'
+      status: 'PAID'
     };
 
     const result = ClienteMapper.fromDetailDto(dto);

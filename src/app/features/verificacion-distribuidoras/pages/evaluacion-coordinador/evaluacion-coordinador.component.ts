@@ -58,6 +58,7 @@ export class EvaluacionCoordinadorComponent implements OnInit, OnDestroy {
     }
 
     const req = {
+      visit_id: solicitud.visitas.at(-1)?.id || '',
       dictamen: this.dictamen()!,
       motivo: this.motivo(),
       lock_version: solicitud.lockVersion

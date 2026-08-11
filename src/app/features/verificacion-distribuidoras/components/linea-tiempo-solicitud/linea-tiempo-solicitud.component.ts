@@ -51,12 +51,12 @@ export class LineaTiempoSolicitudComponent {
     });
 
     // 4. Evaluación del Coordinador
-    const hasEval = s.evaluacion != null;
+    const hasEval = s.ultimaEvaluacion != null;
     events.push({
       title: 'Evaluación del Coordinador',
-      date: hasEval ? s.evaluacion!.fechaEvaluacion : null,
+      date: hasEval ? s.ultimaEvaluacion!.fechaEvaluacion : null,
       status: hasEval ? 'DONE' : (s.estado === 'COORDINATOR_EVALUATION' ? 'CURRENT' : 'PENDING'),
-      description: hasEval ? `Dictamen: ${s.evaluacion!.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple'}` : ''
+      description: hasEval ? `Dictamen: ${s.ultimaEvaluacion!.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple'}` : ''
     });
 
     // 5. Autorización Gerencial

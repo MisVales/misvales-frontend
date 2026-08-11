@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, JsonPipe, KeyValuePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
@@ -10,7 +10,7 @@ import { SessionStore } from '../../../../core/session/session.store';
 @Component({
   selector: 'app-detalle-solicitud',
   standalone: true,
-  imports: [DatePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, FormsModule],
+  imports: [DatePipe, JsonPipe, KeyValuePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, FormsModule],
   templateUrl: './detalle-solicitud.component.html',
   styleUrl: './detalle-solicitud.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -34,15 +34,18 @@ export class DetalleSolicitudComponent implements OnInit, OnDestroy {
 
   // Permisos helpers
   get canAssign(): boolean {
-    return this.sessionStore.permissions().includes('verify_applications');
+    const roles = this.sessionStore.roles();
+    return roles.includes('coordinator');
   }
 
   get canEvaluate(): boolean {
-    return this.sessionStore.permissions().includes('evaluate_applications');
+    const roles = this.sessionStore.roles();
+    return roles.includes('coordinator');
   }
 
   get canAuthorize(): boolean {
-    return this.sessionStore.permissions().includes('authorize_applications');
+    const roles = this.sessionStore.roles();
+    return roles.includes('general_manager') || roles.includes('branch_manager');
   }
 
   isDevolucionModalOpen = signal(false);

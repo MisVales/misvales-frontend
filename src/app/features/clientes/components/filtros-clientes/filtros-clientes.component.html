@@ -1,42 +1,25 @@
-<form [formGroup]="filtrosForm" (ngSubmit)="aplicarFiltros()" class="flex flex-col sm:flex-row items-end gap-3 w-full">
+<form [formGroup]="filtrosForm" class="flex flex-col sm:flex-row items-end gap-3 w-full">
   <div class="flex-1 w-full min-w-[120px]">
     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Sucursal</label>
-    <div class="relative">
-      <select formControlName="branchId" class="w-full pl-3 pr-8 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641]">
-        <option value="">Todas las sucursales</option>
-        <option value="b-1">Centro Histórico</option>
-      </select>
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-      </div>
-    </div>
+    <select formControlName="branchId" class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-[#386641]">
+      <option value="">Todas las sucursales</option>
+      @for (branch of branches; track branch.id) { <option [value]="branch.id">{{ branch.name }}</option> }
+    </select>
   </div>
-
   <div class="flex-1 w-full min-w-[120px]">
     <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Distribuidora</label>
-    <div class="relative">
-      <select formControlName="distributorId" class="w-full pl-3 pr-8 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641]">
-        <option value="">Todas las distribuidoras</option>
-        <option value="d-1">Distribuidora 1</option>
-      </select>
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-      </div>
-    </div>
+    <select formControlName="distributorId" class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-[#386641]">
+      <option value="">Todas las distribuidoras</option>
+      @for (distributor of distributors; track distributor.id) { <option [value]="distributor.id">{{ distributor.numero }} · {{ distributor.nombreCompleto }}</option> }
+    </select>
   </div>
-
-  <div class="flex-1 w-full min-w-[100px] max-w-[140px]">
-    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Estado</label>
-    <div class="relative">
-      <select formControlName="status" class="w-full pl-3 pr-8 py-2 text-sm text-gray-700 bg-white border border-gray-200 rounded-lg appearance-none focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641]">
-        <option value="">Todos</option>
-        <option value="ACTIVE">Activo</option>
-        <option value="PENDING">Pendiente</option>
-        <option value="INACTIVE">Inactivo</option>
-      </select>
-      <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-      </div>
-    </div>
+  <div class="flex-1 w-full min-w-[120px]">
+    <label class="block text-[10px] font-bold text-gray-500 uppercase mb-1">Cartera</label>
+    <select formControlName="status" class="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-[#386641]">
+      <option value="">Todos los estados</option>
+      <option value="PENDING">Pendiente</option>
+      <option value="PARTIALLY_PAID">Pago parcial</option>
+      <option value="PAID">Pagada</option>
+    </select>
   </div>
 </form>

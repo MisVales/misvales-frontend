@@ -14,7 +14,7 @@ export interface VerificacionDistribuidorasState {
   solicitudSeleccionada: SolicitudDistribuidora | null;
   visitaSeleccionada: VisitaVerificacion | null;
   
-  // Paginación compartida (o separada si es necesario, pero simplificaremos aquí para la demostración)
+  // Paginación independiente para solicitudes y visitas.
   totalSolicitudes: number;
   pageSolicitudes: number;
   perPageSolicitudes: number;

@@ -106,10 +106,10 @@ export class AddressFormComponent implements OnInit, OnDestroy {
         this.addressApi.getInfoByZipCode(cp).subscribe({
           next: (info) => {
             this.colonies = info.colonias;
-            this.form.get('colony')?.enable();
-            this.form.get('street')?.enable();
-            this.form.get('exteriorNumber')?.enable();
-            this.form.get('interiorNumber')?.enable();
+            this.form.get('colony')?.enable({ emitEvent: false });
+            this.form.get('street')?.enable({ emitEvent: false });
+            this.form.get('exteriorNumber')?.enable({ emitEvent: false });
+            this.form.get('interiorNumber')?.enable({ emitEvent: false });
             
             // Auto select state and municipality if possible
             if (info.estado) {
@@ -117,7 +117,7 @@ export class AddressFormComponent implements OnInit, OnDestroy {
                this.addressApi.getMunicipalities(info.estado.id).subscribe(m => {
                   this.municipalities = m;
                   if (info.municipio) {
-                     this.form.get('municipality')?.enable();
+                     this.form.get('municipality')?.enable({ emitEvent: false });
                      this.form.get('municipality')?.setValue(info.municipio.id, { emitEvent: false });
                   }
                });

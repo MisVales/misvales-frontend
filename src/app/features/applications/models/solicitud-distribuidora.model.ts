@@ -26,6 +26,7 @@ export type EstadoSolicitudDistribuidora =
   | 'MANAGER_AUTHORIZATION'
   | 'TERMINATED_UNFAVORABLE'
   | 'REJECTED'
+  | 'AUTHORIZED_PENDING_ACTIVATION'
   | 'ACTIVE';
 
 export interface ResumenSolicitante {

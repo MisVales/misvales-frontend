@@ -92,7 +92,8 @@ export interface SolicitudDistribuidora {
   avance: number; // 0-100
   visitas: VisitaVerificacion[];
   correcciones: CorreccionSolicitud[];
-  evaluacion: EvaluacionSolicitud | null;
+  evaluaciones: EvaluacionSolicitud[];
+  ultimaEvaluacion: EvaluacionSolicitud | null;
   autorizacion: AutorizacionSolicitud | null;
   
   // Datos crudos del expediente original (resumen)

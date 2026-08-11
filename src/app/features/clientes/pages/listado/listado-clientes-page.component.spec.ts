@@ -4,6 +4,9 @@ import { ClientesStore } from '../../state/clientes.store';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
+import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
+import { DistribuidorasApiService } from '../../../distribuidoras/data-access/api/distribuidoras-api.service';
+import { SessionStore } from '../../../../core/session/session.store';
 
 describe('ListadoClientesPageComponent', () => {
   let component: ListadoClientesPageComponent;
@@ -22,6 +25,9 @@ describe('ListadoClientesPageComponent', () => {
       imports: [ListadoClientesPageComponent],
       providers: [
         { provide: ClientesStore, useValue: mockStore },
+        { provide: OrganizationApiService, useValue: { getBranches: () => of({ data: [] }) } },
+        { provide: DistribuidorasApiService, useValue: { listar: () => of({ datos: [] }) } },
+        { provide: SessionStore, useValue: { roles: () => ['general_manager'], permissions: () => ['clients.create'] } },
         { provide: ActivatedRoute, useValue: { params: of({}) } }
       ]
     })

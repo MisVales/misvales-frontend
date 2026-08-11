@@ -38,6 +38,7 @@ export interface FinalizarVisitaRequestDto {
 }
 
 export interface AplicarCorreccionRequestDto {
+  visit_id: string;
   seccion: string;
   campo: string;
   valor_original: string;
@@ -52,6 +53,7 @@ export interface FinalizarCorreccionesRequestDto {
 }
 
 export interface EvaluarSolicitudRequestDto {
+  visit_id: string;
   dictamen: 'COMPLIES' | 'DOES_NOT_COMPLY';
   motivo: string;
   lock_version: number;
@@ -66,77 +68,82 @@ export interface AutorizarSolicitudRequestDto {
 
 export interface EvidenciaVerificacionResponseDto {
   id: string;
-  tipo: string;
-  nombre_original: string;
-  fecha_carga: string;
-  cargado_por: string;
+  file_type: string;
+  original_name: string;
+  created_at: string;
+  uploaded_by: string;
+  download_url?: string;
 }
 
 export interface VisitaVerificacionResponseDto {
   id: string;
-  solicitud_id: string;
-  verificador_id: string | null;
-  estado: string;
-  resultado_fisico: string | null;
-  observaciones_generales: string | null;
-  fecha_asignacion: string | null;
-  fecha_inicio: string | null;
-  fecha_fin: string | null;
-  diferencias: any[];
-  evidencias: EvidenciaVerificacionResponseDto[];
+  application_id: string;
+  verifier_id: string | null;
+  status: string;
+  result: string | null;
+  observations: string | null;
+  assigned_at: string | null;
+  started_at: string | null;
+  completed_at: string | null;
+  differences_payload: { items?: any[] } | null;
+  media_files: EvidenciaVerificacionResponseDto[];
   lock_version: number;
 }
 
 export interface CorreccionSolicitudResponseDto {
   id: string;
-  seccion: string;
-  campo: string;
-  valor_original: string;
-  valor_observado: string;
-  valor_corregido: string;
-  motivo: string;
-  corregido_por: string;
-  fecha_correccion: string;
+  section: string;
+  field_path: string;
+  reason: string;
+  corrected_by: string;
+  corrected_at: string;
 }
 
 export interface EvaluacionSolicitudResponseDto {
   id: string;
-  coordinador_id: string;
-  dictamen: string;
-  motivo: string;
-  fecha_evaluacion: string;
+  evaluated_by: string;
+  result: string;
+  reason: string;
+  evaluated_at: string;
 }
 
 export interface AutorizacionSolicitudResponseDto {
   id: string;
-  gerente_id: string;
+  authorized_by: string;
   decision: string;
-  motivo: string;
-  linea_inicial: string | null;
-  fecha_autorizacion: string;
+  reason: string;
+  initial_credit_line_amount: string | null;
+  authorized_at: string;
 }
 
 export interface SolicitudDistribuidoraResponseDto {
   id: string;
-  folio: string;
-  aspirante: {
-    nombre_completo: string;
-    curp_enmascarado: string;
-    rfc_enmascarado: string;
+  application_number: string;
+  applicant: {
+    full_name: string | null;
+    curp_masked: string | null;
   };
-  sucursal: {
+  branch: {
     id: string;
-    nombre: string;
+    name: string | null;
   };
-  coordinador_id: string | null;
-  estado: string;
-  fecha_envio: string;
-  avance: number;
-  datos_declarados: any;
-  visitas: VisitaVerificacionResponseDto[];
-  correcciones: CorreccionSolicitudResponseDto[];
-  evaluacion: EvaluacionSolicitudResponseDto | null;
-  autorizacion: AutorizacionSolicitudResponseDto | null;
+  coordinator: { id: string | null; name: string | null };
+  status: string;
+  submitted_at: string | null;
+  completion: number;
+  section_declarations?: Record<string, unknown>;
+  personal_data?: Record<string, unknown> | null;
+  family_members?: Record<string, unknown>[];
+  residences?: Record<string, unknown>[];
+  vehicles?: Record<string, unknown>[];
+  assets_liabilities?: Record<string, unknown>[];
+  employments?: Record<string, unknown>[];
+  commercial_credits?: Record<string, unknown>[];
+  verification_visits?: VisitaVerificacionResponseDto[];
+  corrections?: CorreccionSolicitudResponseDto[];
+  evaluations?: EvaluacionSolicitudResponseDto[];
+  latest_evaluation?: EvaluacionSolicitudResponseDto | null;
+  authorization?: AutorizacionSolicitudResponseDto | null;
   lock_version: number;
 }
 

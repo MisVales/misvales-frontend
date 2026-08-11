@@ -72,6 +72,7 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     }
 
     const req = {
+      visit_id: solicitud.visitas.at(-1)?.id || '',
       seccion: dif.seccion,
       campo: dif.campo,
       valor_original: dif.datoDeclarado,

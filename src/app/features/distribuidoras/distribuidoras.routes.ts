@@ -5,7 +5,6 @@ import { DetalleDistribuidoraPageComponent } from './pages/detalle/detalle-distr
 import { ActivacionDistribuidoraPageComponent } from './pages/activacion/activacion-distribuidora-page.component';
 import { LineasCreditoPageComponent } from './pages/lineas-credito/lineas-credito-page.component';
 import { IncrementosLineaPageComponent } from './pages/incrementos-linea/incrementos-linea-page.component';
-import { RiesgoMorosidadPageComponent } from './pages/riesgo-morosidad/riesgo-morosidad-page.component';
 
 export const distribuidorasRoutes: Routes = [
   {
@@ -21,11 +20,6 @@ export const distribuidorasRoutes: Routes = [
   {
     path: 'incrementos-linea',
     component: IncrementosLineaPageComponent,
-    canActivate: [anyPermissionGuard(['distributors.view_any', 'distributors.view'])]
-  },
-  {
-    path: 'riesgo-morosidad',
-    component: RiesgoMorosidadPageComponent,
     canActivate: [anyPermissionGuard(['distributors.view_any', 'distributors.view'])]
   },
   {

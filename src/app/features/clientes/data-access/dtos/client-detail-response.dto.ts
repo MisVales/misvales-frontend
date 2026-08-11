@@ -20,5 +20,5 @@ export interface ClientDetailResponseDto {
   portfolio_summary: ClientPortfolioSummaryResponseDto;
   created_at: string;
   lock_version: number;
-  status: 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'PENDING';
+  status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'NO_RECORDS';
 }

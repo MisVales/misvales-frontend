@@ -1,93 +1,19 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { ProductosStore } from '../../estado/productos.store';
+import { firstValueFrom } from 'rxjs';
 import { ProductosService } from '../../data-access/productos.service';
-import { ProductosMapper } from '../../data-access/productos.mapper';
 import { SessionStore } from '../../../../core/session/session.store';
 
-@Component({
-  selector: 'app-producto-detalle',
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
-  templateUrl: './producto-detalle.component.html',
-  styleUrls: ['./producto-detalle.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-})
+@Component({ selector: 'app-producto-detalle', imports: [CommonModule, ReactiveFormsModule, RouterModule], templateUrl: './producto-detalle.component.html', styleUrls: ['./producto-detalle.component.css'], changeDetection: ChangeDetectionStrategy.OnPush })
 export class ProductoDetalleComponent implements OnInit {
-  private readonly fb = inject(FormBuilder);
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  protected readonly store = inject(ProductosStore);
-  private readonly productosService = inject(ProductosService);
-  private readonly sessionStore = inject(SessionStore);
-
-  protected readonly isNew = computed(() => !this.route.snapshot.paramMap.get('id'));
-  protected readonly canWrite = computed(() => {
-    const roles = this.sessionStore.roles() as string[];
-    return roles && (roles.includes('gerente_general') || roles.includes('admin'));
-  });
-
-  protected form = this.fb.group({
-    nombre: [{ value: '', disabled: !this.canWrite() }, Validators.required],
-    descripcion: [{ value: '', disabled: !this.canWrite() }],
-    sku: [{ value: '', disabled: !this.canWrite() }, Validators.required],
-    categoriaId: [{ value: '', disabled: !this.canWrite() }, Validators.required],
-    precioBase: [{ value: '', disabled: !this.canWrite() }, [Validators.required, Validators.pattern(/^\d+(\.\d{1,4})?$/)]],
-  });
-
-  private versionRegistro: number = 0;
-
-  ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id && id !== 'nuevo') {
-      this.cargarDetalle(id);
-    }
-  }
-
-  private cargarDetalle(id: string) {
-    this.productosService.consultarDetalle(id).subscribe({
-      next: (res) => {
-        const model = ProductosMapper.fromDto(res);
-        this.versionRegistro = model.versionRegistro;
-        this.form.patchValue({
-          nombre: model.nombre,
-          descripcion: model.descripcion,
-          sku: model.sku,
-          categoriaId: model.categoriaId,
-          precioBase: model.precioBase
-        });
-      },
-      error: (err) => console.error(err)
-    });
-  }
-
-  guardar(): void {
-    if (this.form.invalid) return;
-
-    const val = this.form.value;
-
-    if (this.isNew()) {
-      this.store.crear({
-        name: val.nombre!,
-        description: val.descripcion!,
-        sku: val.sku!,
-        category_id: val.categoriaId!,
-        base_price: val.precioBase!
-      });
-      this.router.navigate(['/productos']);
-    } else {
-      const id = this.route.snapshot.paramMap.get('id')!;
-      this.store.actualizar(id, {
-        name: val.nombre!,
-        description: val.descripcion!,
-        status: 'ACTIVE',
-        sku: val.sku!,
-        category_id: val.categoriaId!,
-        base_price: val.precioBase!,
-        lock_version: this.versionRegistro
-      } as any);
-      this.router.navigate(['/productos']);
-    }
-  }
+  private fb = inject(FormBuilder); private route = inject(ActivatedRoute); private router = inject(Router);
+  private service = inject(ProductosService); private session = inject(SessionStore);
+  protected isNew = computed(() => !this.route.snapshot.paramMap.get('id') || this.route.snapshot.paramMap.get('id') === 'nuevo');
+  protected canWrite = computed(() => this.session.roles().includes('general_manager'));
+  protected saving = signal(false); protected error = signal<string | null>(null); private lockVersion = 0;
+  protected form = this.fb.group({ code: ['', Validators.required], name: ['', Validators.required], description: [''], nominal_amount: ['', [Validators.required, Validators.min(100)]], loan_commission_percentage: ['', [Validators.required, Validators.min(0), Validators.max(1)]], simple_interest_percentage: ['', [Validators.required, Validators.min(0), Validators.max(1)]], insurance_amount: ['', [Validators.required, Validators.min(0)]], fortnights_count: [1, [Validators.required, Validators.min(1)]], reason: ['', Validators.required], effective_from: ['', Validators.required] });
+  ngOnInit() { const id = this.route.snapshot.paramMap.get('id'); if (id && id !== 'nuevo') this.service.consultarDetalle(id).subscribe({ next: d => { this.lockVersion=d.lock_version; this.form.patchValue(d as any); this.form.controls.code.disable(); }, error: e => this.error.set(e?.error?.message ?? 'No fue posible cargar el producto.') }); }
+  async guardar() { if (this.form.invalid || this.saving()) return; this.saving.set(true); this.error.set(null); const v=this.form.getRawValue(); const payload={ name:v.name!, description:v.description || null, nominal_amount:String(v.nominal_amount), loan_commission_percentage:String(v.loan_commission_percentage), simple_interest_percentage:String(v.simple_interest_percentage), insurance_amount:String(v.insurance_amount), fortnights_count:Number(v.fortnights_count), reason:v.reason!, effective_from:v.effective_from! }; try { const id=this.route.snapshot.paramMap.get('id'); if (this.isNew()) await firstValueFrom(this.service.crear({code:v.code!,...payload})); else await firstValueFrom(this.service.actualizar(id!, {...payload,lock_version:this.lockVersion})); await this.router.navigate(['/productos']); } catch(e:any) { this.error.set(e?.error?.message ?? 'No fue posible guardar el producto.'); } finally { this.saving.set(false); } }
 }

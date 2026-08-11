@@ -1,47 +1,9 @@
 <div class="bg-[#F8FAF9] p-3 rounded-2xl border border-gray-200">
   <form [formGroup]="filtrosForm" (ngSubmit)="aplicarFiltros()" class="flex flex-wrap md:flex-nowrap gap-3 items-end">
-    
-    <div class="flex-1 min-w-[140px]">
-      <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Sucursal</label>
-      <select formControlName="branch_id" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm text-gray-700 transition-colors">
-        <option value="">Todas las sucursales</option>
-        <option value="1">Norte</option>
-        <option value="2">Sur</option>
-      </select>
-    </div>
-
-    <div class="flex-1 min-w-[140px]">
-      <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Coordinador</label>
-      <select formControlName="coordinator_id" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm text-gray-700 transition-colors">
-        <option value="">Todos los coordinadores</option>
-        <option value="101">Juan Pérez</option>
-        <option value="102">María López</option>
-      </select>
-    </div>
-
-    <div class="flex-1 min-w-[140px]">
-      <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Categoría</label>
-      <select formControlName="category_id" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm text-gray-700 transition-colors">
-        <option value="">Todas</option>
-        <option value="cat1">Diamante</option>
-        <option value="cat2">Plata</option>
-      </select>
-    </div>
-
-    <div class="flex-1 min-w-[140px]">
-      <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1">Estado</label>
-      <select formControlName="status" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm text-gray-700 transition-colors">
-        <option value="">Todos</option>
-        <option value="PENDING_ACTIVATION">Revisión</option>
-        <option value="ACTIVE">Activo</option>
-      </select>
-    </div>
-
-    <div class="flex gap-2 min-w-[140px]">
-      <button type="submit" class="w-full px-4 py-2.5 bg-[#EAEFEA] hover:bg-[#d8e2d8] text-[#1A4D2E] rounded-xl text-sm font-bold transition-colors flex items-center justify-center gap-2 border border-[#d2dfd2]">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
-        Aplicar Filtros
-      </button>
-    </div>
+    <div class="flex-1 min-w-[140px]"><label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">Sucursal</label><select formControlName="branch_id" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm"><option value="">Todas las sucursales</option>@for (branch of branches; track branch.id) { <option [value]="branch.id">{{ branch.name }}</option> }</select></div>
+    <div class="flex-1 min-w-[140px]"><label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">Coordinador</label><select formControlName="coordinator_id" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm"><option value="">Todos los coordinadores</option>@for (coordinator of coordinators; track coordinator.id) { <option [value]="coordinator.id">{{ coordinator.name }}</option> }</select></div>
+    <div class="flex-1 min-w-[140px]"><label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">Categoría</label><select formControlName="category_id" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm"><option value="">Todas</option>@for (category of categories; track category.id) { <option [value]="category.id">{{ category.name }}</option> }</select></div>
+    <div class="flex-1 min-w-[140px]"><label class="block text-[11px] font-semibold text-gray-500 uppercase mb-1">Estado</label><select formControlName="status" class="w-full px-3 py-2.5 bg-white border border-gray-200 rounded-xl text-sm"><option value="">Todos</option><option value="PENDING_ACTIVATION">Activación pendiente</option><option value="ACTIVE">Activa</option><option value="DISABLED">Deshabilitada</option></select></div>
+    <button type="submit" class="px-4 py-2.5 bg-[#EAEFEA] text-[#1A4D2E] rounded-xl text-sm font-bold border">Aplicar filtros</button>
   </form>
 </div>

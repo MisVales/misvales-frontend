@@ -15,7 +15,7 @@ export class VisitasAsignadasComponent implements OnInit {
   protected readonly facade = inject(VerificacionDistribuidorasFacade);
 
   ngOnInit() {
-    this.facade.cargarVisitasAsignadas(1, 20); // TODO: status filter 'ASSIGNED,IN_PROGRESS'
+    this.facade.cargarVisitasAsignadas(1, 20);
   }
 
   onPageChange(page: number) {

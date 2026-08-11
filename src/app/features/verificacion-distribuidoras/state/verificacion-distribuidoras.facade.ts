@@ -88,11 +88,8 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async devolverACaptura(id: string, req: DevolverSolicitudCapturaRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.devolverACaptura(id, req));
-          patchState(store, {
-            solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.devolverACaptura(id, req));
+          await this.cargarSolicitud(id);
           return true;
         } catch (err) {
           return handleError(err);
@@ -102,21 +99,18 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async asignarVerificador(id: string, req: AsignarVerificadorRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.asignarVerificador(id, req));
-          patchState(store, {
-            solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.asignarVerificador(id, req));
+          await this.cargarSolicitud(id);
           return true;
         } catch (err) {
           return handleError(err);
         }
       },
 
-      async cargarVerificadoresDisponibles() {
+      async cargarVerificadoresDisponibles(applicationId: string) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.listarVerificadoresDisponibles());
+          const response = await firstValueFrom(apiService.listarVerificadoresDisponibles(applicationId));
           patchState(store, {
             verificadoresDisponibles: response.map(v => ({
               id: v.id,
@@ -180,11 +174,8 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async actualizarVisita(id: string, req: ActualizarVisitaRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.actualizarVisita(id, req));
-          patchState(store, {
-            visitaSeleccionada: mapVisitaToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.actualizarVisita(id, req));
+          await this.cargarVisita(id);
           return true;
         } catch (err) {
           return handleError(err);
@@ -194,11 +185,8 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async finalizarVisita(id: string, req: FinalizarVisitaRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.finalizarVisita(id, req));
-          patchState(store, {
-            visitaSeleccionada: mapVisitaToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.finalizarVisita(id, req));
+          await this.cargarVisita(id);
           return true;
         } catch (err) {
           return handleError(err);
@@ -258,11 +246,8 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async aplicarCorreccion(solicitudId: string, req: AplicarCorreccionRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.aplicarCorreccion(solicitudId, req));
-          patchState(store, {
-            solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.aplicarCorreccion(solicitudId, req));
+          await this.cargarSolicitud(solicitudId);
           return true;
         } catch (err) {
           return handleError(err);
@@ -272,11 +257,8 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async finalizarCorrecciones(solicitudId: string, req: FinalizarCorreccionesRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.finalizarCorrecciones(solicitudId, req));
-          patchState(store, {
-            solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.finalizarCorrecciones(solicitudId, req));
+          await this.cargarSolicitud(solicitudId);
           return true;
         } catch (err) {
           return handleError(err);
@@ -286,11 +268,8 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async evaluarSolicitud(solicitudId: string, req: EvaluarSolicitudRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.evaluarSolicitud(solicitudId, req));
-          patchState(store, {
-            solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.evaluarSolicitud(solicitudId, req));
+          await this.cargarSolicitud(solicitudId);
           return true;
         } catch (err) {
           return handleError(err);
@@ -300,11 +279,8 @@ export const VerificacionDistribuidorasFacade = signalStore(
       async autorizarSolicitud(solicitudId: string, req: AutorizarSolicitudRequestDto) {
         patchState(store, { isLoading: true, error: null });
         try {
-          const response = await firstValueFrom(apiService.autorizarSolicitud(solicitudId, req));
-          patchState(store, {
-            solicitudSeleccionada: mapSolicitudToModel(response),
-            isLoading: false
-          });
+          await firstValueFrom(apiService.autorizarSolicitud(solicitudId, req));
+          await this.cargarSolicitud(solicitudId);
           return true;
         } catch (err) {
           return handleError(err);

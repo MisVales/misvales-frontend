@@ -7,7 +7,7 @@ export interface ClientListItemResponseDto {
   branch_id: string;
   portfolio_summary: {
     current_balance: string;
-    status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID';
+    status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | null;
     last_payment_date: string | null;
   };
   created_at: string;

@@ -1,4 +1,4 @@
-export type EstadoInformativoCartera = 'PENDING' | 'PARTIALLY_PAID' | 'PAID';
+export type EstadoInformativoCartera = 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'NO_RECORDS';
 
 export interface ResumenCartera {
   saldoActual: string;

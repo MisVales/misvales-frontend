@@ -29,12 +29,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   // Tabs / Wizard steps
   step = signal<number>(1);
   
-  // Lista de comprobación simulada
-  puntosComprobacion = signal<PuntoComprobacion[]>([
-    { id: '1', seccion: 'domicilio', campo: 'calle', etiqueta: 'Calle y Número coincide', datoDeclarado: 'Av. Siempre Viva 123', estado: null },
-    { id: '2', seccion: 'domicilio', campo: 'fachada', etiqueta: 'Fachada coincide con fotos', datoDeclarado: 'Casa blanca de 2 pisos', estado: null },
-    { id: '3', seccion: 'identidad', campo: 'ine', etiqueta: 'Identificación oficial original', datoDeclarado: 'INE', estado: null },
-  ]);
+  puntosComprobacion = signal<PuntoComprobacion[]>([]);
 
   tiposEvidencia = [
     { id: 'FACHADA', label: 'Fotografía de Fachada' },
@@ -42,32 +37,48 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     { id: 'DOCUMENTO', label: 'Fotografía de Documento' },
   ];
 
-  seccionesDiferencias = [
-    { id: 'domicilio', label: 'Domicilio' },
-    { id: 'identidad', label: 'Identidad' },
-    { id: 'ingresos', label: 'Ingresos / Empleo' }
-  ];
-
-  camposDiferencias = {
-    'domicilio': [
-      { id: 'calle', label: 'Calle y Número', valorOriginal: 'Av. Siempre Viva 123' },
-      { id: 'fachada', label: 'Color de Fachada', valorOriginal: 'Blanco' }
-    ],
-    'identidad': [
-      { id: 'nombre', label: 'Nombre en Identificación', valorOriginal: 'Juan Pérez' }
-    ]
-  };
+  seccionesDiferencias: { id: string; label: string }[] = [];
+  camposDiferencias: Record<string, { id: string; label: string; valorOriginal: string }[]> = {};
 
   mostrarEditorDiferencia = signal<boolean>(false);
   
   observacionesFila = signal<string>('');
   resultadoFinal = signal<'FAVORABLE' | 'UNFAVORABLE' | null>(null);
 
-  ngOnInit() {
+  async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      this.facade.cargarVisita(id);
+      await this.facade.cargarVisita(id);
+      const visita = this.facade.visitaSeleccionada();
+      if (visita) {
+        await this.facade.cargarSolicitud(visita.solicitudId);
+        this.construirComprobacion();
+      }
     }
+  }
+
+  private construirComprobacion() {
+    const datos = this.facade.solicitudSeleccionada()?.datosDeclarados ?? {};
+    const puntos: PuntoComprobacion[] = [];
+    const campos: Record<string, { id: string; label: string; valorOriginal: string }[]> = {};
+    for (const [seccion, contenido] of Object.entries(datos)) {
+      if (contenido === null || (Array.isArray(contenido) && contenido.length === 0)) continue;
+      const registros = Array.isArray(contenido) ? contenido : [contenido];
+      campos[seccion] = [];
+      registros.forEach((registro, indice) => {
+        if (!registro || typeof registro !== 'object') return;
+        Object.entries(registro as Record<string, unknown>).forEach(([campo, valor]) => {
+          if (['id', 'application_id', 'created_at', 'updated_at', 'lock_version'].includes(campo)) return;
+          const id = `${seccion}.${indice}.${campo}`;
+          const declarado = valor == null ? 'Sin dato' : typeof valor === 'object' ? JSON.stringify(valor) : String(valor);
+          puntos.push({ id, seccion, campo, etiqueta: campo.replaceAll('_', ' '), datoDeclarado: declarado, estado: null });
+          campos[seccion].push({ id: campo, label: campo.replaceAll('_', ' '), valorOriginal: declarado });
+        });
+      });
+    }
+    this.puntosComprobacion.set(puntos);
+    this.camposDiferencias = campos;
+    this.seccionesDiferencias = Object.keys(campos).map(id => ({ id, label: id.replaceAll('_', ' ') }));
   }
 
   ngOnDestroy() {

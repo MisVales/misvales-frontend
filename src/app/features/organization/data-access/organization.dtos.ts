@@ -22,6 +22,7 @@ export interface Branch {
   address: string | null;
   is_headquarters: boolean;
   status: 'ACTIVE' | 'INACTIVE';
+  has_branch_manager?: boolean;
   lock_version: number;
   active_personnel_count?: number;
   created_at?: string;
@@ -97,7 +98,7 @@ export interface CoordinatorDistributorAssignment {
   coordinator: { id: string; name: string; email?: string };
   distributor: {
     id: string;
-    application_number: string;
+    distributor_number: string;
     full_name: string | null;
     status: string;
     branch_id: string;
@@ -113,7 +114,7 @@ export interface AssignCoordinatorDistributorPayload {
 
 export interface DistributorCandidate {
   id: string;
-  application_number: string;
+  distributor_number: string;
   status: string;
   branch: { id: string; name?: string };
   coordinator: { id: string; name: string | null };

@@ -17,10 +17,11 @@
       <table class="min-w-full w-full table-auto">
         <thead>
           <tr class="bg-gray-200 text-gray-600 uppercase text-sm leading-normal">
-            <th class="py-3 px-6 text-left">SKU</th>
+            <th class="py-3 px-6 text-left">Código</th>
             <th class="py-3 px-6 text-left">Nombre</th>
-            <th class="py-3 px-6 text-left">Precio Base</th>
+            <th class="py-3 px-6 text-left">Valor nominal</th>
             <th class="py-3 px-6 text-center">Estado</th>
+            <th class="py-3 px-6 text-center">Versión</th>
             <th class="py-3 px-6 text-center">Acciones</th>
           </tr>
         </thead>
@@ -39,8 +40,12 @@
               <td class="py-3 px-6 text-center">
                 <span class="bg-purple-200 text-purple-600 py-1 px-3 rounded-full text-xs">{{ prod.estado }}</span>
               </td>
+              <td class="py-3 px-6 text-center">{{ prod.estadoVersion }}</td>
               <td class="py-3 px-6 text-center">
                 <a [routerLink]="[prod.id]" class="text-blue-500 hover:text-blue-700">Ver Detalle</a>
+                @if (session.roles().includes('general_manager') && prod.estadoVersion === 'DRAFT') {
+                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="publicar(prod.versionId, prod.versionRegistro)">Publicar</button>
+                }
               </td>
             </tr>
           }

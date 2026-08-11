@@ -50,16 +50,22 @@ export class VerificacionDistribuidorasApiService {
     return this.http.get<{ data: SolicitudDistribuidoraResponseDto }>(`${this.apiUrl}/distributor-applications/${id}`).pipe(map(res => res.data));
   }
 
-  devolverACaptura(id: string, req: DevolverSolicitudCapturaRequestDto): Observable<SolicitudDistribuidoraResponseDto> {
-    return this.http.post<{ data: SolicitudDistribuidoraResponseDto }>(`${this.apiUrl}/distributor-applications/${id}/return-to-capture`, req).pipe(map(res => res.data));
+  devolverACaptura(id: string, req: DevolverSolicitudCapturaRequestDto): Observable<void> {
+    return this.http.post(`${this.apiUrl}/distributor-applications/${id}/return-to-draft`, {
+      reason: req.motivo,
+      pending_sections: req.seccionesPendientes,
+      lock_version: req.lock_version,
+    }).pipe(map(() => undefined));
   }
 
-  asignarVerificador(id: string, req: AsignarVerificadorRequestDto): Observable<SolicitudDistribuidoraResponseDto> {
-    return this.http.post<{ data: SolicitudDistribuidoraResponseDto }>(`${this.apiUrl}/distributor-applications/${id}/assign-verifier`, req).pipe(map(res => res.data));
+  asignarVerificador(id: string, req: AsignarVerificadorRequestDto): Observable<void> {
+    return this.http.post(`${this.apiUrl}/distributor-applications/${id}/assign-verifier`, req).pipe(map(() => undefined));
   }
 
-  listarVerificadoresDisponibles(): Observable<{ id: string; nombre_completo: string; sucursal_id: string; estado: string }[]> {
-    return this.http.get<{ data: any[] }>(`${this.apiUrl}/users?role=VERIFIER`).pipe(map(res => res.data)); // Ajustar si hay un endpoint específico
+  listarVerificadoresDisponibles(applicationId: string): Observable<{ id: string; nombre_completo: string; sucursal_id: string; estado: string }[]> {
+    return this.http.get<{ data: any[] }>(`${this.apiUrl}/distributor-applications/${applicationId}/available-verifiers`).pipe(map(res => res.data.map(user => ({
+      id: user.id, nombre_completo: user.name, sucursal_id: user.branch_id, estado: user.state,
+    }))));
   }
 
   // ---------------------------------------------------------
@@ -92,18 +98,32 @@ export class VerificacionDistribuidorasApiService {
     return this.http.post<{ data: VisitaVerificacionResponseDto }>(`${this.apiUrl}/verification-visits/${id}/start`, req).pipe(map(res => res.data));
   }
 
-  actualizarVisita(id: string, req: ActualizarVisitaRequestDto): Observable<VisitaVerificacionResponseDto> {
-    return this.http.put<{ data: VisitaVerificacionResponseDto }>(`${this.apiUrl}/verification-visits/${id}`, req).pipe(map(res => res.data));
+  actualizarVisita(id: string, req: ActualizarVisitaRequestDto): Observable<void> {
+    const items = (req.diferencias || []).map(d => ({
+      section: d.seccion,
+      field: d.campo,
+      declared_value: d.dato_declarado,
+      observed_value: d.dato_observado,
+      description: d.descripcion,
+    }));
+    return this.http.put(`${this.apiUrl}/verification-visits/${id}/differences`, {
+      differences_payload: { has_differences: items.length > 0, items },
+      lock_version: req.lock_version,
+    }).pipe(map(() => undefined));
   }
 
-  finalizarVisita(id: string, req: FinalizarVisitaRequestDto): Observable<VisitaVerificacionResponseDto> {
-    return this.http.post<{ data: VisitaVerificacionResponseDto }>(`${this.apiUrl}/verification-visits/${id}/finish`, req).pipe(map(res => res.data));
+  finalizarVisita(id: string, req: FinalizarVisitaRequestDto): Observable<void> {
+    return this.http.post(`${this.apiUrl}/verification-visits/${id}/finish`, {
+      result: req.resultado_fisico,
+      observations: req.observaciones,
+      lock_version: req.lock_version,
+    }).pipe(map(() => undefined));
   }
 
   adjuntarEvidencia(visitaId: string, tipo: string, file: File, lockVersion: number): Observable<{ progress: number; data?: EvidenciaVerificacionResponseDto }> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('tipo', tipo);
+    formData.append('file_type', tipo);
     formData.append('lock_version', lockVersion.toString());
 
     return this.http.post<{ data: EvidenciaVerificacionResponseDto }>(
@@ -123,11 +143,11 @@ export class VerificacionDistribuidorasApiService {
   }
 
   descargarEvidencia(visitaId: string, evidenciaId: string): Observable<Blob> {
-    return this.http.get(`${this.apiUrl}/verification-visits/${visitaId}/evidences/${evidenciaId}/download`, { responseType: 'blob' });
+    return this.http.get(`${this.apiUrl}/verification-evidences/${evidenciaId}/download`, { responseType: 'blob' });
   }
 
   eliminarEvidencia(visitaId: string, evidenciaId: string, lockVersion: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/verification-visits/${visitaId}/evidences/${evidenciaId}`, {
+    return this.http.delete<void>(`${this.apiUrl}/verification-evidences/${evidenciaId}`, {
       body: { lock_version: lockVersion }
     });
   }
@@ -136,19 +156,36 @@ export class VerificacionDistribuidorasApiService {
   // CORRECCIONES, EVALUACION Y AUTORIZACION
   // ---------------------------------------------------------
 
-  aplicarCorreccion(solicitudId: string, req: AplicarCorreccionRequestDto): Observable<SolicitudDistribuidoraResponseDto> {
-    return this.http.post<{ data: SolicitudDistribuidoraResponseDto }>(`${this.apiUrl}/distributor-applications/${solicitudId}/corrections`, req).pipe(map(res => res.data));
+  aplicarCorreccion(solicitudId: string, req: AplicarCorreccionRequestDto): Observable<void> {
+    return this.http.post(`${this.apiUrl}/distributor-applications/${solicitudId}/corrections`, {
+      visit_id: req.visit_id,
+      section: req.seccion,
+      field_path: req.campo,
+      new_value: req.valor_corregido,
+      reason: req.motivo,
+      lock_version: req.lock_version,
+    }).pipe(map(() => undefined));
   }
 
-  finalizarCorrecciones(solicitudId: string, req: FinalizarCorreccionesRequestDto): Observable<SolicitudDistribuidoraResponseDto> {
-    return this.http.post<{ data: SolicitudDistribuidoraResponseDto }>(`${this.apiUrl}/distributor-applications/${solicitudId}/corrections/finish`, req).pipe(map(res => res.data));
+  finalizarCorrecciones(solicitudId: string, req: FinalizarCorreccionesRequestDto): Observable<void> {
+    return this.http.post(`${this.apiUrl}/distributor-applications/${solicitudId}/corrections/finish`, req).pipe(map(() => undefined));
   }
 
-  evaluarSolicitud(solicitudId: string, req: EvaluarSolicitudRequestDto): Observable<SolicitudDistribuidoraResponseDto> {
-    return this.http.post<{ data: SolicitudDistribuidoraResponseDto }>(`${this.apiUrl}/distributor-applications/${solicitudId}/evaluate`, req).pipe(map(res => res.data));
+  evaluarSolicitud(solicitudId: string, req: EvaluarSolicitudRequestDto): Observable<void> {
+    return this.http.post(`${this.apiUrl}/distributor-applications/${solicitudId}/evaluate`, {
+      visit_id: req.visit_id,
+      result: req.dictamen,
+      reason: req.motivo,
+      lock_version: req.lock_version,
+    }).pipe(map(() => undefined));
   }
 
-  autorizarSolicitud(solicitudId: string, req: AutorizarSolicitudRequestDto): Observable<SolicitudDistribuidoraResponseDto> {
-    return this.http.post<{ data: SolicitudDistribuidoraResponseDto }>(`${this.apiUrl}/distributor-applications/${solicitudId}/authorize`, req).pipe(map(res => res.data));
+  autorizarSolicitud(solicitudId: string, req: AutorizarSolicitudRequestDto): Observable<void> {
+    return this.http.post(`${this.apiUrl}/distributor-applications/${solicitudId}/authorize`, {
+      decision: req.decision,
+      reason: req.motivo,
+      initial_credit_line_amount: req.linea_inicial,
+      lock_version: req.lock_version,
+    }).pipe(map(() => undefined));
   }
 }

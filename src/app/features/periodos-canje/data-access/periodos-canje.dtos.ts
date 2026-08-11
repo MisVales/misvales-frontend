@@ -1,9 +1,11 @@
 export interface ExchangePeriodDto {
   id: string;
+  code: string;
   name: string;
+  description: string | null;
   start_date: string; // ISO 8601
   end_date: string; // ISO 8601
-  status: 'SCHEDULED' | 'ACTIVE' | 'CLOSED';
+  status: 'DRAFT' | 'SCHEDULED' | 'OPEN' | 'CLOSED' | 'CANCELLED';
   created_at: string;
   lock_version: number;
 }
@@ -18,15 +20,20 @@ export interface ExchangePeriodListResponseDto {
 }
 
 export interface CreateExchangePeriodRequestDto {
+  code: string;
   name: string;
-  start_date: string;
-  end_date: string;
+  description: string | null;
+  starts_at: string;
+  ends_at: string;
+  reason: string;
 }
 
 export interface UpdateExchangePeriodRequestDto {
   name: string;
-  start_date: string;
-  end_date: string;
+  description: string | null;
+  starts_at: string;
+  ends_at: string;
+  reason: string;
   lock_version: number;
 }
 
@@ -35,7 +42,7 @@ export interface PeriodoCanje {
   nombre: string;
   fechaInicio: string;
   fechaFin: string;
-  estado: 'SCHEDULED' | 'ACTIVE' | 'CLOSED';
+  estado: 'DRAFT' | 'SCHEDULED' | 'OPEN' | 'CLOSED' | 'CANCELLED';
   fechaCreacion: string;
   versionRegistro: number;
 }

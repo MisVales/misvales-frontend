@@ -33,13 +33,13 @@
             </div>
             <div>
               <p class="label">Evaluación Coordinación</p>
-              <span class="badge" [class.badge-success]="solicitud.evaluacion?.dictamen === 'COMPLIES'" [class.badge-danger]="solicitud.evaluacion?.dictamen === 'DOES_NOT_COMPLY'">
-                {{ solicitud.evaluacion?.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple' }}
+              <span class="badge" [class.badge-success]="solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES'" [class.badge-danger]="solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY'">
+                {{ solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple' }}
               </span>
             </div>
           </div>
-          @if (solicitud.evaluacion?.motivo) {
-            <p class="mt-2 text-sm"><strong>Motivo Coordinador:</strong> {{ solicitud.evaluacion?.motivo }}</p>
+          @if (solicitud.ultimaEvaluacion?.motivo) {
+            <p class="mt-2 text-sm"><strong>Motivo Coordinador:</strong> {{ solicitud.ultimaEvaluacion?.motivo }}</p>
           }
         </div>
 

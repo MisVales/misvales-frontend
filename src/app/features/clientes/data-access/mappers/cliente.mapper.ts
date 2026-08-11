@@ -35,7 +35,7 @@ export class ClienteMapper {
       },
       resumenCartera: {
         saldoActual: dto.portfolio_summary.current_balance,
-        estadoInformativo: dto.portfolio_summary.status,
+        estadoInformativo: dto.portfolio_summary.status ?? 'NO_RECORDS',
         ultimoPagoEn: dto.portfolio_summary.last_payment_date,
         cantidadMovimientos: 0,
         tieneRegistrosVencidos: false,
@@ -43,7 +43,7 @@ export class ClienteMapper {
       },
       creadoEn: dto.created_at,
       versionBloqueo: 0,
-      estado: 'ACTIVE' // Mock as list item doesn't provide general status in PDF
+      estado: dto.portfolio_summary.status ?? 'NO_RECORDS'
     };
   }
 

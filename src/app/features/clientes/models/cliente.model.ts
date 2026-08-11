@@ -3,7 +3,7 @@ import { CuentaBancariaCliente } from './cuenta-bancaria-cliente.model';
 import { AsignacionCliente } from './asignacion-cliente.model';
 import { ResumenCartera } from './resumen-cartera.model';
 
-export type EstadoCliente = 'ACTIVE' | 'INACTIVE' | 'BLOCKED' | 'PENDING';
+export type EstadoCliente = 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'NO_RECORDS';
 
 export interface Cliente {
   id: string;
@@ -19,5 +19,5 @@ export interface Cliente {
   resumenCartera: ResumenCartera;
   creadoEn: string;
   versionBloqueo: number;
-  estado: EstadoCliente; // keeping this general status for Listado if needed
+  estado: EstadoCliente;
 }

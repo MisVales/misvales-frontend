@@ -39,11 +39,14 @@
       @if (solicitud.estado === 'MANAGER_AUTHORIZATION' && canAuthorize) {
         <a [routerLink]="['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id, 'autorizacion']" class="btn btn-primary">Dictamen Gerencial</a>
       }
+      @if (solicitud.estado === 'AUTHORIZED_PENDING_ACTIVATION' && canAuthorize) {
+        <a [routerLink]="['/distribuidoras', solicitud.id, 'activacion']" class="btn btn-primary">Activar Distribuidora</a>
+      }
     </div>
 
     <div class="layout-grid">
       <div class="main-content">
-        <!-- Sección de Datos Declarados (Resumen simulado) -->
+        <!-- Expediente canónico capturado en M04 -->
         <section class="content-section">
           <h2 class="section-title">Datos Declarados</h2>
           <div class="data-grid">
@@ -60,6 +63,14 @@
               <div>{{ solicitud.sucursal.nombre }}</div>
             </div>
           </div>
+          @for (seccion of solicitud.datosDeclarados | keyvalue; track seccion.key) {
+            @if (seccion.value) {
+              <div class="mt-4 rounded border border-gray-200 p-3">
+                <h3 class="font-semibold capitalize">{{ seccion.key.replaceAll('_', ' ') }}</h3>
+                <pre class="mt-2 whitespace-pre-wrap break-words text-xs text-gray-700">{{ seccion.value | json }}</pre>
+              </div>
+            }
+          }
         </section>
 
         <!-- Sección de Visitas -->

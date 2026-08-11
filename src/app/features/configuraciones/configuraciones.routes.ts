@@ -9,12 +9,12 @@ export const CONFIGURACIONES_ROUTES: Routes = [
     children: [
       {
         path: '',
-        canActivate: [permissionGuard('view_configurations')], // placeholder permission
+        canActivate: [permissionGuard('catalogs.view_published')],
         loadComponent: () => import('./pages/configuraciones-lista/configuraciones-lista.component').then(m => m.ConfiguracionesListaComponent)
       },
       {
         path: ':clave',
-        canActivate: [permissionGuard('view_configurations')],
+        canActivate: [permissionGuard('catalogs.view_history')],
         loadComponent: () => import('./pages/configuracion-detalle/configuracion-detalle.component').then(m => m.ConfiguracionDetalleComponent)
       }
     ]

@@ -48,7 +48,7 @@ export class AutorizacionGerencialComponent implements OnInit, OnDestroy {
     }
 
     // Example logic rule
-    if (this.decision() === 'APPROVED' && solicitud.evaluacion?.dictamen === 'DOES_NOT_COMPLY') {
+    if (this.decision() === 'APPROVED' && solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY') {
       if (!confirm('Advertencia: El coordinador dictaminó esta solicitud como DESFAVORABLE. ¿Seguro que deseas APROBARLA?')) {
         return;
       }

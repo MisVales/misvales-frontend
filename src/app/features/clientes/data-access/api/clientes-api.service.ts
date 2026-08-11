@@ -1,126 +1,98 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, delay, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, Observable } from 'rxjs';
 import { FiltroClientes } from '../../models/filtro-clientes.model';
 import { Cliente } from '../../models/cliente.model';
 import { ClienteMapper } from '../mappers/cliente.mapper';
-import { ClientListItemResponseDto } from '../dtos/client-list-item-response.dto';
 import { ClientDetailResponseDto } from '../dtos/client-detail-response.dto';
 import { CreateClientRequestDto } from '../dtos/create-client-request.dto';
 import { ClientBankAccountResponseDto } from '../dtos/client-bank-account-response.dto';
 import { CreateClientBankAccountRequestDto } from '../dtos/create-client-bank-account-request.dto';
 
-export interface Pagina<T> {
-  data: T[];
-  total: number;
-}
+export interface Pagina<T> { data: T[]; total: number; }
 
 @Injectable({ providedIn: 'root' })
 export class ClientesApiService {
-  private http = inject(HttpClient);
-  private baseUrl = '/api/v1/clients';
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = '/api/v1/clients';
 
   listar(filtros: FiltroClientes): Observable<Pagina<Cliente>> {
-    // This would be a real HTTP call
-    // return this.http.get<{data: ClientListItemResponseDto[], total: number}>(this.baseUrl, { params: ... })
-    
-    // MOCK DATA for local testing
-    const mockList: ClientListItemResponseDto[] = [
-      {
-        id: 'c-1',
-        client_number: 'CLI-001',
-        full_name: 'Juan Pérez López',
-        masked_curp: 'PELJ80XXXXXX',
-        distributor_id: 'd-1',
-        branch_id: 'b-1',
-        portfolio_summary: {
-          current_balance: '1500.00',
-          status: 'PENDING',
-          last_payment_date: null
-        },
-        created_at: '2024-01-10T10:00:00Z'
-      }
-    ];
+    let params = new HttpParams();
+    if (filtros.search) params = params.set('search', filtros.search);
+    if (filtros.branchId) params = params.set('branch_id', filtros.branchId);
+    if (filtros.distributorId) params = params.set('distributor_id', filtros.distributorId);
+    if (filtros.status) params = params.set('portfolio_status', filtros.status);
+    if (filtros.hasBalance !== undefined) params = params.set('has_portfolio_balance', String(filtros.hasBalance));
+    params = params.set('page', String(filtros.page ?? 1));
+    params = params.set('per_page', String(filtros.perPage ?? 10));
 
-    return of({
-      data: mockList.map(item => ClienteMapper.fromListItemDto(item)),
-      total: 1
-    }).pipe(delay(500));
+    return this.http.get<any>(this.baseUrl, { params }).pipe(map((response) => ({
+      data: (response.data ?? []).map((item: any) => ClienteMapper.fromListItemDto({
+        id: item.id,
+        client_number: item.client_number,
+        full_name: item.full_name,
+        masked_curp: item.curp_masked,
+        distributor_id: item.distributor?.id ?? '',
+        branch_id: item.branch?.id ?? '',
+        portfolio_summary: {
+          current_balance: item.portfolio_summary?.current_balance ?? '0',
+          status: item.portfolio_summary?.informational_status ?? null,
+          last_payment_date: null,
+        },
+        created_at: item.created_at,
+      })),
+      total: response.meta?.total ?? response.data?.length ?? 0,
+    })));
   }
 
   obtener(id: string): Observable<Cliente> {
-    const mockDetail: ClientDetailResponseDto = {
-      id: id,
-      client_number: 'CLI-001',
-      full_name: 'Juan Pérez López',
-      masked_curp: 'PELJ80XXXXXX',
-      masked_rfc: 'PELJ80XXX',
-      birth_date: '1980-01-01',
-      birth_place: 'Jalisco',
-      active_address: {
-        id: 'addr-1',
-        street: 'Av. Vallarta',
-        exterior_number: '123',
-        interior_number: null,
-        neighborhood: 'Centro',
-        zip_code: '44100',
-        city: 'Guadalajara',
-        municipality: 'Guadalajara',
-        state: 'Jalisco',
-        country: 'MX',
-        valid_from: '2024-01-10'
-      },
-      active_bank_account: {
-        id: 'acc-1',
-        bank_name: 'BBVA',
-        account_holder: 'Juan Pérez',
-        masked_account_number: '****1234',
-        masked_clabe: '0123456789012****',
-        valid_from: '2024-01-10'
-      },
-      active_assignment: {
-        distributor_id: 'd-1',
-        branch_id: 'b-1',
-        start_date: '2024-01-10'
-      },
-      portfolio_summary: {
-        current_balance: '1500.00',
-        status: 'PENDING',
-        last_payment_date: null,
-        total_entries: 2,
-        has_overdue_entries: false,
-        is_zero_balance_for_transfer: false
-      },
-      created_at: '2024-01-10T10:00:00Z',
-      lock_version: 1,
-      status: 'ACTIVE'
-    };
-    return of(ClienteMapper.fromDetailDto(mockDetail)).pipe(delay(500));
+    return this.http.get<{ data: any }>(`${this.baseUrl}/${id}`).pipe(map(({ data: item }) => {
+      const address = item.address_history?.find((entry: any) => entry.is_current) ?? item.address ?? {};
+      const bank = item.bank_account_history?.find((entry: any) => entry.is_current) ?? item.bank_account;
+      const assignment = item.assignment_history?.find((entry: any) => !entry.ends_at) ?? {};
+      const dto: ClientDetailResponseDto = {
+        id: item.id, client_number: item.client_number, full_name: item.full_name, masked_curp: item.curp_masked,
+        masked_rfc: item.rfc_masked ?? null, birth_date: item.birth_date, birth_place: item.birth_place,
+        active_address: {
+          id: address.id ?? '', street: address.street ?? '', exterior_number: address.exterior_number ?? '', interior_number: address.interior_number ?? null,
+          neighborhood: address.neighborhood ?? '', zip_code: address.postal_code ?? '', city: address.city ?? '', municipality: address.municipality ?? '',
+          state: address.state ?? '', country: address.country ?? 'MX', valid_from: address.starts_at ?? item.created_at,
+        },
+        active_bank_account: bank ? {
+          id: bank.id ?? '', bank_name: bank.bank_name, account_holder: bank.account_holder_name,
+          masked_account_number: bank.account_number_masked ?? null, masked_clabe: bank.clabe_masked, valid_from: bank.starts_at ?? item.created_at,
+        } : null,
+        active_assignment: {
+          distributor_id: assignment.distributor_id ?? item.distributor?.id ?? '', branch_id: assignment.branch_id ?? item.branch?.id ?? '',
+          start_date: assignment.starts_at ?? item.created_at,
+        },
+        portfolio_summary: {
+          current_balance: item.portfolio_summary?.current_balance ?? '0', status: item.portfolio_summary?.informational_status ?? 'NO_RECORDS',
+          last_payment_date: null, total_entries: 0, has_overdue_entries: false,
+          is_zero_balance_for_transfer: item.portfolio_summary?.current_balance === '0.0000',
+        },
+        created_at: item.created_at, lock_version: item.lock_version, status: item.portfolio_summary?.informational_status ?? 'NO_RECORDS',
+      };
+      return ClienteMapper.fromDetailDto(dto);
+    }));
   }
 
   crear(entrada: CreateClientRequestDto, idempotencyKey: string): Observable<Cliente> {
     const headers = new HttpHeaders().set('Idempotency-Key', idempotencyKey);
-    // Real call:
-    // return this.http.post<ClientDetailResponseDto>(this.baseUrl, entrada, { headers })
-    //   .pipe(map(dto => ClienteMapper.fromDetailDto(dto)));
-    
-    // Mock response
-    return this.obtener('new-id').pipe(delay(800));
+    return this.http.post<{ data: { id: string } }>(this.baseUrl, entrada, { headers }).pipe(map(({ data }) => ({ id: data.id } as Cliente)));
   }
 
   listarCuentas(id: string): Observable<ClientBankAccountResponseDto[]> {
-    return of([]).pipe(delay(300));
+    return this.http.get<{ data: any[] }>(`${this.baseUrl}/${id}/bank-accounts`).pipe(map(({ data }) => data.map((item) => ({
+      id: item.id, bank_name: item.bank_name, account_holder: item.account_holder_name,
+      masked_account_number: item.account_number_masked, masked_clabe: item.clabe_masked, valid_from: item.starts_at,
+    }))));
   }
 
   crearCuenta(id: string, entrada: CreateClientBankAccountRequestDto): Observable<ClientBankAccountResponseDto> {
-    return of({
-      id: 'acc-new',
-      bank_name: entrada.bank_name,
-      account_holder: entrada.account_holder,
-      masked_account_number: entrada.account_number ? '****' : null,
-      masked_clabe: '****' + entrada.clabe.slice(-4),
-      valid_from: new Date().toISOString()
-    }).pipe(delay(500));
+    return this.http.post<{ data: any }>(`${this.baseUrl}/${id}/bank-accounts`, entrada).pipe(map(({ data }) => ({
+      id: data.id, bank_name: data.bank_name, account_holder: data.account_holder_name,
+      masked_account_number: data.account_number_masked, masked_clabe: data.clabe_masked, valid_from: data.starts_at,
+    })));
   }
 }

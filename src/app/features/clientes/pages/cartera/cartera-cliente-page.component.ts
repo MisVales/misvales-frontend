@@ -29,9 +29,8 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.form = this.fb.group({
-      type: ['', Validators.required],
-      amount: [''], // Note does not require amount
-      concept: ['', Validators.required]
+      entry_type: ['NOTE', Validators.required], amount: [''], informational_status: [''],
+      occurred_at: ['', Validators.required], due_date: [''], last_payment_at: [''], note: ['']
     });
   }
 
@@ -51,7 +50,7 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   abrirRegistro(type: string = 'NOTE') {
     this.form.reset();
-    this.form.patchValue({ type });
+    this.form.patchValue({ entry_type: type === 'CHARGE' ? 'DEBT' : type, occurred_at: new Date().toISOString().slice(0, 16) });
     this.mostrarModal.set(true);
   }
 
@@ -69,7 +68,8 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
     if (!clienteId) return;
 
     try {
-      const request = this.form.value;
+      const value = this.form.value;
+      const request = { entry_type: value.entry_type, amount: value.entry_type === 'NOTE' || value.entry_type === 'STATUS_UPDATE' ? null : String(value.amount), informational_status: value.informational_status || null, occurred_at: value.occurred_at, due_date: value.due_date || null, last_payment_at: value.last_payment_at || null, note: value.note || null, related_voucher_id: null } as any;
       const idempotencyKey = crypto.randomUUID();
 
       await firstValueFrom(this.store.registrarMovimiento(clienteId, request, idempotencyKey));

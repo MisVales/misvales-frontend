@@ -36,7 +36,7 @@ export interface ClientesState {
 const initialState: ClientesState = {
   listado: [],
   detalle: null,
-  filtros: {},
+  filtros: { page: 1, perPage: 10 },
   paginacion: { total: 0, page: 1 },
   cuentasBancarias: [],
   movimientosCartera: [],
@@ -61,9 +61,10 @@ export const ClientesStore = signalStore(
                carteraApi = inject(CarteraApiService)) => ({
     
     actualizarFiltros(filtros: FiltroClientes) {
-      patchState(store, { filtros, cargandoListado: true, error: null });
-      clientesApi.listar(filtros).pipe(
-        tap(res => patchState(store, { listado: res.data, paginacion: { ...store.paginacion(), total: res.total }, cargandoListado: false })),
+      const filtrosConPagina = { ...filtros, page: 1, perPage: store.filtros().perPage ?? 10 };
+      patchState(store, { filtros: filtrosConPagina, cargandoListado: true, error: null, paginacion: { ...store.paginacion(), page: 1 } });
+      clientesApi.listar(filtrosConPagina).pipe(
+        tap(res => patchState(store, { listado: res.data, paginacion: { total: res.total, page: 1 }, cargandoListado: false })),
         catchError(err => {
           patchState(store, { error: handleClientError(err), cargandoListado: false });
           return of(null);
@@ -75,6 +76,20 @@ export const ClientesStore = signalStore(
       patchState(store, { cargandoListado: true, error: null });
       clientesApi.listar(store.filtros()).pipe(
         tap(res => patchState(store, { listado: res.data, paginacion: { ...store.paginacion(), total: res.total }, cargandoListado: false })),
+        catchError(err => {
+          patchState(store, { error: handleClientError(err), cargandoListado: false });
+          return of(null);
+        })
+      ).subscribe();
+    },
+
+    cambiarPagina(page: number) {
+      const ultimaPagina = Math.max(1, Math.ceil(store.paginacion().total / (store.filtros().perPage ?? 10)));
+      if (page < 1 || page > ultimaPagina || page === store.paginacion().page) return;
+      const filtros = { ...store.filtros(), page };
+      patchState(store, { filtros, paginacion: { ...store.paginacion(), page }, cargandoListado: true, error: null });
+      clientesApi.listar(filtros).pipe(
+        tap(res => patchState(store, { listado: res.data, paginacion: { total: res.total, page }, cargandoListado: false })),
         catchError(err => {
           patchState(store, { error: handleClientError(err), cargandoListado: false });
           return of(null);

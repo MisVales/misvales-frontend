@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { map, switchMap } from 'rxjs/operators';
 import { API_CONFIG } from '../../../core/api/api.config';
 import { PaginacionResponseDTO, SolicitudDistribuidoraResponseDTO } from './dtos/solicitud-distribuidora-response.dto';
 import { CrearSolicitudRequestDTO } from './dtos/solicitud-distribuidora-request.dto';
@@ -13,6 +13,10 @@ function unwrapArray(res: any): any[] {
   if (res && Array.isArray(res.data)) return res.data;
   console.warn('unwrapArray: unexpected response shape', res);
   return [];
+}
+
+function unwrapData<T>(res: T | { data: T }): T {
+  return res && typeof res === 'object' && 'data' in res ? (res as { data: T }).data : res as T;
 }
 
 @Injectable({
@@ -58,28 +62,28 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearSolicitud(datos: CrearSolicitudRequestDTO): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(this.baseUrl, datos).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
+    return this.http.post<SolicitudDistribuidoraResponseDTO | { data: SolicitudDistribuidoraResponseDTO }>(this.baseUrl, datos).pipe(
+      map(unwrapData), map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   consultarSolicitud(id: string): Observable<SolicitudDistribuidora> {
-    return this.http.get<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${id}`).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
+    return this.http.get<SolicitudDistribuidoraResponseDTO | { data: SolicitudDistribuidoraResponseDTO }>(`${this.baseUrl}/${id}`).pipe(
+      map(unwrapData), map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   enviarARevision(id: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${id}/submit`, { lock_version: versionBloqueo }).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
+    return this.http.post<SolicitudDistribuidoraResponseDTO | { data: SolicitudDistribuidoraResponseDTO }>(`${this.baseUrl}/${id}/submit`, { lock_version: versionBloqueo }).pipe(
+      map(unwrapData), map(SolicitudDistribuidoraMapper.mapToModel)
     );
   }
 
   // ==== 2. DATOS PERSONALES ====
 
   guardarDatosPersonales(id: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.put<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${id}/personal-data`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
+    return this.http.put(`${this.baseUrl}/${id}/personal-data`, this.withLockVersion(datos, versionBloqueo)).pipe(
+      switchMap(() => this.consultarSolicitud(id))
     );
   }
 
@@ -90,23 +94,17 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearFamiliar(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/family-members`, this.withLockVersion(datos, versionBloqueo));
   }
 
   actualizarFamiliar(idSolicitud: string, idFamiliar: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, this.withLockVersion(datos, versionBloqueo));
   }
 
   eliminarFamiliar(idSolicitud: string, idFamiliar: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, {
+    return this.http.delete<any>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, {
       body: { lock_version: versionBloqueo },
-    }).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    });
   }
 
   // ==== DOMICILIOS ====
@@ -115,23 +113,17 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearDomicilio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/residences`, this.withLockVersion(datos, versionBloqueo));
   }
 
   actualizarDomicilio(idSolicitud: string, idDomicilio: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, this.withLockVersion(datos, versionBloqueo));
   }
 
   eliminarDomicilio(idSolicitud: string, idDomicilio: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, {
+    return this.http.delete<any>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, {
       body: { lock_version: versionBloqueo },
-    }).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    });
   }
 
   // ==== VEHÍCULOS ====
@@ -140,23 +132,17 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearVehiculo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/vehicles`, this.withLockVersion(datos, versionBloqueo));
   }
 
   actualizarVehiculo(idSolicitud: string, idVehiculo: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, this.withLockVersion(datos, versionBloqueo));
   }
 
   eliminarVehiculo(idSolicitud: string, idVehiculo: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, {
+    return this.http.delete<any>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, {
       body: { lock_version: versionBloqueo },
-    }).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    });
   }
 
   // ==== BIENES Y COMPROMISOS ====
@@ -165,23 +151,17 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearPatrimonio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`, this.withLockVersion(datos, versionBloqueo));
   }
 
   actualizarPatrimonio(idSolicitud: string, idPatrimonio: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, this.withLockVersion(datos, versionBloqueo));
   }
 
   eliminarPatrimonio(idSolicitud: string, idPatrimonio: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, {
+    return this.http.delete<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, {
       body: { lock_version: versionBloqueo },
-    }).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    });
   }
 
   // ==== EMPLEOS ====
@@ -190,23 +170,17 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearEmpleo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/employments`, this.withLockVersion(datos, versionBloqueo));
   }
 
   actualizarEmpleo(idSolicitud: string, idEmpleo: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, this.withLockVersion(datos, versionBloqueo));
   }
 
   eliminarEmpleo(idSolicitud: string, idEmpleo: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, {
+    return this.http.delete<any>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, {
       body: { lock_version: versionBloqueo },
-    }).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    });
   }
 
   // ==== CRÉDITOS COMERCIALES ====
@@ -215,23 +189,17 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearCreditoComercial(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits`, this.withLockVersion(datos, versionBloqueo));
   }
 
   actualizarCreditoComercial(idSolicitud: string, idCredito: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, this.withLockVersion(datos, versionBloqueo)).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, this.withLockVersion(datos, versionBloqueo));
   }
 
   eliminarCreditoComercial(idSolicitud: string, idCredito: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.delete<SolicitudDistribuidoraResponseDTO>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, {
+    return this.http.delete<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, {
       body: { lock_version: versionBloqueo },
-    }).pipe(
-      map(SolicitudDistribuidoraMapper.mapToModel)
-    );
+    });
   }
 
 }

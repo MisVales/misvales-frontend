@@ -20,6 +20,7 @@
             <th class="py-3 px-6 text-left">Nombre</th>
             <th class="py-3 px-6 text-left">% Ganancia Vigente</th>
             <th class="py-3 px-6 text-center">Estado</th>
+            <th class="py-3 px-6 text-center">Versión</th>
             <th class="py-3 px-6 text-center">Fecha Creación</th>
             <th class="py-3 px-6 text-center">Acciones</th>
           </tr>
@@ -31,16 +32,20 @@
                 <span class="font-medium">{{ cat.nombre }}</span>
               </td>
               <td class="py-3 px-6 text-left">
-                <span>{{ cat.margenGanancia }}%</span>
+                <span>{{ (+cat.margenGanancia * 100) | number:'1.0-2' }}%</span>
               </td>
               <td class="py-3 px-6 text-center">
                 <span class="bg-purple-200 text-purple-600 py-1 px-3 rounded-full text-xs">{{ cat.estado }}</span>
               </td>
+              <td class="py-3 px-6 text-center">{{ cat.estadoVersion }}</td>
               <td class="py-3 px-6 text-center">
                 <span>{{ cat.fechaCreacion | date:'dd/MM/yyyy' }}</span>
               </td>
               <td class="py-3 px-6 text-center">
                 <a [routerLink]="[cat.id]" class="text-blue-500 hover:text-blue-700">Ver Detalle</a>
+                @if (session.roles().includes('general_manager') && cat.estadoVersion === 'DRAFT') {
+                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="publicar(cat.versionId, cat.versionRegistro)">Publicar</button>
+                }
               </td>
             </tr>
           }

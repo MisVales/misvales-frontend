@@ -4,4 +4,6 @@ export interface FiltroClientes {
   distributorId?: string;
   status?: string;
   hasBalance?: boolean;
+  page?: number;
+  perPage?: number;
 }

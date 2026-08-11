@@ -6,6 +6,7 @@ import { InvitationService } from '../../data-access/invitation.service';
 import { RoleService } from '../../data-access/role.service';
 import { ChevronLeft, ChevronRight, Loader2, LucideAngularModule, Plus, X } from 'lucide-angular';
 import { importProvidersFrom } from '@angular/core';
+import { OrganizationFacade } from '../../../organization/state/organization.facade';
 
 describe('Invitations', () => {
   let component: Invitations;
@@ -41,6 +42,13 @@ describe('Invitations', () => {
         {
           provide: RoleService,
           useValue: { getRoles: () => of([]) },
+        },
+        {
+          provide: OrganizationFacade,
+          useValue: {
+            branches: () => [],
+            loadBranches: () => Promise.resolve(),
+          },
         },
       ],
     }).compileComponents();

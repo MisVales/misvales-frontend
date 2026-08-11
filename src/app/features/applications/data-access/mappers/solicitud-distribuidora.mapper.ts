@@ -11,12 +11,12 @@ export class SolicitudDistribuidoraMapper {
       id: dto.id,
       folio: dto.application_number,
       estado: dto.status,
-      sucursalId: dto.branch_id,
-      coordinadorId: dto.coordinator_id,
+      sucursalId: dto.branch_id ?? dto.branch?.id ?? '',
+      coordinadorId: dto.coordinator_id ?? dto.coordinator?.id ?? '',
       sucursal: dto.branch ? { id: dto.branch.id, nombre: dto.branch.name } : undefined,
       coordinador: dto.coordinator ? { id: dto.coordinator.id, nombre: dto.coordinator.name } : undefined,
       solicitante: (dto.applicant && (dto.applicant.full_name || dto.applicant.first_name)) ? {
-        id: dto.applicant.id,
+        id: dto.applicant.id ?? '',
         nombre: dto.applicant.first_name || '',
         apellidoPaterno: dto.applicant.first_last_name || '',
         apellidoMaterno: dto.applicant.second_last_name || '',
@@ -39,7 +39,7 @@ export class SolicitudDistribuidoraMapper {
         puedeEnviarse: completion?.can_submit ?? false
       },
       versionBloqueo: dto.lock_version,
-      enviadaPor: dto.submitted_by,
+      enviadaPor: dto.submitted_by ?? null,
       enviadaEn: dto.submitted_at,
       creadaEn: dto.created_at,
       actualizadaEn: dto.updated_at

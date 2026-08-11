@@ -183,7 +183,7 @@ export class AssignmentsPage implements OnInit {
   }
 
   distributorLabel(distributor: DistributorCandidate): string {
-    return `${distributor.application_number} · ${distributor.applicant?.full_name || 'Distribuidora sin nombre capturado'}`;
+    return `${distributor.distributor_number} · ${distributor.applicant?.full_name || 'Distribuidora sin nombre capturado'}`;
   }
 
   roleLabel(user: UserRes): string {

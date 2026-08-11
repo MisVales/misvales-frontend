@@ -1,10 +1,9 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DistribuidorasStore } from '../../state/distribuidoras.store';
 import { FiltrosDistribuidorasComponent } from '../../components/filtros-distribuidoras/filtros-distribuidoras.component';
 import { Router } from '@angular/router';
-// Import some auth context if needed to detect role, for now we will assume a mock context
-// import { AuthService } from '../../../core/auth/auth.service'; 
+import { SessionStore } from '../../../../core/session/session.store';
 
 @Component({
   selector: 'app-listado-distribuidoras-page',
@@ -16,9 +15,13 @@ import { Router } from '@angular/router';
 export class ListadoDistribuidorasPageComponent implements OnInit {
   store = inject(DistribuidorasStore);
   router = inject(Router);
-  
-  // Mocking auth context for structure
-  userRole: 'GERENTE' | 'COORDINADOR' | 'DISTRIBUIDORA' = 'GERENTE'; 
+  private session = inject(SessionStore);
+  userRole = computed<'GERENTE' | 'COORDINADOR' | 'DISTRIBUIDORA'>(() => {
+    const roles = this.session.roles();
+    if (roles.includes('distributor')) return 'DISTRIBUIDORA';
+    if (roles.includes('coordinator')) return 'COORDINADOR';
+    return 'GERENTE';
+  });
   
   ngOnInit() {
     this.store.listar(1, 10, {});

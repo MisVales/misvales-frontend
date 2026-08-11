@@ -14,7 +14,7 @@ export const PERIODOS_CANJE_ROUTES: Routes = [
   },
   {
     path: ':id',
-    canActivate: [permissionGuard('view_redemption_periods')],
+    canActivate: [permissionGuard('catalogs.manage')],
     loadComponent: () => import('./pages/periodo-canje-formulario/periodo-canje-formulario.component').then(m => m.PeriodoCanjeFormularioComponent)
   }
 ];

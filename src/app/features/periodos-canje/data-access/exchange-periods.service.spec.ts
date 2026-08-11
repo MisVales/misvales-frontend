@@ -25,17 +25,17 @@ describe('PeriodosCanjeService', () => {
   });
 
   it('debería listar periodos de canje', () => {
-    const mockData = {
-      data: [{ id: '1', name: 'Periodo 1', start_date: '2023-01-01', end_date: '2023-01-31', status: 'CLOSED' as const, created_at: '2022-12-01', lock_version: 0 }],
-      meta: { current_page: 1, last_page: 1, total: 1 }
-    };
+    const apiData = [{ id: '1', code: 'P-1', name: 'Periodo 1', description: null, starts_at: '2023-01-01', ends_at: '2023-01-31', status: 'CLOSED' as const, created_at: '2022-12-01', lock_version: 0 }];
 
     service.listar().subscribe(data => {
-      expect(data).toEqual(mockData);
+      expect(data).toEqual({
+        data: [{ id: '1', code: 'P-1', name: 'Periodo 1', description: null, start_date: '2023-01-01', end_date: '2023-01-31', status: 'CLOSED', created_at: '2022-12-01', lock_version: 0 }],
+        meta: { current_page: 1, last_page: 1, total: 1 },
+      });
     });
 
     const req = httpMock.expectOne('/api/v1/redemption-periods?page=1&per_page=10');
     expect(req.request.method).toBe('GET');
-    req.flush(mockData);
+    req.flush(apiData);
   });
 });

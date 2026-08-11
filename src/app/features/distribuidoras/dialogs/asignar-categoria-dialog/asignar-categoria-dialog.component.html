@@ -25,10 +25,12 @@
           <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1.5">Nueva Categoría</label>
           <select formControlName="category_version_id" class="w-full px-4 py-3 border border-[#E8EEE8] rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm bg-white text-gray-800 transition-colors">
             <option value="">Seleccione una categoría...</option>
-            <option *ngFor="let cat of categoriasSimuladas" [value]="cat.id" [disabled]="cat.id === categoriaActualId">
-              {{ cat.nombre }}
+            <option *ngFor="let cat of categorias()" [value]="cat.version_id">
+              {{ cat.code }} — {{ cat.name }} ({{ cat.profit_margin }})
             </option>
           </select>
+          @if (cargandoCategorias()) { <p class="mt-1 text-xs text-gray-500">Cargando categorías…</p> }
+          @if (errorCategorias()) { <p class="mt-1 text-xs text-red-700">{{ errorCategorias() }}</p> }
         </div>
 
         <div>
