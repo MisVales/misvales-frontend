@@ -10,6 +10,18 @@ export interface BankImport {
   error?: string;
   created_at: string;
 }
+export interface BankMovement {
+  id: string;
+  payment_reference: string;
+  amount: string;
+  paid_at: string;
+  bank_folio: string;
+  concept: string;
+  classification: string;
+  applied_amount: string;
+  surplus_amount: string;
+  relation_id: string | null;
+}
 @Injectable({ providedIn: 'root' })
 export class ConciliacionApiService {
   private readonly http = inject(HttpClient);
@@ -24,6 +36,11 @@ export class ConciliacionApiService {
   imports(): Observable<BankImport[]> {
     return this.http
       .get<{ data: { data: BankImport[] } }>(`${this.config.baseUrl}/bank-imports`)
+      .pipe(map((r) => r.data.data));
+  }
+  movements(): Observable<BankMovement[]> {
+    return this.http
+      .get<{ data: { data: BankMovement[] } }>(`${this.config.baseUrl}/bank-movements`)
       .pipe(map((r) => r.data.data));
   }
 }

@@ -28,4 +28,9 @@ describe('ConciliacionApiService', () => {
     expect((req.request.body as FormData).get('file')).toBe(file);
     req.flush({ data: { status: 'PROCESSED' } });
   });
+  it('consulta movimientos conciliados paginados', () => {
+    service.movements().subscribe((items) => expect(items[0].classification).toBe('SETTLEMENT'));
+    const req = http.expectOne((request) => request.url.endsWith('/bank-movements'));
+    req.flush({ data: { data: [{ id: 'm1', classification: 'SETTLEMENT' }] } });
+  });
 });

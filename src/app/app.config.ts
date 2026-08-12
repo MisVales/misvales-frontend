@@ -20,6 +20,7 @@ import {
   ArrowRightLeft,
   Banknote,
   Bell,
+  BellRing,
   BookOpen,
   Briefcase,
   Building,
@@ -143,7 +144,7 @@ export const appConfig: ApplicationConfig = {
     ),
     importProvidersFrom(
       LucideAngularModule.pick({
-        Activity, AlertTriangle, ArrowLeftRight, ArrowRightLeft, Banknote, Bell,
+        Activity, AlertTriangle, ArrowLeftRight, ArrowRightLeft, Banknote, Bell, BellRing,
         BookOpen, Briefcase, Building, Building2, Calculator, CalendarClock,
         CalendarRange, ChartNoAxesCombined, CheckCircle, CheckCircle2,
         CheckSquare, ChevronDown, ChevronLeft, ChevronRight, Circle,

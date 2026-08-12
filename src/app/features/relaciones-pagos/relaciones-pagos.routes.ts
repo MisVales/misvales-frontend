@@ -23,6 +23,22 @@ export const relacionesPagosRoutes: Routes = [
     ],
   },
   {
+    path: 'conciliacion',
+    loadComponent: () =>
+      import('./pages/conciliacion-page.component').then((m) => m.ConciliacionPageComponent),
+    canActivate: [
+      anyPermissionGuard(['bank_movements.view_branch', 'bank_movements.view_global']),
+    ],
+  },
+  {
+    path: 'pagos',
+    loadComponent: () =>
+      import('./pages/pagos-page.component').then((m) => m.PagosPageComponent),
+    canActivate: [
+      anyPermissionGuard(['relations.view_own', 'relations.view_branch', 'relations.view_global']),
+    ],
+  },
+  {
     path: 'excedentes',
     loadComponent: () =>
       import('./pages/excedentes-page.component').then((m) => m.ExcedentesPageComponent),
