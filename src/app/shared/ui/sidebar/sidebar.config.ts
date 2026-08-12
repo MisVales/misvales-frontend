@@ -385,6 +385,26 @@ export const NAV_GROUPS: NavGroupData[] = [
     ],
   },
   {
+    heading: 'Cambios organizacionales',
+    icon: 'repeat-2',
+    items: [
+      {
+        id: 'organizational-transfers',
+        title: 'Transferencias y reasignaciones',
+        icon: 'arrow-left-right',
+        route: '/transferencias',
+        roles: GG_AD_GS_CO_DI,
+        permissions: [
+          'client_transfers.view',
+          'organization_changes.view',
+          'organization_changes.manage_branch',
+          'organization_changes.manage_global',
+        ],
+        permissionMode: 'any',
+      },
+    ],
+  },
+  {
     heading: 'Auditoría y control',
     icon: 'shield',
     items: [

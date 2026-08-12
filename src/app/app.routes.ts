@@ -125,6 +125,13 @@ export const routes: Routes = [
         loadChildren: () => import('./features/riesgo/riesgo.routes').then((m) => m.riesgoRoutes),
       },
       {
+        path: 'transferencias',
+        loadChildren: () =>
+          import('./features/transferencias/transferencias.routes').then(
+            (m) => m.transferenciasRoutes,
+          ),
+      },
+      {
         path: '**',
         loadComponent: () =>
           import('./shared/ui/placeholder/placeholder.component').then(
