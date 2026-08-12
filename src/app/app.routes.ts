@@ -132,6 +132,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'centro-operacion',
+        loadChildren: () =>
+          import('./features/centro-operacion/centro-operacion.routes').then(
+            (m) => m.centroOperacionRoutes,
+          ),
+      },
+      {
         path: '**',
         loadComponent: () =>
           import('./shared/ui/placeholder/placeholder.component').then(

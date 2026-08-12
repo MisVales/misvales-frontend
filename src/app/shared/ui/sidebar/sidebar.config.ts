@@ -409,6 +409,23 @@ export const NAV_GROUPS: NavGroupData[] = [
     icon: 'shield',
     items: [
       {
+        id: 'operations-center',
+        title: 'Notificaciones y reportes',
+        icon: 'bell-ring',
+        route: '/centro-operacion',
+        roles: ALL,
+        permissions: [
+          'notifications.view_own',
+          'reports.view_branch',
+          'reports.view_global',
+          'audit.view_branch',
+          'audit.view_global',
+          'logs.view_branch',
+          'logs.view_global',
+        ],
+        permissionMode: 'any',
+      },
+      {
         id: 'audit',
         title: 'Auditoría',
         icon: 'scroll-text',
