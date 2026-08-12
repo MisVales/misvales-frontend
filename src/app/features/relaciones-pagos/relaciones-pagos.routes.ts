@@ -22,4 +22,12 @@ export const relacionesPagosRoutes: Routes = [
       ]),
     ],
   },
+  {
+    path: 'excedentes',
+    loadComponent: () =>
+      import('./pages/excedentes-page.component').then((m) => m.ExcedentesPageComponent),
+    canActivate: [
+      anyPermissionGuard(['surpluses.view_own', 'surpluses.view_branch', 'surpluses.view_global']),
+    ],
+  },
 ];

@@ -283,6 +283,8 @@ export const NAV_GROUPS: NavGroupData[] = [
         icon: 'undo-2',
         route: '/relaciones-pagos/excedentes',
         roles: ['general_manager', 'admin', 'branch_manager', 'distributor', 'cashier'],
+        permissions: ['surpluses.view_own', 'surpluses.view_branch', 'surpluses.view_global'],
+        permissionMode: 'any',
       },
     ],
   },
