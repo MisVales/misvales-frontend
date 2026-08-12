@@ -16,9 +16,12 @@ export const routes: Routes = [
       {
         path: '',
         canDeactivate: [(component: { canLeave(): boolean }) => component.canLeave()],
-        loadComponent: () => import('./features/auth/pages/activate-account/activate-account').then(m => m.ActivateAccount)
-      }
-    ]
+        loadComponent: () =>
+          import('./features/auth/pages/activate-account/activate-account').then(
+            (m) => m.ActivateAccount,
+          ),
+      },
+    ],
   },
   {
     path: 'auth',
@@ -26,9 +29,9 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadChildren: () => import('./features/auth/auth.routes').then(m => m.authRoutes)
-      }
-    ]
+        loadChildren: () => import('./features/auth/auth.routes').then((m) => m.authRoutes),
+      },
+    ],
   },
   {
     path: '',
@@ -37,61 +40,89 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        loadChildren: () => import('./features/admin/admin.routes').then(m => m.ADMIN_ROUTES)
+        loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
       },
       {
         path: 'perfil',
-        loadComponent: () => import('./features/profile/pages/profile/profile').then(m => m.Profile)
+        loadComponent: () =>
+          import('./features/profile/pages/profile/profile').then((m) => m.Profile),
       },
       {
         path: 'seguridad',
-        loadChildren: () => import('./features/security/security.routes').then(m => m.SECURITY_ROUTES)
+        loadChildren: () =>
+          import('./features/security/security.routes').then((m) => m.SECURITY_ROUTES),
       },
       {
         path: 'organizacion',
-        loadChildren: () => import('./features/organization/organization.routes').then(m => m.organizationRoutes)
+        loadChildren: () =>
+          import('./features/organization/organization.routes').then((m) => m.organizationRoutes),
       },
       {
         path: 'categorias',
-        loadChildren: () => import('./features/categorias/categorias.routes').then(m => m.CATEGORIAS_ROUTES)
+        loadChildren: () =>
+          import('./features/categorias/categorias.routes').then((m) => m.CATEGORIAS_ROUTES),
       },
       {
         path: 'productos',
-        loadChildren: () => import('./features/productos/productos.routes').then(m => m.PRODUCTOS_ROUTES)
+        loadChildren: () =>
+          import('./features/productos/productos.routes').then((m) => m.PRODUCTOS_ROUTES),
       },
       {
         path: 'configuraciones',
-        loadChildren: () => import('./features/configuraciones/configuraciones.routes').then(m => m.CONFIGURACIONES_ROUTES)
+        loadChildren: () =>
+          import('./features/configuraciones/configuraciones.routes').then(
+            (m) => m.CONFIGURACIONES_ROUTES,
+          ),
       },
       {
         path: 'periodos-canje',
-        loadChildren: () => import('./features/periodos-canje/periodos-canje.routes').then(m => m.PERIODOS_CANJE_ROUTES)
+        loadChildren: () =>
+          import('./features/periodos-canje/periodos-canje.routes').then(
+            (m) => m.PERIODOS_CANJE_ROUTES,
+          ),
       },
       {
         path: 'verificacion-distribuidoras',
-        loadChildren: () => import('./features/verificacion-distribuidoras/verificacion-distribuidoras.routes').then(m => m.VERIFICACION_DISTRIBUIDORAS_ROUTES)
+        loadChildren: () =>
+          import('./features/verificacion-distribuidoras/verificacion-distribuidoras.routes').then(
+            (m) => m.VERIFICACION_DISTRIBUIDORAS_ROUTES,
+          ),
       },
       {
         path: 'solicitudes-distribuidoras',
-        loadChildren: () => import('./features/applications/applications.routes').then(m => m.applicationsRoutes)
+        loadChildren: () =>
+          import('./features/applications/applications.routes').then((m) => m.applicationsRoutes),
       },
       {
         path: 'distribuidoras',
-        loadChildren: () => import('./features/distribuidoras/distribuidoras.routes').then(m => m.distribuidorasRoutes)
+        loadChildren: () =>
+          import('./features/distribuidoras/distribuidoras.routes').then(
+            (m) => m.distribuidorasRoutes,
+          ),
       },
       {
         path: 'clientes',
-        loadChildren: () => import('./features/clientes/clientes.routes').then(m => m.CLIENTES_ROUTES)
+        loadChildren: () =>
+          import('./features/clientes/clientes.routes').then((m) => m.CLIENTES_ROUTES),
       },
       {
         path: 'vales',
-        loadChildren: () => import('./features/vales/vales.routes').then(m => m.valesRoutes)
+        loadChildren: () => import('./features/vales/vales.routes').then((m) => m.valesRoutes),
+      },
+      {
+        path: 'relaciones-pagos',
+        loadChildren: () =>
+          import('./features/relaciones-pagos/relaciones-pagos.routes').then(
+            (m) => m.relacionesPagosRoutes,
+          ),
       },
       {
         path: '**',
-        loadComponent: () => import('./shared/ui/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
-      }
-    ]
-  }
+        loadComponent: () =>
+          import('./shared/ui/placeholder/placeholder.component').then(
+            (m) => m.PlaceholderComponent,
+          ),
+      },
+    ],
+  },
 ];
-

@@ -247,6 +247,8 @@ export const NAV_GROUPS: NavGroupData[] = [
         icon: 'file-stack',
         route: '/relaciones-pagos/relaciones',
         roles: GG_AD_GS_CO_DI_CA,
+        permissions: ['relations.view_own', 'relations.view_branch', 'relations.view_global'],
+        permissionMode: 'any',
       },
       {
         id: 'bank-file',
