@@ -89,8 +89,8 @@ export const NAV_GROUPS: NavGroupData[] = [
     icon: 'store',
     items: [
       { id: 'distributors', title: 'Distribuidoras', icon: 'store', route: '/distribuidoras', roles: GG_AD_GS_CO },
-      { id: 'credit-lines', title: 'Líneas de crédito', icon: 'credit-card', route: '/distribuidoras/lineas-credito', roles: GG_AD_GS_CO_DI },
-      { id: 'credit-increases', title: 'Incrementos de línea', icon: 'circle-arrow-up', route: '/distribuidoras/incrementos-linea', roles: GG_AD_GS_CO_DI },
+      { id: 'credit-lines', title: 'Líneas de crédito', icon: 'credit-card', route: '/distribuidoras/lineas-credito', roles: GG_AD_GS_CO_DI, permissions: ['credit_lines.view_own', 'credit_lines.view_assigned', 'credit_lines.view_branch', 'credit_lines.view_global'], permissionMode: 'any' },
+      { id: 'credit-increases', title: 'Incrementos de línea', icon: 'circle-arrow-up', route: '/distribuidoras/incrementos-linea', roles: GG_AD_GS_CO_DI, permissions: ['credit_increase_requests.view_own', 'credit_increase_requests.view_assigned', 'credit_increase_requests.view_branch', 'credit_increase_requests.view_global'], permissionMode: 'any' },
     ],
   },
   {
