@@ -1,11 +1,9 @@
 import '@angular/compiler';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { API_CONFIG, defaultApiConfig } from '../../../core/api/api.config';
 import { ConciliacionApiService } from './conciliacion-api.service';
-TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 describe('ConciliacionApiService', () => {
   let service: ConciliacionApiService;
   let http: HttpTestingController;

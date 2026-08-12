@@ -28,4 +28,15 @@ describe('CentroOperacionApiService', () => {
     expect(request.request.params.get('status')).toBe('ACTIVE');
     request.flush({ data: { data: [{ id: '1' }], current_page: 1, last_page: 1, total: 1 } });
   });
+  it('consulta el estado operativo integrado', () => {
+    service.readiness().subscribe((health) => expect(health.checks['scheduler']).toBe(true));
+    const request = http.expectOne((item) => item.url.endsWith('/health/readiness'));
+    request.flush({
+      status: 'ready',
+      checks: { postgresql: true, redis: true, private_storage: true, scheduler: true },
+      failed_jobs: 0,
+      queued_jobs: 0,
+      checked_at: '2026-08-12T20:00:00-06:00',
+    });
+  });
 });

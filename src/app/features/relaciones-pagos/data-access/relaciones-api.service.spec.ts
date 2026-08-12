@@ -1,12 +1,10 @@
 import '@angular/compiler';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { API_CONFIG, defaultApiConfig } from '../../../core/api/api.config';
 import { RelacionesApiService } from './relaciones-api.service';
 
-TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 describe('RelacionesApiService', () => {
   let service: RelacionesApiService;
   let http: HttpTestingController;

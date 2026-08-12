@@ -15,11 +15,22 @@ export interface Page<T> {
   last_page: number;
   total: number;
 }
+export interface ReadinessStatus {
+  status: 'ready' | 'not_ready';
+  checks: Record<string, boolean>;
+  failed_jobs: number;
+  queued_jobs: number | null;
+  checked_at: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CentroOperacionApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
+
+  readiness(): Observable<ReadinessStatus> {
+    return this.http.get<ReadinessStatus>(`${this.config.baseUrl}/health/readiness`);
+  }
 
   notifications(unread = false): Observable<Page<NotificationItem>> {
     return this.http

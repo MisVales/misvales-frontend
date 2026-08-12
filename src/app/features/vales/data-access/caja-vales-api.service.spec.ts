@@ -1,12 +1,9 @@
 import '@angular/compiler';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { BrowserTestingModule, platformBrowserTesting } from '@angular/platform-browser/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { API_CONFIG, defaultApiConfig } from '../../../core/api/api.config';
 import { CajaValesApiService } from './caja-vales-api.service';
-
-TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
 describe('CajaValesApiService', () => {
   let service: CajaValesApiService;
