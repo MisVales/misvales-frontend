@@ -94,6 +94,30 @@ import { RelacionesApiService, RelationView } from '../data-access/relaciones-ap
               </table>
             </div>
           </section>
+          <section>
+            <h3 class="font-bold">Pagos aplicados</h3>
+            @for (payment of item.pagos ?? []; track payment.id) {
+              <div class="mt-2 rounded-lg bg-gray-50 p-3">
+                <strong>{{ payment.amount | currency: 'MXN' }}</strong> ·
+                {{ payment.applied_at | date: 'medium' }}
+                <p class="text-sm">
+                  Recargo {{ payment.surcharge_applied | currency: 'MXN' }} · Interés
+                  {{ payment.interest_applied | currency: 'MXN' }} · Seguro
+                  {{ payment.insurance_applied | currency: 'MXN' }} · Comisión
+                  {{ payment.commission_applied | currency: 'MXN' }} · Capital
+                  {{ payment.capital_applied | currency: 'MXN' }}
+                </p>
+                <p class="text-sm font-semibold">
+                  Línea recuperada {{ payment.line_recovered | currency: 'MXN' }}
+                </p>
+              </div>
+            }
+            @if (item.temporal_classification) {
+              <p class="mt-3">
+                Comportamiento: <strong>{{ item.temporal_classification }}</strong>
+              </p>
+            }
+          </section>
           @if (canDownload()) {
             <button class="rounded-lg bg-blue-700 px-4 py-2 text-white" (click)="download(item)">
               Descargar relación

@@ -26,6 +26,19 @@ export interface RelationView {
   header_snapshot: Record<string, string>;
   bank_snapshot: Record<string, string>;
   partidas?: RelationItem[];
+  settled_at?: string;
+  temporal_classification?: string;
+  pagos?: Array<{
+    id: string;
+    amount: string;
+    applied_at: string;
+    surcharge_applied: string;
+    interest_applied: string;
+    insurance_applied: string;
+    commission_applied: string;
+    capital_applied: string;
+    line_recovered: string;
+  }>;
 }
 
 @Injectable({ providedIn: 'root' })
