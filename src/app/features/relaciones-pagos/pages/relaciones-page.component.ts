@@ -111,20 +111,16 @@ export class RelacionesPageComponent {
   readonly selected = signal<RelationView | null>(null);
   readonly error = signal('');
   constructor() {
-    this.api
-      .list()
-      .subscribe({
-        next: (v) => this.relations.set(v),
-        error: () => this.error.set('No fue posible consultar las relaciones.'),
-      });
+    this.api.list().subscribe({
+      next: (v) => this.relations.set(v),
+      error: () => this.error.set('No fue posible consultar las relaciones.'),
+    });
   }
   open(id: string): void {
-    this.api
-      .detail(id)
-      .subscribe({
-        next: (v) => this.selected.set(v),
-        error: () => this.error.set('No fue posible abrir la relación.'),
-      });
+    this.api.detail(id).subscribe({
+      next: (v) => this.selected.set(v),
+      error: () => this.error.set('No fue posible abrir la relación.'),
+    });
   }
   canDownload(): boolean {
     return this.session

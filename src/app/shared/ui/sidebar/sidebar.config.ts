@@ -256,6 +256,12 @@ export const NAV_GROUPS: NavGroupData[] = [
         icon: 'file-down',
         route: '/relaciones-pagos/archivo-bancario',
         roles: ['general_manager', 'admin', 'branch_manager', 'cashier'],
+        permissions: [
+          'bank_imports.create_branch',
+          'bank_imports.view_branch',
+          'bank_imports.view_global',
+        ],
+        permissionMode: 'any',
       },
       {
         id: 'reconciliation',
