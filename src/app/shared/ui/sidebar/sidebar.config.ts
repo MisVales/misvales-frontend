@@ -365,6 +365,26 @@ export const NAV_GROUPS: NavGroupData[] = [
     ],
   },
   {
+    heading: 'Riesgo',
+    icon: 'triangle-alert',
+    items: [
+      {
+        id: 'risk-delinquency',
+        title: 'Morosidad',
+        icon: 'shield-alert',
+        route: '/riesgo',
+        roles: GG_AD_GS_CO_DI,
+        permissions: [
+          'risk.view_own',
+          'risk.view_assigned',
+          'risk.view_branch',
+          'risk.view_global',
+        ],
+        permissionMode: 'any',
+      },
+    ],
+  },
+  {
     heading: 'Auditoría y control',
     icon: 'shield',
     items: [
