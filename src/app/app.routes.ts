@@ -117,6 +117,10 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'puntos',
+        loadChildren: () => import('./features/puntos/puntos.routes').then((m) => m.puntosRoutes),
+      },
+      {
         path: '**',
         loadComponent: () =>
           import('./shared/ui/placeholder/placeholder.component').then(

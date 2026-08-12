@@ -298,6 +298,8 @@ export const NAV_GROUPS: NavGroupData[] = [
         icon: 'star',
         route: '/puntos',
         roles: ['general_manager', 'admin', 'branch_manager', 'distributor'],
+        permissions: ['points.view_own', 'points.authorize_branch', 'points.authorize_global'],
+        permissionMode: 'any',
       },
       {
         id: 'redemptions',
@@ -305,6 +307,13 @@ export const NAV_GROUPS: NavGroupData[] = [
         icon: 'package-check',
         route: '/puntos/canjes',
         roles: ['general_manager', 'admin', 'branch_manager', 'distributor'],
+        permissions: [
+          'points.redeem_own',
+          'points.authorize_branch',
+          'points.authorize_global',
+          'points.deliver_branch',
+        ],
+        permissionMode: 'any',
       },
     ],
   },
