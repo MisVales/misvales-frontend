@@ -1,4 +1,5 @@
 import { InjectionToken } from '@angular/core';
+import { environment } from '../../../environments/environment';
 
 
 export interface ApiConfig {
@@ -8,6 +9,5 @@ export interface ApiConfig {
 export const API_CONFIG = new InjectionToken<ApiConfig>('API_CONFIG');
 
 export const defaultApiConfig: ApiConfig = {
-  // Using a relative path or an environment variable later. For now, a placeholder.
-  baseUrl: '/api/v1', 
+  baseUrl: environment.apiBaseUrl,
 };

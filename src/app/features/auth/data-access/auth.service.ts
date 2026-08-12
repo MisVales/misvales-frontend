@@ -22,7 +22,11 @@ export class AuthService {
   }
 
   getCsrfCookie(): Observable<unknown> {
-    return this.http.get('/sanctum/csrf-cookie');
+    const apiOrigin = this.apiConfig.baseUrl.startsWith('http')
+      ? new URL(this.apiConfig.baseUrl).origin
+      : '';
+
+    return this.http.get(`${apiOrigin}/sanctum/csrf-cookie`);
   }
 
   login(credentials: LoginReq): Observable<LoginRes> {
