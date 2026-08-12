@@ -84,6 +84,10 @@ export const routes: Routes = [
         loadChildren: () => import('./features/clientes/clientes.routes').then(m => m.CLIENTES_ROUTES)
       },
       {
+        path: 'vales',
+        loadChildren: () => import('./features/vales/vales.routes').then(m => m.valesRoutes)
+      },
+      {
         path: '**',
         loadComponent: () => import('./shared/ui/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
       }

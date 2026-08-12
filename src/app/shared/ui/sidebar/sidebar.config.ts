@@ -105,7 +105,7 @@ export const NAV_GROUPS: NavGroupData[] = [
     heading: 'Vales',
     icon: 'ticket',
     items: [
-      { id: 'vouchers', title: 'Prevales y vales', icon: 'ticket-check', route: '/vales', roles: GG_AD_GS_CO_DI_CA },
+      { id: 'vouchers', title: 'Prevales y vales', icon: 'ticket-check', route: '/vales', roles: GG_AD_GS_CO_DI_CA, permissions: ['vouchers.create_own', 'vouchers.view_own', 'vouchers.view_assigned', 'vouchers.view_branch', 'vouchers.view_global'], permissionMode: 'any' },
       { id: 'cashier', title: 'Caja y feriado', icon: 'banknote', route: '/vales/caja-feriado', roles: ['general_manager', 'admin', 'branch_manager', 'cashier'] },
     ],
   },
