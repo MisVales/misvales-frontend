@@ -1,12 +1,11 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '@core/api/api.config';
 import { 
   ConfigurationDefinitionDto, 
-  ConfigurationListResponseDto, 
+  ApiResource,
   ConfigurationVersionDto, 
-  ConfigurationVersionListResponseDto, 
   CreateConfigurationVersionRequestDto, 
   UpdateConfigurationVersionRequestDto 
 } from './configuraciones.dtos';
@@ -34,20 +33,22 @@ export class ConfiguracionesService {
     return crypto.randomUUID();
   }
 
-  listar(pagina: number = 1, porPagina: number = 10): Observable<ConfigurationListResponseDto> {
-    let params = new HttpParams()
-      .set('page', pagina.toString())
-      .set('per_page', porPagina.toString());
-      
-    return this.http.get<ConfigurationListResponseDto>(`${this.baseUrl}`, { params });
+  listar(): Observable<ConfigurationDefinitionDto[]> {
+    return this.http
+      .get<ApiResource<ConfigurationDefinitionDto[]>>(this.baseUrl)
+      .pipe(map((response) => response.data));
   }
 
   consultarDefinicion(clave: string): Observable<ConfigurationDefinitionDto> {
-    return this.http.get<ConfigurationDefinitionDto>(`${this.baseUrl}/${clave}`);
+    return this.http
+      .get<ApiResource<ConfigurationDefinitionDto>>(`${this.baseUrl}/${clave}`)
+      .pipe(map((response) => response.data));
   }
 
-  consultarVersiones(clave: string): Observable<ConfigurationVersionListResponseDto> {
-    return this.http.get<ConfigurationVersionListResponseDto>(`${this.baseUrl}/${clave}/versions`);
+  consultarVersiones(clave: string): Observable<ConfigurationVersionDto[]> {
+    return this.http
+      .get<ApiResource<ConfigurationVersionDto[]>>(`${this.baseUrl}/${clave}/versions`)
+      .pipe(map((response) => response.data));
   }
 
   crearVersion(clave: string, datos: CreateConfigurationVersionRequestDto): Observable<ConfigurationVersionDto> {
@@ -55,11 +56,15 @@ export class ConfiguracionesService {
       .set('X-Request-Id', this.generateRequestId())
       .set('Idempotency-Key', this.generateIdempotencyKey());
       
-    return this.http.post<ConfigurationVersionDto>(`${this.baseUrl}/${clave}/versions`, datos, { headers });
+    return this.http
+      .post<ApiResource<ConfigurationVersionDto>>(`${this.baseUrl}/${clave}/versions`, datos, { headers })
+      .pipe(map((response) => response.data));
   }
 
   consultarVersion(id: string): Observable<ConfigurationVersionDto> {
-    return this.http.get<ConfigurationVersionDto>(`${this.versionsBaseUrl}/${id}`);
+    return this.http
+      .get<ApiResource<ConfigurationVersionDto>>(`${this.versionsBaseUrl}/${id}`)
+      .pipe(map((response) => response.data));
   }
 
   modificarVersion(id: string, datos: UpdateConfigurationVersionRequestDto): Observable<ConfigurationVersionDto> {
@@ -68,7 +73,9 @@ export class ConfiguracionesService {
       .set('If-Match', datos.lock_version.toString());
       
     // En el DTO enviamos lock_version, pero también en la cabecera If-Match como pide la especificación.
-    return this.http.patch<ConfigurationVersionDto>(`${this.versionsBaseUrl}/${id}`, datos, { headers });
+    return this.http
+      .patch<ApiResource<ConfigurationVersionDto>>(`${this.versionsBaseUrl}/${id}`, datos, { headers })
+      .pipe(map((response) => response.data));
   }
 
   publicarVersion(id: string, versionRegistro: number, motivo: string): Observable<ConfigurationVersionDto> {
@@ -77,7 +84,13 @@ export class ConfiguracionesService {
       .set('Idempotency-Key', this.generateIdempotencyKey())
       .set('If-Match', versionRegistro.toString());
       
-    return this.http.post<ConfigurationVersionDto>(`${this.versionsBaseUrl}/${id}/publish`, { reason: motivo }, { headers });
+    return this.http
+      .post<ApiResource<ConfigurationVersionDto>>(
+        `${this.versionsBaseUrl}/${id}/publish`,
+        { reason: motivo, lock_version: versionRegistro },
+        { headers },
+      )
+      .pipe(map((response) => response.data));
   }
 
   desactivarVersion(id: string, versionRegistro: number, motivo: string): Observable<ConfigurationVersionDto> {
@@ -86,6 +99,12 @@ export class ConfiguracionesService {
       .set('Idempotency-Key', this.generateIdempotencyKey())
       .set('If-Match', versionRegistro.toString());
       
-    return this.http.post<ConfigurationVersionDto>(`${this.versionsBaseUrl}/${id}/deactivate`, { reason: motivo }, { headers });
+    return this.http
+      .post<ApiResource<ConfigurationVersionDto>>(
+        `${this.versionsBaseUrl}/${id}/deactivate`,
+        { reason: motivo, lock_version: versionRegistro },
+        { headers },
+      )
+      .pipe(map((response) => response.data));
   }
 }

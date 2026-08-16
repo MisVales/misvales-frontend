@@ -8,6 +8,7 @@ import { SessionStore } from '@core/session/session.store';
 import { RoleScopeRes, UserRes } from '../../../admin/data-access/admin.dtos';
 import { UserService } from '../../../admin/data-access/user.service';
 import { OrganizationApiService } from '../../data-access/organization-api.service';
+import { MisvalesDateTimePipe } from '../../../../shared/pipes/misvales-date-time.pipe';
 import {
   Branch,
   CoordinatorDistributorAssignment,
@@ -18,7 +19,7 @@ import {
 @Component({
   selector: 'app-organization-assignments',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, MisvalesDateTimePipe],
   templateUrl: './assignments.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -40,6 +41,12 @@ export class AssignmentsPage implements OnInit {
   readonly pageMessage = signal('');
   readonly personnelForm = signal({ user_id: '', reason: '' });
   readonly distributorForm = signal({ distributor_id: '', coordinator_id: '', reason: '' });
+  readonly pendingWithdrawal = signal<
+    | { type: 'personnel'; assignment: PersonnelAssignment }
+    | { type: 'distributor'; assignment: CoordinatorDistributorAssignment }
+    | null
+  >(null);
+  readonly withdrawalReason = signal('');
 
   readonly eligibleUsers = computed(() => this.users().filter((user) =>
     user.state === 'ACTIVE' && this.organizationalRole(user) !== null,
@@ -138,14 +145,9 @@ export class AssignmentsPage implements OnInit {
     });
   }
 
-  async endPersonnel(assignment: PersonnelAssignment): Promise<void> {
-    const reason = window.prompt('Motivo del retiro de la asignación:')?.trim();
-    if (!reason) return;
-
-    await this.runAction(async () => {
-      await firstValueFrom(this.api.endPersonnelAssignment(assignment.user.id, assignment.assignment_id, reason));
-      this.pageMessage.set('La asignación se retiró sin borrar el historial.');
-    });
+  requestEndPersonnel(assignment: PersonnelAssignment): void {
+    this.withdrawalReason.set('');
+    this.pendingWithdrawal.set({ type: 'personnel', assignment });
   }
 
   async assignDistributor(): Promise<void> {
@@ -168,16 +170,39 @@ export class AssignmentsPage implements OnInit {
     });
   }
 
-  async endDistributor(assignment: CoordinatorDistributorAssignment): Promise<void> {
+  requestEndDistributor(assignment: CoordinatorDistributorAssignment): void {
     if (assignment.distributor?.status === 'ACTIVE') {
       this.pageError.set('Una distribuidora activa debe reasignarse; no puede quedar sin coordinador.');
       return;
     }
-    const reason = window.prompt('Motivo del retiro de la asignación:')?.trim();
-    if (!reason) return;
+    this.withdrawalReason.set('');
+    this.pendingWithdrawal.set({ type: 'distributor', assignment });
+  }
+
+  closeWithdrawalDialog(): void {
+    this.pendingWithdrawal.set(null);
+    this.withdrawalReason.set('');
+  }
+
+  async confirmWithdrawal(): Promise<void> {
+    const pending = this.pendingWithdrawal();
+    const reason = this.withdrawalReason().trim();
+    if (!pending || !reason) {
+      this.pageError.set('Capture el motivo del retiro para conservar la trazabilidad.');
+      return;
+    }
 
     await this.runAction(async () => {
-      await firstValueFrom(this.api.terminateCoordinatorDistributorAssignment(assignment.id, reason));
+      if (pending.type === 'personnel') {
+        await firstValueFrom(this.api.endPersonnelAssignment(
+          pending.assignment.user.id,
+          pending.assignment.assignment_id,
+          reason,
+        ));
+      } else {
+        await firstValueFrom(this.api.terminateCoordinatorDistributorAssignment(pending.assignment.id, reason));
+      }
+      this.closeWithdrawalDialog();
       this.pageMessage.set('La asignación se retiró sin borrar el historial.');
     });
   }

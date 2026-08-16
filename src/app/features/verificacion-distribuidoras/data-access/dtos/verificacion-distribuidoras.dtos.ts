@@ -62,7 +62,7 @@ export interface EvaluarSolicitudRequestDto {
 export interface AutorizarSolicitudRequestDto {
   decision: 'APPROVED' | 'REJECTED';
   motivo: string;
-  linea_inicial?: string; // Como decimal en string
+  linea_inicial: string | null; // Como decimal en string
   lock_version: number;
 }
 
@@ -88,6 +88,7 @@ export interface VisitaVerificacionResponseDto {
   differences_payload: { items?: any[] } | null;
   media_files: EvidenciaVerificacionResponseDto[];
   lock_version: number;
+  application?: SolicitudDistribuidoraResponseDto;
 }
 
 export interface CorreccionSolicitudResponseDto {
@@ -130,7 +131,11 @@ export interface SolicitudDistribuidoraResponseDto {
   coordinator: { id: string | null; name: string | null };
   status: string;
   submitted_at: string | null;
-  completion: number;
+  completion: number | {
+    completed_sections: number;
+    total_sections: number;
+    can_submit: boolean;
+  };
   section_declarations?: Record<string, unknown>;
   personal_data?: Record<string, unknown> | null;
   family_members?: Record<string, unknown>[];

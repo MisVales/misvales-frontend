@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 export interface DiferenciaPayload {
   seccion: string;
@@ -18,6 +19,7 @@ export interface DiferenciaPayload {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorDiferenciasComponent {
+  private readonly alerts = inject(AlertService);
   // Configuración de campos disponibles para registrar diferencia
   seccionesDisponibles = input<{ id: string; label: string }[]>([]);
   camposDisponibles = input<Record<string, { id: string; label: string; valorOriginal: string }[]>>({});
@@ -56,7 +58,7 @@ export class EditorDiferenciasComponent {
 
   onGuardar() {
     if (!this.seccion() || !this.campo() || (!this.datoObservado() && !this.descripcion())) {
-      alert('Debes completar todos los campos obligatorios para registrar una diferencia.');
+      this.alerts.showAlert('Completa la sección, el campo y el dato observado o su descripción.', 'warning');
       return;
     }
     

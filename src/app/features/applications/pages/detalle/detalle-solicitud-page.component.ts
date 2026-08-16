@@ -87,4 +87,8 @@ export class DetalleSolicitudPageComponent implements OnInit {
     if (!avance || !avance.seccionesTotales) return 0;
     return Math.round((avance.seccionesCompletadas / avance.seccionesTotales) * 100);
   }
+
+  isEditable(): boolean {
+    return this.store.detalle()?.estado === 'DRAFT';
+  }
 }

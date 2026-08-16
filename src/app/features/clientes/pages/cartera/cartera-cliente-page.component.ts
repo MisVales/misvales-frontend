@@ -6,6 +6,7 @@ import { ClientesStore } from '../../state/clientes.store';
 import { CarteraApiService } from '../../data-access/api/cartera-api.service';
 import { MovimientoCartera } from '../../models/movimiento-cartera.model';
 import { firstValueFrom } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-cartera-cliente-page',
@@ -18,6 +19,7 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
   route = inject(ActivatedRoute);
   fb = inject(FormBuilder);
   api = inject(CarteraApiService);
+  private readonly alerts = inject(AlertService);
 
   cargandoHistorial = this.store.registrandoMovimiento;
   movimientos = this.store.movimientosCartera;
@@ -75,9 +77,9 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
       await firstValueFrom(this.store.registrarMovimiento(clienteId, request, idempotencyKey));
       
       this.cerrarRegistro();
-      alert('Movimiento registrado correctamente');
+      this.alerts.showAlert('Movimiento informativo registrado.', 'success');
     } catch (e: any) {
-      alert(this.store.error() || 'Error al registrar el movimiento.');
+      this.alerts.showAlert(this.store.error() || 'No fue posible registrar el movimiento.', 'error');
     }
   }
 

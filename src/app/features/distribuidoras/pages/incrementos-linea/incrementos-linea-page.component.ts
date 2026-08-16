@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
@@ -44,5 +45,13 @@ export class IncrementosLineaPageComponent implements OnInit {
   review(item: CreditIncreaseView): void { if (!this.recommendedAmount || !this.reason.trim()) return; this.run(this.api.revisarIncremento(item.id, this.recommendedAmount, this.reason.trim(), item.lock_version)); }
   reject(item: CreditIncreaseView): void { if (!this.reason.trim()) return; this.run(this.api.rechazarCoordinador(item.id, this.reason.trim(), item.lock_version)); }
   decide(item: CreditIncreaseView): void { if (!this.reason.trim() || (this.decision === 'APPROVE_LOWER' && !this.authorizedAmount)) return; this.run(this.api.decidir(item.id, this.decision, this.reason.trim(), item.lock_version, this.authorizedAmount)); }
-  private run(request: ReturnType<CreditoApiService['consultarIncremento']>): void { this.saving.set(true); this.error.set(''); request.pipe(finalize(() => this.saving.set(false))).subscribe({ next: value => { this.selected.set(value); this.requests.update(items => items.map(item => item.id === value.id ? value : item)); this.reason = ''; }, error: () => this.error.set('La operación fue rechazada. Verifica permisos, estado y versión de la solicitud.') }); }
+  private run(request: ReturnType<CreditoApiService['consultarIncremento']>): void { this.saving.set(true); this.error.set(''); request.pipe(finalize(() => this.saving.set(false))).subscribe({ next: value => { this.selected.set(value); this.requests.update(items => items.map(item => item.id === value.id ? value : item)); this.reason = ''; }, error: (error: HttpErrorResponse) => this.error.set(this.errorMessage(error)) }); }
+  private errorMessage(error: HttpErrorResponse): string {
+    const businessError = error.error?.error;
+    if (typeof businessError?.message === 'string') {
+      return businessError.code ? `${businessError.code}: ${businessError.message}` : businessError.message;
+    }
+    if (typeof error.error?.message === 'string') return error.error.message;
+    return 'La operación fue rechazada. Verifica permisos, estado y versión de la solicitud.';
+  }
 }

@@ -37,7 +37,7 @@ describe('AuthService', () => {
   it('inicia sesión y conserva los tokens solo en memoria', async () => {
     const result = firstValueFrom(service.login({ email: 'test@example.com', password: 'secret' }));
     const request = http.expectOne('/api/v1/auth/login');
-    request.flush({ access_token: 'access', refresh_token: 'refresh', expires_in: 3600 });
+    request.flush({ access_token: 'access', expires_in: 3600 });
 
     await result;
     expect(tokenStore.accessToken()).toBe('access');
@@ -48,7 +48,7 @@ describe('AuthService', () => {
     service.verifyMfa(payload).subscribe();
     const request = http.expectOne('/api/v1/auth/mfa/totp/verify');
     expect(request.request.body).toEqual(payload);
-    request.flush({ access_token: 'access', refresh_token: 'refresh', expires_in: 3600 });
+    request.flush({ access_token: 'access', expires_in: 3600 });
   });
 
   it('inspecciona una invitación mediante POST sin incluir el token en la URL', () => {

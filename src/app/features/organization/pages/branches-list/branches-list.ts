@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
@@ -31,9 +31,9 @@ import { SessionStore } from '@core/session/session.store';
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
           </div>
-          <input type="text" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Buscar sucursal..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm">
+          <input type="search" aria-label="Buscar sucursal" [(ngModel)]="searchTerm" (ngModelChange)="onSearch()" placeholder="Buscar sucursal..." class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm">
         </div>
-        <select [(ngModel)]="statusFilter" (ngModelChange)="onSearch()" class="block w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm">
+        <select aria-label="Filtrar sucursales por estado" [(ngModel)]="statusFilter" (ngModelChange)="onSearch()" class="block w-48 pl-3 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm">
           <option value="">Estado</option>
           <option value="active">Activa</option>
           <option value="inactive">Inactiva</option>
@@ -77,11 +77,11 @@ import { SessionStore } from '@core/session/session.store';
                   <app-branch-status-badge [isActive]="branch.status === 'ACTIVE'"></app-branch-status-badge>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                  <button [routerLink]="[branch.id]" class="text-gray-400 hover:text-[#386641] transition-colors p-2 rounded-full hover:bg-green-50">
+                  <a [routerLink]="[branch.id]" [attr.aria-label]="'Ver detalle de ' + branch.name" class="inline-flex text-gray-400 hover:text-[#386641] transition-colors p-2 rounded-full hover:bg-green-50">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                     </svg>
-                  </button>
+                  </a>
                 </td>
               </tr>
               <tr *ngIf="facade.branches().length === 0">
@@ -99,12 +99,12 @@ import { SessionStore } from '@core/session/session.store';
             Mostrando <span class="font-medium">{{ ((facade.page() - 1) * facade.perPage()) + 1 }}</span> a <span class="font-medium">{{ Math.min(facade.page() * facade.perPage(), facade.total()) }}</span> de <span class="font-medium">{{ facade.total() }}</span> sucursales
           </div>
           <div class="flex gap-2">
-            <button (click)="changePage(-1)" [disabled]="facade.page() === 1" class="p-1 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="button" aria-label="Página anterior" (click)="changePage(-1)" [disabled]="facade.page() === 1" class="p-1 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
               </svg>
             </button>
-            <button (click)="changePage(1)" [disabled]="facade.page() * facade.perPage() >= facade.total()" class="p-1 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="button" aria-label="Página siguiente" (click)="changePage(1)" [disabled]="facade.page() * facade.perPage() >= facade.total()" class="p-1 rounded-md border border-gray-300 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
               </svg>
@@ -115,17 +115,21 @@ import { SessionStore } from '@core/session/session.store';
     </div>
   `
 })
-export class BranchesList implements OnInit {
+export class BranchesList implements OnInit, OnDestroy {
   facade = inject(OrganizationFacade);
   sessionStore = inject(SessionStore);
   
   searchTerm = '';
   statusFilter = '';
   Math = Math;
-  searchTimeout: any;
+  searchTimeout: ReturnType<typeof setTimeout> | null = null;
 
   ngOnInit() {
     this.facade.loadBranches();
+  }
+
+  ngOnDestroy(): void {
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
   }
 
   canManage(): boolean {
@@ -134,7 +138,7 @@ export class BranchesList implements OnInit {
   }
 
   onSearch() {
-    clearTimeout(this.searchTimeout);
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
     this.searchTimeout = setTimeout(() => {
       this.facade.loadBranches(1, 10, this.searchTerm, this.statusFilter);
     }, 300);

@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { CommonModule, DatePipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import { SecurityService } from '../../data-access/security.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
+import { MisvalesDateTimePipe } from '../../../../shared/pipes/misvales-date-time.pipe';
 
 interface SessionItem {
   id: string;
@@ -17,7 +18,7 @@ interface SessionItem {
 @Component({
   selector: 'app-sessions',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, DatePipe],
+  imports: [CommonModule, LucideAngularModule, MisvalesDateTimePipe],
   templateUrl: './sessions.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -28,6 +29,7 @@ export class SessionsComponent implements OnInit {
   loading = signal(true);
   error = signal('');
   sessionToRevoke = signal<string | null>(null);
+  revokeAllOpen = signal(false);
 
   async ngOnInit() {
     await this.loadSessions();
@@ -82,9 +84,16 @@ export class SessionsComponent implements OnInit {
     }
   }
 
-  async revokeAllOther() {
-    if (!confirm('¿Estás seguro de cerrar todas las demás sesiones?')) return;
-    
+  openRevokeAllModal(): void {
+    this.revokeAllOpen.set(true);
+  }
+
+  closeRevokeAllModal(): void {
+    this.revokeAllOpen.set(false);
+  }
+
+  async confirmRevokeAll(): Promise<void> {
+    this.closeRevokeAllModal();
     this.loading.set(true);
     try {
       await firstValueFrom(this.securityService.closeAllOtherSessions());

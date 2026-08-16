@@ -119,7 +119,10 @@ export class PuntosPageComponent {
     this.api.deliver(r.id, this.reference).subscribe(() => this.load());
   }
   private load(): void {
-    if (this.session.permissions().includes('points.view_own'))
+    if (
+      this.session.roles().includes('distributor') &&
+      this.session.permissions().includes('points.view_own')
+    )
       this.api.account().subscribe((v) => this.view.set(v));
     if (this.canManage()) this.api.requests().subscribe((v) => this.requests.set(v));
   }

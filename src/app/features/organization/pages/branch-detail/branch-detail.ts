@@ -1,14 +1,16 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
 import { BranchStatusBadgeComponent } from '@shared/ui/branch-status-badge/branch-status-badge.component';
 import { SessionStore } from '@core/session/session.store';
+import { ConfirmDialogComponent } from '@shared/ui/confirm-dialog/confirm-dialog.component';
+import { MisvalesDateTimePipe } from '@shared/pipes/misvales-date-time.pipe';
 
 @Component({
   selector: 'app-branch-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, BranchStatusBadgeComponent],
+  imports: [CommonModule, RouterModule, BranchStatusBadgeComponent, ConfirmDialogComponent, MisvalesDateTimePipe],
   template: `
     <div class="p-6 md:p-8 max-w-5xl mx-auto font-sans">
       <!-- Breadcrumb -->
@@ -37,7 +39,7 @@ import { SessionStore } from '@core/session/session.store';
             Editar
           </button>
           
-          <button *ngIf="canManageState()" (click)="toggleStatus()"
+          <button *ngIf="canManageState()" (click)="statusConfirmationOpen.set(true)"
                   [disabled]="branch()!.is_headquarters || facade.isLoading()"
                   [title]="branch()!.is_headquarters ? 'No se puede desactivar la Sede Principal' : ''"
                   class="px-4 py-2 rounded-xl shadow-sm text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border"
@@ -102,14 +104,14 @@ import { SessionStore } from '@core/session/session.store';
             <div>
               <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Fecha de Creación</p>
               <p class="text-sm font-medium text-gray-900 mt-1">
-                {{ branch()!.created_at | date:'mediumDate' }}
+                {{ branch()!.created_at | misvalesDateTime }} (Monterrey)
               </p>
             </div>
 
             <div>
               <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Última Actualización</p>
               <p class="text-sm font-medium text-gray-900 mt-1">
-                {{ branch()!.updated_at | date:'medium' }}
+                {{ branch()!.updated_at | misvalesDateTime }} (Monterrey)
               </p>
             </div>
             
@@ -123,6 +125,17 @@ import { SessionStore } from '@core/session/session.store';
         </div>
       </div>
     </div>
+    <app-confirm-dialog
+      [open]="statusConfirmationOpen()"
+      [title]="branch()?.status === 'ACTIVE' ? 'Desactivar sucursal' : 'Activar sucursal'"
+      [message]="branch()?.status === 'ACTIVE' ? 'La sucursal dejará de estar disponible para nuevas operaciones. El historial se conserva.' : 'La sucursal volverá a estar disponible para las operaciones autorizadas.'"
+      [confirmLabel]="branch()?.status === 'ACTIVE' ? 'Sí, desactivar' : 'Sí, activar'"
+      [tone]="branch()?.status === 'ACTIVE' ? 'danger' : 'default'"
+      dialogId="branch-status"
+      [busy]="facade.isLoading()"
+      (confirm)="confirmToggleStatus()"
+      (cancel)="statusConfirmationOpen.set(false)"
+    ></app-confirm-dialog>
   `
 })
 export class BranchDetail implements OnInit {
@@ -132,6 +145,7 @@ export class BranchDetail implements OnInit {
   
   branchId: string | null = null;
   branch = this.facade.selectedBranch;
+  statusConfirmationOpen = signal(false);
 
   ngOnInit() {
     this.branchId = this.route.snapshot.paramMap.get('id');
@@ -140,10 +154,11 @@ export class BranchDetail implements OnInit {
     }
   }
 
-  toggleStatus() {
+  confirmToggleStatus(): void {
     const currentBranch = this.branch();
     if (!currentBranch || currentBranch.is_headquarters) return;
 
+    this.statusConfirmationOpen.set(false);
     this.facade.toggleBranchStatus(currentBranch.id, currentBranch.status !== 'ACTIVE');
   }
 

@@ -15,7 +15,9 @@ export const CONFIGURACIONES_ROUTES: Routes = [
       {
         path: ':clave',
         canActivate: [permissionGuard('catalogs.view_history')],
-        loadComponent: () => import('./pages/configuracion-detalle/configuracion-detalle.component').then(m => m.ConfiguracionDetalleComponent)
+        loadComponent: async () =>
+          (await import('./pages/configuracion-detalle/configuracion-detalle.component'))
+            .ConfiguracionDetalleComponent,
       }
     ]
   }

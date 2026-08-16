@@ -92,7 +92,11 @@ export class CreditoApiService {
   decidir(id: string, decision: 'APPROVE_REQUESTED' | 'APPROVE_LOWER' | 'REJECT', reason: string, lockVersion: number, authorizedAmount?: string): Observable<CreditIncreaseView> {
     const body: Record<string, string | number> = { decision, reason, lock_version: lockVersion };
     if (decision === 'APPROVE_LOWER' && authorizedAmount) body['authorized_amount'] = authorizedAmount;
-    return this.http.post<{ data: CreditIncreaseView }>(`${this.config.baseUrl}/credit-increase-requests/${id}/manager-decision`, body)
+    return this.http.post<{ data: CreditIncreaseView }>(
+      `${this.config.baseUrl}/credit-increase-requests/${id}/manager-decision`,
+      body,
+      { headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }) },
+    )
       .pipe(map(response => response.data));
   }
 }

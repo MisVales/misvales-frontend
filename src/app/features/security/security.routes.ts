@@ -1,7 +1,7 @@
 import { CanDeactivateFn, Routes } from '@angular/router';
 
 interface CanLeaveComponent {
-  canLeave(): boolean;
+  canLeave(): boolean | Promise<boolean>;
 }
 
 const unsavedSecuritySecretsGuard: CanDeactivateFn<CanLeaveComponent> = (component) => component.canLeave();

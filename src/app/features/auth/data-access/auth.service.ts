@@ -49,8 +49,8 @@ export class AuthService {
   }
 
   private saveTokensIfPresent = (response: LoginRes) => {
-    if (response.access_token && response.refresh_token && response.expires_in) {
-      this.tokenStore.set(response.access_token, response.refresh_token, response.expires_in);
+    if (response.access_token && response.expires_in) {
+      this.tokenStore.set(response.access_token, response.expires_in);
     }
   };
 

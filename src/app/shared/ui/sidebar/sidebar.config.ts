@@ -46,6 +46,7 @@ const ALL: readonly RoleCode[] = [
 const GG_AD_GS: readonly RoleCode[] = ['general_manager', 'admin', 'branch_manager'];
 const GG_AD_GS_CO: readonly RoleCode[] = [...GG_AD_GS, 'coordinator'];
 const GG_AD_GS_CO_VE: readonly RoleCode[] = [...GG_AD_GS_CO, 'verifier'];
+const VE: readonly RoleCode[] = ['verifier'];
 const GG_AD_GS_CO_DI: readonly RoleCode[] = [...GG_AD_GS_CO, 'distributor'];
 const GG_AD_GS_CO_DI_CA: readonly RoleCode[] = [...GG_AD_GS_CO_DI, 'cashier'];
 
@@ -138,7 +139,14 @@ export const NAV_GROUPS: NavGroupData[] = [
         title: 'Verificaciones',
         icon: 'clipboard-check',
         route: '/verificacion-distribuidoras',
-        roles: GG_AD_GS_CO_VE,
+        roles: GG_AD_GS_CO,
+      },
+      {
+        id: 'verifier-visits',
+        title: 'Verificaciones',
+        icon: 'clipboard-check',
+        route: '/verificacion-distribuidoras/verificaciones/asignadas',
+        roles: VE,
       },
     ],
   },
@@ -192,13 +200,6 @@ export const NAV_GROUPS: NavGroupData[] = [
         title: 'Clientes finales',
         icon: 'user-round',
         route: '/clientes',
-        roles: GG_AD_GS_CO_DI,
-      },
-      {
-        id: 'portfolio',
-        title: 'Cartera informativa',
-        icon: 'wallet',
-        route: '/clientes/cartera',
         roles: GG_AD_GS_CO_DI,
       },
     ],
@@ -318,53 +319,6 @@ export const NAV_GROUPS: NavGroupData[] = [
     ],
   },
   {
-    heading: 'Movilidad',
-    icon: 'arrow-right-left',
-    items: [
-      {
-        id: 'client-transfers',
-        title: 'Transferencias de clientes',
-        icon: 'move',
-        route: '/movilidad/transferencias-clientes',
-        roles: GG_AD_GS_CO_DI,
-      },
-      {
-        id: 'client-reassignments',
-        title: 'Reasignación de clientes',
-        icon: 'user-round-x',
-        route: '/movilidad/reasignacion-clientes',
-        roles: GG_AD_GS,
-      },
-      {
-        id: 'branch-changes',
-        title: 'Cambios de sucursal',
-        icon: 'building',
-        route: '/movilidad/cambios-sucursal',
-        roles: GG_AD_GS,
-      },
-      {
-        id: 'coordinator-reassignments',
-        title: 'Reasignación de coordinadores',
-        icon: 'user-cog',
-        route: '/movilidad/reasignacion-coordinadores',
-        roles: GG_AD_GS,
-      },
-    ],
-  },
-  {
-    heading: 'Reportes',
-    icon: 'chart-no-axes-combined',
-    items: [
-      {
-        id: 'reports',
-        title: 'Reportes',
-        icon: 'chart-no-axes-combined',
-        route: '/reportes',
-        roles: GG_AD_GS_CO,
-      },
-    ],
-  },
-  {
     heading: 'Riesgo',
     icon: 'triangle-alert',
     items: [
@@ -410,7 +364,7 @@ export const NAV_GROUPS: NavGroupData[] = [
     items: [
       {
         id: 'operations-center',
-        title: 'Notificaciones y reportes',
+        title: 'Centro de operación',
         icon: 'bell-ring',
         route: '/centro-operacion',
         roles: ALL,
@@ -424,34 +378,6 @@ export const NAV_GROUPS: NavGroupData[] = [
           'logs.view_global',
         ],
         permissionMode: 'any',
-      },
-      {
-        id: 'audit',
-        title: 'Auditoría',
-        icon: 'scroll-text',
-        route: '/auditoria',
-        roles: ['general_manager', 'admin'],
-        permissions: ['audit.view'],
-      },
-      {
-        id: 'logs',
-        title: 'Logs',
-        icon: 'file-terminal',
-        route: '/logs',
-        roles: ['general_manager', 'admin'],
-      },
-    ],
-  },
-  {
-    heading: 'Notificaciones',
-    icon: 'bell',
-    items: [
-      {
-        id: 'notifications',
-        title: 'Notificaciones',
-        icon: 'bell',
-        route: '/notificaciones',
-        roles: ALL,
       },
     ],
   },

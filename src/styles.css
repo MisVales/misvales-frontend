@@ -1,4 +1,103 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import "@ng-select/ng-select/themes/default.theme.css";
 @import 'tailwindcss';
+@import './shell-responsive.css';
+
+:root {
+  --mv-primary-50: #f1f7f2;
+  --mv-primary-100: #dcecdf;
+  --mv-primary-600: #386641;
+  --mv-primary-700: #2f5737;
+  --mv-primary-800: #24442b;
+  --mv-surface: #fff;
+  --mv-canvas: #f6f8f7;
+  --mv-surface-muted: #f9faf9;
+  --mv-border: #dfe5e1;
+  --mv-border-strong: #c9d3cc;
+  --mv-text: #18211b;
+  --mv-text-muted: #5f6d64;
+  --mv-focus: #76a65e;
+  --mv-radius-sm: .5rem;
+  --mv-radius-md: .75rem;
+  --mv-radius-lg: 1rem;
+  --mv-motion-fast: 120ms;
+  --mv-motion-standard: 180ms;
+  --mv-ease: cubic-bezier(.2, 0, 0, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { min-width: 320px; color-scheme: light; background: var(--mv-canvas); }
+body {
+  margin: 0;
+  background: var(--mv-canvas);
+  color: var(--mv-text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: var(--mv-primary-100); }
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--mv-focus) 72%, white);
+  outline-offset: 2px;
+}
+:where(button, input, select, textarea) { font: inherit; }
+:where(button, [role='button'], a) {
+  transition-duration: var(--mv-motion-fast);
+  transition-timing-function: var(--mv-ease);
+}
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea) {
+  min-height: 42px;
+  border-color: var(--mv-border-strong) !important;
+  border-radius: var(--mv-radius-sm) !important;
+  background-color: var(--mv-surface);
+}
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):hover:not(:disabled) { border-color: #9eada3 !important; }
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):focus {
+  border-color: var(--mv-primary-600) !important;
+  box-shadow: 0 0 0 3px rgb(56 102 65 / 12%) !important;
+}
+:where(button, a).bg-\[\#386641\], :where(button, a).bg-blue-600 { background-color: var(--mv-primary-600) !important; }
+:where(button, a).bg-\[\#386641\]:hover,
+:where(button, a).hover\:bg-\[\#6A994E\]:hover,
+:where(button, a).bg-blue-600:hover { background-color: var(--mv-primary-700) !important; }
+:where(button, a):disabled { cursor: not-allowed; box-shadow: none !important; }
+:where(.shadow-sm, .shadow-md) { box-shadow: none !important; }
+:where(.rounded-2xl) { border-radius: var(--mv-radius-lg); }
+:where(.rounded-xl) { border-radius: var(--mv-radius-md); }
+:where(.rounded-lg) { border-radius: var(--mv-radius-sm); }
+:where(.border-gray-100, .border-gray-200, .border-gray-300) { border-color: var(--mv-border) !important; }
+:where(.text-gray-400, .text-gray-500, .text-gray-600) { color: var(--mv-text-muted) !important; }
+:where(.text-gray-700, .text-gray-800, .text-gray-900) { color: var(--mv-text) !important; }
+:where(.bg-gray-50, .bg-\[\#F8F9FA\]) { background-color: var(--mv-surface-muted) !important; }
+table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+thead { background: var(--mv-surface-muted); }
+th { color: #445047; font-weight: 650; letter-spacing: .025em; }
+tbody tr { transition: background-color var(--mv-motion-fast) var(--mv-ease); }
+tbody tr:hover { background: #f7faf8; }
+.font-mono, [data-financial] { font-variant-numeric: tabular-nums; }
+.skip-link {
+  position: fixed;
+  z-index: 1000;
+  top: 8px;
+  left: 8px;
+  transform: translateY(-150%);
+  border-radius: var(--mv-radius-sm);
+  background: var(--mv-primary-800);
+  color: #fff;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+.skip-link:focus { transform: translateY(0); }
+@media (max-width: 767px) {
+  :where(.content-wrapper) { padding: 16px !important; }
+  :where(.flex.gap-4):has(> input[type='search'], > select) { flex-wrap: wrap; }
+  :where(.flex.gap-4):has(> input[type='search'], > select) > * { min-width: min(100%, 220px); flex: 1 1 100%; }
+  :where(table) th, :where(table) td { padding-left: 12px !important; padding-right: 12px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

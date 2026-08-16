@@ -1,3 +1,14 @@
 :host {
   display: block;
 }
+
+.detail-tabs { display: flex; gap: .25rem; overflow-x: auto; border-bottom: 1px solid #dfe7e1; }
+.detail-tabs button { border: 0; border-bottom: 3px solid transparent; background: transparent; padding: .85rem 1rem; color: #526158; font-weight: 700; white-space: nowrap; }
+.detail-tabs button.active { border-bottom-color: #1a4d2e; color: #1a4d2e; }
+.detail-panel { padding: 1.5rem; border: 1px solid #e5ebe6; border-radius: 1rem; background: #fff; }
+.detail-panel h2 { margin: 0 0 1rem; font-size: 1.125rem; font-weight: 800; }
+.detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.detail-grid div { padding: 1rem; border-radius: .75rem; background: #f8faf9; }
+.detail-grid dt { color: #65736a; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+.detail-grid dd { margin: .35rem 0 0; color: #17251b; font-weight: 700; }
+@media (max-width: 640px) { .detail-grid { grid-template-columns: 1fr; } }

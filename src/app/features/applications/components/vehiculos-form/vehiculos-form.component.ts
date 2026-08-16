@@ -5,6 +5,8 @@ import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { VehiculoFormFactory } from '../../forms/vehiculo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { firstValueFrom } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-vehiculos-form',
@@ -18,6 +20,8 @@ export class VehiculosFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
   private cdr = inject(ChangeDetectorRef);
+  private alerts = inject(AlertService);
+  private confirmation = inject(ConfirmationService);
 
   vehiculosArray: FormArray = VehiculoFormFactory.createArray(this.fb);
   cargando = false;
@@ -102,7 +106,7 @@ export class VehiculosFormComponent implements OnInit {
     } catch (e: any) {
       if (e?.status === 409) {
         await this.store.cargarDetalle(idSolicitud);
-        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
+        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
       }
     } finally {
       this.cdr.markForCheck();
@@ -110,7 +114,7 @@ export class VehiculosFormComponent implements OnInit {
   }
 
   async eliminarVehiculoAPI(index: number, idVehiculo: string) {
-    const confirmacion = confirm('¿Estás seguro de que deseas eliminar este vehículo?');
+    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar vehículo', message: 'El registro se eliminará del expediente. Esta acción no se puede deshacer.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;

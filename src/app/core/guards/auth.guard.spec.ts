@@ -5,22 +5,30 @@ import { authGuard } from './auth.guard';
 import { vi } from 'vitest';
 import { MeService } from '../services/me.service';
 import { throwError } from 'rxjs';
+import { AuthTokenStore } from '../session/auth-token.store';
+import { SessionRefreshService } from '../session/session-refresh.service';
 
 describe('authGuard', () => {
   let routerSpy: any;
   let sessionStoreSpy: any;
   let meServiceSpy: any;
+  let tokenStoreSpy: any;
+  let sessionRefreshSpy: any;
 
   beforeEach(() => {
     routerSpy = { createUrlTree: vi.fn() };
-    sessionStoreSpy = { isAuthenticated: vi.fn() };
+    sessionStoreSpy = { isAuthenticated: vi.fn(), clearSession: vi.fn() };
     meServiceSpy = { fetchMe: vi.fn(() => throwError(() => new Error('unauthenticated'))) };
+    tokenStoreSpy = { accessToken: vi.fn(() => null), clear: vi.fn() };
+    sessionRefreshSpy = { refresh: vi.fn(() => throwError(() => new Error('no session'))) };
 
     TestBed.configureTestingModule({
       providers: [
         { provide: Router, useValue: routerSpy },
         { provide: SessionStore, useValue: sessionStoreSpy },
-        { provide: MeService, useValue: meServiceSpy }
+        { provide: MeService, useValue: meServiceSpy },
+        { provide: AuthTokenStore, useValue: tokenStoreSpy },
+        { provide: SessionRefreshService, useValue: sessionRefreshSpy }
       ]
     });
   });

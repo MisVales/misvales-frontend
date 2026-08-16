@@ -46,7 +46,7 @@ export class LineaTiempoSolicitudComponent {
     events.push({
       title: 'Visita Física Completada',
       date: visitCompleted ? s.visitas[0].fechaFin : null,
-      status: visitCompleted ? 'DONE' : (s.estado === 'VERIFIER_ASSIGNED' || s.estado === 'VERIFICATION_IN_PROGRESS' ? 'CURRENT' : 'PENDING'),
+      status: visitCompleted ? 'DONE' : (s.estado === 'VERIFIER_ASSIGNED' || s.estado === 'PHYSICAL_VERIFICATION' ? 'CURRENT' : 'PENDING'),
       description: visitCompleted ? `Resultado: ${s.visitas[0].resultadoFisico}` : ''
     });
 

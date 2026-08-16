@@ -10,11 +10,12 @@ import { OrganizationApiService } from '../../../organization/data-access/organi
 import { RoleRes, UserAssignmentRes, UserRes } from '../../data-access/admin.dtos';
 import { RoleService } from '../../data-access/role.service';
 import { UserService } from '../../data-access/user.service';
+import { ConfirmDialogComponent } from '../../../../shared/ui/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-user-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent],
   templateUrl: './user-detail.component.html',
   styleUrl: './user-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,6 +39,7 @@ export class UserDetailComponent implements OnInit {
   readonly isAssignModalOpen = signal(false);
   readonly isActionLoading = signal<string | null>(null);
   readonly newAssignment = signal({ role_id: '', branch_id: '' });
+  readonly assignmentToRevoke = signal<string | null>(null);
 
   readonly selectedAssignmentRole = computed(
     () => this.availableRoles().find((role) => role.id === this.newAssignment().role_id) ?? null,
@@ -157,31 +159,6 @@ export class UserDetailComponent implements OnInit {
     }
   }
 
-  async forcePasswordChange(): Promise<void> {
-    const id = this.userId();
-    if (!id || !window.confirm('¿Exigir el cambio de contraseña en el próximo inicio de sesión?')) return;
-    try {
-      const response = await firstValueFrom(this.userService.requirePasswordChange(id));
-      this.pageMessage.set(response.message);
-    } catch (error: unknown) {
-      this.pageError.set(apiErrorMessage(error, 'No fue posible exigir el cambio de contraseña.'));
-    }
-  }
-
-  async resendInvitation(): Promise<void> {
-    const id = this.userId();
-    if (!id || !window.confirm('¿Reenviar el correo de invitación a este usuario?')) return;
-    this.isActionLoading.set('resend');
-    try {
-      const response = await firstValueFrom(this.userService.sendInvitation(id));
-      this.pageMessage.set(response.message);
-    } catch (error: unknown) {
-      this.pageError.set(apiErrorMessage(error, 'No fue posible reenviar la invitación.'));
-    } finally {
-      this.isActionLoading.set(null);
-    }
-  }
-
   openAssignModal(): void {
     this.newAssignment.set({ role_id: '', branch_id: '' });
     this.isAssignModalOpen.set(true);
@@ -217,14 +194,24 @@ export class UserDetailComponent implements OnInit {
     }
   }
 
-  async revokeAssignment(assignmentId: string): Promise<void> {
+  requestRevokeAssignment(assignmentId: string): void {
+    this.assignmentToRevoke.set(assignmentId);
+  }
+
+  cancelRevokeAssignment(): void {
+    this.assignmentToRevoke.set(null);
+  }
+
+  async confirmRevokeAssignment(): Promise<void> {
     const id = this.userId();
-    if (!id || !window.confirm('¿Seguro que quiere revocar este rol?')) return;
+    const assignmentId = this.assignmentToRevoke();
+    if (!id || !assignmentId) return;
 
     this.isActionLoading.set(`revoke-${assignmentId}`);
     try {
       const response = await firstValueFrom(this.userService.revokeRole(id, assignmentId));
       this.pageMessage.set(response.message);
+      this.cancelRevokeAssignment();
       await this.loadAssignments();
     } catch (error: unknown) {
       this.pageError.set(apiErrorMessage(error, 'No fue posible revocar el rol.'));

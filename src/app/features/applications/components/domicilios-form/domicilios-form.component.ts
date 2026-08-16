@@ -5,6 +5,9 @@ import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DomicilioFormFactory } from '../../forms/domicilio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { firstValueFrom } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { apiErrorMessage } from '../../../../core/api/api-error';
 
 @Component({
   selector: 'app-domicilios-form',
@@ -18,6 +21,8 @@ export class DomiciliosFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
   private cdr = inject(ChangeDetectorRef);
+  private alerts = inject(AlertService);
+  private confirmation = inject(ConfirmationService);
 
   domiciliosArray: FormArray = DomicilioFormFactory.createArray(this.fb);
   cargando = false;
@@ -92,7 +97,7 @@ export class DomiciliosFormComponent implements OnInit {
   marcarComoActual(index: number) {
     const yaExisteActual = this.domiciliosGroups.some((g, i) => i !== index && g.value.is_current);
     if (yaExisteActual) {
-      alert('Ya existe un domicilio marcado como actual. Al guardar este, el backend podría rechazarlo si no permite dos. Asegúrate de desmarcar el otro primero.');
+      this.alerts.showAlert('Ya existe un domicilio actual. Desmarca el anterior antes de guardar para conservar una sola dirección vigente.', 'warning');
     }
     this.domiciliosGroups[index].get('is_current')?.setValue(true);
     this.guardarDomicilioDirecto(this.domiciliosGroups[index]);
@@ -130,9 +135,9 @@ export class DomiciliosFormComponent implements OnInit {
     } catch (e: any) {
       if (e?.status === 409) {
         await this.store.cargarDetalle(idSolicitud);
-        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
+        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
       } else {
-        alert(e?.error?.message || 'Error al guardar domicilio');
+        this.alerts.showAlert(apiErrorMessage(e, 'No fue posible guardar el domicilio.'), 'error');
       }
     } finally {
       this.cdr.markForCheck();
@@ -140,7 +145,7 @@ export class DomiciliosFormComponent implements OnInit {
   }
 
   async eliminarDomicilio(idDomicilio: string) {
-    const confirmacion = confirm('¿Estás seguro de que deseas eliminar este domicilio?');
+    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar domicilio', message: 'La dirección se eliminará del expediente. Si es la vigente, verifica antes el domicilio que quedará activo.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;

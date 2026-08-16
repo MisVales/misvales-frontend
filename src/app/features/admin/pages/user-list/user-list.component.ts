@@ -4,6 +4,10 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage, apiValidationErrors, ValidationErrorsByField } from '../../../../core/api/api-error';
 import { SessionStore } from '../../../../core/session/session.store';
+import { PageHeaderComponent } from '../../../../shared/ui/page-header/page-header.component';
+import { StatusBadgeComponent, StatusBadgeTone } from '../../../../shared/ui/status-badge/status-badge.component';
+import { ViewStateComponent } from '../../../../shared/ui/view-state/view-state.component';
+import { LucideAngularModule } from 'lucide-angular';
 import { Branch } from '../../../organization/data-access/organization.dtos';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { RoleRes, UserRes, UserState } from '../../data-access/admin.dtos';
@@ -15,7 +19,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, PageHeaderComponent, StatusBadgeComponent, ViewStateComponent, LucideAngularModule],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -30,6 +34,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   readonly totalUsers = signal(0);
   readonly loading = signal(false);
   readonly pageError = signal('');
+  readonly pageMessage = signal('');
   readonly filterStatus = signal<UserState | ''>('');
   readonly filterRole = signal('');
   readonly filterBranch = signal('');
@@ -46,11 +51,12 @@ export class UserListComponent implements OnInit, OnDestroy {
   readonly inviteError = signal('');
   readonly inviteValidationErrors = signal<ValidationErrorsByField>({});
   readonly availableRoles = signal<RoleRes[]>([]);
+  readonly assignableRoles = signal<RoleRes[]>([]);
   readonly availableBranches = signal<Branch[]>([]);
   readonly userToBlock = signal<UserRes | null>(null);
 
   readonly selectedInviteRole = computed(
-    () => this.availableRoles().find((role) => role.id === this.inviteRoleId()) ?? null,
+    () => this.assignableRoles().find((role) => role.id === this.inviteRoleId()) ?? null,
   );
   readonly inviteRequiresBranch = computed(() => {
     const role = this.selectedInviteRole();
@@ -68,6 +74,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   async ngOnInit(): Promise<void> {
     await this.loadUsers();
     if (this.canViewRoles()) await this.loadRoles();
+    if (this.canInviteUsers()) await this.loadAssignableRoles();
     if (this.hasPermission('branches.view')) await this.loadBranches();
   }
 
@@ -90,9 +97,18 @@ export class UserListComponent implements OnInit, OnDestroy {
   async loadRoles(): Promise<void> {
     try {
       const roles = await firstValueFrom(this.roleService.getRoles());
-      this.availableRoles.set(roles.filter((role) => role.is_active !== false && role.code !== 'general_manager'));
+      this.availableRoles.set(roles.filter((role) => role.is_active !== false && role.code !== 'distributor'));
     } catch (error: unknown) {
       this.pageError.set(apiErrorMessage(error, 'No fue posible cargar los roles disponibles.'));
+    }
+  }
+
+  async loadAssignableRoles(): Promise<void> {
+    try {
+      const roles = await firstValueFrom(this.roleService.getAssignableRoles());
+      this.assignableRoles.set(roles);
+    } catch (error: unknown) {
+      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar los roles asignables.'));
     }
   }
 
@@ -169,7 +185,7 @@ export class UserListComponent implements OnInit, OnDestroy {
       }));
       this.closeInviteModal();
       await this.loadUsers();
-      this.pageError.set(response.message);
+      this.pageMessage.set(response.message);
     } catch (error: unknown) {
       this.inviteError.set(apiErrorMessage(error, 'No fue posible crear y enviar la invitación.'));
       this.inviteValidationErrors.set(apiValidationErrors(error));
@@ -214,6 +230,16 @@ export class UserListComponent implements OnInit, OnDestroy {
       BLOCKED: 'Bloqueado',
       DISABLED: 'Deshabilitado',
     } satisfies Record<UserState, string>)[state];
+  }
+
+  stateTone(state: UserState): StatusBadgeTone {
+    return ({
+      ACTIVE: 'success',
+      INVITED: 'info',
+      PENDING_ACTIVATION: 'warning',
+      BLOCKED: 'danger',
+      DISABLED: 'neutral',
+    } satisfies Record<UserState, StatusBadgeTone>)[state];
   }
 
   private hasPermission(permission: string): boolean {

@@ -9,7 +9,9 @@
   @if (facade.error()) {
     <div class="alert alert-danger">
       {{ facade.error() }}
-      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">Cerrar</button>
+      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">
+        Cerrar
+      </button>
     </div>
   }
 
@@ -17,44 +19,92 @@
     <div class="card">
       <div class="card-header">
         <h2 class="card-title">Autorización Gerencial Definitiva</h2>
-        <p class="card-subtitle">Solicitud: {{ solicitud.folio }} - {{ solicitud.aspirante.nombreCompleto }}</p>
+        <p class="card-subtitle">
+          Solicitud: {{ solicitud.folio }} - {{ solicitud.aspirante.nombreCompleto }}
+        </p>
       </div>
 
       <div class="card-body">
-        
         <div class="info-panel mb-4">
           <h4>Dictamen Previos</h4>
           <div class="grid-2">
             <div>
               <p class="label">Visita Física</p>
-              <span class="badge" [class.badge-success]="solicitud.visitas[0]?.resultadoFisico === 'FAVORABLE'" [class.badge-danger]="solicitud.visitas[0]?.resultadoFisico === 'UNFAVORABLE'">
+              <span
+                class="badge"
+                [class.badge-success]="solicitud.visitas[0]?.resultadoFisico === 'FAVORABLE'"
+                [class.badge-danger]="solicitud.visitas[0]?.resultadoFisico === 'UNFAVORABLE'"
+              >
                 {{ solicitud.visitas[0]?.resultadoFisico || 'No registrado' }}
               </span>
             </div>
             <div>
               <p class="label">Evaluación Coordinación</p>
-              <span class="badge" [class.badge-success]="solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES'" [class.badge-danger]="solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY'">
+              <span
+                class="badge"
+                [class.badge-success]="solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES'"
+                [class.badge-danger]="solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY'"
+              >
                 {{ solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple' }}
               </span>
             </div>
           </div>
           @if (solicitud.ultimaEvaluacion?.motivo) {
-            <p class="mt-2 text-sm"><strong>Motivo Coordinador:</strong> {{ solicitud.ultimaEvaluacion?.motivo }}</p>
+            <p class="mt-2 text-sm">
+              <strong>Motivo Coordinador:</strong> {{ solicitud.ultimaEvaluacion?.motivo }}
+            </p>
           }
         </div>
+
+        @if (decision() === 'APPROVED') {
+          <div class="form-group mt-4">
+            <label for="initial-credit-line">Línea inicial autorizada</label>
+            <input
+              id="initial-credit-line"
+              class="form-control"
+              type="number"
+              inputmode="decimal"
+              min="0.0001"
+              step="0.0001"
+              required
+              placeholder="0.0000"
+              [ngModel]="lineaInicial()"
+              (ngModelChange)="lineaInicial.set($event)"
+              [disabled]="facade.isLoading()"
+              aria-describedby="initial-credit-line-help"
+            />
+            <p id="initial-credit-line-help" class="field-help">
+              Este importe será la fuente que M06 utilizará para crear la línea de crédito.
+            </p>
+          </div>
+        }
 
         <div class="form-group mt-4">
           <label>Decisión Gerencial</label>
           <div class="radio-group authorization-radios">
             <label class="radio-label auth-approved">
-              <input type="radio" name="decision" value="APPROVED" [ngModel]="decision()" (ngModelChange)="decision.set($event)" [disabled]="facade.isLoading()">
+              <input
+                type="radio"
+                name="decision"
+                value="APPROVED"
+                [ngModel]="decision()"
+                (ngModelChange)="decision.set($event)"
+                [disabled]="facade.isLoading()"
+              />
               <div class="radio-content">
                 <span class="auth-title">Aprobar Solicitud</span>
                 <span class="auth-desc">El aspirante será dado de alta como distribuidora.</span>
               </div>
             </label>
             <label class="radio-label auth-rejected">
-              <input type="radio" name="decision" value="REJECTED" [ngModel]="decision()" (ngModelChange)="decision.set($event)" [disabled]="facade.isLoading()">
+              <input
+                type="radio"
+                name="decision"
+                value="REJECTED"
+                [ngModel]="decision()"
+                (ngModelChange)="decision.set($event)"
+                [disabled]="facade.isLoading()"
+              />
               <div class="radio-content">
                 <span class="auth-title">Rechazar Solicitud</span>
                 <span class="auth-desc">La solicitud será denegada de forma permanente.</span>
@@ -65,13 +115,34 @@
 
         <div class="form-group mt-4">
           <label>Comentarios Adicionales (Obligatorio para rechazos)</label>
-          <textarea class="form-control" rows="4" placeholder="Observaciones de la gerencia..." [ngModel]="comentarios()" (ngModelChange)="comentarios.set($event)" [disabled]="facade.isLoading()"></textarea>
+          <textarea
+            class="form-control"
+            rows="4"
+            placeholder="Observaciones de la gerencia..."
+            [ngModel]="comentarios()"
+            (ngModelChange)="comentarios.set($event)"
+            [disabled]="facade.isLoading()"
+          ></textarea>
         </div>
       </div>
 
       <div class="card-footer">
-        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="facade.isLoading()">Cancelar</button>
-        <button type="button" class="btn btn-primary btn-lg" (click)="onAuthorize()" [disabled]="facade.isLoading()">Emitir Dictamen Final</button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onCancel()"
+          [disabled]="facade.isLoading()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-lg"
+          (click)="onAuthorize()"
+          [disabled]="facade.isLoading()"
+        >
+          Emitir Dictamen Final
+        </button>
       </div>
     </div>
   }

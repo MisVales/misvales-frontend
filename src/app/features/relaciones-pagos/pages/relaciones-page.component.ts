@@ -61,6 +61,27 @@ import { RelacionesApiService, RelationView } from '../data-access/relaciones-ap
               ><strong class="block">{{ item.reconciled_total | currency: 'MXN' }}</strong>
             </div>
           </div>
+          <section class="grid gap-3 rounded-lg bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div><span>Número</span><strong class="block">{{ item.header_snapshot['number'] || '—' }}</strong></div>
+            <div><span>Distribuidora</span><strong class="block">{{ item.header_snapshot['name'] || '—' }}</strong></div>
+            <div><span>Sucursal</span><strong class="block">{{ item.header_snapshot['branch'] || '—' }}</strong></div>
+            <div><span>Coordinador</span><strong class="block">{{ item.header_snapshot['coordinator'] || '—' }}</strong></div>
+            <div><span>Línea autorizada</span><strong class="block">{{ item.header_snapshot['credit_line_total'] | currency: 'MXN' }}</strong></div>
+            <div><span>Saldo disponible</span><strong class="block">{{ item.header_snapshot['credit_available'] | currency: 'MXN' }}</strong></div>
+            <div><span>Puntos</span><strong class="block">{{ item.header_snapshot['points'] ?? '—' }}</strong></div>
+            <div><span>Domicilio</span><strong class="block">{{ item.header_snapshot['address'] || '—' }}</strong></div>
+          </section>
+          <section class="grid gap-3 sm:grid-cols-2">
+            <div class="rounded-lg border p-4">
+              <h3 class="font-bold">Periodo de pago anticipado</h3>
+              <p>{{ item.advance_period_start | date: 'medium' }} — {{ item.advance_period_end | date: 'medium' }}</p>
+            </div>
+            <div class="rounded-lg border p-4">
+              <h3 class="font-bold">Datos bancarios publicados</h3>
+              <p>{{ item.bank_snapshot['name'] }} · {{ item.bank_snapshot['beneficiary'] }}</p>
+              <p>Convenio {{ item.bank_snapshot['agreement'] }} · CLABE {{ maskedClabe(item.bank_snapshot['clabe']) }}</p>
+            </div>
+          </section>
           <section>
             <h3 class="font-bold">Referencia copiable</h3>
             <button class="rounded-lg bg-gray-100 px-3 py-2" (click)="copy(item.payment_reference)">
@@ -73,21 +94,32 @@ import { RelacionesApiService, RelationView } from '../data-access/relaciones-ap
               <table class="w-full text-sm">
                 <thead>
                   <tr>
-                    <th>Folio</th>
-                    <th>Parcialidad</th>
-                    <th>Cliente</th>
-                    <th>MisVales</th>
+                    <th>Producto</th><th>Folio</th><th>Cliente</th><th>Parcialidad</th>
+                    <th>Capital</th><th>Comisión del préstamo</th><th>Interés</th><th>Seguro</th>
+                    <th>Ganancia de categoría</th><th>Recargo</th><th>Pago del cliente</th>
+                    <th>Exigible MisVales</th><th>Conciliado</th><th>Saldo</th><th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (row of item.partidas ?? []; track row.id) {
                     <tr>
+                      <td>{{ row.snapshot['product'] }}</td>
                       <td>{{ row.snapshot['folio'] }}</td>
+                      <td>{{ row.snapshot['client'] }}</td>
                       <td>
                         {{ row.snapshot['installment'] }} / {{ row.snapshot['total_installments'] }}
                       </td>
-                      <td>{{ row.portfolio_amount | currency: 'MXN' }}</td>
-                      <td>{{ row.misvales_amount | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['capital'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['loan_commission'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['interest'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['insurance'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['distributor_profit'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['surcharge'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['client_payment'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['misvales_payment'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['reconciled_payments'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['balance'] | currency: 'MXN' }}</td>
+                      <td>{{ row.snapshot['financial_status'] }}</td>
                     </tr>
                   }
                 </tbody>
@@ -159,6 +191,10 @@ export class RelacionesPageComponent {
   }
   copy(value: string): void {
     void navigator.clipboard.writeText(value);
+  }
+  maskedClabe(value: string | number | null | undefined): string {
+    const clabe = String(value ?? '');
+    return clabe ? `•••• ${clabe.slice(-4)}` : '—';
   }
   download(item: RelationView): void {
     this.api.download(item.id).subscribe((blob) => {

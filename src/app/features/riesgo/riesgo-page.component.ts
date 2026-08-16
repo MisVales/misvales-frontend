@@ -162,7 +162,10 @@ export class RiesgoPageComponent {
   }
 
   private load(): void {
-    if (this.session.permissions().includes('risk.view_own')) {
+    if (
+      this.session.roles().includes('distributor') &&
+      this.session.permissions().includes('risk.view_own')
+    ) {
       this.api.me().subscribe((status) => this.status.set(status));
     }
     if (this.canViewAlerts()) {

@@ -11,7 +11,7 @@ import { CreateClientRequestDto } from '../data-access/dtos/create-client-reques
 import { CreateClientBankAccountRequestDto } from '../data-access/dtos/create-client-bank-account-request.dto';
 import { CreateClientPortfolioEntryRequestDto } from '../data-access/dtos/create-client-portfolio-entry-request.dto';
 import { handleClientError } from '../utils/error-handler.util';
-import { catchError, of, tap } from 'rxjs';
+import { catchError, of, tap, throwError } from 'rxjs';
 
 export interface ClientesState {
   listado: Cliente[];
@@ -114,7 +114,7 @@ export const ClientesStore = signalStore(
         tap(cliente => patchState(store, { detalle: cliente, creandoCliente: false })),
         catchError(err => {
           patchState(store, { error: handleClientError(err), creandoCliente: false });
-          throw err;
+          return throwError(() => err);
         })
       );
     },
@@ -136,7 +136,7 @@ export const ClientesStore = signalStore(
         }),
         catchError(err => {
           patchState(store, { error: handleClientError(err), creandoCuenta: false });
-          throw err;
+          return throwError(() => err);
         })
       );
     },
@@ -167,7 +167,7 @@ export const ClientesStore = signalStore(
             patchState(store, { conflictoVersion: true });
           }
           patchState(store, { error: handleClientError(err), registrandoMovimiento: false });
-          throw err;
+          return throwError(() => err);
         })
       );
     },

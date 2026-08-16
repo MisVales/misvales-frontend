@@ -6,7 +6,6 @@ import { SessionStore } from '../../core/session/session.store';
 import {
   CentroOperacionApiService,
   NotificationItem,
-  ReadinessStatus,
 } from './centro-operacion-api.service';
 
 @Component({
@@ -31,28 +30,6 @@ import {
         </div>
       }
     </header>
-    <section class="rounded-xl border bg-white p-4" aria-live="polite">
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 class="font-bold">Disponibilidad operativa</h2>
-          <p class="text-sm text-gray-600">PostgreSQL, Redis, almacenamiento privado y scheduler.</p>
-        </div>
-        <button class="rounded border px-3 py-2" (click)="loadReadiness()">Actualizar</button>
-      </div>
-      @if (readiness(); as health) {
-        <p class="mt-3 font-semibold" [class.text-green-700]="health.status === 'ready'" [class.text-red-700]="health.status !== 'ready'">
-          {{ health.status === 'ready' ? 'Operación disponible' : 'Operación no disponible' }}
-        </p>
-        <ul class="mt-2 grid gap-1 text-sm sm:grid-cols-2 lg:grid-cols-4">
-          @for (check of health.checks | keyvalue; track check.key) {
-            <li>{{ check.key }}: {{ check.value ? 'correcto' : 'fallando' }}</li>
-          }
-        </ul>
-        <p class="mt-2 text-xs text-gray-500">Jobs fallidos: {{ health.failed_jobs }} · Verificado: {{ health.checked_at | date: 'short' }}</p>
-      } @else {
-        <p class="mt-3 text-sm text-gray-500">Estado operativo no disponible.</p>
-      }
-    </section>
     @if (canNotify()) {
       <section>
         <div class="flex items-center gap-3">
@@ -166,7 +143,6 @@ export class CentroOperacionPageComponent {
   readonly reportRows = signal<Record<string, unknown>[]>([]);
   readonly audits = signal<Record<string, unknown>[]>([]);
   readonly logs = signal<Record<string, unknown>[]>([]);
-  readonly readiness = signal<ReadinessStatus | null>(null);
   unreadOnly = false;
   selectedReport = '';
   dateFrom = '';
@@ -174,18 +150,11 @@ export class CentroOperacionPageComponent {
   status = '';
   correlationId = '';
   constructor() {
-    this.loadReadiness();
     if (this.canNotify()) {
       this.loadNotifications();
       this.api.unreadCount().subscribe((count) => this.unreadCount.set(count));
     }
     if (this.canReports()) this.api.reports().subscribe((reports) => this.reports.set(reports));
-  }
-  loadReadiness(): void {
-    this.api.readiness().subscribe({
-      next: (health) => this.readiness.set(health),
-      error: (response) => this.readiness.set(response.error ?? null),
-    });
   }
   canNotify(): boolean {
     return this.has('notifications.view_own');

@@ -21,4 +21,15 @@ describe('DistribuidorasApiService', () => {
     expect(request.request.body).toEqual({category_version_id:'v2',starts_at:'2026-08-12',reason:'Cambio autorizado',lock_version:3});
     request.flush({data:{id:'a1',name:'Oro',description:'',profit_percentage:'0.1',starts_at:'2026-08-12',ends_at:null,assigned_by_id:'u1',reason:'Cambio autorizado',status:'ACTIVE'}});
   });
+
+  it('desenvuelve la respuesta del detalle antes de mapearla',()=>{
+    let result:any;
+    service.obtener('d1').subscribe(value=>result=value);
+    const request=http.expectOne('/api/v1/distributors/d1');
+    request.flush({data:{id:'d1',distributor_number:'D-1',full_name:'Persona QA',status:'PENDING_ACTIVATION',activation_status:'PENDING_ACTIVATION',branch:{id:'b1',name:'Matriz'},coordinator:{id:'u1',name:'Coordinador QA'},category:{id:'c1',name:'QA',profit_rate:'0.06'},initial_credit:{total_authorized:'15000.0000',used_balance:'0.0000',available_balance:'15000.0000'},initial_restriction:{status:'ACTIVE'},created_at:'2026-08-14',activated_at:null,lock_version:1}});
+    expect(result.numero).toBe('D-1');
+    expect(result.nombreCompleto).toBe('Persona QA');
+    expect(result.sucursal.nombre).toBe('Matriz');
+    expect(result.lineaInicial).toBe('15000.0000');
+  });
 });

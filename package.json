@@ -35,6 +35,7 @@
     "@angular/build": "^22.1.2",
     "@angular/cli": "^22.1.2",
     "@angular/compiler-cli": "^22.1.0",
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4.1.12",
     "@types/leaflet": "^1.9.22",
     "@types/luxon": "^3.7.3",

@@ -23,8 +23,23 @@ export interface RelationView {
   reconciled_total: string;
   surcharge_total: string;
   balance: string;
-  header_snapshot: Record<string, string>;
-  bank_snapshot: Record<string, string>;
+  header_snapshot: {
+    number?: string | null;
+    name?: string | null;
+    address?: string | null;
+    branch?: string | null;
+    coordinator?: string | null;
+    credit_line_total?: string | number | null;
+    credit_available?: string | number | null;
+    points?: string | number | null;
+    configuration_versions?: Record<string, string>;
+  };
+  bank_snapshot: {
+    name?: string | null;
+    beneficiary?: string | null;
+    agreement?: string | null;
+    clabe?: string | null;
+  };
   partidas?: RelationItem[];
   settled_at?: string;
   temporal_classification?: string;

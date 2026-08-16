@@ -3,11 +3,12 @@ import { RouterOutlet } from '@angular/router';
 import { SessionStore } from '../../core/session/session.store';
 import { AuthFacade } from '../../features/auth/state/auth.facade';
 import { SidebarComponent } from '../../shared/ui/sidebar/sidebar.component';
+import { ShellHeaderComponent } from '../../shared/ui/shell-header/shell-header.component';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [RouterOutlet, SidebarComponent],
+  imports: [RouterOutlet, SidebarComponent, ShellHeaderComponent],
   templateUrl: './admin-layout.component.html',
   styleUrl: './admin-layout.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

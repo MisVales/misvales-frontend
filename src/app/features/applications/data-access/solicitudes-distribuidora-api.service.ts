@@ -73,6 +73,17 @@ export class SolicitudesDistribuidoraApiService {
     );
   }
 
+  actualizarDeclaraciones(
+    id: string,
+    sectionDeclarations: Record<string, string>,
+    versionBloqueo: number,
+  ): Observable<SolicitudDistribuidora> {
+    return this.http.patch<SolicitudDistribuidoraResponseDTO | { data: SolicitudDistribuidoraResponseDTO }>(
+      `${this.baseUrl}/${id}`,
+      this.withLockVersion({ section_declarations: sectionDeclarations }, versionBloqueo),
+    ).pipe(map(unwrapData), map(SolicitudDistribuidoraMapper.mapToModel));
+  }
+
   enviarARevision(id: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
     return this.http.post<SolicitudDistribuidoraResponseDTO | { data: SolicitudDistribuidoraResponseDTO }>(`${this.baseUrl}/${id}/submit`, { lock_version: versionBloqueo }).pipe(
       map(unwrapData), map(SolicitudDistribuidoraMapper.mapToModel)

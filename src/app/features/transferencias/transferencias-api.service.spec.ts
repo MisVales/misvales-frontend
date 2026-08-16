@@ -36,4 +36,27 @@ describe('TransferenciasApiService', () => {
     expect(complete.request.body).toEqual({});
     complete.flush({ data: { status: 'COMPLETED' } });
   });
+
+  it('cancela antes del cambio definitivo con motivo e idempotencia', () => {
+    service.cancel('t1', 'El cliente desistió').subscribe((value) => {
+      expect(value.status).toBe('CANCELLED');
+    });
+
+    const cancel = http.expectOne((request) => request.url.endsWith('/client-transfers/t1/cancel'));
+    expect(cancel.request.body).toEqual({ reason: 'El cliente desistió' });
+    expect(cancel.request.headers.has('Idempotency-Key')).toBe(true);
+    cancel.flush({ data: { status: 'CANCELLED' } });
+  });
+
+  it('lista destinos mediante el contrato mínimo de transferencias', () => {
+    service.destinations('Beatriz').subscribe((items) => expect(items[0].id).toBe('d2'));
+
+    const request = http.expectOne(
+      (candidate) =>
+        candidate.url.endsWith('/client-transfer-destinations') &&
+        candidate.params.get('search') === 'Beatriz',
+    );
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: [{ id: 'd2' }] });
+  });
 });

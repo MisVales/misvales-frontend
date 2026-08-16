@@ -15,7 +15,7 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        canDeactivate: [(component: { canLeave(): boolean }) => component.canLeave()],
+        canDeactivate: [(component: { canLeave(): boolean | Promise<boolean> }) => component.canLeave()],
         loadComponent: () =>
           import('./features/auth/pages/activate-account/activate-account').then(
             (m) => m.ActivateAccount,

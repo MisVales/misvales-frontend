@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../core/api/api.config';
@@ -28,6 +28,13 @@ export interface OrganizationalChange {
   occurred_at: string;
 }
 
+export interface TransferDestination {
+  id: string;
+  distributor_number: string;
+  full_name: string | null;
+  branch: { id: string; name: string } | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class TransferenciasApiService {
   private readonly http = inject(HttpClient);
@@ -37,6 +44,15 @@ export class TransferenciasApiService {
     return this.http
       .get<{ data: { data: ClientTransfer[] } }>(`${this.config.baseUrl}/client-transfers`)
       .pipe(map((response) => response.data.data));
+  }
+
+  destinations(search = ''): Observable<TransferDestination[]> {
+    const params = search.trim() ? new HttpParams().set('search', search.trim()) : new HttpParams();
+    return this.http
+      .get<{ data: TransferDestination[] }>(`${this.config.baseUrl}/client-transfer-destinations`, {
+        params,
+      })
+      .pipe(map((response) => response.data));
   }
 
   history(): Observable<OrganizationalChange[]> {
@@ -66,6 +82,10 @@ export class TransferenciasApiService {
 
   complete(transfer: string): Observable<ClientTransfer> {
     return this.post(`${this.config.baseUrl}/client-transfers/${transfer}/complete`, {});
+  }
+
+  cancel(transfer: string, reason: string): Observable<ClientTransfer> {
+    return this.post(`${this.config.baseUrl}/client-transfers/${transfer}/cancel`, { reason });
   }
 
   reassignClient(client: string, destination: string, reason: string): Observable<unknown> {

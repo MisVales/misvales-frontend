@@ -2,9 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SessionStore } from '../../core/session/session.store';
+import { ClientesApiService } from '../clientes/data-access/api/clientes-api.service';
+import { Cliente } from '../clientes/models/cliente.model';
 import {
   ClientTransfer,
   OrganizationalChange,
+  TransferDestination,
   TransferenciasApiService,
 } from './transferencias-api.service';
 
@@ -22,27 +25,67 @@ import {
           exclusivamente al transferir clientes.
         </p>
       </header>
+      <ol
+        class="grid gap-2 text-xs font-semibold sm:grid-cols-5"
+        aria-label="Etapas de transferencia"
+      >
+        <li class="rounded-lg border bg-white p-2">1 Solicitud</li>
+        <li class="rounded-lg border bg-white p-2">2 Preaceptación receptora</li>
+        <li class="rounded-lg border bg-white p-2">3 Autorización de salida</li>
+        <li class="rounded-lg border bg-white p-2">4 Aceptación definitiva</li>
+        <li class="rounded-lg border bg-white p-2">5 Completada</li>
+      </ol>
 
       @if (canInitiate()) {
         <form
           class="grid gap-3 rounded-xl border bg-white p-4 md:grid-cols-3"
           (ngSubmit)="initiate()"
         >
+          <label class="text-sm md:col-span-3"
+            >Buscar cliente<input
+              class="mt-1 w-full rounded border p-2"
+              name="clientSearch"
+              [(ngModel)]="clientSearch"
+              (ngModelChange)="searchClients()"
+              placeholder="Nombre o número de cliente"
+          /></label>
           <label class="text-sm"
-            >Cliente<input
+            >Cliente<select
               class="mt-1 w-full rounded border p-2"
               name="client"
               [(ngModel)]="clientId"
               required
-          /></label>
+            >
+              <option value="">Selecciona un cliente</option>
+              @for (client of clients(); track client.id) {
+                <option [value]="client.id">
+                  {{ client.numero }} — {{ client.nombreCompleto }}
+                </option>
+              }
+            </select></label
+          >
           <label class="text-sm"
-            >Distribuidora receptora<input
+            >Distribuidora receptora<select
               class="mt-1 w-full rounded border p-2"
               name="destination"
               [(ngModel)]="destinationDistributorId"
               required
-          /></label>
-          <button class="self-end rounded bg-indigo-700 px-4 py-2 text-white">
+            >
+              <option value="">Selecciona una distribuidora</option>
+              @for (destination of destinations(); track destination.id) {
+                <option [value]="destination.id">
+                  {{ destination.distributor_number }} — {{ destination.full_name }}
+                  @if (destination.branch) {
+                    · {{ destination.branch.name }}
+                  }
+                </option>
+              }
+            </select></label
+          >
+          <button
+            class="self-end rounded bg-indigo-700 px-4 py-2 text-white disabled:cursor-not-allowed disabled:opacity-50"
+            [disabled]="!clientId || !destinationDistributorId"
+          >
             Iniciar transferencia
           </button>
         </form>
@@ -71,6 +114,18 @@ import {
                 <p class="mt-2">Motivo: {{ transfer.origin_decision_reason }}</p>
               }
               <div class="mt-3 flex flex-wrap gap-2">
+                <p class="w-full rounded bg-gray-50 p-2 text-xs">
+                  <strong>Siguiente responsable:</strong>
+                  {{
+                    transfer.status === 'REQUESTED'
+                      ? 'Distribuidora receptora'
+                      : transfer.status === 'PREACCEPTED'
+                        ? 'Distribuidora de origen'
+                        : transfer.status === 'ORIGIN_AUTHORIZED'
+                          ? 'Distribuidora receptora'
+                          : 'Proceso cerrado'
+                  }}
+                </p>
                 @if (canReceive() && transfer.status === 'REQUESTED') {
                   <button class="rounded border px-3 py-2" (click)="preaccept(transfer, true)">
                     Preaceptar
@@ -80,11 +135,26 @@ import {
                   </button>
                 }
                 @if (canDecide() && transfer.status === 'PREACCEPTED') {
-                  <button class="rounded border px-3 py-2" (click)="originDecision(transfer, true)">
+                  <label class="w-full text-sm font-medium">
+                    Motivo de la decisión de salida
+                    <textarea
+                      class="mt-1 w-full rounded border p-2 font-normal"
+                      [ngModel]="decisionReasons[transfer.id] ?? ''"
+                      (ngModelChange)="decisionReasons[transfer.id] = $event"
+                      placeholder="Explique por qué autoriza o rechaza la salida"
+                      required
+                    ></textarea>
+                  </label>
+                  <button
+                    class="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    [disabled]="!decisionReasons[transfer.id]?.trim()"
+                    (click)="originDecision(transfer, true)"
+                  >
                     Autorizar salida
                   </button>
                   <button
-                    class="rounded border px-3 py-2"
+                    class="rounded border px-3 py-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    [disabled]="!decisionReasons[transfer.id]?.trim()"
                     (click)="originDecision(transfer, false)"
                   >
                     Rechazar salida
@@ -96,6 +166,25 @@ import {
                     (click)="complete(transfer)"
                   >
                     Aceptación definitiva
+                  </button>
+                }
+                @if (canCancel(transfer)) {
+                  <label class="w-full text-sm font-medium">
+                    Motivo de cancelación
+                    <textarea
+                      class="mt-1 w-full rounded border p-2 font-normal"
+                      [ngModel]="cancellationReasons[transfer.id] ?? ''"
+                      (ngModelChange)="cancellationReasons[transfer.id] = $event"
+                      placeholder="Explique por qué se cancela la transferencia"
+                      required
+                    ></textarea>
+                  </label>
+                  <button
+                    class="rounded border border-red-300 px-3 py-2 text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    [disabled]="!cancellationReasons[transfer.id]?.trim()"
+                    (click)="cancel(transfer)"
+                  >
+                    Cancelar transferencia
                   </button>
                 }
               </div>
@@ -225,11 +314,17 @@ import {
 })
 export class TransferenciasPageComponent {
   private readonly api = inject(TransferenciasApiService);
+  private readonly clientsApi = inject(ClientesApiService);
   private readonly session = inject(SessionStore);
   readonly transfers = signal<ClientTransfer[]>([]);
   readonly history = signal<OrganizationalChange[]>([]);
+  readonly clients = signal<Cliente[]>([]);
+  readonly destinations = signal<TransferDestination[]>([]);
   readonly message = signal('');
+  readonly decisionReasons: Record<string, string> = {};
+  readonly cancellationReasons: Record<string, string> = {};
   clientId = '';
+  clientSearch = '';
   destinationDistributorId = '';
   reason = '';
   adminClientId = '';
@@ -242,6 +337,10 @@ export class TransferenciasPageComponent {
 
   constructor() {
     this.load();
+    if (this.canInitiate()) {
+      this.searchClients();
+      this.loadDestinations();
+    }
   }
   canInitiate(): boolean {
     return this.has('client_transfers.initiate_own');
@@ -261,6 +360,21 @@ export class TransferenciasPageComponent {
   canViewHistory(): boolean {
     return this.has('organization_changes.view');
   }
+  searchClients(): void {
+    this.clientsApi
+      .listar({ search: this.clientSearch, page: 1, perPage: 20 })
+      .subscribe((page) => this.clients.set(page.data));
+  }
+  loadDestinations(): void {
+    this.api.destinations().subscribe((destinations) => this.destinations.set(destinations));
+  }
+  canCancel(transfer: ClientTransfer): boolean {
+    return (
+      this.canInitiate() &&
+      transfer.initiated_by === this.session.user()?.id &&
+      ['REQUESTED', 'PREACCEPTED', 'ORIGIN_AUTHORIZED'].includes(transfer.status)
+    );
+  }
 
   initiate(): void {
     if (this.clientId && this.destinationDistributorId)
@@ -276,15 +390,25 @@ export class TransferenciasPageComponent {
       );
   }
   originDecision(transfer: ClientTransfer, authorize: boolean): void {
-    if (!this.reason) return;
-    this.api
-      .originDecision(transfer.id, authorize, this.reason)
-      .subscribe(() => this.done('Decisión de salida registrada.'));
+    const reason = this.decisionReasons[transfer.id]?.trim();
+    if (!reason) return;
+    this.api.originDecision(transfer.id, authorize, reason).subscribe(() => {
+      delete this.decisionReasons[transfer.id];
+      this.done('Decisión de salida registrada.');
+    });
   }
   complete(transfer: ClientTransfer): void {
     this.api
       .complete(transfer.id)
       .subscribe(() => this.done('Transferencia completada; el siguiente vale será digital.'));
+  }
+  cancel(transfer: ClientTransfer): void {
+    const reason = this.cancellationReasons[transfer.id]?.trim();
+    if (!reason) return;
+    this.api.cancel(transfer.id, reason).subscribe(() => {
+      delete this.cancellationReasons[transfer.id];
+      this.done('Transferencia cancelada antes del cambio definitivo.');
+    });
   }
   reassignClient(): void {
     if (!this.reason) return;

@@ -5,6 +5,8 @@ import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { FamiliarFormFactory } from '../../forms/familiar-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { firstValueFrom } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-familiares-form',
@@ -18,6 +20,8 @@ export class FamiliaresFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
   private cdr = inject(ChangeDetectorRef);
+  private alerts = inject(AlertService);
+  private confirmation = inject(ConfirmationService);
 
   familiaresArray: FormArray = FamiliarFormFactory.createArray(this.fb);
   cargando = false;
@@ -102,7 +106,7 @@ export class FamiliaresFormComponent implements OnInit {
     } catch (e: any) {
       if (e?.status === 409) {
         await this.store.cargarDetalle(idSolicitud);
-        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
+        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
       }
     } finally {
       this.cdr.markForCheck();
@@ -110,7 +114,7 @@ export class FamiliaresFormComponent implements OnInit {
   }
 
   async eliminarFamiliarAPI(index: number, idFamiliar: string) {
-    const confirmacion = confirm('¿Estás seguro de que deseas eliminar a este familiar?');
+    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar familiar', message: 'La persona se eliminará de la sección familiar del expediente.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;

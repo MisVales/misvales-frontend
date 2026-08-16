@@ -6,6 +6,8 @@ import { CapturaEvidenciaComponent } from '../../components/captura-evidencia/ca
 import { GaleriaEvidenciasComponent } from '../../components/galeria-evidencias/galeria-evidencias.component';
 import { EditorDiferenciasComponent, DiferenciaPayload } from '../../components/editor-diferencias/editor-diferencias.component';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-realizar-visita',
@@ -25,6 +27,8 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(VerificacionDistribuidorasFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly alerts = inject(AlertService);
+  private readonly confirmation = inject(ConfirmationService);
 
   // Tabs / Wizard steps
   step = signal<number>(1);
@@ -51,7 +55,9 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
       await this.facade.cargarVisita(id);
       const visita = this.facade.visitaSeleccionada();
       if (visita) {
-        await this.facade.cargarSolicitud(visita.solicitudId);
+        if (!this.facade.solicitudSeleccionada()) {
+          await this.facade.cargarSolicitud(visita.solicitudId);
+        }
         this.construirComprobacion();
       }
     }
@@ -179,16 +185,16 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     if (!visita) return;
 
     if (!this.resultadoFinal()) {
-      alert('Debes seleccionar un resultado final.');
+      this.alerts.showAlert('Selecciona el resultado final de la visita.', 'warning');
       return;
     }
 
     if (this.resultadoFinal() === 'UNFAVORABLE' && !this.observacionesFila()) {
-      alert('Debes incluir observaciones si el resultado es desfavorable.');
+      this.alerts.showAlert('Incluye observaciones para documentar el resultado desfavorable.', 'warning');
       return;
     }
 
-    if (confirm('¿Estás seguro de finalizar la visita? Esta acción es irreversible.')) {
+    if (await this.confirmation.confirm({ title: 'Finalizar visita', message: 'El checklist, las fotografías, las diferencias y el resultado quedarán cerrados para el verificador.', confirmLabel: 'Finalizar visita' })) {
       const success = await this.facade.finalizarVisita(visita.id, {
         resultado_fisico: this.resultadoFinal()!,
         observaciones: this.observacionesFila(),
@@ -196,8 +202,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
       });
 
       if (success) {
-        // En una app real, mostrar mensaje de éxito y navegar
-        alert('Visita finalizada con éxito.');
+        this.alerts.showAlert('Visita finalizada y expediente enviado a revisión.', 'success');
         this.router.navigate(['/verificacion-distribuidoras/verificaciones/asignadas']);
       }
     }

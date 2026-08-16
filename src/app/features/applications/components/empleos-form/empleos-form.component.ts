@@ -5,6 +5,8 @@ import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { EmpleoFormFactory } from '../../forms/empleo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { firstValueFrom } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-empleos-form',
@@ -18,6 +20,8 @@ export class EmpleosFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
   private cdr = inject(ChangeDetectorRef);
+  private alerts = inject(AlertService);
+  private confirmation = inject(ConfirmationService);
 
   empleosArray: FormArray = EmpleoFormFactory.createArray(this.fb);
   cargando = false;
@@ -102,7 +106,7 @@ export class EmpleosFormComponent implements OnInit {
     } catch (e: any) {
       if (e?.status === 409) {
         await this.store.cargarDetalle(idSolicitud);
-        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
+        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
       }
     } finally {
       this.cdr.markForCheck();
@@ -110,7 +114,7 @@ export class EmpleosFormComponent implements OnInit {
   }
 
   async eliminarEmpleoAPI(index: number, idRegistro: string) {
-    const confirmacion = confirm('¿Estás seguro de que deseas eliminar este registro de empleo?');
+    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar empleo', message: 'El registro laboral se eliminará del expediente. Esta acción no se puede deshacer.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;

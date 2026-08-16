@@ -40,8 +40,10 @@ export interface ResumenSolicitante {
 
 export interface DeclaracionesSeccion {
   datosPersonales: EstadoDeclaracion;
-  referenciasFamiliares: EstadoDeclaracion;
   domicilios: EstadoDeclaracion;
+  pareja: EstadoDeclaracion;
+  hijos: EstadoDeclaracion;
+  referenciasFamiliares: EstadoDeclaracion;
   vehiculos: EstadoDeclaracion;
   bienes: EstadoDeclaracion;
   pasivos: EstadoDeclaracion;

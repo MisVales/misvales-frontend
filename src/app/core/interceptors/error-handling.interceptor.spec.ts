@@ -1,11 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { errorHandlingInterceptor, sanitizeServerError } from './error-handling.interceptor';
+import { errorHandlingInterceptor, isConcurrencyConflict, sanitizeServerError } from './error-handling.interceptor';
 import { Router } from '@angular/router';
 import { SessionStore } from '../session/session.store';
 import { AlertService } from '../../shared/services/alert.service';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AuthTokenStore } from '../session/auth-token.store';
+import { SessionRefreshService } from '../session/session-refresh.service';
+import { throwError } from 'rxjs';
 
 describe('errorHandlingInterceptor', () => {
   let http: HttpClient;
@@ -13,11 +16,15 @@ describe('errorHandlingInterceptor', () => {
   let routerSpy: any;
   let sessionStoreSpy: any;
   let alertServiceSpy: any;
+  let tokenStoreSpy: any;
+  let sessionRefreshSpy: any;
 
   beforeEach(() => {
     routerSpy = { navigate: vi.fn() };
     sessionStoreSpy = { clearSession: vi.fn() };
     alertServiceSpy = { showAlert: vi.fn() };
+    tokenStoreSpy = { accessToken: vi.fn(() => null), clear: vi.fn() };
+    sessionRefreshSpy = { refresh: vi.fn(() => throwError(() => new Error('expired'))) };
 
     TestBed.configureTestingModule({
       providers: [
@@ -25,7 +32,9 @@ describe('errorHandlingInterceptor', () => {
         provideHttpClientTesting(),
         { provide: Router, useValue: routerSpy },
         { provide: SessionStore, useValue: sessionStoreSpy },
-        { provide: AlertService, useValue: alertServiceSpy }
+        { provide: AlertService, useValue: alertServiceSpy },
+        { provide: AuthTokenStore, useValue: tokenStoreSpy },
+        { provide: SessionRefreshService, useValue: sessionRefreshSpy }
       ]
     });
 
@@ -75,6 +84,45 @@ describe('errorHandlingInterceptor', () => {
     req.flush('Page Expired', { status: 419, statusText: 'Page Expired' });
 
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
+  });
+
+  it('does not report a business-rule 409 as stale information', () => {
+    http.post('/test', {}).subscribe({ error: (error) => expect(error).toBeTruthy() });
+
+    const req = httpTestingController.expectOne('/test');
+    req.flush(
+      { error: { code: 'CREDIT_50_PERCENT_RULE_NOT_SATISFIED', message: 'Fuera del rango permitido.' } },
+      { status: 409, statusText: 'Conflict' },
+    );
+
+    expect(alertServiceSpy.showAlert).not.toHaveBeenCalled();
+  });
+
+  it('reports a version conflict as stale information', () => {
+    http.patch('/test', {}).subscribe({ error: (error) => expect(error).toBeTruthy() });
+
+    const req = httpTestingController.expectOne('/test');
+    req.flush(
+      { error: { code: 'RESOURCE_VERSION_CONFLICT', message: 'Conflicto de concurrencia.' } },
+      { status: 409, statusText: 'Conflict' },
+    );
+
+    expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
+      'La información cambió mientras trabajaba. Recargue los datos e inténtelo de nuevo.',
+      'error',
+      7000,
+    );
+  });
+});
+
+describe('isConcurrencyConflict', () => {
+  it('recognizes both nested and top-level version conflict codes', () => {
+    expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { error: { code: 'CREDIT_LINE_VERSION_CONFLICT' } } }))).toBe(true);
+    expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { code: 'VERSION_CONFLICT' } }))).toBe(true);
+  });
+
+  it('rejects non-concurrency business conflicts', () => {
+    expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { error: { code: 'CREDIT_INSUFFICIENT' } } }))).toBe(false);
   });
 });
 

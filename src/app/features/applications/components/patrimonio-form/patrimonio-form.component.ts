@@ -5,6 +5,8 @@ import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { PatrimonioFormFactory } from '../../forms/patrimonio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { firstValueFrom } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-patrimonio-form',
@@ -18,6 +20,8 @@ export class PatrimonioFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
   private cdr = inject(ChangeDetectorRef);
+  private alerts = inject(AlertService);
+  private confirmation = inject(ConfirmationService);
 
   patrimonioArray: FormArray = PatrimonioFormFactory.createArray(this.fb);
   cargando = false;
@@ -117,7 +121,7 @@ export class PatrimonioFormComponent implements OnInit {
     } catch (e: any) {
       if (e?.status === 409) {
         await this.store.cargarDetalle(idSolicitud);
-        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
+        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
       }
     } finally {
       this.cdr.markForCheck();
@@ -125,7 +129,7 @@ export class PatrimonioFormComponent implements OnInit {
   }
 
   async eliminarRegistroAPI(formGroup: FormGroup, idRegistro: string) {
-    const confirmacion = confirm('¿Estás seguro de que deseas eliminar este registro patrimonial?');
+    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar registro patrimonial', message: 'El bien o pasivo se eliminará del expediente.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;

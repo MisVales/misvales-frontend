@@ -1,9 +1,13 @@
 <section class="p-6">
+  <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="note"><strong>Catálogo global.</strong> Las versiones publicadas aplican a todas las sucursales y operaciones autorizadas.</div>
+  @if (actionError()) { <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{{ actionError() }}</div> }
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Categorías</h1>
-    <a routerLink="nueva" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-      Nueva Categoría
-    </a>
+    @if (canManageCatalogs()) {
+      <a routerLink="nueva" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Nueva Categoría
+      </a>
+    }
   </div>
 
   @if (store.estadoCarga()) {
@@ -39,12 +43,12 @@
               </td>
               <td class="py-3 px-6 text-center">{{ cat.estadoVersion }}</td>
               <td class="py-3 px-6 text-center">
-                <span>{{ cat.fechaCreacion | date:'dd/MM/yyyy' }}</span>
+                <span>{{ cat.fechaCreacion | misvalesDateTime }}</span>
               </td>
               <td class="py-3 px-6 text-center">
                 <a [routerLink]="[cat.id]" class="text-blue-500 hover:text-blue-700">Ver Detalle</a>
-                @if (session.roles().includes('general_manager') && cat.estadoVersion === 'DRAFT') {
-                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="publicar(cat.versionId, cat.versionRegistro)">Publicar</button>
+                @if (canManageCatalogs() && cat.estadoVersion === 'DRAFT') {
+                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="requestPublication(cat.versionId, cat.versionRegistro)">Publicar</button>
                 }
               </td>
             </tr>
@@ -54,3 +58,4 @@
     </div>
   }
 </section>
+<app-reason-action-dialog [open]="!!pendingPublication()" title="Publicar categoría global" message="Esta versión se convertirá en la vigente para todas las sucursales. La operación es controlada y quedará auditada." confirmLabel="Publicar globalmente" [reason]="publicationReason()" (reasonChange)="publicationReason.set($event)" [busy]="actionLoading()" dialogId="publish-category" (confirm)="confirmPublication()" (cancel)="closePublication()"></app-reason-action-dialog>

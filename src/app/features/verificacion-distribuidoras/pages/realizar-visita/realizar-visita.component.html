@@ -30,12 +30,15 @@
     </div>
 
     @if (visita.estado !== 'ASSIGNED') {
+      <div class="responsibility-banner" role="note">
+        <strong>Rol del verificador:</strong> documenta lo declarado, lo observado y las evidencias. Las correcciones posteriores corresponden exclusivamente a coordinación.
+      </div>
       <!-- Wizard Navigation -->
-      <div class="wizard-tabs">
-        <button class="tab-btn" [class.active]="step() === 1" (click)="setStep(1)">1. Comprobación</button>
-        <button class="tab-btn" [class.active]="step() === 2" (click)="setStep(2)">2. Evidencias</button>
-        <button class="tab-btn" [class.active]="step() === 3" (click)="setStep(3)">3. Diferencias</button>
-        <button class="tab-btn" [class.active]="step() === 4" (click)="setStep(4)">4. Resultado Final</button>
+      <div class="wizard-tabs" role="tablist" aria-label="Etapas de la visita">
+        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 1" [class.active]="step() === 1" (click)="setStep(1)">1. Comprobación</button>
+        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 2" [class.active]="step() === 2" (click)="setStep(2)">2. Evidencias</button>
+        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 3" [class.active]="step() === 3" (click)="setStep(3)">3. Diferencias</button>
+        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 4" [class.active]="step() === 4" (click)="setStep(4)">4. Resultado final</button>
       </div>
 
       <!-- Step 1: Comprobación -->
@@ -91,10 +94,12 @@
 
           <div class="diferencias-list">
             @for (dif of visita.diferencias; track dif.id) {
-              <div class="diferencia-card">
+              <div class="diferencia-card" aria-label="Comparación de dato declarado y observado">
                 <h4>{{ dif.seccion }} - {{ dif.campo }}</h4>
-                <p><strong>Declarado:</strong> {{ dif.datoDeclarado }}</p>
-                <p><strong>Observado:</strong> {{ dif.datoObservado || 'N/A' }}</p>
+                <div class="observed-comparison">
+                  <p><span class="comparison-label">Dato original</span><strong>{{ dif.datoDeclarado }}</strong></p>
+                  <p><span class="comparison-label">Dato observado</span><strong>{{ dif.datoObservado || 'Sin dato' }}</strong></p>
+                </div>
                 <p><strong>Descripción:</strong> {{ dif.descripcion }}</p>
               </div>
             }

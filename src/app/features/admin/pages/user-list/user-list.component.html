@@ -1,40 +1,50 @@
 <div class="max-w-6xl mx-auto space-y-6">
-  <div class="flex items-center justify-between mb-2">
-    <h2 class="text-2xl font-extrabold text-[#386641] tracking-tight">Gestión de Usuarios y Roles</h2>
+  <app-page-header
+    eyebrow="Acceso y seguridad"
+    title="Usuarios y roles"
+    description="Administra identidades, estados de acceso y alcances autorizados."
+  >
     @if (canInviteUsers()) {
-    <button class="bg-[#386641] hover:bg-[#6A994E] text-white font-medium py-2 px-4 rounded-lg transition-colors shadow-sm flex items-center gap-2" (click)="showInviteModal.set(true)">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-      </svg>
-      Invitar Usuario
+    <button pageHeaderActions class="bg-[#386641] hover:bg-[#6A994E] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2" (click)="showInviteModal.set(true)">
+      <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
+      Invitar usuario
     </button>
     }
-  </div>
+  </app-page-header>
 
   @if (pageError()) {
-    <div class="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900" role="status">{{ pageError() }}</div>
+    <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{{ pageError() }}</div>
+  }
+  @if (pageMessage()) {
+    <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700" role="status">{{ pageMessage() }}</div>
   }
 
   <div class="border-b border-gray-200 mb-6">
-    <nav class="-mb-px flex gap-6" aria-label="Tabs">
+    <nav class="-mb-px flex gap-6 overflow-x-auto" aria-label="Vistas de usuarios" role="tablist">
       <button 
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'directory'"
         (click)="activeTab.set('directory')"
         [class.border-[#386641]]="activeTab() === 'directory'"
         [class.text-[#386641]]="activeTab() === 'directory'"
         [class.border-transparent]="activeTab() !== 'directory'"
         [class.text-gray-500]="activeTab() !== 'directory'"
         class="hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-        Directorio de Usuarios
+        Directorio de usuarios
       </button>
       @if (canViewRoles()) {
       <button 
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeTab() === 'roles'"
         (click)="activeTab.set('roles')"
         [class.border-[#386641]]="activeTab() === 'roles'"
         [class.text-[#386641]]="activeTab() === 'roles'"
         [class.border-transparent]="activeTab() !== 'roles'"
         [class.text-gray-500]="activeTab() !== 'roles'"
         class="hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-        Resumen Organizacional (Roles)
+        Roles y alcances
       </button>
       }
     </nav>
@@ -42,11 +52,11 @@
 
   @if (activeTab() === 'directory') {
 
-  <div class="flex gap-4 mb-6">
+  <div class="flex flex-wrap gap-3 mb-6" aria-label="Filtros del directorio">
     <input type="search" [ngModel]="filterSearch()" (ngModelChange)="filterSearch.set($event); onFilterChange(true)" aria-label="Buscar usuarios" placeholder="Buscar por nombre o correo" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1">
     
-    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
-      <option value="">Todos los Estados</option>
+    <select aria-label="Filtrar por estado" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-44">
+      <option value="">Todos los estados</option>
       <option value="ACTIVE">Activo</option>
       <option value="INVITED">Invitado</option>
       <option value="PENDING_ACTIVATION">Pendiente Activación</option>
@@ -55,8 +65,8 @@
     </select>
     
     @if (canViewRoles()) {
-    <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
-      <option value="">Todos los Roles</option>
+    <select aria-label="Filtrar por rol" [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-44">
+      <option value="">Todos los roles</option>
       @for (role of availableRoles(); track role.id) {
         <option [value]="role.id">{{ role.name }}</option>
       }
@@ -64,8 +74,8 @@
     }
 
     @if (availableBranches().length) {
-    <select [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
-      <option value="">Todas las Sucursales</option>
+    <select aria-label="Filtrar por sucursal" [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-44">
+      <option value="">Todas las sucursales</option>
       @for (branch of availableBranches(); track branch.id) {
         <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
       }
@@ -73,33 +83,38 @@
     }
   </div>
 
-  <div class="overflow-x-auto bg-white shadow-sm rounded-xl border border-gray-200">
-    <table class="w-full text-sm text-left text-gray-500">
+  @if (loading()) {
+    <app-view-state kind="loading" title="Cargando usuarios" message="Consultando el directorio y sus alcances vigentes." [compact]="true"></app-view-state>
+  } @else if (users().length === 0) {
+    <app-view-state kind="empty" title="No hay usuarios para mostrar" message="Ajusta los filtros o invita a una persona si tu rol lo permite." [compact]="true"></app-view-state>
+  } @else {
+  <div class="overflow-x-auto bg-white rounded-xl border border-gray-200" tabindex="0" aria-label="Directorio de usuarios; desplázate horizontalmente si es necesario">
+    <table class="w-full min-w-[900px] table-fixed text-sm text-left text-gray-500">
       <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
         <tr>
-          <th scope="col" class="px-6 py-4">Nombre</th>
-          <th scope="col" class="px-6 py-4">Email</th>
-          <th scope="col" class="px-6 py-4">Rol</th>
-          <th scope="col" class="px-6 py-4">Sucursal</th>
-          <th scope="col" class="px-6 py-4">Estado</th>
-          <th scope="col" class="px-6 py-4">Acciones</th>
+          <th scope="col" class="w-[21%] px-4 py-4">Nombre</th>
+          <th scope="col" class="w-[19%] px-4 py-4">Email</th>
+          <th scope="col" class="w-[15%] px-4 py-4">Rol</th>
+          <th scope="col" class="w-[15%] px-4 py-4">Sucursal</th>
+          <th scope="col" class="w-[20%] px-4 py-4">Estado</th>
+          <th scope="col" class="w-[10%] px-4 py-4">Acciones</th>
         </tr>
       </thead>
       <tbody>
         @for (user of users(); track user.id) {
           <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.name }}</td>
-            <td class="px-6 py-4">{{ user.email }}</td>
-            <td class="px-6 py-4">
+            <td class="px-4 py-4 font-medium text-gray-900">{{ user.name }}</td>
+            <td class="break-words px-4 py-4">{{ user.email }}</td>
+            <td class="px-4 py-4">
               @if (user.role_scopes?.length) {
                 @for (scope of user.role_scopes; track $index) {
-                  <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full mr-1">{{ scope.role.name }}</span>
+                  <app-status-badge tone="neutral">{{ scope.role.name }}</app-status-badge>
                 }
               } @else {
                 <span class="text-gray-400 italic text-xs">Sin roles</span>
               }
             </td>
-            <td class="px-6 py-4">
+            <td class="px-4 py-4">
               @if (user.role_scopes?.length) {
                 @for (scope of user.role_scopes; track $index) {
                   <span class="block text-xs text-gray-600">{{ scope.branch?.name || 'Alcance global' }}</span>
@@ -108,20 +123,13 @@
                 <span class="text-xs italic text-gray-400">Sin sucursal</span>
               }
             </td>
-            <td class="px-6 py-4">
-              <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                    [class.bg-green-100]="user.state === 'ACTIVE'" [class.text-green-800]="user.state === 'ACTIVE'"
-                    [class.bg-yellow-100]="user.state === 'INVITED' || user.state === 'PENDING_ACTIVATION'" [class.text-yellow-800]="user.state === 'INVITED' || user.state === 'PENDING_ACTIVATION'"
-                    [class.bg-red-100]="user.state === 'BLOCKED' || user.state === 'DISABLED'" [class.text-red-800]="user.state === 'BLOCKED' || user.state === 'DISABLED'">
-                {{ stateLabel(user.state) }}
-              </span>
+            <td class="px-4 py-4">
+              <app-status-badge [tone]="stateTone(user.state)">{{ stateLabel(user.state) }}</app-status-badge>
             </td>
-            <td class="px-6 py-4 flex items-center gap-3">
+            <td class="px-4 py-4">
+              <div class="flex flex-col items-start gap-2">
               <a [routerLink]="['/usuarios', user.id]" class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
+                <lucide-icon name="eye" class="h-4 w-4"></lucide-icon>
                 Ver
               </a>
               @if (canManageUserState() && user.state !== 'DISABLED') {
@@ -135,39 +143,30 @@
                   }
                 </button>
               }
+              </div>
             </td>
-          </tr>
-        } @empty {
-          <tr>
-            <td colspan="6" class="px-6 py-8 text-center text-gray-500">No se encontraron usuarios.</td>
           </tr>
         }
       </tbody>
     </table>
   </div>
+  }
 } @else if (activeTab() === 'roles') {
-  <div class="bg-white shadow-sm rounded-xl border border-gray-200 p-8 text-center min-h-[40vh] flex flex-col justify-center items-center">
-    <div class="w-16 h-16 bg-[#386641]/10 text-[#386641] rounded-full flex items-center justify-center mb-4">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-      </svg>
-    </div>
-    <h3 class="text-xl font-bold text-gray-800 mb-2">Resumen Organizacional</h3>
-    <p class="text-gray-500 max-w-md mx-auto mb-6">Esta vista proporciona un desglose de los roles y niveles de acceso a través de la organización. Actualmente está en desarrollo.</p>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left w-full max-w-4xl mt-4">
+  <section class="bg-white rounded-xl border border-gray-200 p-6" aria-labelledby="roles-summary-title">
+    <h3 id="roles-summary-title" class="text-lg font-bold text-gray-800">Roles disponibles</h3>
+    <p class="text-sm text-gray-500 max-w-2xl mt-1 mb-5">Consulta los roles activos que pueden asignarse. La autorización efectiva también depende del alcance vigente.</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left w-full">
       @for (role of availableRoles(); track role.id) {
         <div class="p-4 border border-gray-100 rounded-lg bg-gray-50">
           <h4 class="font-bold text-gray-800 mb-1">{{ role.name }}</h4>
-          <div class="flex justify-between items-center text-sm mt-3">
-            <span class="text-gray-500">Nivel de Acceso:</span>
-            <span class="font-medium" [class.text-red-600]="role.is_system" [class.text-[#386641]]="!role.is_system">
-              {{ role.is_system ? 'Sistema' : 'Personalizado' }}
-            </span>
+          <div class="flex justify-between items-center gap-3 text-sm mt-3">
+            <span class="text-gray-500">Tipo</span>
+            <app-status-badge [tone]="role.is_system ? 'info' : 'neutral'">{{ role.is_system ? 'Sistema' : 'Personalizado' }}</app-status-badge>
           </div>
         </div>
       }
     </div>
-  </div>
+  </section>
 }
 </div>
 
@@ -199,7 +198,7 @@
         <select id="invite-role" [ngModel]="inviteRoleId()" (ngModelChange)="onInviteRoleChange($event)"
                 class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
           <option value="" disabled>Selecciona un rol...</option>
-          @for (role of availableRoles(); track role.id) {
+          @for (role of assignableRoles(); track role.id) {
             <option [value]="role.id">{{ role.name }}</option>
           }
         </select>
@@ -241,14 +240,14 @@
 
 <!-- Modal Bloquear Usuario -->
 @if (userToBlock()) {
-  <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 border border-gray-100 transform transition-all">
+  <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="block-user-title">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 border border-gray-100 transform transition-all">
       <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
         <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
-      <h3 class="text-lg font-bold text-gray-900 text-center mb-2">
+      <h3 id="block-user-title" class="text-lg font-bold text-gray-900 text-center mb-2">
         ¿{{ userToBlock()?.state === 'BLOCKED' ? 'Desbloquear' : 'Bloquear' }} a {{ userToBlock()?.name }}?
       </h3>
       <p class="text-sm text-gray-500 text-center mb-6">

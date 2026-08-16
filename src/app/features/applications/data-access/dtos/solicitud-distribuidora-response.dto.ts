@@ -42,12 +42,14 @@ export interface ResumenSolicitanteDTO {
 
 export interface DeclaracionesSeccionDTO {
   personal_data: EstadoDeclaracionDTO;
+  residence: EstadoDeclaracionDTO;
+  partner: EstadoDeclaracionDTO;
+  children: EstadoDeclaracionDTO;
   family_references: EstadoDeclaracionDTO;
-  residences: EstadoDeclaracionDTO;
   vehicles: EstadoDeclaracionDTO;
   assets: EstadoDeclaracionDTO;
   liabilities: EstadoDeclaracionDTO;
-  employments: EstadoDeclaracionDTO;
+  employment: EstadoDeclaracionDTO;
   commercial_credits: EstadoDeclaracionDTO;
 }
 

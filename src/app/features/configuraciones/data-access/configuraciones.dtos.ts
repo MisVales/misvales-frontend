@@ -1,73 +1,89 @@
+export type ConfigurationValue =
+  | string
+  | number
+  | boolean
+  | null
+  | ConfigurationValue[]
+  | { [key: string]: ConfigurationValue };
+
+export interface ApiResource<T> {
+  data: T;
+}
+
 export interface ConfigurationDefinitionDto {
+  id: string;
   key: string;
   name: string;
-  group: string;
-  value_type: 'integer' | 'monetary' | 'percentage' | 'time' | 'timezone' | 'duration' | 'date' | 'time_range' | 'controlled_text';
-  current_value: string | null;
+  description: string | null;
+  value_type:
+    | 'INTEGER'
+    | 'DECIMAL'
+    | 'PERCENTAGE'
+    | 'TIME'
+    | 'TIMEZONE'
+    | 'DURATION'
+    | 'DATE'
+    | 'TIME_RANGE'
+    | 'STRING'
+    | 'JSON';
+  unit: string | null;
+  is_required: boolean;
+  is_sensitive: boolean;
+  status: 'ACTIVE' | 'INACTIVE';
+  lock_version: number;
+  versions?: ConfigurationVersionDto[];
 }
 
 export interface ConfigurationVersionDto {
   id: string;
-  configuration_key: string;
-  value: string; // strictly string
+  configuration_definition_id: string;
+  version: number;
+  value: ConfigurationValue;
   status: 'DRAFT' | 'PUBLISHED' | 'INACTIVE';
-  effective_from: string; // ISO 8601 with timezone
-  effective_until: string | null;
-  reason: string | null;
-  responsible_user: string;
+  effective_from: string;
+  effective_to: string | null;
+  reason: string;
+  created_by: string;
+  published_by: string | null;
   published_at: string | null;
   created_at: string;
   lock_version: number;
 }
 
-export interface ConfigurationListResponseDto {
-  data: ConfigurationDefinitionDto[];
-  meta: {
-    current_page: number;
-    last_page: number;
-    total: number;
-  };
-}
-
-export interface ConfigurationVersionListResponseDto {
-  data: ConfigurationVersionDto[];
-  meta: {
-    current_page: number;
-    last_page: number;
-    total: number;
-  };
-}
-
 export interface CreateConfigurationVersionRequestDto {
-  value: string;
+  value: ConfigurationValue;
   effective_from: string;
   reason: string;
 }
 
-export interface UpdateConfigurationVersionRequestDto {
-  value: string;
-  effective_from: string;
-  reason: string;
-  lock_version: number; // passed in body or header
+export interface UpdateConfigurationVersionRequestDto
+  extends CreateConfigurationVersionRequestDto {
+  lock_version: number;
 }
 
-// Modelos internos (camelCase)
 export interface ConfiguracionDefinicion {
+  id: string;
   clave: string;
   nombre: string;
-  grupo: string;
-  tipoValor: string;
-  valorActual: string | null;
+  descripcion: string | null;
+  tipoValor: ConfigurationDefinitionDto['value_type'];
+  unidad: string | null;
+  requerida: boolean;
+  sensible: boolean;
+  estado: ConfigurationDefinitionDto['status'];
+  versionRegistro: number;
+  valorActual: ConfigurationValue;
 }
 
 export interface ConfiguracionVersion {
   id: string;
-  claveConfiguracion: string;
-  valor: string;
-  estado: 'DRAFT' | 'PUBLISHED' | 'INACTIVE';
+  definicionId: string;
+  numero: number;
+  valor: ConfigurationValue;
+  estado: ConfigurationVersionDto['status'];
   inicioVigencia: string;
   finVigencia: string | null;
-  motivo: string | null;
+  motivo: string;
   usuarioResponsable: string;
   fechaPublicacion: string | null;
   fechaCreacion: string;

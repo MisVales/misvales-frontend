@@ -89,33 +89,51 @@ export function mapAutorizacionToModel(dto: AutorizacionSolicitudResponseDto): A
 }
 
 export function mapSolicitudToModel(dto: SolicitudDistribuidoraResponseDto): SolicitudDistribuidora {
+  const avance = typeof dto.completion === 'number'
+    ? dto.completion
+    : dto.completion?.total_sections
+      ? Math.round((dto.completion.completed_sections / dto.completion.total_sections) * 100)
+      : 0;
+
   return {
     id: dto.id,
     folio: dto.application_number,
     aspirante: {
       nombreCompleto: dto.applicant.full_name || '',
       curpEnmascarado: dto.applicant.curp_masked || '',
-      rfcEnmascarado: '',
+      rfcEnmascarado: String(dto.personal_data?.['rfc_masked'] ?? ''),
     },
     sucursal: { id: dto.branch.id, nombre: dto.branch.name || '' },
     coordinadorId: dto.coordinator.id,
     estado: dto.status as EstadoSolicitudDistribuidora,
     fechaEnvio: dto.submitted_at || '',
-    avance: dto.completion,
+    avance,
     visitas: dto.verification_visits?.map(mapVisitaToModel) || [],
     correcciones: dto.corrections?.map(mapCorreccionToModel) || [],
     evaluaciones: dto.evaluations?.map(mapEvaluacionToModel) || [],
     ultimaEvaluacion: dto.latest_evaluation ? mapEvaluacionToModel(dto.latest_evaluation) : null,
     autorizacion: dto.authorization ? mapAutorizacionToModel(dto.authorization) : null,
     datosDeclarados: {
-      personal_data: dto.personal_data ?? null,
-      family_members: dto.family_members ?? [],
-      residences: dto.residences ?? [],
-      vehicles: dto.vehicles ?? [],
-      assets_liabilities: dto.assets_liabilities ?? [],
-      employments: dto.employments ?? [],
-      commercial_credits: dto.commercial_credits ?? [],
+      personal_data: sanitizarDatosDeclarados(dto.personal_data ?? null),
+      family_members: sanitizarDatosDeclarados(dto.family_members ?? []),
+      residences: sanitizarDatosDeclarados(dto.residences ?? []),
+      vehicles: sanitizarDatosDeclarados(dto.vehicles ?? []),
+      assets_liabilities: sanitizarDatosDeclarados(dto.assets_liabilities ?? []),
+      employments: sanitizarDatosDeclarados(dto.employments ?? []),
+      commercial_credits: sanitizarDatosDeclarados(dto.commercial_credits ?? []),
     },
     lockVersion: dto.lock_version
   };
+}
+
+function sanitizarDatosDeclarados(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sanitizarDatosDeclarados);
+  if (!value || typeof value !== 'object') return value;
+
+  const ocultos = new Set(['curp', 'rfc', 'official_id_number']);
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => !ocultos.has(key))
+      .map(([key, nested]) => [key, sanitizarDatosDeclarados(nested)]),
+  );
 }

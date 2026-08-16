@@ -1,161 +1,56 @@
-<div class="min-h-screen bg-[#F8F9F5] p-6 lg:p-8">
-  <header class="mb-8 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+<section class="space-y-6 p-6 lg:p-8">
+  <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Configuraciones de Sistema</h1>
-      <p class="text-gray-600 mt-1">Administra los parámetros globales y reglas de negocio.</p>
+      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">M03 · Catálogo global</p>
+      <h1 class="text-3xl font-bold text-gray-950">Configuraciones</h1>
+      <p class="mt-1 text-sm text-gray-600">
+        Valores publicados, versionados e inmutables para la operación de MisVales.
+      </p>
     </div>
-    <button class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-      </svg>
-      Nueva Configuración
-    </button>
+    <label class="block sm:w-80">
+      <span class="sr-only">Buscar configuración</span>
+      <input
+        type="search"
+        class="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm"
+        placeholder="Buscar por clave o nombre"
+        (input)="buscar.set($any($event.target).value)"
+      />
+    </label>
   </header>
 
-  <!-- Filtros -->
-  <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-8">
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Grupo</label>
-        <select class="w-full border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]">
-          <option>Todos los grupos</option>
-          <option>Crédito</option>
-          <option>Recargos y Penalizaciones</option>
-          <option>Fechas y Horarios</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Estado</label>
-        <select class="w-full border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]">
-          <option>Todos</option>
-          <option>Vigente</option>
-          <option>Futura</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tipo</label>
-        <select class="w-full border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]">
-          <option>Todos</option>
-          <option>Importe</option>
-          <option>Porcentaje</option>
-          <option>Entero</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">&nbsp;</label>
-        <div class="relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg class="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-          <input type="text" class="w-full pl-10 border-gray-200 rounded-lg text-sm focus:ring-[#1A4D2E] focus:border-[#1A4D2E]" placeholder="Buscar por clave...">
-        </div>
-      </div>
+  @if (store.error()) {
+    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      {{ store.error() }}
     </div>
-    <div class="mt-4 flex">
-      <button class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
-        </svg>
-        Filtrar
-      </button>
-    </div>
-  </section>
+  }
 
-  <!-- Grupo: Crédito -->
-  <section class="mb-10">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="bg-[#E8F3E8] p-1.5 rounded-md text-[#1A4D2E]">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-      </div>
-      <h2 class="text-xl font-bold text-gray-900">Crédito</h2>
+  @if (store.estadoCarga() && !store.definiciones().length) {
+    <div class="rounded-xl border bg-white p-8 text-center text-gray-600">Cargando configuraciones…</div>
+  } @else if (!definicionesFiltradas().length) {
+    <div class="rounded-xl border bg-white p-8 text-center text-gray-600">
+      No hay configuraciones que coincidan con la búsqueda.
     </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      @for (cfg of configuracionesCredito; track cfg.clave) {
-      <article (click)="goToDetail(cfg.clave)" class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <h3 class="font-semibold text-gray-900">{{cfg.nombre}}</h3>
-            <p class="text-xs text-gray-500 font-mono mt-1">{{cfg.clave}}</p>
+  } @else {
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (item of definicionesFiltradas(); track item.id) {
+        <button
+          type="button"
+          class="rounded-xl border border-gray-200 bg-white p-5 text-left shadow-sm transition hover:border-emerald-700 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-700"
+          (click)="abrir(item)"
+        >
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <h2 class="font-semibold text-gray-950">{{ item.nombre }}</h2>
+              <p class="mt-1 font-mono text-xs text-gray-500">{{ item.clave }}</p>
+            </div>
+            <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+              {{ item.tipoValor }}
+            </span>
           </div>
-        </div>
-        <div class="my-4">
-          <span class="text-3xl font-bold text-gray-900">{{cfg.valorActual}}</span>
-        </div>
-        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
-          <div class="flex items-center gap-1">
-            <span class="font-mono">{{cfg.tipoValor === 'monetary' ? '$' : (cfg.tipoValor === 'percentage' ? '%' : '#')}}</span> {{cfg.tipoValor}}
-          </div>
-        </div>
-      </article>
+          <p class="mt-5 text-lg font-bold text-gray-950">{{ mostrarValor(item) }}</p>
+          <p class="mt-2 line-clamp-2 text-sm text-gray-600">{{ item.descripcion }}</p>
+        </button>
       }
     </div>
-  </section>
-
-  <!-- Grupo: Recargos y Penalizaciones -->
-  <section class="mb-10">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="bg-red-50 p-1.5 rounded-md text-red-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-        </svg>
-      </div>
-      <h2 class="text-xl font-bold text-gray-900">Recargos y Penalizaciones</h2>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      @for (cfg of configuracionesRecargos; track cfg.clave) {
-      <article (click)="goToDetail(cfg.clave)" class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <h3 class="font-semibold text-gray-900">{{cfg.nombre}}</h3>
-            <p class="text-xs text-gray-500 font-mono mt-1">{{cfg.clave}}</p>
-          </div>
-        </div>
-        <div class="my-4">
-          <span class="text-3xl font-bold text-gray-900">{{cfg.valorActual}}</span>
-        </div>
-        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
-          <div class="flex items-center gap-1">
-            <span class="font-mono">$</span> {{cfg.tipoValor}}
-          </div>
-        </div>
-      </article>
-      }
-    </div>
-  </section>
-
-  <!-- Grupo: Fechas y Horarios -->
-  <section class="mb-10">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="bg-blue-50 p-1.5 rounded-md text-blue-500">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-      </div>
-      <h2 class="text-xl font-bold text-gray-900">Fechas y Horarios</h2>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      @for (cfg of configuracionesFechas; track cfg.clave) {
-      <article (click)="goToDetail(cfg.clave)" class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer">
-        <div class="flex justify-between items-start mb-2">
-          <div>
-            <h3 class="font-semibold text-gray-900">{{cfg.nombre}}</h3>
-            <p class="text-xs text-gray-500 font-mono mt-1">{{cfg.clave}}</p>
-          </div>
-        </div>
-        <div class="my-4">
-          <span class="text-3xl font-bold text-gray-900">{{cfg.valorActual}}</span>
-        </div>
-        <div class="flex items-center justify-between text-xs text-gray-500 pt-4 border-t border-gray-50">
-          <div class="flex items-center gap-1">
-            <span class="font-mono">{{cfg.tipoValor === 'integer' ? '#' : 'Tt'}}</span> {{cfg.tipoValor}}
-          </div>
-        </div>
-      </article>
-      }
-    </div>
-  </section>
-</div>
+  }
+</section>

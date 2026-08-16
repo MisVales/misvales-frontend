@@ -25,6 +25,9 @@
     <!-- CONTENIDO -->
     @if (!store.cargandoDetalle() && store.detalle()) {
     <div class="space-y-6">
+      <div class="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="note">
+        <strong>Cliente final, no usuario de MisVales.</strong> Este perfil conserva identidad, domicilio y asignación a su distribuidora; no otorga acceso al sistema ni representa una autorización de crédito.
+      </div>
       
       <!-- PERFIL RÁPIDO -->
       <div class="flex items-center gap-4 mb-8">
@@ -165,7 +168,7 @@
       <div class="flex justify-end mt-8">
         <a [routerLink]="['/clientes', store.detalle()!.id, 'cartera']" class="px-6 py-3 bg-[#2D452F] hover:bg-[#1a2f20] text-white text-sm font-bold rounded-lg shadow-md transition-colors flex items-center gap-2">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-          Ver Cartera
+          Ver cartera informativa
         </a>
       </div>
 

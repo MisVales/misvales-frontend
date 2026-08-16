@@ -35,4 +35,20 @@ describe('SolicitudesDistribuidoraApiService', () => {
     request.flush(null, { status: 204, statusText: 'No Content' });
     expect(completed).toBe(true);
   });
+
+  it('actualiza las declaraciones de sección con control de versión', () => {
+    service.actualizarDeclaraciones('a1', { residence: 'COMPLETED' }, 4).subscribe();
+    const request = http.expectOne('/api/v1/distributor-applications/a1');
+    expect(request.request.method).toBe('PATCH');
+    expect(request.request.body).toEqual({
+      section_declarations: { residence: 'COMPLETED' },
+      lock_version: 4,
+    });
+    request.flush({ data: {
+      id: 'a1', application_number: 'SOL-1', status: 'DRAFT', applicant: null,
+      section_declarations: { personal_data: 'PENDING', residence: 'COMPLETED' },
+      completion: { completed_sections: 1, total_sections: 10, can_submit: false },
+      lock_version: 5, submitted_at: null, created_at: '', updated_at: '',
+    } });
+  });
 });

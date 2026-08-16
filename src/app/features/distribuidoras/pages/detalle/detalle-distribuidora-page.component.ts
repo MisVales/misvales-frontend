@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DistribuidorasStore } from '../../state/distribuidoras.store';
@@ -8,6 +8,7 @@ import { AsignarCategoriaDialogComponent } from '../../dialogs/asignar-categoria
 import { ReenviarInvitacionDialogComponent } from '../../dialogs/reenviar-invitacion-dialog/reenviar-invitacion-dialog.component';
 import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 import { firstValueFrom } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-detalle-distribuidora-page',
@@ -27,6 +28,8 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   route = inject(ActivatedRoute);
   router = inject(Router);
   api = inject(DistribuidorasApiService);
+  private readonly alerts = inject(AlertService);
+  readonly activeSection = signal<'informacion' | 'credito' | 'historial'>('informacion');
 
   mostrarModalCategoria = false;
   mostrarModalReenvio = false;
@@ -60,7 +63,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
         this.cerrarModalCategoria();
         this.store.cargarDetalle(d.id); // Recargar para obtener la nueva versión e historial
       } catch (e: any) {
-        alert(e?.error?.message || 'Error al asignar categoría');
+        this.alerts.showAlert(e?.error?.message || 'No fue posible asignar la categoría.', 'error');
       }
     }
   }
@@ -79,17 +82,10 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
       try {
         await firstValueFrom(this.api.reenviarInvitacion(d.id, event));
         this.cerrarModalReenvio();
-        alert('Invitación reenviada con éxito');
+        this.alerts.showAlert('Invitación reenviada.', 'success');
       } catch (e: any) {
-        alert(e?.error?.message || 'Error al reenviar invitación');
+        this.alerts.showAlert(e?.error?.message || 'No fue posible reenviar la invitación.', 'error');
       }
-    }
-  }
-
-  irAActivacion() {
-    const id = this.store.detalle()?.id;
-    if (id) {
-      this.router.navigate(['/distribuidoras', id, 'activacion']);
     }
   }
 

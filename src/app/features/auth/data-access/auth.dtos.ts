@@ -10,7 +10,6 @@ export interface LoginRes {
   mfa_challenge_token?: string;
   expires_in?: number;
   access_token?: string;
-  refresh_token?: string;
   available_mfa?: MfaMethod[];
   next_step?: 'PASSKEY';
   user?: {

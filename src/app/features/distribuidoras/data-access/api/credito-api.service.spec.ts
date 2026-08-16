@@ -54,6 +54,7 @@ describe('CreditoApiService', () => {
     service.decidir('r1', 'APPROVE_LOWER', 'Importe prudente', 2, '7000.0000').subscribe();
     const request = http.expectOne('/api/v1/credit-increase-requests/r1/manager-decision');
     expect(request.request.body).toEqual({ decision: 'APPROVE_LOWER', reason: 'Importe prudente', lock_version: 2, authorized_amount: '7000.0000' });
+    expect(request.request.headers.get('Idempotency-Key')).toMatch(/^[0-9a-f-]{36}$/i);
     request.flush({ data: { id: 'r1', lock_version: 3 } });
   });
 });

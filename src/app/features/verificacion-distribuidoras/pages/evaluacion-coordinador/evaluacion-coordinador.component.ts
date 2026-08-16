@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, signal }
 import { ActivatedRoute, Router } from '@angular/router';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-evaluacion-coordinador',
@@ -15,6 +17,8 @@ export class EvaluacionCoordinadorComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(VerificacionDistribuidorasFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly alerts = inject(AlertService);
+  private readonly confirmation = inject(ConfirmationService);
 
   dictamen = signal<'COMPLIES' | 'DOES_NOT_COMPLY' | null>(null);
   motivo = signal<string>('');
@@ -35,12 +39,12 @@ export class EvaluacionCoordinadorComponent implements OnInit, OnDestroy {
     if (!solicitud) return;
 
     if (!this.dictamen()) {
-      alert('Debes seleccionar un dictamen.');
+      this.alerts.showAlert('Selecciona un dictamen de coordinación.', 'warning');
       return;
     }
 
     if (!this.motivo()) {
-      alert('Debes proporcionar un motivo para tu dictamen.');
+      this.alerts.showAlert('El motivo del dictamen es obligatorio.', 'warning');
       return;
     }
     
@@ -48,12 +52,12 @@ export class EvaluacionCoordinadorComponent implements OnInit, OnDestroy {
     if (this.dictamen() === 'COMPLIES') {
       const isUnfavorable = solicitud.visitas.some(v => v.resultadoFisico === 'UNFAVORABLE');
       if (isUnfavorable) {
-        alert('No puedes dictaminar como "Cumple" si la visita física fue desfavorable.');
+        this.alerts.showAlert('No puedes dictaminar “Cumple” cuando la visita física fue desfavorable.', 'error');
         return;
       }
     }
 
-    if (!confirm('¿Estás seguro de enviar esta evaluación? Esta decisión es definitiva y pasará a autorización gerencial si es favorable.')) {
+    if (!await this.confirmation.confirm({ title: 'Enviar evaluación', message: 'La evaluación quedará registrada. Si es favorable, el expediente avanzará a autorización gerencial.', confirmLabel: 'Enviar evaluación' })) {
       return;
     }
 
@@ -66,7 +70,7 @@ export class EvaluacionCoordinadorComponent implements OnInit, OnDestroy {
 
     const success = await this.facade.evaluarSolicitud(solicitud.id, req);
     if (success) {
-      alert('Evaluación registrada con éxito.');
+      this.alerts.showAlert('Evaluación de coordinación registrada.', 'success');
       this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
     }
   }

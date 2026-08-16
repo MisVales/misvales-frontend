@@ -76,6 +76,22 @@ export const SolicitudDetalleStore = signalStore(
         }
       },
 
+      async actualizarDeclaraciones(declaraciones: Record<string, string>) {
+        const id = store.detalle()?.id;
+        const version = store.detalle()?.versionBloqueo;
+        if (!id || version === undefined) return;
+
+        patchState(store, { guardandoSeccion: true, error: null, errorConcurrencia: false });
+        try {
+          const detalle = await firstValueFrom(service.actualizarDeclaraciones(id, declaraciones, version));
+          patchState(store, { detalle, guardandoSeccion: false });
+        } catch (err: any) {
+          patchState(store, { guardandoSeccion: false });
+          manejarErrorConcurrencia(err, 'Error al actualizar el estado de la sección');
+          throw err;
+        }
+      },
+
       async enviarARevision() {
         const id = store.detalle()?.id;
         const version = store.detalle()?.versionBloqueo;
