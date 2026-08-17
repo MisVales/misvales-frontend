@@ -4,13 +4,26 @@
       <h1 class="text-2xl font-bold text-gray-900">Invitaciones</h1>
       <p class="text-gray-500 mt-1">Administra las invitaciones enviadas a nuevos usuarios.</p>
     </div>
-    <button
-      (click)="openModal()"
-      class="flex items-center gap-2 px-4 py-2 bg-[#386641] hover:bg-[#2c5234] text-white text-sm font-medium rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#386641]"
-    >
-      <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
-      Nueva Invitación
-    </button>
+    <div class="flex items-center gap-4">
+      <select 
+        (change)="onFilterChange($event)"
+        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-[#386641] focus:border-[#386641] outline-none bg-white">
+        <option value="">Todas</option>
+        <option value="ACTIVE">Activas</option>
+        <option value="PREPARED">Preparadas</option>
+        <option value="CONSUMED">Consumidas</option>
+        <option value="EXPIRED">Expiradas</option>
+        <option value="REVOKED">Revocadas</option>
+      </select>
+
+      <button
+        (click)="openModal()"
+        class="flex items-center gap-2 px-4 py-2 bg-[#386641] hover:bg-[#2c5234] text-white text-sm font-medium rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#386641]"
+      >
+        <lucide-icon name="plus" class="w-4 h-4"></lucide-icon>
+        Nueva Invitación
+      </button>
+    </div>
   </div>
 
   @if (success()) {
@@ -39,16 +52,24 @@
           >
             <tr>
               <th class="px-6 py-4">Usuario</th>
-              <th class="px-6 py-4">Email</th>
+              <th class="px-6 py-4">Rol / Sucursal</th>
               <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4">Invitado Por</th>
               <th class="px-6 py-4">Vence</th>
+              <th class="px-6 py-4">Acciones</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100 text-gray-700">
             @for (inv of invitations(); track inv.id) {
               <tr class="hover:bg-gray-50 transition-colors">
-                <td class="px-6 py-4 font-medium">{{ inv.user_name }}</td>
-                <td class="px-6 py-4 text-gray-500">{{ inv.user_email }}</td>
+                <td class="px-6 py-4">
+                  <div class="font-medium">{{ inv.user_name }}</div>
+                  <div class="text-gray-500 text-xs">{{ inv.user_email }}</div>
+                </td>
+                <td class="px-6 py-4">
+                  <div class="font-medium">{{ inv['role_name'] || 'Sin rol' }}</div>
+                  <div class="text-gray-500 text-xs">{{ inv['branch_name'] || 'N/A' }}</div>
+                </td>
                 <td class="px-6 py-4">
                   @if (inv.state === 'ACTIVE') {
                     <span
@@ -87,11 +108,22 @@
                     </span>
                   }
                 </td>
+                <td class="px-6 py-4 text-gray-500">{{ inv['inviter_name'] || 'Sistema' }}</td>
                 <td class="px-6 py-4 text-gray-500">{{ inv.expires_at | date: 'short' }}</td>
+                <td class="px-6 py-4">
+                  @if (inv.state === 'ACTIVE' || inv.state === 'PREPARED') {
+                    <button
+                      (click)="openRevokeModal(inv)"
+                      class="text-red-600 hover:text-red-800 text-sm font-medium transition-colors"
+                    >
+                      Revocar
+                    </button>
+                  }
+                </td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="4" class="px-6 py-12 text-center text-gray-500 italic">
+                <td colspan="6" class="px-6 py-12 text-center text-gray-500 italic">
                   No hay invitaciones registradas.
                 </td>
               </tr>
@@ -129,6 +161,18 @@
     }
   </div>
 </div>
+
+<app-reason-action-dialog
+  [open]="isRevokeModalOpen()"
+  title="Revocar Invitación"
+  message="¿Está seguro que desea revocar esta invitación? El usuario ya no podrá utilizar este enlace para activar su cuenta."
+  confirmLabel="Revocar"
+  tone="danger"
+  [(reason)]="revokeReason"
+  [busy]="isSubmitting()"
+  (confirm)="confirmRevoke()"
+  (cancel)="closeRevokeModal()"
+></app-reason-action-dialog>
 
 <!-- Modal Nueva Invitación -->
 @if (isModalOpen()) {
