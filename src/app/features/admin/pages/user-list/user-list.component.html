@@ -207,13 +207,22 @@
       @if (inviteRequiresBranch()) {
         <div class="mb-6">
           <label for="invite-branch" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Sucursal</label>
-          <select id="invite-branch" [ngModel]="inviteBranchId()" (ngModelChange)="inviteBranchId.set($event)"
-                  class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
-            <option value="" disabled>Selecciona una sucursal...</option>
-            @for (branch of availableBranches(); track branch.id) {
-              <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
-            }
-          </select>
+          
+          @if (selectedInviteRole()?.code === 'branch_manager' && isFetchingEligibleBranches()) {
+            <div class="text-sm text-gray-500 py-2">Buscando sucursales elegibles...</div>
+          } @else if (selectedInviteRole()?.code === 'branch_manager' && currentInviteBranches().length === 0) {
+            <div class="text-sm font-medium text-red-600 py-2 bg-red-50 px-3 rounded border border-red-100">
+              No hay sucursales disponibles para asignar un gerente.
+            </div>
+          } @else {
+            <select id="invite-branch" [ngModel]="inviteBranchId()" (ngModelChange)="inviteBranchId.set($event)"
+                    class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
+              <option value="" disabled>Selecciona una sucursal...</option>
+              @for (branch of currentInviteBranches(); track branch.id) {
+                <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
+              }
+            </select>
+          }
           @if (inviteValidationErrors()['branch_id']; as errors) { <p class="mt-1 text-xs text-red-600">{{ errors[0] }}</p> }
         </div>
       }

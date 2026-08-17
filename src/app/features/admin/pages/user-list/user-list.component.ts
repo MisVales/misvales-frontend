@@ -151,9 +151,36 @@ export class UserListComponent implements OnInit, OnDestroy {
     void this.loadUsers();
   }
 
-  onInviteRoleChange(roleId: string): void {
+  readonly isFetchingEligibleBranches = signal(false);
+  readonly eligibleBranchesForManager = signal<Branch[]>([]);
+
+  readonly currentInviteBranches = computed(() => {
+     const role = this.selectedInviteRole();
+     if (role?.code === 'branch_manager') {
+         return this.eligibleBranchesForManager();
+     }
+     return this.availableBranches();
+  });
+
+  async onInviteRoleChange(roleId: string): Promise<void> {
     this.inviteRoleId.set(roleId);
     this.inviteBranchId.set('');
+    
+    const role = this.selectedInviteRole();
+    if (role?.code === 'branch_manager') {
+        this.isFetchingEligibleBranches.set(true);
+        try {
+            const response = await firstValueFrom(this.organizationApi.getBranches({ 
+                per_page: 100,
+                eligible_for_manager: true
+            } as any));
+            this.eligibleBranchesForManager.set(response.data);
+        } catch (error: unknown) {
+            this.inviteError.set('No se pudieron cargar las sucursales elegibles.');
+        } finally {
+            this.isFetchingEligibleBranches.set(false);
+        }
+    }
   }
 
   closeInviteModal(): void {
