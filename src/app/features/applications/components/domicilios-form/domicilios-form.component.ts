@@ -8,11 +8,12 @@ import { firstValueFrom } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
+import { AddressFormComponent } from '../../../../shared/components/address-form/address-form';
 
 @Component({
   selector: 'app-domicilios-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AddressFormComponent],
   templateUrl: './domicilios-form.component.html',
   styleUrls: ['./domicilios-form.component.css']
 })
@@ -101,6 +102,37 @@ export class DomiciliosFormComponent implements OnInit {
     }
     this.domiciliosGroups[index].get('is_current')?.setValue(true);
     this.guardarDomicilioDirecto(this.domiciliosGroups[index]);
+  }
+
+  mapToAddressResult(val: any) {
+    if (!val || !val.street) return undefined;
+    return {
+      full_address: '', // No importa para initialAddress
+      street: val.street,
+      exterior_number: val.exterior_number,
+      interior_number: val.interior_number,
+      neighborhood: val.neighborhood,
+      zip_code: val.postal_code,
+      municipality: val.municipality,
+      city: val.city,
+      state: val.state,
+      country: val.country
+    };
+  }
+
+  onAddressChange(result: any) {
+    if (!this.formularioActual) return;
+    this.formularioActual.patchValue({
+      street: result.street,
+      exterior_number: result.exterior_number,
+      interior_number: result.interior_number,
+      neighborhood: result.neighborhood,
+      postal_code: result.zip_code,
+      municipality: result.municipality,
+      city: result.city,
+      state: result.state,
+      country: result.country
+    });
   }
 
   async guardarFormulario() {
