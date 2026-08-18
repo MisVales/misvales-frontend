@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+﻿import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpEvent, HttpEventType } from '@angular/common/http';
 import { Observable, filter, map } from 'rxjs';
 import { API_CONFIG } from '@core/api/api.config';
@@ -189,3 +189,4 @@ export class VerificacionDistribuidorasApiService {
     }).pipe(map(() => undefined));
   }
 }
+

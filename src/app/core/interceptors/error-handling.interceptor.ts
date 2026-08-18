@@ -1,4 +1,4 @@
-import {
+﻿import {
   HttpErrorResponse,
   HttpEvent,
   HttpInterceptorFn,
@@ -14,6 +14,7 @@ import { AuthTokenStore } from '../session/auth-token.store';
 import { SessionExpiredService } from '../session/session-expired.service';
 import { SessionRefreshService } from '../session/session-refresh.service';
 import { SessionStore } from '../session/session.store';
+import { OfflineSyncService } from '../services/offline-sync.service';
 
 const PRODUCTION_SERVER_ERROR_MESSAGE = 'Ocurrió un error interno. Intenta nuevamente más tarde.';
 const SAFE_REQUEST_ID = /^[A-Za-z0-9-]{8,100}$/;
@@ -66,6 +67,7 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
   const sessionExpired = inject(SessionExpiredService);
   const sessionRefresh = inject(SessionRefreshService);
   const router = inject(Router);
+  const offlineSync = inject(OfflineSyncService);
 
   const endExpiredSession = (error: HttpErrorResponse): Observable<never> => {
     tokenStore.clear();
@@ -190,3 +192,4 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
     catchError((error: HttpErrorResponse) => handleError(error, req, true)),
   );
 };
+

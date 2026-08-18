@@ -7,6 +7,7 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { ServiceWorkerModule } from '@angular/service-worker';
 import { provideHttpClient, withFetch, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
 import { routes } from './app.routes';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
@@ -137,6 +138,7 @@ export class GlobalErrorHandler implements ErrorHandler {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
+    importProvidersFrom(ServiceWorkerModule.register('ngsw-worker.js', { enabled: !isDevMode(), registrationStrategy: 'registerWhenStable:30000' })),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withFetch(),
