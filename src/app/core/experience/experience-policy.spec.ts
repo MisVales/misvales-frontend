@@ -6,7 +6,7 @@ import { ROLE_EXPERIENCE_MAP } from './role-experience.resolver';
 
 const ROLES = Object.keys(ROLE_EXPERIENCE_MAP) as RoleCode[];
 const MATRIX = ROLES.flatMap((role) =>
-  EXPERIENCE_TYPES.map((device) => [role, device, ROLE_EXPERIENCE_MAP[role] === device] as const),
+  EXPERIENCE_TYPES.map((device) => [role, device] as const),
 );
 
 function context(detectedClass: DeviceClass): DeviceContext {
@@ -32,29 +32,25 @@ function context(detectedClass: DeviceClass): DeviceContext {
 
 describe('evaluateExperiencePolicy', () => {
   it.each(MATRIX)(
-    'evaluates %s on %s according to the 21-case matrix',
-    (role, device, allowed) => {
+    'loads the role experience for %s on %s without a device block',
+    (role, device) => {
       const decision = evaluateExperiencePolicy([role], context(device));
-      expect(decision.kind === 'allowed').toBe(allowed);
+      expect(decision).toMatchObject({
+        kind: 'allowed',
+        requiredExperience: ROLE_EXPERIENCE_MAP[role],
+      });
     },
   );
 
-  it('blocks an otherwise matching class when its viewport is not viable', () => {
+  it('keeps the role experience when its viewport is not viable', () => {
     const device = context('desktop');
     device.viewportViability.desktop = false;
 
-    expect(evaluateExperiencePolicy(['admin'], device)).toMatchObject({
-      kind: 'unsupported',
-      reason: 'viewport_incompatible',
-      requiredExperience: 'desktop' satisfies ExperienceType,
-    });
+    expect(evaluateExperiencePolicy(['admin'], device)).toMatchObject({ kind: 'allowed', requiredExperience: 'desktop' satisfies ExperienceType });
   });
 
   it('keeps unknown devices separate from role-context denial', () => {
-    expect(evaluateExperiencePolicy(['admin'], context('unknown'))).toMatchObject({
-      kind: 'unsupported',
-      reason: 'unknown_device',
-    });
+    expect(evaluateExperiencePolicy(['admin'], context('unknown'))).toMatchObject({ kind: 'allowed', requiredExperience: 'desktop' });
     expect(evaluateExperiencePolicy(['admin', 'coordinator'], context('desktop'))).toEqual({
       kind: 'denied',
       reason: 'mixed_experiences',

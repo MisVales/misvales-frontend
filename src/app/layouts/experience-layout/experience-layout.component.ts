@@ -30,7 +30,7 @@ export class ExperienceLayoutComponent {
     effect(() => {
       const decision = this.policy.decision();
       if (decision.kind === 'allowed') return;
-      const target = decision.kind === 'denied' ? '/acceso-denegado' : '/dispositivo-no-compatible';
+      const target = '/acceso-denegado';
       if (this.router.url !== target) void this.router.navigateByUrl(target, { replaceUrl: true });
     });
   }
