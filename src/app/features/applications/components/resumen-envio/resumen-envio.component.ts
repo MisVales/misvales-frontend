@@ -63,7 +63,7 @@ export class ResumenEnvioComponent {
     try {
       await this.store.enviarARevision();
       this.alerts.showAlert('Solicitud enviada a revisión correctamente.', 'success');
-      await this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora/revision']);
+      await this.router.navigate(['/solicitudes-distribuidoras']);
     } catch (e: any) {
       if (e?.status === 409) {
         this.alerts.showAlert('El expediente fue modificado por otra persona. Se requiere recargar antes de continuar.', 'warning');

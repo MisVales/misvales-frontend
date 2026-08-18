@@ -84,36 +84,36 @@
       <div class="flex-1">
         <fieldset [disabled]="!isEditable()" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[500px] flex flex-col disabled:opacity-80">
           
-          <!-- CONTENIDO DINÁMICO -->
-          <div *ngIf="pasoActual === 'datos-personales'" class="flex-1 h-full">
+          <!-- CONTENIDO DINÁMICO (PERSISTENTE ENTRE PESTAÑAS) -->
+          <div [hidden]="pasoActual !== 'datos-personales'" [class.hidden]="pasoActual !== 'datos-personales'" class="flex-1 h-full">
             <app-datos-personales-form></app-datos-personales-form>
           </div>
 
-          <div *ngIf="pasoActual === 'familiares'" class="flex-1 h-full">
+          <div [hidden]="pasoActual !== 'familiares'" [class.hidden]="pasoActual !== 'familiares'" class="flex-1 h-full">
             <app-familiares-form></app-familiares-form>
           </div>
 
-          <div *ngIf="pasoActual === 'domicilios'" class="flex-1 h-full">
+          <div [hidden]="pasoActual !== 'domicilios'" [class.hidden]="pasoActual !== 'domicilios'" class="flex-1 h-full">
             <app-domicilios-form></app-domicilios-form>
           </div>
 
-          <div *ngIf="pasoActual === 'vehiculos'" class="flex-1 h-full">
+          <div [hidden]="pasoActual !== 'vehiculos'" [class.hidden]="pasoActual !== 'vehiculos'" class="flex-1 h-full">
             <app-vehiculos-form></app-vehiculos-form>
           </div>
 
-          <div *ngIf="pasoActual === 'patrimonio'" class="flex-1 h-full">
+          <div [hidden]="pasoActual !== 'patrimonio'" [class.hidden]="pasoActual !== 'patrimonio'" class="flex-1 h-full">
             <app-patrimonio-form></app-patrimonio-form>
           </div>
 
-          <div *ngIf="pasoActual === 'empleos'" class="flex-1 h-full">
+          <div [hidden]="pasoActual !== 'empleos'" [class.hidden]="pasoActual !== 'empleos'" class="flex-1 h-full">
             <app-empleos-form></app-empleos-form>
           </div>
 
-          <div *ngIf="pasoActual === 'creditos'" class="flex-1 h-full">
+          <div [hidden]="pasoActual !== 'creditos'" [class.hidden]="pasoActual !== 'creditos'" class="flex-1 h-full">
             <app-creditos-comerciales-form></app-creditos-comerciales-form>
           </div>
 
-          <div *ngIf="pasoActual === 'resumen'" class="flex-1 h-full">
+          <div [hidden]="pasoActual !== 'resumen'" [class.hidden]="pasoActual !== 'resumen'" class="flex-1 h-full">
             <app-resumen-envio></app-resumen-envio>
           </div>
 

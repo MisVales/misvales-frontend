@@ -84,6 +84,8 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     });
   }
 
+  private isSelectingSuggestion = false;
+
   private setupListeners() {
     // State change -> load municipalities
     this.form.get('state')?.valueChanges.pipe(
@@ -158,10 +160,10 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     // Street Autocomplete
     this.form.get('street')?.valueChanges.pipe(
       takeUntil(this.destroy$),
-      debounceTime(800), // Esperar a que el usuario deje de escribir
+      debounceTime(600),
       distinctUntilChanged(),
       switchMap(text => {
-        if (!text || text.length < 3) {
+        if (!text || text.length < 3 || this.isSelectingSuggestion) {
           this.streetSuggestions = [];
           return of(null);
         }
@@ -174,8 +176,14 @@ export class AddressFormComponent implements OnInit, OnDestroy {
         return this.addressApi.autocomplete(text, city, state, cp);
       })
     ).subscribe(res => {
+      if (this.isSelectingSuggestion) {
+        this.streetSuggestions = [];
+        return;
+      }
       if (res && res.features) {
         this.streetSuggestions = res.features;
+      } else {
+        this.streetSuggestions = [];
       }
     });
 
@@ -188,6 +196,12 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     });
   }
 
+  onStreetBlur() {
+    setTimeout(() => {
+      this.streetSuggestions = [];
+    }, 250);
+  }
+
   private resetLowerFields() {
     this.colonies = [];
     this.form.get('colony')?.setValue(null);
@@ -198,6 +212,8 @@ export class AddressFormComponent implements OnInit, OnDestroy {
   }
 
   selectSuggestion(feature: any) {
+    this.isSelectingSuggestion = true;
+    this.streetSuggestions = [];
     const props = feature.properties;
     const streetName = props.street || props.name || props.formatted;
     const postcode = props.postcode;
@@ -210,7 +226,10 @@ export class AddressFormComponent implements OnInit, OnDestroy {
       this.form.patchValue({ zipCode: postcode });
     }
 
-    this.streetSuggestions = [];
+    setTimeout(() => {
+      this.isSelectingSuggestion = false;
+      this.streetSuggestions = [];
+    }, 400);
   }
 
   public async geocode(): Promise<{ lat: number, lng: number } | null> {

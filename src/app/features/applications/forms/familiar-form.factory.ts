@@ -10,7 +10,6 @@ export class FamiliarFormFactory {
       first_last_name: ['', [Validators.required, Validators.maxLength(100)]],
       second_last_name: ['', [Validators.maxLength(100)]],
       birth_date: ['', [Validators.required, adultBirthDateValidator]],
-      declared_age: [null, [Validators.min(0), Validators.max(120)]],
       school_name: ['', [Validators.maxLength(150)]],
       is_family_reference: [false],
       details_payload: [null]

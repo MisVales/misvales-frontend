@@ -123,6 +123,10 @@ export class InputErrorComponent {
       errors.push(custom['pastDate'] ?? `La fecha no puede ser en el pasado.`);
     }
 
+    if (errs['mustBeAdult']) {
+      errors.push(custom['mustBeAdult'] ?? `Debes tener al menos 18 años para realizar la solicitud.`);
+    }
+
     // Direct string errors or custom error object messages
     for (const key in errs) {
       if (
@@ -153,7 +157,8 @@ export class InputErrorComponent {
           'dateRangeInvalid',
           'rangoInvalido',
           'futureDate',
-          'pastDate'
+          'pastDate',
+          'mustBeAdult'
         ].includes(key)
       ) {
         continue;

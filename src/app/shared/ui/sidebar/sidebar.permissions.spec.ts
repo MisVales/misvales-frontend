@@ -86,6 +86,6 @@ describe('sidebar permission filtering', () => {
     );
 
     expect(collectIds(sinCapacidad)).not.toContain('verifications');
-    expect(collectIds(conCapacidad)).toContain('verifications');
+    expect(collectIds(conCapacidad)).toContain('verifier-visits');
   });
 });

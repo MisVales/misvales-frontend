@@ -35,6 +35,11 @@ export class DatosPersonalesFormComponent implements OnInit {
   
   autosaveStatus: AutosaveStatus = 'idle';
   readonly countries = ISO_COUNTRIES;
+  readonly maxAdultDate: string = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 18);
+    return d.toISOString().split('T')[0];
+  })();
 
   saveFn = (rawValue: any): Observable<any> => {
     const payload: any = { ...rawValue };
@@ -62,7 +67,7 @@ export class DatosPersonalesFormComponent implements OnInit {
     // Escuchar los cambios en detalle() para reaccionar asíncronamente
     effect(() => {
       const detalle = this.store.detalle();
-      if (detalle && detalle.datosPersonales) {
+      if (detalle && detalle.datosPersonales && !this.form.dirty) {
         this.cargarDatosActuales(detalle.datosPersonales);
         this.cdr.markForCheck();
       }

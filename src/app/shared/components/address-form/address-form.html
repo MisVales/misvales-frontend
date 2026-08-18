@@ -51,6 +51,8 @@
     <div class="md:col-span-8 relative">
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Calle *</label>
       <input type="text" formControlName="street" placeholder="Ej. Av. Morelos" autocomplete="off"
+        (blur)="onStreetBlur()"
+        (keydown.escape)="streetSuggestions = []"
         class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
       <app-input-error [control]="form.get('street')" label="La calle"></app-input-error>
       

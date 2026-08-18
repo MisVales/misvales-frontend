@@ -115,7 +115,8 @@
         {{ autosaveStatus === 'saving' ? 'Guardando…' : autosaveStatus === 'saved' ? 'Guardado automáticamente' : autosaveStatus === 'error' ? 'No se pudo guardar' : '' }}
       </span>
       <div class="flex gap-3">
-      <button type="button" (click)="cancelarFormulario()" class="px-5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
+        <button type="button" (click)="cancelarFormulario()" class="px-5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
+        <button type="button" (click)="guardarYFinalizar()" [disabled]="formularioActual.invalid || autosaveStatus === 'saving'" class="px-5 py-2 bg-[#1A4D2E] hover:bg-[#133c23] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">Guardar Domicilio</button>
       </div>
     </div>
   </div>

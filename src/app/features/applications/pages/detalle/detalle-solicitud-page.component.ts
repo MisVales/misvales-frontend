@@ -64,19 +64,30 @@ export class DetalleSolicitudPageComponent implements OnInit {
   }
 
   getPasoCompletado(pasoId: StepName): boolean {
-    const decl = this.store.detalle()?.declaracionesSeccion;
+    const detalle = this.store.detalle();
+    const decl = detalle?.declaracionesSeccion;
     if (!decl) return false;
-    const map: Record<StepName, string | undefined> = {
-      'datos-personales': decl.datosPersonales,
-      'familiares': decl.referenciasFamiliares,
-      'domicilios': decl.domicilios,
-      'vehiculos': decl.vehiculos,
-      'patrimonio': decl.bienes,
-      'empleos': decl.empleos,
-      'creditos': decl.creditosComerciales,
-      'resumen': undefined,
-    };
-    return map[pasoId] === 'COMPLETED';
+
+    switch (pasoId) {
+      case 'datos-personales':
+        return decl.datosPersonales === 'COMPLETED';
+      case 'familiares':
+        return decl.referenciasFamiliares === 'COMPLETED' || decl.hijos === 'COMPLETED' || decl.pareja === 'COMPLETED';
+      case 'domicilios':
+        return decl.domicilios === 'COMPLETED';
+      case 'vehiculos':
+        return decl.vehiculos === 'COMPLETED';
+      case 'patrimonio':
+        return decl.bienes === 'COMPLETED' || decl.pasivos === 'COMPLETED';
+      case 'empleos':
+        return decl.empleos === 'COMPLETED';
+      case 'creditos':
+        return decl.creditosComerciales === 'COMPLETED';
+      case 'resumen':
+        return detalle?.estado !== 'DRAFT';
+      default:
+        return false;
+    }
   }
 
   getProgresoAncho(): string {

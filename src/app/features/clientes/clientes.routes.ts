@@ -27,6 +27,11 @@ export const CLIENTES_ROUTES: Routes = [
     loadComponent: () => import('./pages/nuevo/nuevo-cliente-page.component').then(m => m.NuevoClientePageComponent)
   },
   {
+    path: 'cartera',
+    canActivate: [permissionGuard('clients.view_portfolio'), distributorOnlyGuard],
+    loadComponent: () => import('./pages/cartera/cartera-cliente-page.component').then(m => m.CarteraClientePageComponent)
+  },
+  {
     path: ':id',
     canActivate: [permissionGuard('clients.view'), distributorOnlyGuard],
     loadComponent: () => import('./pages/detalle/detalle-cliente-page.component').then(m => m.DetalleClientePageComponent)

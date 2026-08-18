@@ -142,6 +142,24 @@ export class DomiciliosFormComponent implements OnInit {
     });
   }
 
+  async guardarYFinalizar() {
+    if (!this.formularioActual) return;
+    if (this.formularioActual.invalid) {
+      this.formularioActual.markAllAsTouched();
+      return;
+    }
+    try {
+      await this.guardarDomicilioDirecto(this.formularioActual);
+      this.alerts.showAlert('Domicilio guardado correctamente.', 'success');
+      await this.cargarDomicilios();
+      this.mostrandoFormulario = false;
+      this.formularioActual = null;
+      this.indiceEdicion = null;
+    } catch (e) {
+      // Error handled by guardarDomicilioDirecto
+    }
+  }
+
   async guardarDomicilioDirecto(formGroup: FormGroup): Promise<void> {
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
