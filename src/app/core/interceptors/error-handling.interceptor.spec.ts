@@ -2,25 +2,24 @@ import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { errorHandlingInterceptor, isConcurrencyConflict, sanitizeServerError } from './error-handling.interceptor';
-import { Router } from '@angular/router';
 import { SessionStore } from '../session/session.store';
 import { AlertService } from '../../shared/services/alert.service';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthTokenStore } from '../session/auth-token.store';
+import { SessionExpiredService } from '../session/session-expired.service';
 import { SessionRefreshService } from '../session/session-refresh.service';
-import { throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 describe('errorHandlingInterceptor', () => {
   let http: HttpClient;
   let httpTestingController: HttpTestingController;
-  let routerSpy: any;
   let sessionStoreSpy: any;
   let alertServiceSpy: any;
   let tokenStoreSpy: any;
   let sessionRefreshSpy: any;
+  let sessionExpired: SessionExpiredService;
 
   beforeEach(() => {
-    routerSpy = { navigate: vi.fn() };
     sessionStoreSpy = { clearSession: vi.fn() };
     alertServiceSpy = { showAlert: vi.fn() };
     tokenStoreSpy = { accessToken: vi.fn(() => null), clear: vi.fn() };
@@ -30,7 +29,6 @@ describe('errorHandlingInterceptor', () => {
       providers: [
         provideHttpClient(withInterceptors([errorHandlingInterceptor])),
         provideHttpClientTesting(),
-        { provide: Router, useValue: routerSpy },
         { provide: SessionStore, useValue: sessionStoreSpy },
         { provide: AlertService, useValue: alertServiceSpy },
         { provide: AuthTokenStore, useValue: tokenStoreSpy },
@@ -40,13 +38,14 @@ describe('errorHandlingInterceptor', () => {
 
     http = TestBed.inject(HttpClient);
     httpTestingController = TestBed.inject(HttpTestingController);
+    sessionExpired = TestBed.inject(SessionExpiredService);
   });
 
   afterEach(() => {
     httpTestingController.verify();
   });
 
-  it('should redirect to login on 401 error', () => {
+  it('opens the blocking session state when refresh fails after a 401', () => {
     http.get('/test').subscribe({
       error: (error) => expect(error).toBeTruthy()
     });
@@ -55,7 +54,8 @@ describe('errorHandlingInterceptor', () => {
     req.flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
 
     expect(sessionStoreSpy.clearSession).toHaveBeenCalled();
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
+    expect(tokenStoreSpy.clear).toHaveBeenCalled();
+    expect(sessionExpired.isOpen()).toBe(true);
   });
 
   it('should preserve the session and report denied access on 403 error', () => {
@@ -67,7 +67,7 @@ describe('errorHandlingInterceptor', () => {
     req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
 
     expect(sessionStoreSpy.clearSession).not.toHaveBeenCalled();
-    expect(routerSpy.navigate).not.toHaveBeenCalled();
+    expect(sessionExpired.isOpen()).toBe(false);
     expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
       'No tiene permiso para realizar esta acción.',
       'error',
@@ -75,7 +75,7 @@ describe('errorHandlingInterceptor', () => {
     );
   });
 
-  it('should redirect to login on 419 error', () => {
+  it('opens the blocking session state on a 419 response', () => {
     http.get('/test').subscribe({
       error: (error) => expect(error).toBeTruthy()
     });
@@ -83,7 +83,68 @@ describe('errorHandlingInterceptor', () => {
     const req = httpTestingController.expectOne('/test');
     req.flush('Page Expired', { status: 419, statusText: 'Page Expired' });
 
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login']);
+    expect(sessionStoreSpy.clearSession).toHaveBeenCalled();
+    expect(sessionExpired.isOpen()).toBe(true);
+  });
+
+  it('retries a safe read once with the refreshed access token', () => {
+    sessionRefreshSpy.refresh.mockReturnValue(of(undefined));
+    tokenStoreSpy.accessToken.mockReturnValue('refreshed-access-token');
+    let response: unknown;
+    http.get('/test').subscribe((value) => {
+      response = value;
+    });
+
+    httpTestingController
+      .expectOne('/test')
+      .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+    const retry = httpTestingController.expectOne(
+      (request) => request.url === '/test' && request.headers.get('X-Session-Retry') === '1',
+    );
+
+    expect(retry.request.headers.get('Authorization')).toBe('Bearer refreshed-access-token');
+    retry.flush({ ok: true });
+
+    expect(response).toEqual({ ok: true });
+    expect(sessionStoreSpy.clearSession).not.toHaveBeenCalled();
+    expect(sessionExpired.isOpen()).toBe(false);
+  });
+
+  it('preserves the refreshed session when the retried request is forbidden', () => {
+    sessionRefreshSpy.refresh.mockReturnValue(of(undefined));
+    tokenStoreSpy.accessToken.mockReturnValue('refreshed-access-token');
+    http.get('/test').subscribe({ error: (error) => expect(error.status).toBe(403) });
+
+    httpTestingController
+      .expectOne('/test')
+      .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+    httpTestingController
+      .expectOne((request) => request.headers.get('X-Session-Retry') === '1')
+      .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(sessionStoreSpy.clearSession).not.toHaveBeenCalled();
+    expect(tokenStoreSpy.clear).not.toHaveBeenCalled();
+    expect(sessionExpired.isOpen()).toBe(false);
+    expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
+      'No tiene permiso para realizar esta acción.',
+      'error',
+      6000,
+    );
+  });
+
+  it('converges simultaneous expired reads on one global session state', () => {
+    http.get('/first').subscribe({ error: () => undefined });
+    http.get('/second').subscribe({ error: () => undefined });
+
+    httpTestingController
+      .expectOne('/first')
+      .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+    httpTestingController
+      .expectOne('/second')
+      .flush('Unauthorized', { status: 401, statusText: 'Unauthorized' });
+
+    expect(sessionRefreshSpy.refresh).toHaveBeenCalledTimes(2);
+    expect(sessionExpired.isOpen()).toBe(true);
   });
 
   it('does not report a business-rule 409 as stale information', () => {
