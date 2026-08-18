@@ -108,12 +108,16 @@ export class SolicitudesDistribuidoraApiService {
     return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/family-members`).pipe(map(unwrapArray));
   }
 
-  crearFamiliar(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/family-members`, this.withLockVersion(datos, versionBloqueo));
+  crearFamiliar(idSolicitud: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/family-members`, this.withLockVersion(datos, versionBloqueo)).pipe(
+      map(unwrapData),
+    );
   }
 
-  actualizarFamiliar(idSolicitud: string, idFamiliar: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, this.withLockVersion(datos, versionBloqueo));
+  actualizarFamiliar(idSolicitud: string, idFamiliar: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, this.withLockVersion(datos, versionBloqueo)).pipe(
+      map(unwrapData),
+    );
   }
 
   eliminarFamiliar(idSolicitud: string, idFamiliar: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {

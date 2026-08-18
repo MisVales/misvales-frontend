@@ -29,6 +29,7 @@ export class FamiliaresFormComponent implements OnInit {
   cargando = false;
   
   autosaveStatuses: Record<number, AutosaveStatus> = {};
+  protected readonly today = new Date().toISOString().slice(0, 10);
 
   get familiaresGroups(): FormGroup[] {
     return this.familiaresArray.controls as FormGroup[];

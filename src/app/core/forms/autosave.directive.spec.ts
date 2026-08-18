@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
-import { FormControl, FormGroup } from '@angular/forms';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { Observable, of, Subject, tap, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AutosaveDirective } from './autosave.directive';
@@ -76,6 +76,20 @@ describe('AutosaveDirective', () => {
     expect(directive.hasUnsavedChanges).toBe(true);
     expect(directive.flush()).toBeUndefined();
     directive.ngOnDestroy();
+  });
+
+  it('does not send an incomplete form to the API', () => {
+    const saveFn = vi.fn(() => of({ ok: true }));
+    const form = new FormGroup({ value: new FormControl('', { validators: [Validators.required] }) });
+    const directive = TestBed.runInInjectionContext(() => new AutosaveDirective());
+    directive.formGroup = form;
+    directive.saveFn = saveFn;
+    directive.hasUnsavedChanges = true;
+
+    directive.flush();
+
+    expect(saveFn).not.toHaveBeenCalled();
+    expect(directive.currentStatus).toBe('idle');
   });
 });
 

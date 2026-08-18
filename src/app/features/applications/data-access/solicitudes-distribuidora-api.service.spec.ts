@@ -36,6 +36,16 @@ describe('SolicitudesDistribuidoraApiService', () => {
     expect(completed).toBe(true);
   });
 
+  it('desenvuelve el familiar creado para conservar su identificador en el autosave', () => {
+    let result: any;
+    service.crearFamiliar('a1', { relationship: 'CHILD' }, 2).subscribe((value) => result = value);
+    const request = http.expectOne('/api/v1/distributor-applications/a1/family-members');
+    expect(request.request.body).toEqual({ relationship: 'CHILD', lock_version: 2 });
+    request.flush({ data: { id: 'f1', relationship: 'CHILD' } });
+
+    expect(result).toEqual({ id: 'f1', relationship: 'CHILD' });
+  });
+
   it('actualiza las declaraciones de sección con control de versión', () => {
     service.actualizarDeclaraciones('a1', { residence: 'COMPLETED' }, 4).subscribe();
     const request = http.expectOne('/api/v1/distributor-applications/a1');

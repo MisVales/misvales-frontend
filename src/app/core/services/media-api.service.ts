@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { defaultApiConfig } from '../api/api.config';
@@ -35,6 +35,8 @@ export class MediaApiService {
     formData.append('owner_id', payload.owner_id);
     formData.append('purpose', payload.purpose);
 
-    return this.http.post<MediaFileResponse>(`${this.apiUrl}/media`, formData);
+    return this.http.post<MediaFileResponse>(`${this.apiUrl}/media`, formData, {
+      headers: new HttpHeaders().set('Idempotency-Key', crypto.randomUUID()),
+    });
   }
 }

@@ -82,6 +82,11 @@ export class AutosaveDirective implements OnInit, OnDestroy {
       return EMPTY;
     }
 
+    if (this.formGroup.invalid) {
+      this.updateStatus('idle');
+      return EMPTY;
+    }
+
     this.updateStatus('saving');
     return this.saveFn(this.formGroup.getRawValue()).pipe(
       tap((result) => {
