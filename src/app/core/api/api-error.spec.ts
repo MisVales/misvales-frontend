@@ -57,4 +57,15 @@ describe('normalizeApiError', () => {
     expect(normalized.fields).toEqual({});
     expect(normalized.requestId).toBeNull();
   });
+
+  it('does not expose local exception messages as API feedback', () => {
+    const normalized = normalizeApiError(
+      new Error('internal network adapter detail'),
+      'SAFE_CODE',
+      'Mensaje seguro.',
+    );
+
+    expect(normalized.code).toBe('SAFE_CODE');
+    expect(normalized.message).toBe('Mensaje seguro.');
+  });
 });
