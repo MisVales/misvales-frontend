@@ -1,7 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { SessionStore } from '../../core/session/session.store';
-import { AuthFacade } from '../../features/auth/state/auth.facade';
 import { SidebarComponent } from '../../shared/ui/sidebar/sidebar.component';
 import { ShellHeaderComponent } from '../../shared/ui/shell-header/shell-header.component';
 
@@ -13,21 +11,8 @@ import { ShellHeaderComponent } from '../../shared/ui/shell-header/shell-header.
   styleUrl: './admin-layout.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    '[class.layout-desktop]': 'layoutPreference() === "desktop"',
-    '[class.layout-tablet]': 'layoutPreference() === "tablet"',
-    '[class.layout-mobile]': 'layoutPreference() === "mobile"',
-  }
+    class: 'layout-desktop',
+  },
 })
-export class AdminLayoutComponent {
-  private readonly sessionStore = inject(SessionStore);
-  private readonly authFacade = inject(AuthFacade);
-
-  // Default to desktop if none provided
-  layoutPreference = computed(() => this.sessionStore.layoutPreference() || 'desktop');
-
-
-  logout() {
-    this.authFacade.logout();
-  }
-}
+export class AdminLayoutComponent {}
 

@@ -28,7 +28,6 @@ export class MeService {
           roles,
           response.effective_permissions,
           activeBranch,
-          response.user.layoutPreference,
           scopes,
         );
       }),

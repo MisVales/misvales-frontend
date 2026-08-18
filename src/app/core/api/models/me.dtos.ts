@@ -11,7 +11,6 @@ export interface MeRes {
     name: string;
     email: string;
     state: string;
-    layoutPreference?: 'desktop' | 'tablet' | 'mobile';
   };
   scopes: Scope[];
   effective_permissions: string[];

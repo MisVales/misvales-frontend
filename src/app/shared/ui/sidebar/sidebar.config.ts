@@ -6,14 +6,9 @@
  * autorización definitiva permanece en Laravel.
  */
 
-export type RoleCode =
-  | 'general_manager'
-  | 'admin'
-  | 'branch_manager'
-  | 'coordinator'
-  | 'verifier'
-  | 'distributor'
-  | 'cashier';
+import type { RoleCode } from '@core/experience/experience.models';
+
+export type { RoleCode } from '@core/experience/experience.models';
 
 export interface NavItemData {
   id: string;
