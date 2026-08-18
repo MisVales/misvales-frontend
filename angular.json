@@ -68,7 +68,7 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "allowedHosts": [
-              "testimony-hygiene-brochure-addressing.trycloudflare.com"
+              "richmond-participating-actor-eric.trycloudflare.com"
             ]
           },
           "configurations": {
