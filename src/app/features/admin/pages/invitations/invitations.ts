@@ -8,11 +8,12 @@ import { RoleRes } from '../../data-access/admin.dtos';
 import { InvitationRes, InvitationService } from '../../data-access/invitation.service';
 import { RoleService } from '../../data-access/role.service';
 import { OrganizationFacade } from '../../../organization/state/organization.facade';
+import { ReasonActionDialogComponent } from '../../../../shared/ui/reason-action-dialog/reason-action-dialog.component';
 
 @Component({
   selector: 'app-invitations',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, DatePipe],
+  imports: [CommonModule, FormsModule, LucideAngularModule, DatePipe, ReasonActionDialogComponent],
   templateUrl: './invitations.html',
 })
 export class Invitations implements OnInit {
@@ -28,9 +29,16 @@ export class Invitations implements OnInit {
   readonly currentPage = signal(1);
   readonly lastPage = signal(1);
   readonly totalItems = signal(0);
+  readonly filterState = signal<string>(''); // empty means all
+  
   readonly isModalOpen = signal(false);
   readonly isSubmitting = signal(false);
   readonly newInvitation = signal({ name: '', email: '', role_id: '', branch_id: '' });
+
+  // Revocation modal state
+  readonly isRevokeModalOpen = signal(false);
+  readonly invitationToRevoke = signal<InvitationRes | null>(null);
+  readonly revokeReason = signal('');
 
   readonly filteredBranches = computed(() => {
     const roleId = this.newInvitation().role_id;
@@ -41,13 +49,10 @@ export class Invitations implements OnInit {
     const selectedRole = this.roles().find((r) => r.id === roleId);
     if (selectedRole) {
       if (selectedRole.code === 'branch_manager') {
-        // Un gerente de sucursal no puede estar en la matriz y la sucursal debe estar libre
         return branches.filter((b) => !b.is_headquarters && !b.has_branch_manager);
       }
     }
 
-    // Para cualquier otro rol, devolvemos todas las sucursales
-    // (el backend valida si el usuario que invita tiene permisos sobre ellas)
     return branches;
   });
 
@@ -56,7 +61,6 @@ export class Invitations implements OnInit {
     if (!roleId) return true;
 
     const selectedRole = this.roles().find((r) => r.id === roleId);
-    // Si es administrador, no pide sucursal
     if (selectedRole && (selectedRole.code === 'admin' || selectedRole.code === 'system_admin')) {
       return false;
     }
@@ -86,7 +90,8 @@ export class Invitations implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const response = await firstValueFrom(this.invitationService.getInvitations(page));
+      const state = this.filterState();
+      const response = await firstValueFrom(this.invitationService.getInvitations(page, state || undefined));
       this.invitations.set(response.data);
       this.currentPage.set(response.current_page);
       this.lastPage.set(response.last_page ?? 1);
@@ -96,6 +101,12 @@ export class Invitations implements OnInit {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  onFilterChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.filterState.set(value);
+    this.loadInvitations(1);
   }
 
   async setPage(page: number): Promise<void> {
@@ -119,7 +130,6 @@ export class Invitations implements OnInit {
     if (currentData.branch_id) {
       const availableBranchIds = this.filteredBranches().map((b) => b.id);
       if (!availableBranchIds.includes(currentData.branch_id) || !this.isBranchRequired()) {
-        // Limpiar la sucursal seleccionada si ya no es válida para el nuevo rol
         this.newInvitation.set({ ...this.newInvitation(), branch_id: '' });
       }
     }
@@ -143,7 +153,6 @@ export class Invitations implements OnInit {
         .find((b) => b.id === data.branch_id);
 
       if (selectedRole && selectedBranch?.is_headquarters) {
-        // Los roles globales permitidos en la matriz
         const globalRoles = ['admin', 'system_admin', 'general_manager'];
         if (!globalRoles.includes(selectedRole.code)) {
           this.error.set(
@@ -172,6 +181,35 @@ export class Invitations implements OnInit {
       this.success.set(response.message);
     } catch (error: unknown) {
       this.error.set(apiErrorMessage(error, 'No fue posible enviar la invitación.'));
+    } finally {
+      this.isSubmitting.set(false);
+    }
+  }
+
+  openRevokeModal(invitation: InvitationRes): void {
+    this.invitationToRevoke.set(invitation);
+    this.revokeReason.set('');
+    this.isRevokeModalOpen.set(true);
+  }
+
+  closeRevokeModal(): void {
+    this.isRevokeModalOpen.set(false);
+    this.invitationToRevoke.set(null);
+  }
+
+  async confirmRevoke(): Promise<void> {
+    const invitation = this.invitationToRevoke();
+    const reason = this.revokeReason().trim();
+    if (!invitation || !reason) return;
+
+    this.isSubmitting.set(true);
+    try {
+      await firstValueFrom(this.invitationService.revokeInvitation(invitation.id, reason));
+      this.success.set('La invitación ha sido revocada exitosamente.');
+      this.closeRevokeModal();
+      await this.loadInvitations(this.currentPage());
+    } catch (error: unknown) {
+      this.error.set(apiErrorMessage(error, 'No fue posible revocar la invitación.'));
     } finally {
       this.isSubmitting.set(false);
     }
