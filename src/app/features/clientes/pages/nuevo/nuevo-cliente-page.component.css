@@ -1,1 +1,3 @@
-/* Estilos del componente de alta de cliente */
+label { display: grid; gap: 0.35rem; font-size: 0.75rem; font-weight: 700; color: #1f2937; }
+.field { width: 100%; border: 1px solid #d1d5db; border-radius: 0.5rem; padding: 0.65rem 0.75rem; font-size: 0.875rem; font-weight: 400; background: white; }
+.field:focus { outline: 2px solid #386641; outline-offset: 1px; }

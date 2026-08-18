@@ -1,0 +1,19 @@
+<main class="min-h-screen bg-[#f5f5f1] p-4 lg:p-8">
+  <section class="mx-auto max-w-6xl">
+    <h1 class="text-2xl font-bold">Cartera informativa</h1>
+    <p class="mt-2 rounded-xl bg-[#eef4dd] p-4 text-sm text-[#386641]">Este seguimiento es exclusivamente informativo. No modifica crédito, pagos, bloqueos ni relaciones operativas.</p>
+    @if (store.cargandoListado()) { <p class="mt-8">Cargando cartera…</p> }
+    @if (store.error()) { <p role="alert" class="mt-8 text-red-700">{{ store.error() }}</p> }
+    <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      @for (cliente of store.listado(); track cliente.id) {
+        <article class="rounded-xl bg-white p-5 shadow-sm">
+          <p class="text-xs font-bold text-gray-500">{{ cliente.numero }}</p>
+          <h2 class="mt-1 font-bold">{{ cliente.nombreCompleto }}</h2>
+          <p class="mt-4 text-sm">Saldo informativo: <strong>{{ cliente.resumenCartera.saldoActual | currency:'MXN' }}</strong></p>
+          <p class="text-sm">Estado: {{ cliente.resumenCartera.estadoInformativo || 'Sin estado' }}</p>
+          <a [routerLink]="['/clientes', cliente.id, 'cartera']" class="mt-4 inline-block font-semibold text-[#386641]">Ver movimientos</a>
+        </article>
+      }
+    </div>
+  </section>
+</main>
