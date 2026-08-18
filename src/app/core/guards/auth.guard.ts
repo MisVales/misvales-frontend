@@ -5,7 +5,6 @@ import { MeService } from '../services/me.service';
 import { firstValueFrom } from 'rxjs';
 import { AuthTokenStore } from '../session/auth-token.store';
 import { SessionRefreshService } from '../session/session-refresh.service';
-import { HttpErrorResponse } from '@angular/common/http';
 
 export const authGuard: CanActivateFn = async (route, state) => {
   const sessionStore = inject(SessionStore);
@@ -26,13 +25,9 @@ export const authGuard: CanActivateFn = async (route, state) => {
     if (sessionStore.isAuthenticated()) {
       return true;
     }
-  } catch (error) {
-    if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 419)) {
-      tokenStore.clear();
-      sessionStore.clearSession();
-    } else {
-      return router.createUrlTree(['/servicio-no-disponible']);
-    }
+  } catch {
+    tokenStore.clear();
+    sessionStore.clearSession();
   }
 
   return router.createUrlTree(['/auth/login']);

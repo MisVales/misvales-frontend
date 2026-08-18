@@ -7,7 +7,6 @@ import { MeService } from '../services/me.service';
 import { throwError } from 'rxjs';
 import { AuthTokenStore } from '../session/auth-token.store';
 import { SessionRefreshService } from '../session/session-refresh.service';
-import { HttpErrorResponse } from '@angular/common/http';
 
 describe('authGuard', () => {
   let routerSpy: any;
@@ -19,9 +18,9 @@ describe('authGuard', () => {
   beforeEach(() => {
     routerSpy = { createUrlTree: vi.fn() };
     sessionStoreSpy = { isAuthenticated: vi.fn(), clearSession: vi.fn() };
-    meServiceSpy = { fetchMe: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401 }))) };
+    meServiceSpy = { fetchMe: vi.fn(() => throwError(() => new Error('unauthenticated'))) };
     tokenStoreSpy = { accessToken: vi.fn(() => null), clear: vi.fn() };
-    sessionRefreshSpy = { refresh: vi.fn(() => throwError(() => new HttpErrorResponse({ status: 401 }))) };
+    sessionRefreshSpy = { refresh: vi.fn(() => throwError(() => new Error('no session'))) };
 
     TestBed.configureTestingModule({
       providers: [
@@ -57,9 +56,9 @@ describe('authGuard', () => {
     expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
   });
 
-  it('keeps the session when loading /me fails outside authentication errors', async () => {
+  it('returns to login when /me cannot restore the session', async () => {
     tokenStoreSpy.accessToken.mockReturnValue('token');
-    meServiceSpy.fetchMe.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 503 })));
+    meServiceSpy.fetchMe.mockReturnValue(throwError(() => new Error('unavailable')));
     const mockUrlTree = {} as any;
     routerSpy.createUrlTree.mockReturnValue(mockUrlTree);
 
@@ -68,8 +67,8 @@ describe('authGuard', () => {
     );
 
     expect(result).toBe(mockUrlTree);
-    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/servicio-no-disponible']);
-    expect(tokenStoreSpy.clear).not.toHaveBeenCalled();
-    expect(sessionStoreSpy.clearSession).not.toHaveBeenCalled();
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
+    expect(tokenStoreSpy.clear).toHaveBeenCalledOnce();
+    expect(sessionStoreSpy.clearSession).toHaveBeenCalledOnce();
   });
 });

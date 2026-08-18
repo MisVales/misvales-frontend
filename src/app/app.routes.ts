@@ -35,10 +35,6 @@ export const routes: Routes = [
     ],
   },
   {
-    path: 'servicio-no-disponible',
-    loadComponent: () => import('./features/experience/pages/service-unavailable/service-unavailable.component').then((m) => m.ServiceUnavailableComponent),
-  },
-  {
     path: '',
     canActivate: [authGuard],
     children: [
@@ -76,7 +72,7 @@ export const routes: Routes = [
           { path: 'riesgo', loadChildren: () => import('./features/riesgo/riesgo.routes').then((m) => m.riesgoRoutes) },
           { path: 'transferencias', loadChildren: () => import('./features/transferencias/transferencias.routes').then((m) => m.transferenciasRoutes) },
           { path: 'centro-operacion', loadChildren: () => import('./features/centro-operacion/centro-operacion.routes').then((m) => m.centroOperacionRoutes) },
-          { path: '**', data: { statusPage: 'not-found' }, loadComponent: () => import('./shared/ui/http-status-page/http-status-page.component').then((m) => m.HttpStatusPageComponent) },
+          { path: '**', redirectTo: '/inicio' },
         ],
       },
     ],
