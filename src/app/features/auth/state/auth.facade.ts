@@ -60,6 +60,9 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
   INVALID_INVITATION: 'La invitación no es válida.',
   USED_INVITATION: 'La invitación ya fue utilizada o revocada.',
   EXPIRED_INVITATION: 'La invitación ha expirado.',
+  TURNSTILE_REQUIRED: 'La verificación de seguridad es obligatoria.',
+  INVALID_TURNSTILE: 'La verificación de seguridad no pudo validarse. Intente nuevamente.',
+  CONFIG_ERROR: 'Error de configuración en el servicio de seguridad.',
 };
 
 function messageFor(error: unknown, fallback: string): string {

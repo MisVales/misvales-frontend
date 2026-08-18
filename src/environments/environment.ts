@@ -1,4 +1,7 @@
 export const environment = {
   production: false,
   apiBaseUrl: '/api/v1',
-} as const;
+  turnstileSiteKey: '0x4AAAAAAEUc7ZiMLrLcwWeY' as string,
+};
+
+

@@ -62,9 +62,17 @@
           <app-input-error [control]="loginForm.controls.password" label="La contraseña" [serverError]="fieldError('password')"></app-input-error>
         </div>
 
+        <!-- Cloudflare Turnstile (Explícito, solo visible si está configurado) -->
+        <app-turnstile
+          (tokenChange)="onTurnstileToken($event)"
+          (error)="onTurnstileError($event)"
+          (expired)="onTurnstileExpired()"
+          (timeout)="onTurnstileExpired()">
+        </app-turnstile>
+
         <!-- Botón Ingresar -->
         <button type="submit" 
-                [disabled]="isLoading || loginForm.invalid"
+                [disabled]="isSubmitDisabled"
                 class="w-full bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/70 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-4">
           
           <ng-container *ngIf="!isLoading">

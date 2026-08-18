@@ -1,4 +1,7 @@
 export const environment = {
   production: true,
   apiBaseUrl: 'https://testimony-hygiene-brochure-addressing.trycloudflare.com/api/v1',
-} as const;
+  turnstileSiteKey: '0x4AAAAAAEUc7ZiMLrLcwWeY' as string,
+};
+
+

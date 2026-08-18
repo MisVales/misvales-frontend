@@ -1,6 +1,7 @@
 export interface LoginReq {
   email: string;
   password: string;
+  turnstile_token?: string | null;
 }
 
 export type MfaMethod = 'PASSKEY' | 'RECOVERY_CODE' | 'TOTP';
