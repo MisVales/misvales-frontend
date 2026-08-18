@@ -75,13 +75,6 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'periodos-canje',
-        loadChildren: () =>
-          import('./features/periodos-canje/periodos-canje.routes').then(
-            (m) => m.PERIODOS_CANJE_ROUTES,
-          ),
-      },
-      {
         path: 'verificacion-distribuidoras',
         loadChildren: () =>
           import('./features/verificacion-distribuidoras/verificacion-distribuidoras.routes').then(
@@ -115,10 +108,6 @@ export const routes: Routes = [
           import('./features/relaciones-pagos/relaciones-pagos.routes').then(
             (m) => m.relacionesPagosRoutes,
           ),
-      },
-      {
-        path: 'puntos',
-        loadChildren: () => import('./features/puntos/puntos.routes').then((m) => m.puntosRoutes),
       },
       {
         path: 'riesgo',

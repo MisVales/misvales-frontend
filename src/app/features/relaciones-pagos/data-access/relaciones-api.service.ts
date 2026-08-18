@@ -31,7 +31,6 @@ export interface RelationView {
     coordinator?: string | null;
     credit_line_total?: string | number | null;
     credit_available?: string | number | null;
-    points?: string | number | null;
     configuration_versions?: Record<string, string>;
   };
   bank_snapshot: {

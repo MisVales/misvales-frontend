@@ -68,7 +68,6 @@ import { RelacionesApiService, RelationView } from '../data-access/relaciones-ap
             <div><span>Coordinador</span><strong class="block">{{ item.header_snapshot['coordinator'] || '—' }}</strong></div>
             <div><span>Línea autorizada</span><strong class="block">{{ item.header_snapshot['credit_line_total'] | currency: 'MXN' }}</strong></div>
             <div><span>Saldo disponible</span><strong class="block">{{ item.header_snapshot['credit_available'] | currency: 'MXN' }}</strong></div>
-            <div><span>Puntos</span><strong class="block">{{ item.header_snapshot['points'] ?? '—' }}</strong></div>
             <div><span>Domicilio</span><strong class="block">{{ item.header_snapshot['address'] || '—' }}</strong></div>
           </section>
           <section class="grid gap-3 sm:grid-cols-2">
