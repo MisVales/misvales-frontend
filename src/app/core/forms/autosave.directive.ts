@@ -56,12 +56,39 @@ export class AutosaveDirective implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    if (this.hasUnsavedChanges) {
+      const flush$ = this.flush();
+      if (flush$) flush$.subscribe();
+    }
     this.sub.unsubscribe();
   }
 
   private updateStatus(status: AutosaveStatus) {
     this.currentStatus = status;
     this.statusChange.emit(status);
+  }
+
+  /**
+   * Forces an immediate save of unsaved changes.
+   * Useful when changing tabs or routes.
+   */
+  public flush(): Observable<any> | void {
+    if (this.hasUnsavedChanges) {
+      this.updateStatus('saving');
+      return this.saveFn(this.formGroup.getRawValue()).pipe(
+        tap(res => {
+          if (res !== null) {
+            this.updateStatus('saved');
+            this.hasUnsavedChanges = false;
+            this.lastSavedValue = this.formGroup.getRawValue();
+          }
+        }),
+        catchError(err => {
+          this.updateStatus('error');
+          return of(null);
+        })
+      );
+    }
   }
 
   /**

@@ -4,11 +4,13 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DatosPersonalesFormFactory } from '../../forms/datos-personales-form.factory';
 import { ResumenSolicitante } from '../../models/solicitud-distribuidora.model';
+import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';
+import { from, Observable } from 'rxjs';
 
 @Component({
   selector: 'app-datos-personales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AutosaveDirective],
   templateUrl: './datos-personales-form.component.html',
   styleUrls: ['./datos-personales-form.component.css']
 })
@@ -23,7 +25,27 @@ export class DatosPersonalesFormComponent implements OnInit {
   // View states
   isCurpMasked = false;
   isRfcMasked = false;
-  guardadoExitoso = false;
+  
+  autosaveStatus: AutosaveStatus = 'idle';
+
+  saveFn = (rawValue: any): Observable<any> => {
+    const payload: any = { ...rawValue };
+    
+    if (this.isCurpMasked) {
+      delete payload.curp;
+    }
+    if (this.isRfcMasked) {
+      delete payload.rfc;
+    }
+
+    Object.keys(payload).forEach(key => {
+      if (typeof payload[key] === 'string') {
+        payload[key] = payload[key].trim().replace(/\s+/g, ' ');
+      }
+    });
+
+    return from(this.store.guardarDatosPersonales(payload));
+  };
 
   constructor() {
     // Escuchar los cambios en detalle() para reaccionar asíncronamente
@@ -51,54 +73,10 @@ export class DatosPersonalesFormComponent implements OnInit {
     if (solicitante.curpEnmascarada && solicitante.curpEnmascarada.includes('*')) {
        this.isCurpMasked = true;
     }
-    
-    // Si ya tiene curp, probablemente ya se guardó una vez (borrador parcial)
-    if (solicitante.curpEnmascarada) {
-      this.guardadoExitoso = true;
-    }
-    
-    // Al parchear valores desde un effect asíncrono, si estamos zoneless, 
-    // cdr.markForCheck() podría ser necesario dependiendo de cómo se actualice la vista.
   }
 
   editarCurp() {
     this.isCurpMasked = false;
     this.form.get('curp')?.setValue('');
   }
-
-  async onSubmit() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
-
-    // Preparar payload, omitir curp si está enmascarada
-    const rawValue = this.form.value;
-    const payload: any = { ...rawValue };
-    
-    if (this.isCurpMasked) {
-      delete payload.curp;
-    }
-    if (this.isRfcMasked) {
-      delete payload.rfc;
-    }
-
-    // Normalizar espacios antes de enviar (regla de negocio del documento)
-    Object.keys(payload).forEach(key => {
-      if (typeof payload[key] === 'string') {
-        payload[key] = payload[key].trim().replace(/\s+/g, ' ');
-      }
-    });
-
-    try {
-      await this.store.guardarDatosPersonales(payload);
-      this.form.markAsPristine();
-      this.guardadoExitoso = true;
-    } catch (e) {
-      // Error handled by store
-    } finally {
-      this.cdr.markForCheck();
-    }
-  }
 }
-

@@ -4,14 +4,15 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { PatrimonioFormFactory } from '../../forms/patrimonio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { firstValueFrom } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';
 
 @Component({
   selector: 'app-patrimonio-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AutosaveDirective],
   templateUrl: './patrimonio-form.component.html',
   styleUrls: ['./patrimonio-form.component.css']
 })
@@ -27,6 +28,7 @@ export class PatrimonioFormComponent implements OnInit {
   cargando = false;
   
   tipoActivo: 'ASSET' | 'LIABILITY' | 'ACTIVE_COMMITMENT' = 'ASSET';
+  autosaveStatuses: Record<number, AutosaveStatus> = {};
 
   get patrimonioGroups(): FormGroup[] {
     return this.patrimonioArray.controls as FormGroup[];
@@ -34,6 +36,32 @@ export class PatrimonioFormComponent implements OnInit {
 
   get gruposFiltrados(): FormGroup[] {
     return this.patrimonioGroups.filter(g => g.value.entry_type === this.tipoActivo);
+  }
+
+  getSaveFn(formGroup: FormGroup) {
+    return (rawValue: any): Observable<any> => {
+      const index = this.patrimonioGroups.indexOf(formGroup);
+      const idSolicitud = this.store.detalle()?.id;
+      if (!idSolicitud) return from([]);
+
+      const payload = { ...rawValue };
+      const idRegistro = payload.id;
+      delete payload.id;
+
+      let request$;
+      if (idRegistro) {
+        request$ = this.api.actualizarPatrimonio(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo);
+      } else {
+        request$ = this.api.crearPatrimonio(idSolicitud, payload, this.store.detalle()!.versionBloqueo);
+      }
+      
+      return from(request$.toPromise().then(res => {
+        if (!idRegistro && res && res.id && index !== -1) {
+           this.patrimonioArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+        }
+        return this.store.cargarDetalle(idSolicitud).then(() => res);
+      }));
+    };
   }
 
   async ngOnInit() {
@@ -92,40 +120,9 @@ export class PatrimonioFormComponent implements OnInit {
     const index = this.patrimonioGroups.findIndex(g => g === formGroup);
     if (index !== -1) {
       this.patrimonioArray.removeAt(index);
+      delete this.autosaveStatuses[index];
     }
     this.cdr.markForCheck();
-  }
-
-  async guardarRegistro(formGroup: FormGroup) {
-    if (formGroup.invalid) {
-      formGroup.markAllAsTouched();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    const idSolicitud = this.store.detalle()?.id;
-    if (!idSolicitud) return;
-
-    const payload = { ...formGroup.value };
-    const idRegistro = payload.id;
-    delete payload.id;
-
-    try {
-      if (idRegistro) {
-        await firstValueFrom(this.api.actualizarPatrimonio(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo));
-      } else {
-        await firstValueFrom(this.api.crearPatrimonio(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
-      }
-      await this.store.cargarDetalle(idSolicitud);
-      await this.cargarPatrimonio();
-    } catch (e: any) {
-      if (e?.status === 409) {
-        await this.store.cargarDetalle(idSolicitud);
-        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
-      }
-    } finally {
-      this.cdr.markForCheck();
-    }
   }
 
   async eliminarRegistroAPI(formGroup: FormGroup, idRegistro: string) {
@@ -136,7 +133,7 @@ export class PatrimonioFormComponent implements OnInit {
     if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarPatrimonio(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo));
+      await this.api.eliminarPatrimonio(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerRegistroVisual(formGroup);
       await this.store.cargarDetalle(idSolicitud);
     } catch (e) {

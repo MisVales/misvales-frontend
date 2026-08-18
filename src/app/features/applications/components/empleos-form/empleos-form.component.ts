@@ -4,14 +4,15 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { EmpleoFormFactory } from '../../forms/empleo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { firstValueFrom } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';
 
 @Component({
   selector: 'app-empleos-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AutosaveDirective],
   templateUrl: './empleos-form.component.html',
   styleUrls: ['./empleos-form.component.css']
 })
@@ -25,9 +26,36 @@ export class EmpleosFormComponent implements OnInit {
 
   empleosArray: FormArray = EmpleoFormFactory.createArray(this.fb);
   cargando = false;
+  
+  autosaveStatuses: Record<number, AutosaveStatus> = {};
 
   get empleosGroups(): FormGroup[] {
     return this.empleosArray.controls as FormGroup[];
+  }
+
+  getSaveFn(index: number) {
+    return (rawValue: any): Observable<any> => {
+      const idSolicitud = this.store.detalle()?.id;
+      if (!idSolicitud) return from([]);
+
+      const payload = { ...rawValue };
+      const idRegistro = payload.id;
+      delete payload.id;
+
+      let request$;
+      if (idRegistro) {
+        request$ = this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo);
+      } else {
+        request$ = this.api.crearEmpleo(idSolicitud, payload, this.store.detalle()!.versionBloqueo);
+      }
+      
+      return from(request$.toPromise().then(res => {
+        if (!idRegistro && res && res.id) {
+           this.empleosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+        }
+        return this.store.cargarDetalle(idSolicitud).then(() => res);
+      }));
+    };
   }
 
   async ngOnInit() {
@@ -77,40 +105,8 @@ export class EmpleosFormComponent implements OnInit {
 
   removerEmpleoVisual(index: number) {
     this.empleosArray.removeAt(index);
+    delete this.autosaveStatuses[index];
     this.cdr.markForCheck();
-  }
-
-  async guardarEmpleo(index: number) {
-    const formGroup = this.empleosGroups[index];
-    if (formGroup.invalid) {
-      formGroup.markAllAsTouched();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    const idSolicitud = this.store.detalle()?.id;
-    if (!idSolicitud) return;
-
-    const payload = { ...formGroup.value };
-    const idRegistro = payload.id;
-    delete payload.id;
-
-    try {
-      if (idRegistro) {
-        await firstValueFrom(this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo));
-      } else {
-        await firstValueFrom(this.api.crearEmpleo(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
-      }
-      await this.store.cargarDetalle(idSolicitud);
-      await this.cargarEmpleos();
-    } catch (e: any) {
-      if (e?.status === 409) {
-        await this.store.cargarDetalle(idSolicitud);
-        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
-      }
-    } finally {
-      this.cdr.markForCheck();
-    }
   }
 
   async eliminarEmpleoAPI(index: number, idRegistro: string) {
@@ -121,7 +117,7 @@ export class EmpleosFormComponent implements OnInit {
     if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarEmpleo(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo));
+      await this.api.eliminarEmpleo(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerEmpleoVisual(index);
       await this.store.cargarDetalle(idSolicitud);
     } catch (e) {

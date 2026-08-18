@@ -4,14 +4,15 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { VehiculoFormFactory } from '../../forms/vehiculo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { firstValueFrom } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';
 
 @Component({
   selector: 'app-vehiculos-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AutosaveDirective],
   templateUrl: './vehiculos-form.component.html',
   styleUrls: ['./vehiculos-form.component.css']
 })
@@ -25,9 +26,36 @@ export class VehiculosFormComponent implements OnInit {
 
   vehiculosArray: FormArray = VehiculoFormFactory.createArray(this.fb);
   cargando = false;
+  
+  autosaveStatuses: Record<number, AutosaveStatus> = {};
 
   get vehiculosGroups(): FormGroup[] {
     return this.vehiculosArray.controls as FormGroup[];
+  }
+
+  getSaveFn(index: number) {
+    return (rawValue: any): Observable<any> => {
+      const idSolicitud = this.store.detalle()?.id;
+      if (!idSolicitud) return from([]);
+
+      const payload = { ...rawValue };
+      const idVehiculo = payload.id;
+      delete payload.id;
+
+      let request$;
+      if (idVehiculo) {
+        request$ = this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, this.store.detalle()!.versionBloqueo);
+      } else {
+        request$ = this.api.crearVehiculo(idSolicitud, payload, this.store.detalle()!.versionBloqueo);
+      }
+      
+      return from(request$.toPromise().then(res => {
+        if (!idVehiculo && res && res.id) {
+           this.vehiculosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+        }
+        return this.store.cargarDetalle(idSolicitud).then(() => res);
+      }));
+    };
   }
 
   async ngOnInit() {
@@ -77,40 +105,8 @@ export class VehiculosFormComponent implements OnInit {
 
   removerVehiculoVisual(index: number) {
     this.vehiculosArray.removeAt(index);
+    delete this.autosaveStatuses[index];
     this.cdr.markForCheck();
-  }
-
-  async guardarVehiculo(index: number) {
-    const formGroup = this.vehiculosArray.at(index) as FormGroup;
-    if (formGroup.invalid) {
-      formGroup.markAllAsTouched();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    const idSolicitud = this.store.detalle()?.id;
-    if (!idSolicitud) return;
-
-    const payload = { ...formGroup.value };
-    const idVehiculo = payload.id;
-    delete payload.id;
-
-    try {
-      if (idVehiculo) {
-        await firstValueFrom(this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, this.store.detalle()!.versionBloqueo));
-      } else {
-        await firstValueFrom(this.api.crearVehiculo(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
-      }
-      await this.store.cargarDetalle(idSolicitud);
-      await this.cargarVehiculos();
-    } catch (e: any) {
-      if (e?.status === 409) {
-        await this.store.cargarDetalle(idSolicitud);
-        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
-      }
-    } finally {
-      this.cdr.markForCheck();
-    }
   }
 
   async eliminarVehiculoAPI(index: number, idVehiculo: string) {
@@ -121,7 +117,7 @@ export class VehiculosFormComponent implements OnInit {
     if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarVehiculo(idSolicitud, idVehiculo, this.store.detalle()!.versionBloqueo));
+      await this.api.eliminarVehiculo(idSolicitud, idVehiculo, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerVehiculoVisual(index);
       await this.store.cargarDetalle(idSolicitud);
     } catch (e) {

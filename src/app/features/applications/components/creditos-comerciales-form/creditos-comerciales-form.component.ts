@@ -4,14 +4,15 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { CreditoComercialFormFactory } from '../../forms/credito-comercial-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { firstValueFrom } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';
 
 @Component({
   selector: 'app-creditos-comerciales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, AutosaveDirective],
   templateUrl: './creditos-comerciales-form.component.html',
   styleUrls: ['./creditos-comerciales-form.component.css']
 })
@@ -25,9 +26,36 @@ export class CreditosComercialesFormComponent implements OnInit {
 
   creditosArray: FormArray = CreditoComercialFormFactory.createArray(this.fb);
   cargando = false;
+  
+  autosaveStatuses: Record<number, AutosaveStatus> = {};
 
   get creditosGroups(): FormGroup[] {
     return this.creditosArray.controls as FormGroup[];
+  }
+
+  getSaveFn(index: number) {
+    return (rawValue: any): Observable<any> => {
+      const idSolicitud = this.store.detalle()?.id;
+      if (!idSolicitud) return from([]);
+
+      const payload = { ...rawValue };
+      const idRegistro = payload.id;
+      delete payload.id;
+
+      let request$;
+      if (idRegistro) {
+        request$ = this.api.actualizarCreditoComercial(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo);
+      } else {
+        request$ = this.api.crearCreditoComercial(idSolicitud, payload, this.store.detalle()!.versionBloqueo);
+      }
+      
+      return from(request$.toPromise().then(res => {
+        if (!idRegistro && res && res.id) {
+           this.creditosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+        }
+        return this.store.cargarDetalle(idSolicitud).then(() => res);
+      }));
+    };
   }
 
   async ngOnInit() {
@@ -77,40 +105,8 @@ export class CreditosComercialesFormComponent implements OnInit {
 
   removerCreditoVisual(index: number) {
     this.creditosArray.removeAt(index);
+    delete this.autosaveStatuses[index];
     this.cdr.markForCheck();
-  }
-
-  async guardarCredito(index: number) {
-    const formGroup = this.creditosGroups[index];
-    if (formGroup.invalid) {
-      formGroup.markAllAsTouched();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    const idSolicitud = this.store.detalle()?.id;
-    if (!idSolicitud) return;
-
-    const payload = { ...formGroup.value };
-    const idRegistro = payload.id;
-    delete payload.id;
-
-    try {
-      if (idRegistro) {
-        await firstValueFrom(this.api.actualizarCreditoComercial(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo));
-      } else {
-        await firstValueFrom(this.api.crearCreditoComercial(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
-      }
-      await this.store.cargarDetalle(idSolicitud);
-      await this.cargarCreditos();
-    } catch (e: any) {
-      if (e?.status === 409) {
-        await this.store.cargarDetalle(idSolicitud);
-        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
-      }
-    } finally {
-      this.cdr.markForCheck();
-    }
   }
 
   async eliminarCreditoAPI(index: number, idRegistro: string) {
@@ -121,7 +117,7 @@ export class CreditosComercialesFormComponent implements OnInit {
     if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarCreditoComercial(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo));
+      await this.api.eliminarCreditoComercial(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerCreditoVisual(index);
       await this.store.cargarDetalle(idSolicitud);
     } catch (e) {
