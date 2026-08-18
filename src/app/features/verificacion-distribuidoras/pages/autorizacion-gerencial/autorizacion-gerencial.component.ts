@@ -98,9 +98,12 @@ export class AutorizacionGerencialComponent implements OnInit, OnDestroy {
       return;
     }
 
+    const comentarios = this.comentarios().trim();
+    const motivoFinal = comentarios || (this.decision() === 'APPROVED' ? 'Aprobación gerencial' : '');
+
     const req = {
       decision: this.decision()!,
-      motivo: this.comentarios(),
+      motivo: motivoFinal,
       linea_inicial: this.decision() === 'APPROVED' ? this.lineaInicial() : null,
       lock_version: solicitud.lockVersion,
     };

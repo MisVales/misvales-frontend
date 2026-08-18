@@ -65,6 +65,11 @@ function friendlyValidationMessage(field: string, message: string): string {
     'validation.required': 'Este campo es obligatorio.',
     'validation.email': 'Captura un correo electrónico válido.',
     'validation.unique': 'Este dato ya está registrado en otra solicitud.',
+    'validation.regex': 'El formato del valor capturado no es válido.',
+    'validation.numeric': 'El valor debe ser numérico.',
+    'validation.min.numeric': 'El valor debe ser mayor o igual al mínimo permitido.',
+    'validation.max.numeric': 'El valor excede el máximo permitido.',
+    'validation.decimal': 'El valor numérico no tiene el formato decimal permitido.',
   };
 
   return messages[message] ?? 'El valor capturado no es válido.';
