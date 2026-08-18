@@ -64,7 +64,11 @@ const ERROR_MESSAGES: Readonly<Record<string, string>> = {
 
 function messageFor(error: unknown, fallback: string): string {
   const code = apiErrorCode(error, 'UNEXPECTED_ERROR');
-  return ERROR_MESSAGES[code] ?? apiErrorMessage(error, fallback);
+  const backendMsg = apiErrorMessage(error, '');
+  if (code === 'RATE_LIMIT_EXCEEDED' && backendMsg && backendMsg !== 'Too Many Attempts.') {
+    return backendMsg;
+  }
+  return ERROR_MESSAGES[code] ?? (backendMsg || fallback);
 }
 
 export const AuthFacade = signalStore(

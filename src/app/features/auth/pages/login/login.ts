@@ -7,7 +7,6 @@ import { InputErrorComponent } from '../../../../shared/ui/input-error/input-err
 
 @Component({
   selector: 'app-login',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent],
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
