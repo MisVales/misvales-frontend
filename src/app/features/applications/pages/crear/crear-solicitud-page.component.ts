@@ -25,6 +25,7 @@ export class CrearSolicitudPageComponent {
   branches = signal<Branch[]>([]);
   coordinators = signal<PersonnelAssignment[]>([]);
   isLoadingCatalogs = signal(false);
+  catalogError = signal<string | null>(null);
   selectedBranchId = signal<string | null>(null);
 
   isGeneralManager = computed(() => this.session.roles().includes('general_manager'));
@@ -47,44 +48,87 @@ export class CrearSolicitudPageComponent {
 
   async ngOnInit() {
     this.isLoadingCatalogs.set(true);
-    try {
-      const branches = await firstValueFrom(this.organizationApi.getBranches({ per_page: 100, status: 'ACTIVE' }));
-      this.branches.set(branches.data);
+    this.catalogError.set(null);
 
+    try {
       const branchId = this.session.activeBranch();
       const userId = this.session.user()?.id;
 
-      if (this.isFixedBranch() && branchId) {
+      if (this.isFixedBranch()) {
+        if (!branchId) {
+          this.blockForIncompleteContext(
+            'No hay una sucursal activa en la sesión. Solicita que revisen tu asignación.',
+          );
+          return;
+        }
+
         this.selectedBranchId.set(branchId);
         this.crearForm.patchValue({ branch_id: branchId });
 
-        if (this.isFixedCoordinator() && userId) {
+        if (this.isFixedCoordinator()) {
+          if (!userId) {
+            this.blockForIncompleteContext(
+              'No se pudo identificar al coordinador de la sesión. Vuelve a iniciar sesión.',
+            );
+            return;
+          }
+
           this.crearForm.patchValue({ coordinator_id: userId });
-        } else {
-          await this.onBranchChange(branchId);
+          return;
         }
-      } else {
-        if (branches.data.length === 1) {
-          this.crearForm.patchValue({ branch_id: branches.data[0].id });
-          await this.onBranchChange(branches.data[0].id);
-        }
+
+        await this.onBranchChange(branchId);
+        return;
       }
+
+      if (!this.isGeneralManager()) {
+        this.blockForIncompleteContext(
+          'La sesión no tiene un alcance autorizado para crear solicitudes.',
+        );
+        return;
+      }
+
+      const branches = await firstValueFrom(
+        this.organizationApi.getBranches({ per_page: 100, status: 'ACTIVE' }),
+      );
+      this.branches.set(branches.data);
+
+      if (branches.data.length === 1) {
+        this.crearForm.patchValue({ branch_id: branches.data[0].id });
+        await this.onBranchChange(branches.data[0].id);
+      }
+    } catch {
+      this.catalogError.set(
+        'No fue posible cargar las opciones autorizadas. Intenta nuevamente.',
+      );
     } finally {
       this.isLoadingCatalogs.set(false);
     }
   }
 
   async onBranchChange(branchId: string) {
+    this.catalogError.set(null);
     this.selectedBranchId.set(branchId || null);
     this.crearForm.patchValue({ coordinator_id: '' });
     this.coordinators.set([]);
 
     if (!branchId) return;
 
-    const assignments = await firstValueFrom(this.organizationApi.getBranchAssignments(branchId));
-    this.coordinators.set(assignments.data.filter(
-      (assignment) => assignment.assignment_status === 'ACTIVE' && assignment.role.code === 'coordinator',
-    ));
+    try {
+      const assignments = await firstValueFrom(
+        this.organizationApi.getBranchAssignments(branchId),
+      );
+      this.coordinators.set(
+        assignments.data.filter(
+          (assignment) =>
+            assignment.assignment_status === 'ACTIVE' && assignment.role.code === 'coordinator',
+        ),
+      );
+    } catch {
+      this.catalogError.set(
+        'No fue posible cargar los coordinadores autorizados para la sucursal.',
+      );
+    }
   }
 
   async onSubmit() {
@@ -107,5 +151,13 @@ export class CrearSolicitudPageComponent {
 
   cancelar() {
     this.router.navigate(['/solicitudes-distribuidoras']);
+  }
+
+  private blockForIncompleteContext(message: string): void {
+    this.branches.set([]);
+    this.coordinators.set([]);
+    this.selectedBranchId.set(null);
+    this.crearForm.patchValue({ branch_id: '', coordinator_id: '' });
+    this.catalogError.set(message);
   }
 }
