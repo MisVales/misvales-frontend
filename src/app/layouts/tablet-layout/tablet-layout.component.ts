@@ -73,7 +73,7 @@ interface TabletNavGroup extends Pick<NavGroupData, 'heading' | 'icon'> {
     <main id="tablet-main" tabindex="-1" class="tablet-main"><ng-content /></main>
   `,
   styles: [`
-    :host { display:grid; grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); min-height:100dvh; background:var(--mv-canvas); color:var(--mv-text); }
+    :host { display:grid; grid-template-columns:minmax(0, 1fr); grid-template-rows:auto minmax(0, 1fr); height:100dvh; overflow:hidden; background:var(--mv-canvas); color:var(--mv-text); }
     .tablet-header { grid-column:1 / -1; grid-row:1; z-index:20; min-height:72px; display:flex; align-items:center; gap:16px; padding:max(12px, env(safe-area-inset-top)) 24px 12px; border-bottom:1px solid var(--mv-border); background:var(--mv-surface); }
     .brand { display:inline-flex; align-items:center; gap:10px; color:var(--mv-text); font-size:1.125rem; font-weight:760; letter-spacing:-.02em; text-decoration:none; }
     .brand__mark { display:grid; place-items:center; width:36px; height:36px; border-radius:10px; background:var(--mv-primary-800); color:var(--mv-surface); font-size:.75rem; font-weight:800; letter-spacing:.04em; }
@@ -82,7 +82,7 @@ interface TabletNavGroup extends Pick<NavGroupData, 'heading' | 'icon'> {
     .workspace strong { font-size:.9375rem; }
     .nav-toggle, .close-nav { display:inline-grid; place-items:center; width:48px; height:48px; padding:0; border:0; border-radius:var(--mv-radius-sm); color:var(--mv-text); background:transparent; touch-action:manipulation; }
     .nav-toggle:active, .close-nav:active, .nav-link:active { background:var(--mv-primary-100); transform:scale(.98); }
-    .tablet-sidebar { position:fixed; z-index:40; inset:0 auto 0 0; width:min(320px, calc(100vw - 48px)); display:flex; flex-direction:column; padding:max(16px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom)); overflow-y:auto; border-right:1px solid var(--mv-border); background:var(--mv-surface); box-shadow:12px 0 28px rgb(24 33 27 / .14); transform:translateX(-104%); transition:transform var(--mv-motion-standard) var(--mv-ease); }
+    .tablet-sidebar { position:fixed; z-index:40; inset:0 auto 0 0; min-block-size:0; width:min(320px, calc(100vw - 48px)); display:flex; flex-direction:column; padding:max(16px, env(safe-area-inset-top)) 12px max(16px, env(safe-area-inset-bottom)); overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; border-right:1px solid var(--mv-border); background:var(--mv-surface); box-shadow:12px 0 28px rgb(24 33 27 / .14); transform:translateX(-104%); transition:transform var(--mv-motion-standard) var(--mv-ease); }
     .tablet-sidebar--open { transform:translateX(0); }
     .tablet-scrim { position:fixed; z-index:30; inset:0; border:0; background:rgb(24 33 27 / .42); }
     .sidebar__title { min-height:48px; display:flex; align-items:center; justify-content:space-between; padding:0 8px 12px 12px; color:var(--mv-text); font-weight:760; }
@@ -95,7 +95,7 @@ interface TabletNavGroup extends Pick<NavGroupData, 'heading' | 'icon'> {
     .nav-link--active lucide-icon { color:var(--mv-primary-600); }
     .nav-link--logout { margin-top:8px; cursor:pointer; }
     .sidebar__footer { display:grid; gap:4px; margin-top:auto; padding-top:16px; border-top:1px solid var(--mv-border); }
-    .tablet-main { grid-column:1; grid-row:2; min-width:0; padding:clamp(24px, 3vw, 40px); overflow:auto; scroll-padding-top:24px; }
+    .tablet-main { grid-column:1; grid-row:2; min-width:0; min-block-size:0; padding:clamp(24px, 3vw, 40px); overflow:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; scroll-padding-top:24px; }
     @media (min-width:900px) { :host { grid-template-columns:272px minmax(0, 1fr); } .tablet-header { padding-inline:28px; } .nav-toggle, .close-nav, .tablet-scrim { display:none; } .tablet-sidebar { position:relative; grid-column:1; grid-row:2; width:auto; inset:auto; padding:20px 14px; box-shadow:none; transform:none; } .tablet-main { grid-column:2; } .sidebar__title { padding-left:12px; } }
     @media (max-width:520px) { .tablet-header { gap:10px; padding-inline:12px; } .workspace { display:none; } .tablet-main { padding:16px; } }
     @media (prefers-reduced-motion:reduce) { .tablet-sidebar { transition:none; } }
