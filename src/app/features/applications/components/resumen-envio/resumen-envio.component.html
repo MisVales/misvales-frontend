@@ -41,6 +41,11 @@
       {{ enviando ? 'Enviando...' : (store.detalle()?.estado === 'DRAFT' ? 'Enviar a Revisión' : 'Expediente Enviado') }}
     </button>
 
-    <p *ngIf="!canSubmit && store.detalle()?.estado === 'DRAFT'" class="text-red-500 text-xs mt-3 font-medium">Debes completar todas las secciones para poder enviar a revisión.</p>
+    <div *ngIf="!canSubmit && store.detalle()?.estado === 'DRAFT'" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
+      <p class="text-red-600 text-sm font-medium mb-2">Para poder enviar a revisión, las siguientes secciones deben estar completadas o marcadas como 'No aplica':</p>
+      <ul class="list-disc list-inside text-sm text-red-500 ml-2">
+        <li *ngFor="let sec of faltantes">{{ sec.label }}</li>
+      </ul>
+    </div>
   </div>
 </div>

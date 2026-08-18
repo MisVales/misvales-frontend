@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { VehiculoFormFactory } from '../../forms/vehiculo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { from, Observable } from 'rxjs';
+import { from, Observable, firstValueFrom } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';

@@ -50,6 +50,10 @@ export class ResumenEnvioComponent {
     ];
   }
 
+  get faltantes() {
+    return this.getSeccionesArray().filter(s => !s.status || s.status === 'PENDING');
+  }
+
   async actualizarEstado(id: string, estado: string) {
     if (this.store.detalle()?.estado !== 'DRAFT' || !estado || this.actualizandoSeccion) return;
 
