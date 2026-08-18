@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
+import { AlertTriangle, Eye, Inbox, Loader2, Lock, LucideAngularModule, Plus } from 'lucide-angular';
 import { SessionStore } from '../../../../core/session/session.store';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { RoleService } from '../../data-access/role.service';
@@ -20,7 +21,10 @@ describe('UserListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UserListComponent],
+      imports: [
+        UserListComponent,
+        LucideAngularModule.pick({ AlertTriangle, Eye, Inbox, Loader2, Lock, Plus }),
+      ],
       providers: [
         provideRouter([]),
         { provide: UserService, useValue: userService },

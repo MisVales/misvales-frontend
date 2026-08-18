@@ -9,7 +9,9 @@
   border: 1px solid var(--border-color, #e2e8f0);
   border-radius: 0.5rem;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .card-header {
@@ -71,8 +73,14 @@
   font-weight: 600;
 }
 
-.badge-success { background-color: var(--color-green-100, #d1fae5); color: var(--color-green-800, #065f46); }
-.badge-danger { background-color: var(--color-red-100, #fee2e2); color: var(--color-red-800, #991b1b); }
+.badge-success {
+  background-color: var(--color-green-100, #d1fae5);
+  color: var(--color-green-800, #065f46);
+}
+.badge-danger {
+  background-color: var(--color-red-100, #fee2e2);
+  color: var(--color-red-800, #991b1b);
+}
 
 .authorization-radios {
   display: grid;
@@ -97,7 +105,7 @@
   transition: all 0.2s;
 }
 
-.radio-label input[type="radio"] {
+.radio-label input[type='radio'] {
   margin-top: 0.25rem;
   width: 1.25rem;
   height: 1.25rem;
@@ -147,6 +155,12 @@
   cursor: not-allowed;
 }
 
+.field-help {
+  margin: 0.5rem 0 0;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.875rem;
+}
+
 .card-footer {
   padding: 1.5rem;
   background-color: var(--color-gray-50, #f9fafb);
@@ -194,10 +208,18 @@
   background-color: var(--color-gray-300, #d1d5db);
 }
 
-.mb-4 { margin-bottom: 1rem; }
-.mt-4 { margin-top: 1rem; }
-.mt-2 { margin-top: 0.5rem; }
-.text-sm { font-size: 0.875rem; }
+.mb-4 {
+  margin-bottom: 1rem;
+}
+.mt-4 {
+  margin-top: 1rem;
+}
+.mt-2 {
+  margin-top: 0.5rem;
+}
+.text-sm {
+  font-size: 0.875rem;
+}
 
 .loading-state {
   display: flex;
@@ -219,8 +241,12 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .alert {
@@ -237,8 +263,13 @@
   border: 1px solid var(--color-red-200, #fecaca);
 }
 
-.ml-auto { margin-left: auto; }
-.btn-sm { padding: 0.25rem 0.5rem; font-size: 0.875rem; }
+.ml-auto {
+  margin-left: auto;
+}
+.btn-sm {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.875rem;
+}
 .btn-outline-danger {
   color: var(--color-red-600, #dc2626);
   border-color: var(--color-red-600, #dc2626);

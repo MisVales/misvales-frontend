@@ -12,4 +12,8 @@
 .main-content {
   flex: 1;
   min-width: 0;
+  background: var(--mv-canvas);
+  scroll-padding-top: 1.5rem;
 }
+
+.content-wrapper { width: 100%; padding: clamp(1rem, 2.2vw, 2rem); }

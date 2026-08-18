@@ -11,6 +11,5 @@ export const roleWriteGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Redirigir si no tiene permisos de escritura
-  return router.createUrlTree(['/']);
+  return router.createUrlTree(['/auth/login']);
 };

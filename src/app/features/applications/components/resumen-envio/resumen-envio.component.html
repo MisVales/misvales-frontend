@@ -1,27 +1,25 @@
 <div class="flex-1 flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 p-8">
   <div class="text-center max-w-lg mx-auto mb-10">
     <h2 class="text-2xl font-bold text-gray-900 mb-3">Resumen y Envío a Revisión</h2>
-    <p class="text-gray-600">Revisa que todas las secciones estén completadas o marcadas como 'No aplicable' antes de enviar la solicitud al Coordinador.</p>
+    <p class="text-gray-600">El avance se calcula automáticamente con los datos guardados en cada sección. Completa los pendientes antes de enviar la solicitud al Coordinador.</p>
   </div>
 
   <div class="max-w-3xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-10">
-    <div *ngFor="let sec of getSeccionesArray()" class="flex items-center justify-between p-4 border border-gray-100 rounded-xl bg-gray-50">
-      <span class="font-medium text-gray-700">{{ sec.label }}</span>
-      
-      <span *ngIf="sec.status === 'COMPLETED'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#E8F3E8] text-[#1A4D2E] text-xs font-bold uppercase tracking-wider">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
-        Completa
+    <div *ngFor="let sec of getSeccionesArray()" class="flex flex-col gap-2 p-4 border border-gray-100 rounded-xl bg-gray-50">
+      <p class="font-medium text-gray-700">
+        {{ sec.label }}<span *ngIf="sec.required" class="text-red-500" aria-hidden="true"> *</span>
+      </p>
+      <span
+        class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-medium"
+        [ngClass]="{
+          'bg-emerald-100 text-emerald-800': sec.status === 'COMPLETED',
+          'bg-amber-100 text-amber-800': !sec.status || sec.status === 'PENDING',
+          'bg-slate-200 text-slate-700': sec.status === 'NOT_APPLICABLE'
+        }"
+      >
+        {{ sec.status === 'COMPLETED' ? 'Completa' : sec.status === 'NOT_APPLICABLE' ? 'No aplica' : 'Pendiente' }}
       </span>
-      
-      <span *ngIf="sec.status === 'NOT_APPLICABLE'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-200 text-gray-600 text-xs font-bold uppercase tracking-wider">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"></path></svg>
-        No Aplica
-      </span>
-      
-      <span *ngIf="sec.status === 'PENDING' || !sec.status" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-amber-100 text-amber-700 text-xs font-bold uppercase tracking-wider">
-        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-        Pendiente
-      </span>
+      <p class="text-xs text-gray-500">Se actualiza al guardar los datos de esta sección.</p>
     </div>
   </div>
 
@@ -42,6 +40,11 @@
       {{ enviando ? 'Enviando...' : (store.detalle()?.estado === 'DRAFT' ? 'Enviar a Revisión' : 'Expediente Enviado') }}
     </button>
 
-    <p *ngIf="!canSubmit && store.detalle()?.estado === 'DRAFT'" class="text-red-500 text-xs mt-3 font-medium">Debes completar todas las secciones para poder enviar a revisión.</p>
+    <div *ngIf="!canSubmit && store.detalle()?.estado === 'DRAFT'" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
+      <p class="text-red-600 text-sm font-medium mb-2">Para poder enviar a revisión, completa las siguientes secciones:</p>
+      <ul class="list-disc list-inside text-sm text-red-500 ml-2">
+        <li *ngFor="let sec of faltantes">{{ sec.label }}</li>
+      </ul>
+    </div>
   </div>
 </div>

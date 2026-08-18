@@ -30,21 +30,25 @@
     </div>
 
     @if (visita.estado !== 'ASSIGNED') {
+      <div class="responsibility-banner" role="note">
+        <strong>Rol del verificador:</strong> documenta lo declarado, lo observado y las evidencias. Las correcciones posteriores corresponden exclusivamente a coordinación.
+      </div>
       <!-- Wizard Navigation -->
-      <div class="wizard-tabs">
-        <button class="tab-btn" [class.active]="step() === 1" (click)="setStep(1)">1. Comprobación</button>
-        <button class="tab-btn" [class.active]="step() === 2" (click)="setStep(2)">2. Evidencias</button>
-        <button class="tab-btn" [class.active]="step() === 3" (click)="setStep(3)">3. Diferencias</button>
-        <button class="tab-btn" [class.active]="step() === 4" (click)="setStep(4)">4. Resultado Final</button>
+      <div class="wizard-tabs" role="tablist" aria-label="Etapas de la visita">
+        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 1" [class.active]="step() === 1" (click)="setStep(1)">1. Revisar expediente</button>
+        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 2" [class.active]="step() === 2" (click)="setStep(2)">2. Evidencias</button>
+        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 3" [class.active]="step() === 3" (click)="setStep(3)">3. Resultado final</button>
       </div>
 
       <!-- Step 1: Comprobación -->
       @if (step() === 1) {
         <div class="step-content">
-          <h2 class="step-title">Lista de Comprobación</h2>
+          <h2 class="step-title">Revisión del expediente</h2>
+          <p class="step-intro">Revisa todo el expediente a simple vista. Marca <strong>Correcto todo</strong> cuando el grupo coincida; si detectas un error, activa <strong>Marcar diferencia</strong> para seleccionar únicamente el campo que debes documentar.</p>
           <app-lista-comprobacion-visita 
             [puntos]="puntosComprobacion()"
             [isReadonly]="visita.estado === 'COMPLETED'"
+            (cambiarEstadoGrupo)="onEstadoGrupoChange($event)"
             (cambiarEstadoPunto)="onEstadoPuntoChange($event)"
             (registrarDiferencia)="abrirEditorDiferencia($event)">
           </app-lista-comprobacion-visita>
@@ -80,39 +84,24 @@
         </div>
       }
 
-      <!-- Step 3: Diferencias (Registro Manual) -->
+      <!-- Step 3: Resultado Final -->
       @if (step() === 3) {
         <div class="step-content">
-          <h2 class="step-title">Diferencias Registradas</h2>
-          
-          @if (visita.estado !== 'COMPLETED') {
-            <button class="btn btn-secondary mb-4" (click)="abrirEditorDiferencia()">+ Nueva Diferencia Manual</button>
-          }
-
-          <div class="diferencias-list">
-            @for (dif of visita.diferencias; track dif.id) {
-              <div class="diferencia-card">
-                <h4>{{ dif.seccion }} - {{ dif.campo }}</h4>
-                <p><strong>Declarado:</strong> {{ dif.datoDeclarado }}</p>
-                <p><strong>Observado:</strong> {{ dif.datoObservado || 'N/A' }}</p>
-                <p><strong>Descripción:</strong> {{ dif.descripcion }}</p>
-              </div>
-            }
-            @if (visita.diferencias.length === 0) {
-              <p class="text-muted">No se han registrado diferencias.</p>
-            }
-          </div>
-        </div>
-      }
-
-      <!-- Step 4: Resultado Final -->
-      @if (step() === 4) {
-        <div class="step-content final-step">
           <h2 class="step-title">Finalizar Visita</h2>
           
           <div class="summary-box">
             <p><strong>Evidencias cargadas:</strong> {{ visita.evidencias.length }}</p>
             <p><strong>Diferencias reportadas:</strong> {{ visita.diferencias.length }}</p>
+            @if (visita.diferencias.length) {
+              <ul class="summary-differences" aria-label="Diferencias registradas">
+                @for (diferencia of visita.diferencias; track diferencia.id) {
+                  <li>
+                    <strong>{{ etiquetaDiferencia(diferencia.seccion, diferencia.campo) }}.</strong>
+                    {{ diferencia.descripcion || diferencia.datoObservado || 'Sin descripción adicional.' }}
+                  </li>
+                }
+              </ul>
+            }
           </div>
 
           @if (visita.estado !== 'COMPLETED') {
@@ -167,15 +156,16 @@
 
   <!-- Modal/Overlay para Editor de Diferencias -->
   @if (mostrarEditorDiferencia()) {
-    <div class="modal-overlay">
-      <div class="modal-content">
-        <app-editor-diferencias
-          [seccionesDisponibles]="seccionesDiferencias"
-          [camposDisponibles]="camposDiferencias"
-          [isProcessing]="facade.isLoading()"
-          (cancelar)="cerrarEditorDiferencia()"
-          (guardar)="onGuardarDiferencia($event)">
-        </app-editor-diferencias>
+    <div class="modal-overlay" role="presentation">
+      <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="editor-diferencia-titulo">
+        @if (puntoDiferencia(); as punto) {
+          <app-editor-diferencias
+            [contexto]="{ seccion: punto.seccion, campo: punto.campo, etiqueta: punto.grupo + ' · ' + punto.etiqueta, datoDeclarado: punto.datoDeclarado }"
+            [isProcessing]="facade.isLoading()"
+            (cancelar)="cerrarEditorDiferencia()"
+            (guardar)="onGuardarDiferencia($event)">
+          </app-editor-diferencias>
+        }
       </div>
     </div>
   }

@@ -1,7 +1,9 @@
+<a class="skip-link" href="#main-content">Saltar al contenido</a>
 <app-sidebar class="sidebar-wrapper"></app-sidebar>
 
-<main class="main-content flex-grow flex flex-col bg-[#F8F9FA] overflow-y-auto">
-  <div class="content-wrapper p-4 md:p-8 flex-grow">
-    <router-outlet></router-outlet>
+<main id="main-content" class="main-content flex-grow flex flex-col overflow-y-auto" tabindex="-1">
+  <app-shell-header></app-shell-header>
+  <div class="content-wrapper flex-grow">
+    <ng-content></ng-content>
   </div>
 </main>

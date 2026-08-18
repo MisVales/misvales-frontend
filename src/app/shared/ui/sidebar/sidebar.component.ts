@@ -15,6 +15,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { Subscription, filter } from 'rxjs';
 import { AuthFacade } from '../../../features/auth/state/auth.facade';
 import { filterNavigationItems } from './sidebar.permissions';
+import { ShellNavigationService } from '../../../core/services/shell-navigation.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -32,7 +33,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private readonly sessionStore = inject(SessionStore);
   private readonly router = inject(Router);
   private readonly authFacade = inject(AuthFacade);
+  readonly shellNavigation = inject(ShellNavigationService);
   private routerSub!: Subscription;
+  private mobileMedia?: MediaQueryList;
 
   /** ID de la categoría principal (nivel 0) abierta */
   openGroupId = signal<string | null>(null);
@@ -45,6 +48,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   /** Sidebar colapsado (rail) */
   isCollapsed = signal(false);
+  isSmallScreen = signal(false);
 
   // ─── Navegación filtrada por permisos ──────────────────────
 
@@ -74,6 +78,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // ─── Lifecycle ─────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.mobileMedia = window.matchMedia('(max-width: 767px)');
+    this.isSmallScreen.set(this.mobileMedia.matches);
+    this.mobileMedia.addEventListener('change', this.onMobileMediaChange);
     // Set initial route
     this.activeRoute.set(this.router.url);
     this.openAncestorsForRoute(this.router.url);
@@ -85,11 +92,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
         const url = (e as NavigationEnd).urlAfterRedirects;
         this.activeRoute.set(url);
         this.openAncestorsForRoute(url);
+        this.shellNavigation.closeMobileMenu();
       });
   }
 
   ngOnDestroy(): void {
     this.routerSub?.unsubscribe();
+    this.mobileMedia?.removeEventListener('change', this.onMobileMediaChange);
   }
 
   // ─── Acordeón controlado ───────────────────────────────────
@@ -141,6 +150,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   // ─── Acciones ──────────────────────────────────────────────
 
   onItemClick(item: NavItemData): void {
+    this.shellNavigation.closeMobileMenu();
     if (item.action === 'logout') {
       this.authFacade.logout();
       return;
@@ -150,6 +160,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
   toggleCollapse(): void {
     this.isCollapsed.update((v) => !v);
   }
+
+  closeMobileMenu(): void {
+    this.shellNavigation.closeMobileMenu();
+  }
+
+  private readonly onMobileMediaChange = (event: MediaQueryListEvent): void => {
+    this.isSmallScreen.set(event.matches);
+    if (!event.matches) this.shellNavigation.closeMobileMenu();
+  };
 
   // ─── Helpers privados ──────────────────────────────────────
 

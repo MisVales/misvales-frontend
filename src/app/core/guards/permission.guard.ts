@@ -12,8 +12,7 @@ export const permissionGuard = (requiredPermission: string): CanActivateFn => {
       return true;
     }
 
-    // Opcional: Redirigir a una página de 'Acceso Denegado'
-    return router.createUrlTree(['/']);
+    return router.createUrlTree(['/auth/login']);
   };
 };
 
@@ -25,6 +24,6 @@ export const anyPermissionGuard = (requiredPermissions: readonly string[]): CanA
 
     return permissions.includes('all') || requiredPermissions.some((permission) => permissions.includes(permission))
       ? true
-      : router.createUrlTree(['/inicio']);
+      : router.createUrlTree(['/auth/login']);
   };
 };

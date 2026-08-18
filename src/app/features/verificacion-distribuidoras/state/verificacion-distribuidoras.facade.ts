@@ -150,6 +150,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
           const response = await firstValueFrom(apiService.consultarVisita(id));
           patchState(store, {
             visitaSeleccionada: mapVisitaToModel(response),
+            solicitudSeleccionada: response.application ? mapSolicitudToModel(response.application) : null,
             isLoading: false
           });
         } catch (err) {

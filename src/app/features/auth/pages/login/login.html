@@ -1,18 +1,18 @@
-<div class="min-h-screen bg-[#F8F9FA] flex flex-col relative font-sans">
+<main class="min-h-screen bg-[#F8F9FA] flex flex-col relative font-sans" aria-labelledby="login-title">
   <!-- Encabezado superior discreto -->
   <!-- Contenedor central -->
   <div class="flex-grow flex items-center justify-center p-4">
     <!-- Tarjeta de Login -->
-    <div class="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full border border-gray-100">
+    <div class="bg-white rounded-2xl p-6 sm:p-8 max-w-[28rem] w-full border border-gray-200">
       
       <!-- Encabezado de la tarjeta -->
       <div class="text-center mb-8">
-        <h1 class="text-3xl font-extrabold text-[#386641] tracking-tight">MisVales</h1>
+        <h1 id="login-title" class="text-3xl font-extrabold text-[#386641] tracking-tight">MisVales</h1>
         <p class="text-gray-500 text-sm mt-2">Acceso seguro a su portal financiero.</p>
       </div>
 
       <!-- Mensaje de Error (del Facade) -->
-      <div *ngIf="error" class="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200">
+      <div *ngIf="error" class="mb-6 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200" role="alert">
         {{ error }}
       </div>
 
@@ -89,4 +89,4 @@
 
     </div>
   </div>
-</div>
+</main>

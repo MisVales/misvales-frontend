@@ -2,12 +2,14 @@ export type EstadoSolicitudDistribuidora =
   | 'DRAFT'
   | 'COORDINATOR_REVIEW'
   | 'VERIFIER_ASSIGNED'
-  | 'VERIFICATION_IN_PROGRESS'
+  | 'PHYSICAL_VERIFICATION'
+  | 'COORDINATOR_CORRECTION'
   | 'COORDINATOR_EVALUATION'
   | 'MANAGER_AUTHORIZATION'
+  | 'TERMINATED_UNFAVORABLE'
   | 'AUTHORIZED_PENDING_ACTIVATION'
   | 'REJECTED'
-  | 'CANCELLED';
+  | 'ACTIVE';
 
 export type ResultadoVisitaVerificacion = 'FAVORABLE' | 'UNFAVORABLE' | null;
 export type EstadoVisitaVerificacion = 'ASSIGNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';

@@ -65,10 +65,24 @@
           </div>
           @for (seccion of solicitud.datosDeclarados | keyvalue; track seccion.key) {
             @if (seccion.value) {
-              <div class="mt-4 rounded border border-gray-200 p-3">
-                <h3 class="font-semibold capitalize">{{ seccion.key.replaceAll('_', ' ') }}</h3>
-                <pre class="mt-2 whitespace-pre-wrap break-words text-xs text-gray-700">{{ seccion.value | json }}</pre>
-              </div>
+              <section class="declared-section" [attr.aria-labelledby]="'declared-' + seccion.key">
+                <h3 class="declared-section-title" [id]="'declared-' + seccion.key">{{ etiquetaSeccion(seccion.key) }}</h3>
+                @for (registro of registrosSeccion(seccion.value); track $index; let indice = $index) {
+                  <article class="declared-record">
+                    @if (registrosSeccion(seccion.value).length > 1) {
+                      <h4 class="declared-record-title">Registro {{ indice + 1 }}</h4>
+                    }
+                    <dl class="data-grid declared-grid">
+                      @for (campo of registro; track campo.etiqueta) {
+                        <div class="data-group">
+                          <dt>{{ campo.etiqueta }}</dt>
+                          <dd>{{ campo.valor }}</dd>
+                        </div>
+                      }
+                    </dl>
+                  </article>
+                }
+              </section>
             }
           }
         </section>

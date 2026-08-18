@@ -1,4 +1,5 @@
-import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { adultBirthDateValidator } from '../validators/adult-birth-date.validator';
 
 export class FamiliarFormFactory {
   static create(fb: FormBuilder): FormGroup {
@@ -8,7 +9,7 @@ export class FamiliarFormFactory {
       first_name: ['', [Validators.required, Validators.maxLength(100)]],
       first_last_name: ['', [Validators.required, Validators.maxLength(100)]],
       second_last_name: ['', [Validators.maxLength(100)]],
-      birth_date: ['', [Validators.required]],
+      birth_date: ['', [Validators.required, adultBirthDateValidator]],
       declared_age: [null, [Validators.min(0), Validators.max(120)]],
       school_name: ['', [Validators.maxLength(150)]],
       is_family_reference: [false],

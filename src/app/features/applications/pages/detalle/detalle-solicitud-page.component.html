@@ -28,11 +28,17 @@
           <span>Progreso de Solicitud</span>
           <span>{{ getProgresoPorcentaje() }}%</span>
         </div>
-        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div class="w-full h-2 bg-gray-200 rounded-full overflow-hidden" role="progressbar" aria-label="Progreso de la solicitud" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="getProgresoPorcentaje()">
           <div class="h-full bg-[#82B965] rounded-full transition-all duration-300" [style.width]="getProgresoAncho()"></div>
         </div>
       </div>
     </div>
+
+    @if (!isEditable()) {
+      <div class="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+        <strong>Expediente en modo consulta.</strong> La solicitud ya salió de borrador y no admite cambios en esta etapa.
+      </div>
+    }
 
     <!-- Layout Grid -->
     <div class="flex flex-col lg:flex-row gap-6">
@@ -42,8 +48,11 @@
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
           <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-3">Pasos de Solicitud</h3>
           
-          <div class="space-y-1 relative">
+          <div class="relative flex gap-1 overflow-x-auto lg:block lg:space-y-1" role="tablist" aria-label="Secciones de la solicitud">
             <button *ngFor="let paso of pasos" 
+                    type="button"
+                    role="tab"
+                    [attr.aria-selected]="pasoActual === paso.id"
                     (click)="cambiarPaso(paso.id)"
                     [class.bg-[#F4F8F4]]="pasoActual === paso.id"
                     [class.text-[#1A4D2E]]="pasoActual === paso.id"
@@ -53,7 +62,7 @@
                     [class.hover:bg-gray-50]="pasoActual !== paso.id"
                     [class.pl-2]="pasoActual === paso.id"
                     [class.pl-3]="pasoActual !== paso.id"
-                    class="w-full flex items-center gap-3 py-2.5 pr-3 rounded-r-lg text-sm font-medium transition-colors text-left border-transparent">
+                    class="flex min-w-max items-center gap-3 rounded-r-lg border-transparent py-2.5 pr-3 text-left text-sm font-medium transition-colors lg:w-full">
               
               <!-- Check Icon (completed) -->
               <svg *ngIf="getPasoCompletado(paso.id)" class="w-5 h-5 text-[#82B965]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -73,7 +82,7 @@
 
       <!-- Main Content Area -->
       <div class="flex-1">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[500px] flex flex-col">
+        <fieldset [disabled]="!isEditable()" class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[500px] flex flex-col disabled:opacity-80">
           
           <!-- CONTENIDO DINÁMICO -->
           <div *ngIf="pasoActual === 'datos-personales'" class="flex-1 h-full">
@@ -108,7 +117,7 @@
             <app-resumen-envio></app-resumen-envio>
           </div>
 
-        </div>
+        </fieldset>
       </div>
 
     </div>

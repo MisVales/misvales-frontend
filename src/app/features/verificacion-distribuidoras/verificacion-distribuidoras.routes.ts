@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from '@core/guards/auth.guard';
 import { permissionGuard } from '@core/guards/permission.guard';
 import { roleGuard } from '@core/guards/role.guard';
+import { negativeRoleGuard } from '@core/guards/negative-role.guard';
 
 export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
   {
@@ -18,7 +19,7 @@ export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
       },
       {
         path: 'solicitudes-distribuidora/autorizaciones',
-        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager'])],
+        canActivate: [negativeRoleGuard(['coordinator', 'admin']), permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager'])],
         loadComponent: () => import('./pages/autorizacion-gerencial/autorizacion-gerencial.component').then(m => m.AutorizacionGerencialComponent)
       },
       {
@@ -28,22 +29,22 @@ export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
       },
       {
         path: 'solicitudes-distribuidora/:id/asignar-verificador',
-        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
+        canActivate: [negativeRoleGuard(['admin']), permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
         loadComponent: () => import('./pages/asignar-verificador/asignar-verificador.component').then(m => m.AsignarVerificadorComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id/correcciones',
-        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
+        canActivate: [negativeRoleGuard(['verifier', 'admin']), permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
         loadComponent: () => import('./pages/correcciones-solicitud/correcciones-solicitud.component').then(m => m.CorreccionesSolicitudComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id/evaluacion',
-        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
+        canActivate: [negativeRoleGuard(['admin']), permissionGuard('distributor_applications.view'), roleGuard(['coordinator'])],
         loadComponent: () => import('./pages/evaluacion-coordinador/evaluacion-coordinador.component').then(m => m.EvaluacionCoordinadorComponent)
       },
       {
         path: 'solicitudes-distribuidora/:id/autorizacion',
-        canActivate: [permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager'])],
+        canActivate: [negativeRoleGuard(['coordinator', 'admin']), permissionGuard('distributor_applications.view'), roleGuard(['general_manager', 'branch_manager'])],
         loadComponent: () => import('./pages/autorizacion-gerencial/autorizacion-gerencial.component').then(m => m.AutorizacionGerencialComponent) // Reutilizamos el mismo componente que manejará la vista simple y el wizard de decisión
       },
 
@@ -65,3 +66,4 @@ export const VERIFICACION_DISTRIBUIDORAS_ROUTES: Routes = [
     ]
   }
 ];
+

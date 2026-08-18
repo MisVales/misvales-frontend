@@ -6,11 +6,17 @@ import { DomicilioFormFactory } from '../../forms/domicilio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
+import { from, Observable } from 'rxjs';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { apiErrorMessage } from '../../../../core/api/api-error';
+import { AddressFormComponent } from '../../../../shared/components/address-form/address-form';
+import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 
 @Component({
   selector: 'app-domicilios-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AddressFormComponent, AutosaveDirective],
   templateUrl: './domicilios-form.component.html',
   styleUrls: ['./domicilios-form.component.css']
 })
@@ -19,12 +25,18 @@ export class DomiciliosFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
   private cdr = inject(ChangeDetectorRef);
+  private alerts = inject(AlertService);
+  private confirmation = inject(ConfirmationService);
 
   domiciliosArray: FormArray = DomicilioFormFactory.createArray(this.fb);
   cargando = false;
   mostrandoFormulario = false;
   formularioActual: FormGroup | null = null;
   indiceEdicion: number | null = null;
+  autosaveStatus: AutosaveStatus = 'idle';
+
+  saveCurrentAddress = (): Observable<unknown> =>
+    this.formularioActual ? from(this.guardarDomicilioDirecto(this.formularioActual)) : from([]);
 
   async ngOnInit() {
     await this.esperarDetalle();
@@ -93,26 +105,44 @@ export class DomiciliosFormComponent implements OnInit {
   marcarComoActual(index: number) {
     const yaExisteActual = this.domiciliosGroups.some((g, i) => i !== index && g.value.is_current);
     if (yaExisteActual) {
-      alert('Ya existe un domicilio marcado como actual. Al guardar este, el backend podría rechazarlo si no permite dos. Asegúrate de desmarcar el otro primero.');
+      this.alerts.showAlert('Ya existe un domicilio actual. Desmarca el anterior antes de guardar para conservar una sola dirección vigente.', 'warning');
     }
     this.domiciliosGroups[index].get('is_current')?.setValue(true);
-    this.guardarDomicilioDirecto(this.domiciliosGroups[index]);
+    void this.guardarDomicilioDirecto(this.domiciliosGroups[index]).catch(() => undefined);
   }
 
-  async guardarFormulario() {
+  mapToAddressResult(val: any) {
+    if (!val || !val.street) return undefined;
+    return {
+      full_address: '', // No importa para initialAddress
+      street: val.street,
+      exterior_number: val.exterior_number,
+      interior_number: val.interior_number,
+      neighborhood: val.neighborhood,
+      zip_code: val.postal_code,
+      municipality: val.municipality,
+      city: val.city,
+      state: val.state,
+      country: val.country
+    };
+  }
+
+  onAddressChange(result: any) {
     if (!this.formularioActual) return;
-    
-    if (this.formularioActual.invalid) {
-      this.formularioActual.markAllAsTouched();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    await this.guardarDomicilioDirecto(this.formularioActual);
-    this.cancelarFormulario();
+    this.formularioActual.patchValue({
+      street: result.street,
+      exterior_number: result.exterior_number,
+      interior_number: result.interior_number,
+      neighborhood: result.neighborhood,
+      postal_code: result.zip_code,
+      municipality: result.municipality,
+      city: result.city,
+      state: result.state,
+      country: result.country
+    });
   }
 
-  async guardarDomicilioDirecto(formGroup: FormGroup) {
+  async guardarDomicilioDirecto(formGroup: FormGroup): Promise<void> {
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
 
@@ -121,27 +151,32 @@ export class DomiciliosFormComponent implements OnInit {
     delete payload.id;
 
     try {
-      if (idDomicilio) {
-        await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, this.store.detalle()!.versionBloqueo));
-      } else {
-        await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
-      }
-      await this.store.cargarDetalle(idSolicitud);
-      await this.cargarDomicilios();
+      await this.store.ejecutarGuardado(async () => {
+        const detalle = this.store.detalle();
+        if (!detalle || detalle.versionBloqueo === undefined) return;
+
+        const saved: any = idDomicilio
+          ? await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, detalle.versionBloqueo))
+          : await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, detalle.versionBloqueo));
+
+        const createdId = saved?.id ?? saved?.data?.id;
+        if (!idDomicilio && createdId) formGroup.patchValue({ id: createdId }, { emitEvent: false });
+        this.store.registrarAutoguardado(saved);
+      });
     } catch (e: any) {
       if (e?.status === 409) {
-        await this.store.cargarDetalle(idSolicitud);
-        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
+        this.alerts.showAlert('La información cambió en otra sesión. No se guardó este cambio; actualiza el expediente antes de reintentar.', 'warning');
       } else {
-        alert(e?.error?.message || 'Error al guardar domicilio');
+        this.alerts.showAlert(apiErrorMessage(e, 'No fue posible guardar el domicilio.'), 'error');
       }
+      throw e;
     } finally {
       this.cdr.markForCheck();
     }
   }
 
   async eliminarDomicilio(idDomicilio: string) {
-    const confirmacion = confirm('¿Estás seguro de que deseas eliminar este domicilio?');
+    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar domicilio', message: 'La dirección se eliminará del expediente. Si es la vigente, verifica antes el domicilio que quedará activo.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;

@@ -3,6 +3,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { ComparadorCorreccionesComponent } from '../../components/comparador-correcciones/comparador-correcciones.component';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-correcciones-solicitud',
@@ -16,6 +18,8 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(VerificacionDistribuidorasFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly alerts = inject(AlertService);
+  private readonly confirmation = inject(ConfirmationService);
 
   mostrarFormularioCorreccion = signal<boolean>(false);
   diferenciaSeleccionada = signal<any>(null);
@@ -67,7 +71,7 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     if (!solicitud || !dif) return;
 
     if (!this.valorCorregido() || !this.motivoCorreccion()) {
-      alert('Debes ingresar el valor corregido y el motivo.');
+      this.alerts.showAlert('Ingresa el dato corregido y el motivo de la corrección.', 'warning');
       return;
     }
 
@@ -93,18 +97,18 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     if (!solicitud) return;
 
     if (this.diferenciasPendientes().length > 0) {
-      if (!confirm('Aún hay diferencias sin corregir. ¿Estás seguro de finalizar las correcciones y avanzar el proceso?')) {
+      if (!await this.confirmation.confirm({ title: 'Hay diferencias pendientes', message: 'El expediente aún contiene diferencias sin corregir. Si continúas, avanzará con ese registro pendiente.', confirmLabel: 'Finalizar de todos modos', tone: 'danger' })) {
         return;
       }
     } else {
-      if (!confirm('¿Finalizar correcciones?')) {
+      if (!await this.confirmation.confirm({ title: 'Finalizar correcciones', message: 'El expediente avanzará a la siguiente etapa con el historial original, observado y corregido.', confirmLabel: 'Finalizar correcciones' })) {
         return;
       }
     }
 
     const success = await this.facade.finalizarCorrecciones(solicitud.id, { lock_version: solicitud.lockVersion });
     if (success) {
-      alert('Correcciones finalizadas.');
+      this.alerts.showAlert('Correcciones finalizadas y expediente actualizado.', 'success');
       this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id]);
     }
   }

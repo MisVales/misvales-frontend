@@ -265,3 +265,14 @@
     </div>
   </div>
 </div>
+
+<app-confirm-dialog
+  [open]="leaveDialogOpen()"
+  title="Salir sin guardar los códigos"
+  message="Los códigos de recuperación solo se muestran una vez. Si sales ahora, podrías perder un método de recuperación de acceso."
+  confirmLabel="Salir de todos modos"
+  tone="danger"
+  dialogId="leave-activation"
+  (confirm)="resolveLeave(true)"
+  (cancel)="resolveLeave(false)"
+></app-confirm-dialog>

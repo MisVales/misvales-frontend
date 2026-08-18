@@ -56,7 +56,20 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     this.loadStates();
     this.setupListeners();
     if (this.initialAddress) {
-      // TODO: logic to patch initial address if necessary
+      // Patch simple text fields
+      this.form.patchValue({
+        street: this.initialAddress.street || '',
+        exteriorNumber: this.initialAddress.exterior_number || '',
+        interiorNumber: this.initialAddress.interior_number || '',
+        zipCode: this.initialAddress.zip_code || ''
+      }, { emitEvent: false });
+      
+      // If zip_code exists, it will trigger the zipCode listener later when we manually emit 
+      // or we can just trigger it now:
+      if (this.initialAddress.zip_code && this.initialAddress.zip_code.length === 5) {
+        this.pendingColonyName = this.initialAddress.neighborhood || null;
+        this.form.get('zipCode')?.updateValueAndValidity();
+      }
     }
   }
 
@@ -247,7 +260,7 @@ export class AddressFormComponent implements OnInit, OnDestroy {
       municipality: cityName,
       city: cityName,
       state: stateName,
-      country: 'Mexico',
+      country: 'MX',
       lat,
       lng
     });

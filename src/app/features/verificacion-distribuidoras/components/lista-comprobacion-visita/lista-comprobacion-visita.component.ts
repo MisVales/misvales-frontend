@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 
 export interface PuntoComprobacion {
   id: string;
@@ -6,8 +6,22 @@ export interface PuntoComprobacion {
   campo: string;
   etiqueta: string;
   datoDeclarado: string;
+  grupo: string;
+  registro: string;
   estado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA' | null;
   diferenciaRegistrada?: boolean;
+}
+
+interface RegistroComprobacion {
+  key: string;
+  nombre: string;
+  puntos: PuntoComprobacion[];
+}
+
+interface GrupoComprobacion {
+  nombre: string;
+  puntos: PuntoComprobacion[];
+  registros: RegistroComprobacion[];
 }
 
 @Component({
@@ -22,7 +36,57 @@ export class ListaComprobacionVisitaComponent {
   isReadonly = input<boolean>(false);
   
   cambiarEstadoPunto = output<{ puntoId: string; estado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA' }>();
+  cambiarEstadoGrupo = output<{ grupo: string; estado: 'COMPROBADO' | 'NO_APLICA' }>();
   registrarDiferencia = output<PuntoComprobacion>();
+
+  private readonly gruposEnDiferencia = signal<Set<string>>(new Set());
+
+  protected readonly grupos = computed(() => {
+    const agrupados = new Map<string, PuntoComprobacion[]>();
+    for (const punto of this.puntos()) {
+      agrupados.set(punto.grupo, [...(agrupados.get(punto.grupo) ?? []), punto]);
+    }
+    return [...agrupados.entries()].map(([nombre, puntos]): GrupoComprobacion => {
+      const registros = new Map<string, PuntoComprobacion[]>();
+      for (const punto of puntos) {
+        const key = punto.registro || '__sin-registro__';
+        registros.set(key, [...(registros.get(key) ?? []), punto]);
+      }
+
+      return {
+        nombre,
+        puntos,
+        registros: [...registros.entries()].map(([key, registroPuntos]) => ({
+          key,
+          nombre: key === '__sin-registro__' ? '' : (registroPuntos[0]?.registro ?? ''),
+          puntos: registroPuntos,
+        })),
+      };
+    });
+  });
+
+  isGrupoEnDiferencia(nombre: string): boolean {
+    return this.gruposEnDiferencia().has(nombre);
+  }
+
+  activarDiferencias(grupo: GrupoComprobacion) {
+    if (this.isReadonly()) return;
+    this.gruposEnDiferencia.update((actuales) => {
+      const siguientes = new Set(actuales);
+      siguientes.add(grupo.nombre);
+      return siguientes;
+    });
+  }
+
+  onEstadoGrupoChange(grupo: GrupoComprobacion, estado: 'COMPROBADO' | 'NO_APLICA') {
+    if (this.isReadonly()) return;
+    this.gruposEnDiferencia.update((actuales) => {
+      const siguientes = new Set(actuales);
+      siguientes.delete(grupo.nombre);
+      return siguientes;
+    });
+    this.cambiarEstadoGrupo.emit({ grupo: grupo.nombre, estado });
+  }
 
   onEstadoChange(punto: PuntoComprobacion, nuevoEstado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA') {
     if (this.isReadonly()) return;

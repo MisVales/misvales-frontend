@@ -48,8 +48,8 @@ export class DistribuidorasApiService {
   }
 
   obtener(id: string): Observable<Distribuidora> {
-    return this.http.get<DistributorDetailResponseDto>(`${this.apiUrl}/${id}`).pipe(
-      map(dto => DistribuidoraMapper.fromDto(dto))
+    return this.http.get<{ data: DistributorDetailResponseDto }>(`${this.apiUrl}/${id}`).pipe(
+      map(({ data }) => DistribuidoraMapper.fromDto(data))
     );
   }
 

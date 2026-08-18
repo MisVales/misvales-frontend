@@ -10,12 +10,12 @@ export const distribuidorasRoutes: Routes = [
   {
     path: '',
     component: ListadoDistribuidorasPageComponent,
-    canActivate: [anyPermissionGuard(['distributors.view_any', 'distributors.view'])]
+    canActivate: [anyPermissionGuard(['credit_lines.view_own', 'credit_lines.view_assigned', 'credit_lines.view_branch', 'credit_lines.view_global'])]
   },
   {
     path: 'lineas-credito',
     component: LineasCreditoPageComponent,
-    canActivate: [anyPermissionGuard(['distributors.view_any', 'distributors.view'])]
+    canActivate: [anyPermissionGuard(['credit_increase_requests.view_own', 'credit_increase_requests.view_assigned', 'credit_increase_requests.view_branch', 'credit_increase_requests.view_global'])]
   },
   {
     path: 'incrementos-linea',

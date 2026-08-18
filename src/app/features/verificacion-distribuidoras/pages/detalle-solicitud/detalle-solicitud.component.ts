@@ -1,16 +1,19 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
-import { DatePipe, JsonPipe, KeyValuePipe } from '@angular/common';
+import { DatePipe, KeyValuePipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { EstadoSolicitudComponent } from '../../components/estado-solicitud/estado-solicitud.component';
 import { LineaTiempoSolicitudComponent } from '../../components/linea-tiempo-solicitud/linea-tiempo-solicitud.component';
 import { SessionStore } from '../../../../core/session/session.store';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { presentarRegistrosDeclarados } from './datos-declarados.presenter';
 
 @Component({
   selector: 'app-detalle-solicitud',
   standalone: true,
-  imports: [DatePipe, JsonPipe, KeyValuePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, FormsModule],
+  imports: [DatePipe, KeyValuePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, FormsModule],
   templateUrl: './detalle-solicitud.component.html',
   styleUrl: './detalle-solicitud.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -20,6 +23,8 @@ export class DetalleSolicitudComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   protected readonly sessionStore = inject(SessionStore);
+  private readonly alerts = inject(AlertService);
+  private readonly confirmation = inject(ConfirmationService);
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -60,6 +65,24 @@ export class DetalleSolicitudComponent implements OnInit, OnDestroy {
     { value: 'BIENES', label: 'Bienes y Compromisos' }
   ];
 
+  private readonly etiquetasSeccion: Record<string, string> = {
+    personal_data: 'Datos personales',
+    family_members: 'Familiares y referencias',
+    residences: 'Domicilios',
+    vehicles: 'Vehículos',
+    assets_liabilities: 'Bienes y compromisos',
+    employments: 'Empleos',
+    commercial_credits: 'Créditos comerciales',
+  };
+
+  etiquetaSeccion(seccion: string): string {
+    return this.etiquetasSeccion[seccion] ?? seccion.replaceAll('_', ' ');
+  }
+
+  registrosSeccion(valor: unknown) {
+    return presentarRegistrosDeclarados(valor);
+  }
+
   toggleSeccionDevolucion(valor: string) {
     const actuales = this.devolucionSecciones();
     if (actuales.includes(valor)) {
@@ -81,11 +104,11 @@ export class DetalleSolicitudComponent implements OnInit, OnDestroy {
 
   async confirmarDevolucion(lockVersion: number) {
     if (!this.devolucionMotivo() || this.devolucionSecciones().length === 0) {
-      alert('Debes proporcionar un motivo y seleccionar al menos una sección pendiente.');
+      this.alerts.showAlert('Indica el motivo y selecciona al menos una sección pendiente.', 'warning');
       return;
     }
 
-    if (!confirm('¿Estás seguro de devolver esta solicitud a captura?')) return;
+    if (!await this.confirmation.confirm({ title: 'Devolver a captura', message: 'La solicitud regresará a captura con las secciones seleccionadas como pendientes.', confirmLabel: 'Devolver solicitud', tone: 'danger' })) return;
 
     const req = {
       motivo: this.devolucionMotivo(),
@@ -98,7 +121,7 @@ export class DetalleSolicitudComponent implements OnInit, OnDestroy {
       const success = await this.facade.devolverACaptura(id, req);
       if (success) {
         this.cerrarDevolucionModal();
-        alert('Solicitud devuelta a captura exitosamente.');
+        this.alerts.showAlert('Solicitud devuelta a captura.', 'success');
       }
     }
   }

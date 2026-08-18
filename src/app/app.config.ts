@@ -7,6 +7,7 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
+import { ServiceWorkerModule } from '@angular/service-worker';
 import { provideHttpClient, withFetch, withInterceptors, withXsrfConfiguration } from '@angular/common/http';
 import { routes } from './app.routes';
 import { authInterceptor } from '@core/interceptors/auth.interceptor';
@@ -20,6 +21,7 @@ import {
   ArrowRightLeft,
   Banknote,
   Bell,
+  BellRing,
   BookOpen,
   Briefcase,
   Building,
@@ -73,6 +75,7 @@ import {
   Lock,
   LogOut,
   MailPlus,
+  Menu,
   MapPin,
   MessageSquare,
   MessageSquareWarning,
@@ -100,7 +103,6 @@ import {
   SlidersHorizontal,
   Smartphone,
   Split,
-  Star,
   Store,
   Tags,
   Target,
@@ -136,14 +138,19 @@ export class GlobalErrorHandler implements ErrorHandler {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
+    importProvidersFrom(ServiceWorkerModule.register('ngsw-worker.js', { enabled: !isDevMode(), registrationStrategy: 'registerWhenStable:30000' })),
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withFetch(),
+      withXsrfConfiguration({
+        cookieName: 'XSRF-TOKEN',
+        headerName: 'X-XSRF-TOKEN',
+      }),
       withInterceptors([authInterceptor, errorHandlingInterceptor]),
     ),
     importProvidersFrom(
       LucideAngularModule.pick({
-        Activity, AlertTriangle, ArrowLeftRight, ArrowRightLeft, Banknote, Bell,
+        Activity, AlertTriangle, ArrowLeftRight, ArrowRightLeft, Banknote, Bell, BellRing,
         BookOpen, Briefcase, Building, Building2, Calculator, CalendarClock,
         CalendarRange, ChartNoAxesCombined, CheckCircle, CheckCircle2,
         CheckSquare, ChevronDown, ChevronLeft, ChevronRight, Circle,
@@ -152,12 +159,12 @@ export const appConfig: ApplicationConfig = {
         FilePenLine, FileStack, FileTerminal, FileText, FolderArchive,
         FolderKanban, Gift, GitMerge, GitPullRequest, Globe, Grid3x3, Hash,
         History, Inbox, Info, Key, KeyRound, Landmark, Layers, LayoutDashboard,
-        Link, Loader2, Lock, LogOut, MailPlus, MapPin, MessageSquare,
+        Link, Loader2, Lock, LogOut, MailPlus, Menu, MapPin, MessageSquare,
         MessageSquareWarning, Monitor, MonitorSmartphone, Move, Network,
         OctagonAlert, Package, PackageCheck, PanelLeftClose, PanelLeftOpen,
         Percent, Plus, ReceiptText, RefreshCw, Save, ScanSearch, ScrollText,
         Search, Settings, Shield, ShieldAlert, ShieldCheck, SlidersHorizontal,
-        Smartphone, Split, Star, Store, Tags, Target, Terminal, Ticket,
+        Smartphone, Split, Store, Tags, Target, Terminal, Ticket,
         TicketCheck, TrendingUp, Undo2, User, UserCheck, UserCog, UserRound,
         UserRoundX, Users, UsersRound, Wallet, Workflow, X,
       }),

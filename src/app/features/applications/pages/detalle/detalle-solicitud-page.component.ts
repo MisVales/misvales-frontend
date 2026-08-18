@@ -10,6 +10,7 @@ import { PatrimonioFormComponent } from '../../components/patrimonio-form/patrim
 import { EmpleosFormComponent } from '../../components/empleos-form/empleos-form.component';
 import { CreditosComercialesFormComponent } from '../../components/creditos-comerciales-form/creditos-comerciales-form.component';
 import { ResumenEnvioComponent } from '../../components/resumen-envio/resumen-envio.component';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' | 'patrimonio' | 'empleos' | 'creditos' | 'resumen';
 
@@ -33,6 +34,7 @@ type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' |
 export class DetalleSolicitudPageComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private route = inject(ActivatedRoute);
+  private alerts = inject(AlertService);
 
   pasoActual: StepName = 'datos-personales';
 
@@ -57,6 +59,7 @@ export class DetalleSolicitudPageComponent implements OnInit {
   }
 
   cambiarPaso(paso: StepName) {
+    this.alerts.clear();
     this.pasoActual = paso;
   }
 
@@ -86,5 +89,9 @@ export class DetalleSolicitudPageComponent implements OnInit {
     const avance = this.store.detalle()?.avance;
     if (!avance || !avance.seccionesTotales) return 0;
     return Math.round((avance.seccionesCompletadas / avance.seccionesTotales) * 100);
+  }
+
+  isEditable(): boolean {
+    return this.store.detalle()?.estado === 'DRAFT';
   }
 }

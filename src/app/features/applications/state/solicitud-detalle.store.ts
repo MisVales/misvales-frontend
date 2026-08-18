@@ -28,6 +28,13 @@ export const SolicitudDetalleStore = signalStore(
   withState(initialState),
   withMethods((store) => {
     const service = inject(SolicitudesDistribuidoraApiService);
+    let guardadosPendientes: Promise<void> = Promise.resolve();
+    const ejecutarEnCola = <T>(operacion: () => Promise<T>): Promise<T> => {
+      const turno = guardadosPendientes.then(operacion, operacion);
+      guardadosPendientes = turno.then(() => undefined, () => undefined);
+
+      return turno;
+    };
 
     const manejarErrorConcurrencia = (err: any, mensajePorDefecto: string) => {
       if (err?.status === 409 || err?.error?.code === 'RESOURCE_VERSION_CONFLICT') {
@@ -61,19 +68,35 @@ export const SolicitudDetalleStore = signalStore(
       },
 
       async guardarDatosPersonales(datos: any) {
-        const id = store.detalle()?.id;
-        const version = store.detalle()?.versionBloqueo;
-        if (!id || version === undefined) return;
+        return ejecutarEnCola(async () => {
+          const id = store.detalle()?.id;
+          const version = store.detalle()?.versionBloqueo;
+          if (!id || version === undefined) return undefined;
 
-        patchState(store, { guardandoSeccion: true, error: null });
-        try {
-          const detalle = await firstValueFrom(service.guardarDatosPersonales(id, datos, version));
-          patchState(store, { detalle, guardandoSeccion: false });
-        } catch (err: any) {
-          patchState(store, { guardandoSeccion: false });
-          manejarErrorConcurrencia(err, 'Error al guardar datos personales');
-          throw err;
-        }
+          patchState(store, { guardandoSeccion: true, error: null });
+          try {
+            const resultado = await firstValueFrom(service.guardarDatosPersonales(id, datos, version));
+            const detalle = store.detalle();
+            if (detalle) {
+              patchState(store, {
+                detalle: actualizarEstadoAutoguardado(detalle, resultado),
+                guardandoSeccion: false,
+              });
+            } else {
+              patchState(store, { guardandoSeccion: false });
+            }
+
+            return resultado;
+          } catch (err: any) {
+            patchState(store, { guardandoSeccion: false });
+            manejarErrorConcurrencia(err, 'Error al guardar datos personales');
+            throw err;
+          }
+        });
+      },
+
+      ejecutarGuardado<T>(operacion: () => Promise<T>): Promise<T> {
+        return ejecutarEnCola(operacion);
       },
 
       async enviarARevision() {
@@ -85,11 +108,29 @@ export const SolicitudDetalleStore = signalStore(
         try {
           const detalle = await firstValueFrom(service.enviarARevision(id, version));
           patchState(store, { detalle, enviandoRevision: false });
+          return detalle;
         } catch (err: any) {
           patchState(store, { enviandoRevision: false });
           manejarErrorConcurrencia(err, 'Error al enviar a revisión');
           throw err;
         }
+      },
+
+      actualizarVersionBloqueo(version: unknown) {
+        const detalle = store.detalle();
+        if (!detalle || typeof version !== 'number') return;
+
+        patchState(store, { detalle: { ...detalle, versionBloqueo: version }, errorConcurrencia: false });
+      },
+
+      registrarAutoguardado(resultado: any) {
+        const detalle = store.detalle();
+        if (!detalle) return;
+
+        patchState(store, {
+          detalle: actualizarEstadoAutoguardado(detalle, resultado),
+          errorConcurrencia: false,
+        });
       },
 
       limpiarStore() {
@@ -98,3 +139,48 @@ export const SolicitudDetalleStore = signalStore(
     };
   })
 );
+
+function actualizarEstadoAutoguardado(detalle: SolicitudDistribuidora, resultado: any): SolicitudDistribuidora {
+  const completion = resultado?.completion;
+  const version = resultado?.application_lock_version ?? resultado?.lock_version;
+  const declarations = resultado?.section_declarations;
+  const personalFields = [
+    'nationality', 'first_name', 'first_last_name', 'second_last_name', 'curp',
+    'curp_masked', 'rfc', 'birth_country', 'birth_date', 'birth_state',
+    'birth_city', 'email', 'phone_number', 'identification_country',
+    'official_id_type', 'official_id_number', 'official_id_number_masked',
+  ];
+  const hasPersonalData = personalFields.some((field) =>
+    Object.prototype.hasOwnProperty.call(resultado ?? {}, field),
+  );
+  const datosPersonales = hasPersonalData
+    ? { ...(detalle.datosPersonales ?? {}), ...Object.fromEntries(
+      personalFields
+        .filter((field) => Object.prototype.hasOwnProperty.call(resultado ?? {}, field))
+        .map((field) => [field, resultado[field]]),
+    ) } as SolicitudDistribuidora['datosPersonales']
+    : detalle.datosPersonales;
+
+  return {
+    ...detalle,
+    datosPersonales,
+    versionBloqueo: typeof version === 'number' ? version : detalle.versionBloqueo,
+    avance: completion ? {
+      seccionesCompletadas: completion.completed_sections ?? detalle.avance.seccionesCompletadas,
+      seccionesTotales: completion.total_sections ?? detalle.avance.seccionesTotales,
+      puedeEnviarse: completion.can_submit ?? detalle.avance.puedeEnviarse,
+    } : detalle.avance,
+    declaracionesSeccion: declarations ? {
+      datosPersonales: declarations.personal_data ?? detalle.declaracionesSeccion.datosPersonales,
+      domicilios: declarations.residence ?? detalle.declaracionesSeccion.domicilios,
+      pareja: declarations.partner ?? detalle.declaracionesSeccion.pareja,
+      hijos: declarations.children ?? detalle.declaracionesSeccion.hijos,
+      referenciasFamiliares: declarations.family_references ?? detalle.declaracionesSeccion.referenciasFamiliares,
+      vehiculos: declarations.vehicles ?? detalle.declaracionesSeccion.vehiculos,
+      bienes: declarations.assets ?? detalle.declaracionesSeccion.bienes,
+      pasivos: declarations.liabilities ?? detalle.declaracionesSeccion.pasivos,
+      empleos: declarations.employment ?? detalle.declaracionesSeccion.empleos,
+      creditosComerciales: declarations.commercial_credits ?? detalle.declaracionesSeccion.creditosComerciales,
+    } : detalle.declaracionesSeccion,
+  };
+}

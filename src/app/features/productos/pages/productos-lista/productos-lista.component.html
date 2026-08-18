@@ -1,9 +1,13 @@
 <section class="p-6">
+  <div class="mb-5 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900" role="note"><strong>Catálogo global.</strong> Los productos y sus versiones vigentes aplican a todas las sucursales.</div>
+  @if (actionError()) { <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{{ actionError() }}</div> }
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-gray-800">Productos</h1>
-    <a routerLink="nuevo" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-      Nuevo Producto
-    </a>
+    @if (canManageCatalogs()) {
+      <a routerLink="nuevo" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+        Nuevo Producto
+      </a>
+    }
   </div>
 
   @if (store.estadoCarga()) {
@@ -43,8 +47,8 @@
               <td class="py-3 px-6 text-center">{{ prod.estadoVersion }}</td>
               <td class="py-3 px-6 text-center">
                 <a [routerLink]="[prod.id]" class="text-blue-500 hover:text-blue-700">Ver Detalle</a>
-                @if (session.roles().includes('general_manager') && prod.estadoVersion === 'DRAFT') {
-                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="publicar(prod.versionId, prod.versionRegistro)">Publicar</button>
+                @if (canManageCatalogs() && prod.estadoVersion === 'DRAFT') {
+                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="requestPublication(prod.versionId, prod.versionRegistro)">Publicar</button>
                 }
               </td>
             </tr>
@@ -54,3 +58,4 @@
     </div>
   }
 </section>
+<app-reason-action-dialog [open]="!!pendingPublication()" title="Publicar producto global" message="Esta versión quedará disponible globalmente para la operación. El motivo y la versión quedarán auditados." confirmLabel="Publicar globalmente" [reason]="publicationReason()" (reasonChange)="publicationReason.set($event)" [busy]="actionLoading()" dialogId="publish-product" (confirm)="confirmPublication()" (cancel)="closePublication()"></app-reason-action-dialog>

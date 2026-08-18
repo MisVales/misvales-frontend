@@ -6,6 +6,8 @@ import { CapturaEvidenciaComponent } from '../../components/captura-evidencia/ca
 import { GaleriaEvidenciasComponent } from '../../components/galeria-evidencias/galeria-evidencias.component';
 import { EditorDiferenciasComponent, DiferenciaPayload } from '../../components/editor-diferencias/editor-diferencias.component';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../../../shared/services/alert.service';
+import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 
 @Component({
   selector: 'app-realizar-visita',
@@ -25,6 +27,8 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(VerificacionDistribuidorasFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly alerts = inject(AlertService);
+  private readonly confirmation = inject(ConfirmationService);
 
   // Tabs / Wizard steps
   step = signal<number>(1);
@@ -37,10 +41,8 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     { id: 'DOCUMENTO', label: 'Fotografía de Documento' },
   ];
 
-  seccionesDiferencias: { id: string; label: string }[] = [];
-  camposDiferencias: Record<string, { id: string; label: string; valorOriginal: string }[]> = {};
-
   mostrarEditorDiferencia = signal<boolean>(false);
+  puntoDiferencia = signal<PuntoComprobacion | null>(null);
   
   observacionesFila = signal<string>('');
   resultadoFinal = signal<'FAVORABLE' | 'UNFAVORABLE' | null>(null);
@@ -52,7 +54,9 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
       await this.facade.cargarVisita(id);
       const visita = this.facade.visitaSeleccionada();
       if (visita) {
-        await this.facade.cargarSolicitud(visita.solicitudId);
+        if (!this.facade.solicitudSeleccionada()) {
+          await this.facade.cargarSolicitud(visita.solicitudId);
+        }
         this.construirComprobacion();
       }
     }
@@ -61,25 +65,68 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   private construirComprobacion() {
     const datos = this.facade.solicitudSeleccionada()?.datosDeclarados ?? {};
     const puntos: PuntoComprobacion[] = [];
-    const campos: Record<string, { id: string; label: string; valorOriginal: string }[]> = {};
     for (const [seccion, contenido] of Object.entries(datos)) {
       if (contenido === null || (Array.isArray(contenido) && contenido.length === 0)) continue;
       const registros = Array.isArray(contenido) ? contenido : [contenido];
-      campos[seccion] = [];
       registros.forEach((registro, indice) => {
         if (!registro || typeof registro !== 'object') return;
         Object.entries(registro as Record<string, unknown>).forEach(([campo, valor]) => {
-          if (['id', 'application_id', 'created_at', 'updated_at', 'lock_version'].includes(campo)) return;
+          if (CAMPOS_INTERNOS.has(campo)) return;
           const id = `${seccion}.${indice}.${campo}`;
-          const declarado = valor == null ? 'Sin dato' : typeof valor === 'object' ? JSON.stringify(valor) : String(valor);
-          puntos.push({ id, seccion, campo, etiqueta: campo.replaceAll('_', ' '), datoDeclarado: declarado, estado: null });
-          campos[seccion].push({ id: campo, label: campo.replaceAll('_', ' '), valorOriginal: declarado });
+          const declarado = this.formatearValor(campo, valor);
+          puntos.push({
+            id,
+            seccion,
+            campo,
+            etiqueta: ETIQUETAS_CAMPOS[campo] ?? this.humanizar(campo),
+            datoDeclarado: declarado,
+            grupo: ETIQUETAS_SECCIONES[seccion] ?? this.humanizar(seccion),
+            registro: this.etiquetaRegistro(seccion, registro as Record<string, unknown>, indice),
+            estado: null,
+          });
         });
       });
     }
     this.puntosComprobacion.set(puntos);
-    this.camposDiferencias = campos;
-    this.seccionesDiferencias = Object.keys(campos).map(id => ({ id, label: id.replaceAll('_', ' ') }));
+  }
+
+  private etiquetaRegistro(seccion: string, registro: Record<string, unknown>, indice: number): string {
+    switch (seccion) {
+      case 'family_members': return `Familiar ${indice + 1}${registro['relationship'] ? ` · ${this.formatearValor('relationship', registro['relationship'])}` : ''}`;
+      case 'residences': return registro['is_current'] ? 'Domicilio actual' : `Domicilio anterior ${indice + 1}`;
+      case 'vehicles': return `Vehículo ${indice + 1}${registro['brand'] || registro['model'] ? ` · ${[registro['brand'], registro['model']].filter(Boolean).join(' ')}` : ''}`;
+      case 'assets_liabilities': return `${this.formatearValor('entry_type', registro['entry_type'])}${registro['name'] ? ` · ${String(registro['name'])}` : ''}`;
+      case 'employments': return registro['is_current'] ? 'Empleo actual' : `Empleo anterior ${indice + 1}`;
+      case 'commercial_credits': return `Crédito ${indice + 1}${registro['company_name'] ? ` · ${String(registro['company_name'])}` : ''}`;
+      default: return '';
+    }
+  }
+
+  private formatearValor(campo: string, valor: unknown): string {
+    if (valor === null || valor === undefined || valor === '') return 'Sin dato';
+    if (typeof valor === 'boolean') return valor ? 'Sí' : 'No';
+    if (['birth_date', 'started_at', 'ended_at'].includes(campo) && typeof valor === 'string') {
+      const [year, month, day] = valor.split('-');
+      return year && month && day ? `${day}/${month}/${year}` : valor;
+    }
+    if (['amount', 'outstanding_balance', 'monthly_payment', 'credit_limit'].includes(campo)) {
+      const numero = Number(valor);
+      return Number.isFinite(numero) ? new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(numero) : String(valor);
+    }
+    if (campo === 'model_year') return String(valor);
+    if (['width_meters', 'length_meters'].includes(campo)) return `${String(valor)} m`;
+    if (campo === 'built_area_square_meters') return `${String(valor)} m²`;
+    return VALORES_TRADUCIDOS[String(valor)] ?? String(valor);
+  }
+
+  private humanizar(valor: string): string {
+    return valor.replaceAll('_', ' ').replace(/\b\w/g, (letra) => letra.toUpperCase());
+  }
+
+  etiquetaDiferencia(seccion: string, campo: string): string {
+    const seccionHumana = ETIQUETAS_SECCIONES[seccion] ?? this.humanizar(seccion);
+    const campoHumano = ETIQUETAS_CAMPOS[campo] ?? this.humanizar(campo);
+    return `${seccionHumana} · ${campoHumano}`;
   }
 
   ngOnDestroy() {
@@ -101,13 +148,21 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     );
   }
 
+  onEstadoGrupoChange(event: { grupo: string; estado: 'COMPROBADO' | 'NO_APLICA' }) {
+    this.puntosComprobacion.update((puntos) => puntos.map((punto) =>
+      punto.grupo === event.grupo ? { ...punto, estado: event.estado } : punto
+    ));
+  }
+
   abrirEditorDiferencia(punto?: PuntoComprobacion) {
+    if (!punto) return;
+    this.puntoDiferencia.set(punto);
     this.mostrarEditorDiferencia.set(true);
-    // Podríamos pre-llenar el editor si viene de un punto específico
   }
 
   cerrarEditorDiferencia() {
     this.mostrarEditorDiferencia.set(false);
+    this.puntoDiferencia.set(null);
   }
 
   async onGuardarDiferencia(diferencia: DiferenciaPayload) {
@@ -138,14 +193,12 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     });
 
     if (success) {
+      const punto = this.puntoDiferencia();
+      if (punto) this.puntosComprobacion.update((puntos) => puntos.map((item) => item.id === punto.id
+        ? { ...item, estado: 'DIFERENCIA', diferenciaRegistrada: true }
+        : item
+      ));
       this.cerrarEditorDiferencia();
-      
-      // Marcar el punto como registrado si aplica
-      this.puntosComprobacion.update(pts => 
-        pts.map(p => p.seccion === diferencia.seccion && p.campo === diferencia.campo 
-          ? { ...p, diferenciaRegistrada: true } 
-          : p)
-      );
     }
   }
 
@@ -181,14 +234,16 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     if (!visita) return;
 
     if (!this.resultadoFinal()) {
+      this.alerts.showAlert('Selecciona el resultado final de la visita.', 'warning');
       return;
     }
 
     if (this.resultadoFinal() === 'UNFAVORABLE' && !this.observacionesFila()) {
+      this.alerts.showAlert('Incluye observaciones para documentar el resultado desfavorable.', 'warning');
       return;
     }
 
-    if (confirm('¿Estás seguro de finalizar la visita? Esta acción es irreversible.')) {
+    if (await this.confirmation.confirm({ title: 'Finalizar visita', message: 'El checklist, las fotografías, las diferencias y el resultado quedarán cerrados para el verificador.', confirmLabel: 'Finalizar visita' })) {
       const success = await this.facade.finalizarVisita(visita.id, {
         resultado_fisico: this.resultadoFinal()!,
         observaciones: this.observacionesFila(),
@@ -196,8 +251,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
       });
 
       if (success) {
-        // En una app real, mostrar mensaje de éxito y navegar
-        alert('Visita finalizada con éxito.');
+        this.alerts.showAlert('Visita finalizada y expediente enviado a revisión.', 'success');
         this.router.navigate(['/verificacion-distribuidoras/verificaciones/asignadas']);
       }
     }
@@ -207,3 +261,33 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     this.step.set(s);
   }
 }
+
+const CAMPOS_INTERNOS = new Set([
+  'id', 'application_id', 'created_at', 'updated_at', 'lock_version', 'details_payload', 'reference_payload',
+  'is_current', 'is_active', 'declared_age', 'relationship', 'entry_type', 'is_family_reference',
+]);
+
+const ETIQUETAS_SECCIONES: Record<string, string> = {
+  personal_data: 'Datos personales', family_members: 'Familiares', residences: 'Domicilios', vehicles: 'Vehículos',
+  assets_liabilities: 'Patrimonio', employments: 'Empleos', commercial_credits: 'Créditos comerciales',
+};
+
+const ETIQUETAS_CAMPOS: Record<string, string> = {
+  first_name: 'Nombre(s)', first_last_name: 'Apellido paterno', second_last_name: 'Apellido materno', nationality: 'Nacionalidad',
+  birth_country: 'País de nacimiento', curp_masked: 'CURP', rfc_masked: 'RFC', birth_date: 'Fecha de nacimiento',
+  birth_place: 'Lugar de nacimiento', birth_state: 'Estado de nacimiento', birth_city: 'Ciudad de nacimiento', email: 'Correo electrónico',
+  phone_number: 'Teléfono', identification_country: 'País de emisión de identificación', official_id_type: 'Tipo de identificación',
+  official_id_number_masked: 'Número de identificación', relationship: 'Parentesco', school_name: 'Escuela', street: 'Calle',
+  exterior_number: 'Número exterior', interior_number: 'Número interior', neighborhood: 'Colonia', postal_code: 'Código postal',
+  municipality: 'Municipio', city: 'Ciudad', state: 'Estado', country: 'País', housing_tenure: 'Tipo de vivienda',
+  financing_status: 'Financiamiento', width_meters: 'Frente', length_meters: 'Fondo', built_area_square_meters: 'Área construida',
+  vehicle_type: 'Tipo de vehículo', brand: 'Marca', model: 'Modelo', model_year: 'Año', ownership_status: 'Propiedad',
+  entry_type: 'Tipo de registro', name: 'Nombre', amount: 'Monto', outstanding_balance: 'Saldo pendiente', monthly_payment: 'Pago mensual',
+  employer_name: 'Empresa', job_title: 'Puesto', started_at: 'Fecha de inicio', ended_at: 'Fecha de término',
+  company_name: 'Institución', credit_limit: 'Límite de crédito', proof_reference: 'Referencia del comprobante',
+};
+
+const VALORES_TRADUCIDOS: Record<string, string> = {
+  MEXICAN: 'Mexicana', MX: 'México', INE: 'Credencial para votar (INE)', SIBLING: 'Hermano/a', CHILD: 'Hijo/a',
+  OWNED: 'Propio', RENTED: 'Rentada', INFONAVIT: 'INFONAVIT', ASSET: 'Bien', LIABILITY: 'Pasivo',
+};

@@ -12,19 +12,19 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: 268px;
+  width: 244px;
   height: 100%;
-  background: #1B3A20;
+  background: #17351f;
   color: rgba(255, 255, 255, 0.85);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   overflow: hidden;
-  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--mv-motion-standard) var(--mv-ease);
   user-select: none;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .sidebar--collapsed {
-  width: 64px;
+  width: 72px;
 }
 
 /* ─── Header ──────────────────────────────────────────────── */
@@ -48,7 +48,7 @@
   width: 32px;
   height: 32px;
   border-radius: 8px;
-  background: linear-gradient(135deg, #6A994E, #A7C957);
+  background: #6f9b59;
   color: #fff;
   display: flex;
   align-items: center;
@@ -57,7 +57,7 @@
   font-size: 12px;
   letter-spacing: 0.5px;
   flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: none;
 }
 
 .sidebar__brand-text {
@@ -89,8 +89,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   border: none;
   border-radius: 6px;
   background: transparent;
@@ -162,7 +162,8 @@
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  padding: 7px 12px;
+  min-height: 40px;
+  padding: 9px 12px;
   border: none;
   border-radius: 6px;
   background: transparent;
@@ -418,7 +419,7 @@
 
 @media (max-width: 1024px) {
   .sidebar {
-    width: 64px;
+    width: 72px;
   }
 
   .sidebar__brand-text,
@@ -444,4 +445,13 @@
     width: 20px;
     height: 20px;
   }
+}
+
+@media (max-width: 767px) {
+  .sidebar,
+  .sidebar--collapsed { width: 60px; }
+  .sidebar__header { padding-inline: 10px; }
+  .sidebar__logo { width: 40px; height: 40px; }
+  .sidebar__collapse-btn { display: none; }
+  .sidebar__content, .sidebar__footer { padding-inline: 6px; }
 }

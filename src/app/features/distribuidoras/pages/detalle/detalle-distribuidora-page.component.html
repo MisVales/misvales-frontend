@@ -8,21 +8,16 @@
         Regresar
       </button>
 
-      <div class="flex items-start justify-between">
+      <div class="flex items-start justify-between gap-4 flex-wrap">
         <div>
-          <h1 class="text-3xl font-bold text-gray-900">Detalle de Distribuidora</h1>
-          <p class="text-gray-500 font-medium mt-1">ID: D-{{ store.detalle()?.numero || '...' }}</p>
+          <h1 class="text-3xl font-bold text-gray-900">{{ store.detalle()?.nombreCompleto || 'Distribuidora' }}</h1>
+          <p class="text-gray-500 font-medium mt-1">{{ store.detalle()?.numero || '...' }} · {{ store.detalle()?.sucursal?.nombre || 'Sin sucursal' }} · {{ store.detalle()?.estado || 'Sin estado' }}</p>
         </div>
 
         <div class="flex items-center gap-3" *ngIf="!store.cargandoDetalle() && store.detalle()">
-          <button class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-            Editar Información
-          </button>
-          
-          <button *ngIf="store.detalle()?.estado === 'PENDING_ACTIVATION'" (click)="irAActivacion()" class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-colors shadow-sm">
-            Completar Activación
-          </button>
+          <span *ngIf="store.detalle()?.estado === 'PENDING_ACTIVATION'" class="rounded-xl bg-orange-100 px-5 py-2.5 text-sm font-bold text-orange-800">
+            Activación pendiente del titular
+          </span>
         </div>
       </div>
     </div>
@@ -46,8 +41,33 @@
         (abrirReenvio)="abrirModalReenvio()">
       </app-resumen-distribuidora>
 
-      <!-- Bottom: Historial -->
-      <div class="mt-6">
+      <nav class="detail-tabs" role="tablist" aria-label="Secciones de distribuidora">
+        <button role="tab" [attr.aria-selected]="activeSection() === 'informacion'" [class.active]="activeSection() === 'informacion'" (click)="activeSection.set('informacion')">Información</button>
+        <button role="tab" [attr.aria-selected]="activeSection() === 'credito'" [class.active]="activeSection() === 'credito'" (click)="activeSection.set('credito')">Crédito</button>
+        <button role="tab" [attr.aria-selected]="activeSection() === 'historial'" [class.active]="activeSection() === 'historial'" (click)="activeSection.set('historial')">Historial</button>
+      </nav>
+
+      <section *ngIf="activeSection() === 'informacion'" class="detail-panel">
+        <h2>Información operativa</h2>
+        <dl class="detail-grid">
+          <div><dt>Número</dt><dd>{{ store.detalle()!.numero }}</dd></div>
+          <div><dt>Sucursal</dt><dd>{{ store.detalle()!.sucursal.nombre }}</dd></div>
+          <div><dt>Coordinador</dt><dd>{{ store.detalle()!.coordinador?.nombreCompleto || 'Sin asignar' }}</dd></div>
+          <div><dt>Categoría</dt><dd>{{ store.detalle()!.categoria?.nombre || 'Sin categoría' }}</dd></div>
+        </dl>
+      </section>
+
+      <section *ngIf="activeSection() === 'credito'" class="detail-panel">
+        <h2>Resumen de crédito</h2>
+        <dl class="detail-grid">
+          <div><dt>Línea total</dt><dd>{{ store.detalle()!.lineaInicial ? ('$' + store.detalle()!.lineaInicial + ' MXN') : 'No disponible' }}</dd></div>
+          <div><dt>Disponible</dt><dd>No disponible en este contrato</dd></div>
+          <div><dt>Utilizado</dt><dd>No disponible en este contrato</dd></div>
+          <div><dt>Restricción activa</dt><dd>{{ store.detalle()!.restriccionInicialActiva ? 'Sí' : 'No' }}</dd></div>
+        </dl>
+      </section>
+
+      <div *ngIf="activeSection() === 'historial'" class="mt-6">
         <app-historial-categorias [distribuidoraId]="store.detalle()!.id"></app-historial-categorias>
       </div>
   </div>

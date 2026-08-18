@@ -8,6 +8,7 @@ export interface SolicitudDistribuidoraResponseDTO {
   branch?: { id: string; name: string };
   coordinator?: { id: string; name: string };
   applicant: ResumenSolicitanteDTO | null;
+  personal_data?: PersonalDataDTO | null;
   section_declarations: DeclaracionesSeccionDTO;
   progress?: AvanceExpedienteDTO;
   completion?: AvanceExpedienteDTO;
@@ -16,6 +17,22 @@ export interface SolicitudDistribuidoraResponseDTO {
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface PersonalDataDTO extends ResumenSolicitanteDTO {
+  first_name: string;
+  first_last_name: string;
+  nationality: 'MEXICAN' | 'FOREIGN';
+  birth_country: string;
+  birth_date: string;
+  birth_state: string;
+  birth_city: string;
+  email: string;
+  phone_number: string;
+  identification_country?: string | null;
+  official_id_type: string;
+  official_id_number?: string | null;
+  rfc?: string | null;
 }
 
 export type EstadoSolicitudDistribuidoraDTO = 
@@ -42,12 +59,14 @@ export interface ResumenSolicitanteDTO {
 
 export interface DeclaracionesSeccionDTO {
   personal_data: EstadoDeclaracionDTO;
+  residence: EstadoDeclaracionDTO;
+  partner: EstadoDeclaracionDTO;
+  children: EstadoDeclaracionDTO;
   family_references: EstadoDeclaracionDTO;
-  residences: EstadoDeclaracionDTO;
   vehicles: EstadoDeclaracionDTO;
   assets: EstadoDeclaracionDTO;
   liabilities: EstadoDeclaracionDTO;
-  employments: EstadoDeclaracionDTO;
+  employment: EstadoDeclaracionDTO;
   commercial_credits: EstadoDeclaracionDTO;
 }
 

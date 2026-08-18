@@ -1,11 +1,11 @@
 <div class="max-w-4xl mx-auto space-y-6 mt-6">
   <div>
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-      <h2 class="text-xl font-bold text-gray-900">Sesiones Activas</h2>
+      <h2 class="text-xl font-bold text-gray-900">Sesiones activas</h2>
       
       @if (!loading() && sessions().length > 1) {
         <button 
-          (click)="revokeAllOther()"
+          (click)="openRevokeAllModal()"
           class="text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
         >
           <lucide-icon name="log-out" class="w-4 h-4"></lucide-icon>
@@ -45,7 +45,7 @@
                   <span class="hidden sm:inline">•</span>
                   <span class="flex items-center gap-1">
                     <lucide-icon name="clock" class="w-3.5 h-3.5"></lucide-icon>
-                    Activa el {{ session.last_activity | date:'medium' }}
+                    Actividad: {{ session.last_activity | misvalesDateTime }} (Monterrey)
                   </span>
                 </div>
               </div>
@@ -73,13 +73,13 @@
   </div>
 
   @if (sessionToRevoke()) {
-    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity">
-      <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm transform transition-all duration-300">
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 backdrop-blur-sm transition-opacity" role="dialog" aria-modal="true" aria-labelledby="revoke-session-title">
+      <div class="bg-white rounded-xl p-6 w-full max-w-sm transform transition-all duration-300">
         <div class="flex items-center gap-3 mb-4 text-red-600">
           <div class="bg-red-50 p-2 rounded-full">
             <lucide-icon name="alert-triangle" class="w-6 h-6"></lucide-icon>
           </div>
-          <h2 class="text-xl font-bold">Cerrar Sesión</h2>
+          <h2 id="revoke-session-title" class="text-xl font-bold">Cerrar sesión</h2>
         </div>
         
         <p class="text-sm text-gray-600 mb-6">
@@ -99,6 +99,22 @@
           >
             Sí, cerrar sesión
           </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (revokeAllOpen()) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-50 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="revoke-all-title">
+      <div class="w-full max-w-md rounded-xl border border-gray-200 bg-white p-6">
+        <div class="mb-4 flex items-center gap-3 text-red-700">
+          <span class="rounded-full bg-red-50 p-2" aria-hidden="true"><lucide-icon name="alert-triangle" class="h-6 w-6"></lucide-icon></span>
+          <h2 id="revoke-all-title" class="text-lg font-bold">Cerrar las demás sesiones</h2>
+        </div>
+        <p class="text-sm text-gray-600">Se desconectarán de inmediato todos los dispositivos excepto este. Tendrán que autenticarse nuevamente.</p>
+        <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button type="button" (click)="closeRevokeAllModal()" class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancelar</button>
+          <button type="button" (click)="confirmRevokeAll()" class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700">Sí, cerrar las demás</button>
         </div>
       </div>
     </div>

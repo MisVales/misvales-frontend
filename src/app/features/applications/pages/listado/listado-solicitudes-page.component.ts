@@ -6,11 +6,13 @@ import { SolicitudesListadoStore } from '../../state/solicitudes-listado.store';
 import { firstValueFrom } from 'rxjs';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { Branch, PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
+import { SessionStore } from '../../../../core/session/session.store';
+import { EstadoSolicitudComponent } from '../../../verificacion-distribuidoras/components/estado-solicitud/estado-solicitud.component';
 
 @Component({
   selector: 'app-listado-solicitudes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, EstadoSolicitudComponent],
   templateUrl: './listado-solicitudes-page.component.html',
   styleUrls: ['./listado-solicitudes-page.component.css']
 })
@@ -18,6 +20,7 @@ export class ListadoSolicitudesPageComponent implements OnInit {
   protected store = inject(SolicitudesListadoStore);
   private fb = inject(FormBuilder);
   private organizationApi = inject(OrganizationApiService);
+  private sessionStore = inject(SessionStore);
 
   branches: Branch[] = [];
   coordinators: PersonnelAssignment[] = [];
@@ -31,8 +34,8 @@ export class ListadoSolicitudesPageComponent implements OnInit {
   });
 
   async ngOnInit() {
-    await this.cargarCatalogos();
     this.store.listar();
+    await this.cargarCatalogos();
 
     this.filtrosForm.valueChanges.subscribe(() => {
       this.store.listar(1, 10, this.getFiltrosVigentes());
@@ -40,13 +43,22 @@ export class ListadoSolicitudesPageComponent implements OnInit {
   }
 
   private async cargarCatalogos(): Promise<void> {
-    const [branches, personnel] = await Promise.all([
+    const permissions = this.sessionStore.permissions();
+    const puedeConsultarOrganizacion = permissions.includes('all')
+      || permissions.includes('branches.view')
+      || permissions.includes('roles.assign');
+
+    if (!puedeConsultarOrganizacion) return;
+
+    const [branches, personnel] = await Promise.allSettled([
       firstValueFrom(this.organizationApi.getBranches({ per_page: 100, status: 'ACTIVE' })),
       firstValueFrom(this.organizationApi.getPersonnel({ per_page: 100, assignment_status: 'ACTIVE' })),
     ]);
 
-    this.branches = branches.data;
-    this.coordinators = personnel.data.filter((assignment) => assignment.role.code === 'coordinator');
+    if (branches.status === 'fulfilled') this.branches = branches.value.data;
+    if (personnel.status === 'fulfilled') {
+      this.coordinators = personnel.value.data.filter((assignment) => assignment.role.code === 'coordinator');
+    }
   }
 
   getFiltrosVigentes(): Record<string, string> {

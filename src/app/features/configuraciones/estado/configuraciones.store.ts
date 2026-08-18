@@ -51,10 +51,10 @@ export const ConfiguracionesStore = signalStore(
       async listar(pagina: number = 1, porPagina: number = 10, grupo?: string, estado?: string) {
         patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'listar' });
         try {
-          const res = await firstValueFrom(service.listar(pagina, porPagina));
+          const res = await firstValueFrom(service.listar());
           patchState(store, {
-            definiciones: res.data.map(ConfiguracionesMapper.fromDefinitionDto),
-            paginacion: { pagina: res.meta.current_page, total: res.meta.total, porPagina },
+            definiciones: res.map(ConfiguracionesMapper.fromDefinitionDto),
+            paginacion: { pagina, total: res.length, porPagina },
             filtros: { grupo, estado },
             estadoCarga: false,
             operacionEnProceso: null
@@ -78,10 +78,10 @@ export const ConfiguracionesStore = signalStore(
         patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'consultarVersiones' });
         try {
           const res = await firstValueFrom(service.consultarVersiones(clave));
-          patchState(store, { 
-            versiones: res.data.map(ConfiguracionesMapper.fromVersionDto), 
-            estadoCarga: false, 
-            operacionEnProceso: null 
+          patchState(store, {
+            versiones: res.map(ConfiguracionesMapper.fromVersionDto),
+            estadoCarga: false,
+            operacionEnProceso: null
           });
         } catch (err: any) {
           patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al consultar versiones', operacionEnProceso: null });
@@ -93,8 +93,8 @@ export const ConfiguracionesStore = signalStore(
         try {
           await firstValueFrom(service.crearVersion(clave, datos));
           // Recargar versiones
-          this.consultarVersiones(clave);
-          patchState(store, { operacionEnProceso: 'crearVersionSuccess' });
+          await this.consultarVersiones(clave);
+          patchState(store, { estadoCarga: false, operacionEnProceso: 'crearVersionSuccess' });
         } catch (err: any) {
           patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al crear versión', operacionEnProceso: null });
         }
@@ -105,7 +105,7 @@ export const ConfiguracionesStore = signalStore(
         try {
           await firstValueFrom(service.modificarVersion(idVersion, datos));
           if (store.definicionSeleccionada()) {
-            this.consultarVersiones(store.definicionSeleccionada()!.clave);
+            await this.consultarVersiones(store.definicionSeleccionada()!.clave);
           }
           patchState(store, { operacionEnProceso: 'modificarVersionSuccess' });
         } catch (err: any) {
@@ -118,7 +118,7 @@ export const ConfiguracionesStore = signalStore(
         try {
           await firstValueFrom(service.publicarVersion(idVersion, versionRegistro, motivo));
           if (store.definicionSeleccionada()) {
-            this.consultarVersiones(store.definicionSeleccionada()!.clave);
+            await this.consultarVersiones(store.definicionSeleccionada()!.clave);
           }
           patchState(store, { operacionEnProceso: 'publicarVersionSuccess' });
         } catch (err: any) {
@@ -131,7 +131,7 @@ export const ConfiguracionesStore = signalStore(
         try {
           await firstValueFrom(service.desactivarVersion(idVersion, versionRegistro, motivo));
           if (store.definicionSeleccionada()) {
-            this.consultarVersiones(store.definicionSeleccionada()!.clave);
+            await this.consultarVersiones(store.definicionSeleccionada()!.clave);
           }
           patchState(store, { operacionEnProceso: 'desactivarVersionSuccess' });
         } catch (err: any) {

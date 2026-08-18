@@ -5,11 +5,12 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthFacade } from '../../state/auth.facade';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import * as QRCode from 'qrcode';
+import { ConfirmDialogComponent } from '../../../../shared/ui/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-activate-account',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent, ConfirmDialogComponent],
   templateUrl: './activate-account.html',
   styleUrls: ['./activate-account.css'],
 })
@@ -50,6 +51,8 @@ export class ActivateAccount implements OnInit, OnDestroy {
 
   generatedQrCodeUrl = signal<string | null>(null);
   copiedCodes = signal<boolean>(false);
+  leaveDialogOpen = signal(false);
+  private leaveResolver?: (allow: boolean) => void;
 
   constructor() {
     effect(() => {
@@ -98,10 +101,16 @@ export class ActivateAccount implements OnInit, OnDestroy {
     this.authFacade.resetState();
   }
 
-  canLeave(): boolean {
-    return this.phase() !== 2 || window.confirm(
-      'Los códigos de recuperación solo se muestran una vez. ¿Confirmas que deseas salir?',
-    );
+  canLeave(): boolean | Promise<boolean> {
+    if (this.phase() !== 2) return true;
+    this.leaveDialogOpen.set(true);
+    return new Promise<boolean>((resolve) => { this.leaveResolver = resolve; });
+  }
+
+  resolveLeave(allow: boolean): void {
+    this.leaveDialogOpen.set(false);
+    this.leaveResolver?.(allow);
+    this.leaveResolver = undefined;
   }
 
   passwordMatchValidator(control: AbstractControl): ValidationErrors | null {

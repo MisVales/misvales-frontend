@@ -2,9 +2,19 @@
      SIDEBAR — MisVales
      ═══════════════════════════════════════════════════════════ -->
 
+<button
+  type="button"
+  class="sidebar-backdrop"
+  [class.sidebar-backdrop--visible]="shellNavigation.mobileMenuOpen()"
+  (click)="closeMobileMenu()"
+  aria-label="Cerrar navegación principal"
+></button>
 <nav
+  id="primary-navigation"
   class="sidebar"
   [class.sidebar--collapsed]="isCollapsed()"
+  [class.sidebar--mobile-open]="shellNavigation.mobileMenuOpen()"
+  [attr.inert]="isSmallScreen() && !shellNavigation.mobileMenuOpen() ? '' : null"
   role="navigation"
   aria-label="Navegación principal"
 >
@@ -69,8 +79,6 @@
         [class.nav-item--has-active]="hasActiveDescendant(item)"
         [style.padding-left.px]="isCollapsed() ? 12 : (level * 16 + 12)"
         (click)="toggleGroup(item, parentId ?? undefined)"
-        (keydown.enter)="toggleGroup(item, parentId ?? undefined)"
-        (keydown.space)="toggleGroup(item, parentId ?? undefined); $event.preventDefault()"
         [attr.aria-expanded]="isGroupOpen(item.id, parentId)"
         [attr.aria-controls]="'submenu-' + item.id"
         type="button"
@@ -140,6 +148,7 @@
       class="nav-item nav-item--page"
       [class.nav-item--active]="isActive(item)"
       [routerLink]="item.route"
+      (click)="closeMobileMenu()"
       [style.padding-left.px]="isCollapsed() ? 12 : (level * 16 + 12)"
       [attr.aria-current]="isActive(item) ? 'page' : null"
       [attr.title]="isCollapsed() ? item.title : null"

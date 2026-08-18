@@ -2,13 +2,13 @@ import { Component, computed, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DistribuidorasStore } from '../../state/distribuidoras.store';
 import { FiltrosDistribuidorasComponent } from '../../components/filtros-distribuidoras/filtros-distribuidoras.component';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { SessionStore } from '../../../../core/session/session.store';
 
 @Component({
   selector: 'app-listado-distribuidoras-page',
   standalone: true,
-  imports: [CommonModule, FiltrosDistribuidorasComponent],
+  imports: [CommonModule, FiltrosDistribuidorasComponent, RouterLink],
   templateUrl: './listado-distribuidoras-page.component.html',
   styleUrls: ['./listado-distribuidoras-page.component.css']
 })

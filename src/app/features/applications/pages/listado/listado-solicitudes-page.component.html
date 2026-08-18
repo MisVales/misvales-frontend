@@ -24,7 +24,16 @@
         <select formControlName="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent bg-white">
           <option value="">Todos</option>
           <option value="DRAFT">En Captura</option>
-          <option value="ACTIVE">Aprobada</option>
+          <option value="COORDINATOR_REVIEW">Revisión de coordinación</option>
+          <option value="VERIFIER_ASSIGNED">Visita asignada</option>
+          <option value="PHYSICAL_VERIFICATION">Verificación física</option>
+          <option value="COORDINATOR_CORRECTION">Corrección de coordinación</option>
+          <option value="COORDINATOR_EVALUATION">Evaluación de coordinación</option>
+          <option value="MANAGER_AUTHORIZATION">Autorización gerencial</option>
+          <option value="AUTHORIZED_PENDING_ACTIVATION">Pendiente de activación</option>
+          <option value="ACTIVE">Activa</option>
+          <option value="TERMINATED_UNFAVORABLE">Terminada desfavorable</option>
+          <option value="REJECTED">Rechazada</option>
         </select>
       </div>
       <div>
@@ -80,9 +89,7 @@
               <div class="text-xs text-gray-500 mt-0.5">{{ sol.solicitante?.curpEnmascarada || 'N/A' }}</div>
             </td>
             <td class="px-6 py-4">
-              <span *ngIf="sol.estado === 'DRAFT'" class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">En Captura</span>
-              <span *ngIf="sol.estado === 'ACTIVE'" class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E]">Aprobada</span>
-              <!-- Más estados aquí -->
+              <app-estado-solicitud [estado]="sol.estado"></app-estado-solicitud>
             </td>
             <td class="px-6 py-4 text-sm text-gray-700">{{ sol.sucursal?.nombre || sol.sucursalId }}</td>
             <td class="px-6 py-4">

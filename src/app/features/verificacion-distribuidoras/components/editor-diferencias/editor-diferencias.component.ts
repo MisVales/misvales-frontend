@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 export interface DiferenciaPayload {
   seccion: string;
@@ -18,9 +19,8 @@ export interface DiferenciaPayload {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorDiferenciasComponent {
-  // Configuración de campos disponibles para registrar diferencia
-  seccionesDisponibles = input<{ id: string; label: string }[]>([]);
-  camposDisponibles = input<Record<string, { id: string; label: string; valorOriginal: string }[]>>({});
+  private readonly alerts = inject(AlertService);
+  contexto = input.required<{ seccion: string; campo: string; etiqueta: string; datoDeclarado: string }>();
   
   isProcessing = input<boolean>(false);
   
@@ -28,45 +28,23 @@ export class EditorDiferenciasComponent {
   guardar = output<DiferenciaPayload>();
   cancelar = output<void>();
 
-  // State
-  seccion = signal<string>('');
-  campo = signal<string>('');
   datoObservado = signal<string>('');
   descripcion = signal<string>('');
   submitted = signal<boolean>(false);
-  
-  // Derived state (no computed to keep simple binds in template)
-  datoDeclarado = signal<string>('');
-
-  onSeccionChange(val: string) {
-    this.seccion.set(val);
-    this.campo.set('');
-    this.datoDeclarado.set('');
-  }
-
-  onCampoChange(val: string) {
-    this.campo.set(val);
-    const campos = this.camposDisponibles()[this.seccion()] || [];
-    const found = campos.find(c => c.id === val);
-    if (found) {
-      this.datoDeclarado.set(found.valorOriginal);
-    } else {
-      this.datoDeclarado.set('');
-    }
-  }
 
   onGuardar() {
     this.submitted.set(true);
-    if (!this.seccion() || !this.campo() || (!this.datoObservado() && !this.descripcion())) {
+    if (!this.datoObservado().trim() && !this.descripcion().trim()) {
+      this.alerts.showAlert('Indica el dato observado o describe claramente la diferencia.', 'warning');
       return;
     }
-    
+    const contexto = this.contexto();
     this.guardar.emit({
-      seccion: this.seccion(),
-      campo: this.campo(),
-      datoDeclarado: this.datoDeclarado(),
-      datoObservado: this.datoObservado(),
-      descripcion: this.descripcion()
+      seccion: contexto.seccion,
+      campo: contexto.campo,
+      datoDeclarado: contexto.datoDeclarado,
+      datoObservado: this.datoObservado().trim(),
+      descripcion: this.descripcion().trim()
     });
   }
 }

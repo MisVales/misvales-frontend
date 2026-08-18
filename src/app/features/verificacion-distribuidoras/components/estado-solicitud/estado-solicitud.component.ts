@@ -16,12 +16,14 @@ export class EstadoSolicitudComponent {
       'DRAFT': 'Borrador',
       'COORDINATOR_REVIEW': 'Revisión Coord.',
       'VERIFIER_ASSIGNED': 'Visita Asignada',
-      'VERIFICATION_IN_PROGRESS': 'Visita en Progreso',
+      'PHYSICAL_VERIFICATION': 'Verificación Física',
+      'COORDINATOR_CORRECTION': 'Corrección Coord.',
       'COORDINATOR_EVALUATION': 'Evaluación Coord.',
       'MANAGER_AUTHORIZATION': 'Autorización Gerencial',
       'AUTHORIZED_PENDING_ACTIVATION': 'Autorizado (P. Act.)',
+      'TERMINATED_UNFAVORABLE': 'Terminada Desfavorable',
       'REJECTED': 'Rechazado',
-      'CANCELLED': 'Cancelado'
+      'ACTIVE': 'Activa'
     };
     return map[this.estado()] || this.estado();
   });
@@ -31,12 +33,15 @@ export class EstadoSolicitudComponent {
       case 'DRAFT': return 'badge-neutral';
       case 'COORDINATOR_REVIEW': 
       case 'VERIFIER_ASSIGNED':
-      case 'VERIFICATION_IN_PROGRESS': return 'badge-info';
+      case 'PHYSICAL_VERIFICATION': return 'badge-info';
+      case 'COORDINATOR_CORRECTION':
       case 'COORDINATOR_EVALUATION': 
       case 'MANAGER_AUTHORIZATION': return 'badge-warning';
-      case 'AUTHORIZED_PENDING_ACTIVATION': return 'badge-success';
+      case 'AUTHORIZED_PENDING_ACTIVATION':
+      case 'ACTIVE': return 'badge-success';
+      case 'TERMINATED_UNFAVORABLE':
       case 'REJECTED': 
-      case 'CANCELLED': return 'badge-danger';
+        return 'badge-danger';
       default: return 'badge-neutral';
     }
   });

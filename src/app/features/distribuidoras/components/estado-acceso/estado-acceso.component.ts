@@ -11,9 +11,4 @@ import { Distribuidora } from '../../models/distribuidora.model';
 })
 export class EstadoAccesoComponent {
   @Input({ required: true }) distribuidora!: Distribuidora;
-
-  // En una implementación real, este componente abriría el dialog para reenviar invitación
-  reenviarInvitacion() {
-    alert('Abre el modal de reenvío de invitación (Fase 4)');
-  }
 }

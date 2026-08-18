@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy } from '@
 import { ActivatedRoute, Router } from '@angular/router';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { FormsModule } from '@angular/forms';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-asignar-verificador',
@@ -15,6 +16,7 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   protected readonly facade = inject(VerificacionDistribuidorasFacade);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly alerts = inject(AlertService);
 
   verifierId = '';
   submitted = false;
@@ -34,6 +36,7 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   async onAssign() {
     this.submitted = true;
     if (!this.verifierId) {
+      this.alerts.showAlert('Selecciona un verificador antes de continuar.', 'warning');
       return;
     }
     const solicitud = this.facade.solicitudSeleccionada();

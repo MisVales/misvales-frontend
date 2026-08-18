@@ -1,209 +1,129 @@
-<div class="min-h-screen bg-[#F8F9F5] p-6 lg:p-8">
-  <button class="flex items-center gap-2 text-sm text-[#1A4D2E] hover:text-[#133c23] font-medium mb-6 transition-colors">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-    </svg>
-    Volver a Configuración
+<section class="space-y-6 p-6 lg:p-8">
+  <button type="button" class="text-sm font-semibold text-emerald-800" (click)="volver()">
+    ← Volver a configuraciones
   </button>
 
-  <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-8">
-    <div>
-      <h1 class="text-3xl font-bold text-gray-900">Tasa de Interés Base</h1>
-      <p class="text-gray-600 mt-1">Parámetro global del sistema financiero corporativo.</p>
+  @if (store.error()) {
+    <div role="alert" class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      {{ store.error() }}
     </div>
-    <button class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-      </svg>
-      Crear nueva versión
-    </button>
-  </div>
+  }
 
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
-    <!-- Valor Vigente Card -->
-    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col justify-between relative overflow-hidden border-l-4 border-l-[#1A4D2E]">
-      <!-- Background icon decoration -->
-      <svg class="absolute -right-4 -bottom-4 w-48 h-48 text-gray-50 opacity-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-      </svg>
-      
+  @if (definicion(); as item) {
+    <header class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Valor Vigente</h2>
-        <div class="flex items-center gap-4 mb-6">
-          <span class="text-5xl font-bold text-gray-900">12.5%</span>
-          <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E] border border-[#1A4D2E]/20">
-            <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
-            Publicada
-          </span>
-        </div>
+        <h1 class="text-3xl font-bold text-gray-950">{{ item.nombre }}</h1>
+        <p class="mt-2 max-w-3xl text-sm text-gray-600">{{ item.descripcion }}</p>
       </div>
-      <div class="flex items-center text-sm text-gray-500 bg-gray-50 rounded-lg p-3 max-w-sm">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-        </svg>
-        Vigente desde el 01 Oct 2023
-      </div>
-    </div>
+      <button
+        type="button"
+        class="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white"
+        (click)="creando.set(!creando())"
+      >
+        {{ creando() ? 'Cancelar' : 'Crear nueva versión' }}
+      </button>
+    </header>
 
-    <!-- Última Auditoría Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
-      <div class="flex items-center text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Última Auditoría
-      </div>
-      <div class="flex items-center gap-3 mb-4">
-        <div class="h-10 w-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
-          <img src="https://ui-avatars.com/api/?name=Carlos+Mendoza&background=E8F3E8&color=1A4D2E" alt="Carlos Mendoza" class="h-full w-full object-cover">
-        </div>
+    <article class="rounded-xl border bg-white p-5 shadow-sm">
+      <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Valor vigente</p>
+      <p class="mt-2 text-2xl font-bold text-gray-950">{{ mostrarValor(item.valorActual, item) }}</p>
+    </article>
+
+    @if (creando()) {
+      <form class="space-y-5 rounded-xl border bg-white p-5 shadow-sm" [formGroup]="versionForm" (ngSubmit)="crearVersion()">
         <div>
-          <p class="text-sm font-bold text-gray-900">Carlos Mendoza</p>
-          <p class="text-xs text-gray-500">Admin. Riesgos</p>
+          <h2 class="text-lg font-bold text-gray-950">Nueva versión en borrador</h2>
+          <p class="text-sm text-gray-600">La versión deberá publicarse después de revisar sus datos.</p>
         </div>
+
+        @if (esPeriodo(item)) {
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="text-sm font-medium">Inicio (días después del corte)
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="0" formControlName="periodStart" />
+            </label>
+            <label class="text-sm font-medium">Fin (días después del corte)
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="1" formControlName="periodEnd" />
+            </label>
+          </div>
+        } @else if (esBanco(item)) {
+          <div class="grid gap-4 sm:grid-cols-2">
+            <label class="text-sm font-medium">Banco
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="bankName" />
+            </label>
+            <label class="text-sm font-medium">Beneficiario
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="bankBeneficiary" />
+            </label>
+            <label class="text-sm font-medium">Convenio
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="bankAgreement" />
+            </label>
+            <label class="text-sm font-medium">CLABE de 18 dígitos
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" inputmode="numeric" autocomplete="off" maxlength="18" formControlName="bankClabe" />
+            </label>
+          </div>
+        } @else {
+          <label class="block text-sm font-medium">Valor
+            <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="scalar" />
+          </label>
+        }
+
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="text-sm font-medium">Inicio de vigencia
+            <input class="mt-1 w-full rounded-lg border px-3 py-2" type="datetime-local" formControlName="effectiveFrom" />
+          </label>
+          <label class="text-sm font-medium">Motivo
+            <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="reason" />
+          </label>
+        </div>
+        <button type="submit" class="rounded-lg bg-emerald-800 px-4 py-2.5 font-semibold text-white">
+          Guardar borrador
+        </button>
+      </form>
+    }
+
+    <section class="space-y-4">
+      <div>
+        <h2 class="text-xl font-bold text-gray-950">Historial de versiones</h2>
+        <p class="text-sm text-gray-600">Las versiones publicadas permanecen inmutables.</p>
       </div>
-      <div class="bg-gray-50 rounded-lg p-3 text-sm italic text-gray-600 flex-grow">
-        <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1 not-italic">Motivo del cambio</span>
-        "Ajuste trimestral aprobado por comité de riesgos."
-      </div>
-    </div>
-  </div>
 
-  <h2 class="text-xl font-bold text-gray-900 mb-6">Historial de Versiones</h2>
+      <form class="max-w-xl" [formGroup]="transitionForm">
+        <label class="text-sm font-medium">Motivo para publicar o desactivar
+          <input class="mt-1 w-full rounded-lg border bg-white px-3 py-2" formControlName="reason" />
+        </label>
+      </form>
 
-  <!-- Timeline -->
-  <div class="relative max-w-4xl">
-    <!-- Línea vertical principal -->
-    <div class="absolute left-3 top-4 bottom-4 w-0.5 bg-gray-200"></div>
-
-    <!-- Item: Vigente -->
-    <div class="relative pl-10 mb-8">
-      <div class="absolute left-[9px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#1A4D2E] ring-4 ring-white z-10"></div>
-      
-      <div class="bg-white rounded-xl shadow-sm border border-[#1A4D2E]/20 p-5">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-4 border-b border-gray-50 pb-3">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-bold text-gray-900">v3</span>
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E]">Activa</span>
-          </div>
-          <div class="flex items-center text-sm text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            01 Oct 2023, 14:30 hrs
-          </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div class="flex items-center gap-4 bg-gray-50 px-4 py-3 rounded-lg flex-shrink-0">
-            <div class="text-center">
-              <span class="block text-xs font-medium text-gray-400 mb-1">Anterior</span>
-              <span class="text-sm font-semibold text-gray-500 line-through">10.5%</span>
+      @if (!store.versiones().length) {
+        <div class="rounded-xl border bg-white p-6 text-gray-600">Aún no existen versiones para esta configuración.</div>
+      }
+      @for (version of store.versiones(); track version.id) {
+        <article class="rounded-xl border bg-white p-5 shadow-sm">
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-gray-950">Versión {{ version.numero }}</h3>
+                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">{{ version.estado }}</span>
+              </div>
+              <p class="mt-2 text-lg font-semibold">{{ mostrarValor(version.valor, item) }}</p>
+              <p class="mt-1 text-sm text-gray-600">Vigencia: {{ version.inicioVigencia | date: 'medium' }}</p>
+              <p class="mt-1 text-sm text-gray-600">{{ version.motivo }}</p>
             </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-            <div class="text-center">
-              <span class="block text-xs font-medium text-[#1A4D2E] mb-1">Nuevo</span>
-              <span class="text-lg font-bold text-gray-900">12.5%</span>
+            <div class="flex gap-2">
+              @if (version.estado === 'DRAFT') {
+                <button type="button" class="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-semibold text-white" (click)="publicar(version)">
+                  Publicar
+                </button>
+              }
+              @if (version.estado === 'PUBLISHED') {
+                <button type="button" class="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700" (click)="desactivar(version)">
+                  Desactivar
+                </button>
+              }
             </div>
           </div>
-          <div class="text-right flex-grow">
-            <p class="text-sm text-gray-900 mb-1">Modificado por <span class="font-bold">Carlos Mendoza</span></p>
-            <p class="text-sm text-gray-500 italic max-w-sm ml-auto">"Ajuste trimestral aprobado por comité de riesgos."</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Item: Inmutable 2 -->
-    <div class="relative pl-10 mb-8">
-      <div class="absolute left-[9px] top-1.5 w-2.5 h-2.5 rounded-full bg-gray-400 ring-4 ring-[#F8F9F5] z-10"></div>
-      
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 opacity-75 hover:opacity-100 transition-opacity">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-4 border-b border-gray-50 pb-3">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-bold text-gray-700">v2</span>
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Inmutable
-            </span>
-          </div>
-          <div class="flex items-center text-sm text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            15 Ene 2023, 09:15 hrs
-          </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div class="flex items-center gap-4 bg-gray-50 px-4 py-3 rounded-lg flex-shrink-0">
-            <div class="text-center">
-              <span class="block text-xs font-medium text-gray-400 mb-1">Anterior</span>
-              <span class="text-sm font-semibold text-gray-500 line-through">9.0%</span>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-            <div class="text-center">
-              <span class="block text-xs font-medium text-gray-700 mb-1">Nuevo</span>
-              <span class="text-lg font-bold text-gray-700">10.5%</span>
-            </div>
-          </div>
-          <div class="text-right flex-grow">
-            <p class="text-sm text-gray-700 mb-1">Modificado por <span class="font-bold">Ana Silva</span></p>
-            <p class="text-sm text-gray-500 italic max-w-sm ml-auto">"Actualización por inflación anual."</p>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Item: Inmutable 1 -->
-    <div class="relative pl-10">
-      <div class="absolute left-[9px] top-1.5 w-2.5 h-2.5 rounded-full bg-gray-400 ring-4 ring-[#F8F9F5] z-10"></div>
-      
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 opacity-75 hover:opacity-100 transition-opacity">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-2 mb-4 border-b border-gray-50 pb-3">
-          <div class="flex items-center gap-3">
-            <span class="text-lg font-bold text-gray-700">v1</span>
-            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Inmutable
-            </span>
-          </div>
-          <div class="flex items-center text-sm text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            01 Sep 2022, 10:00 hrs
-          </div>
-        </div>
-
-        <div class="flex flex-col md:flex-row md:items-start justify-between gap-6">
-          <div class="flex items-center gap-4 bg-gray-50 px-4 py-3 rounded-lg flex-shrink-0">
-            <div class="text-center">
-              <span class="block text-xs font-medium text-gray-400 mb-1">Anterior</span>
-              <span class="text-sm font-semibold text-gray-400">N/A</span>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-            </svg>
-            <div class="text-center">
-              <span class="block text-xs font-medium text-gray-700 mb-1">Nuevo</span>
-              <span class="text-lg font-bold text-gray-700">9.0%</span>
-            </div>
-          </div>
-          <div class="text-right flex-grow">
-            <p class="text-sm text-gray-700 mb-1">Modificado por <span class="font-bold">Sistema</span></p>
-            <p class="text-sm text-gray-500 italic max-w-sm ml-auto">"Configuración inicial del módulo."</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+        </article>
+      }
+    </section>
+  } @else if (store.estadoCarga()) {
+    <div class="rounded-xl border bg-white p-8 text-center text-gray-600">Cargando configuración…</div>
+  }
+</section>

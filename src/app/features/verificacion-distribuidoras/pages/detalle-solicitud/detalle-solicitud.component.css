@@ -78,6 +78,52 @@
   margin-bottom: 0.25rem;
 }
 
+.data-group dt {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted, #6b7280);
+  margin-bottom: 0.25rem;
+}
+
+.data-group dd {
+  margin: 0;
+  color: var(--text-primary, #111827);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.declared-section {
+  margin-top: 1.25rem;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.declared-section-title {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background-color: var(--color-gray-50, #f9fafb);
+  color: var(--text-primary, #1f2937);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.declared-record {
+  padding: 1rem;
+  border-top: 1px solid var(--border-color, #e5e7eb);
+}
+
+.declared-record-title {
+  margin: 0 0 0.75rem;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.declared-grid {
+  gap: 1rem 1.5rem;
+}
+
 .data-group div {
   font-size: 1rem;
   color: var(--text-primary, #111827);
