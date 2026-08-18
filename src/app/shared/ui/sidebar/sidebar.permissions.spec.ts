@@ -76,4 +76,16 @@ describe('sidebar permission filtering', () => {
     expect(item?.route).toBe('/verificacion-distribuidoras/verificaciones/asignadas');
     expect(collectIds(filteredItems)).not.toContain('verifications');
   });
+
+  it('muestra verificaciones solo con una capacidad efectiva de M05', () => {
+    const sinCapacidad = filterNavigationItems(allItems, [], ['verifier']);
+    const conCapacidad = filterNavigationItems(
+      allItems,
+      ['verification.visits.view'],
+      ['verifier'],
+    );
+
+    expect(collectIds(sinCapacidad)).not.toContain('verifications');
+    expect(collectIds(conCapacidad)).toContain('verifications');
+  });
 });

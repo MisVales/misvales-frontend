@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  ElementRef,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 export interface EvidenciaPayload {
   tipo: string;
@@ -14,14 +22,14 @@ export interface EvidenciaPayload {
 })
 export class CapturaEvidenciaComponent {
   // Inputs
-  tiposPermitidos = input<{id: string; label: string}[]>([]);
-  maxSizeMB = input<number>(5);
+  tiposPermitidos = input<{ id: string; label: string }[]>([]);
+  maxSizeMB = input<number>(10);
   isUploading = input<boolean>(false);
   progress = input<number>(0);
 
   // Outputs
   fileSelected = output<EvidenciaPayload>();
-  
+
   // View Childs
   fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
@@ -40,7 +48,7 @@ export class CapturaEvidenciaComponent {
   onFileChange(event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
-    
+
     this.errorMsg.set(null);
 
     if (!file) {
@@ -57,19 +65,19 @@ export class CapturaEvidenciaComponent {
     }
 
     // Validate mime
-    if (!file.type.startsWith('image/')) {
-      this.errorMsg.set('Solo se permiten archivos de imagen.');
+    if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
+      this.errorMsg.set('Solo se permiten archivos JPG, PNG o PDF.');
       this.limpiarArchivo();
       return;
     }
 
     this.archivoSeleccionado.set(file);
-    
+
     // Create preview
     if (this.previewUrl()) {
       URL.revokeObjectURL(this.previewUrl()!);
     }
-    this.previewUrl.set(URL.createObjectURL(file));
+    this.previewUrl.set(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
   }
 
   subirEvidencia() {
@@ -77,7 +85,7 @@ export class CapturaEvidenciaComponent {
       this.errorMsg.set('Debes seleccionar el tipo de evidencia.');
       return;
     }
-    
+
     const file = this.archivoSeleccionado();
     if (!file) {
       this.errorMsg.set('Debes capturar una fotografía o seleccionar un archivo.');
