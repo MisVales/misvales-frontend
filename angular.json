@@ -68,8 +68,7 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "allowedHosts": [
-              "lap-finds-futures-info.trycloudflare.com",
-              "advertisement-there-forever-flags.trycloudflare.com"
+              "testimony-hygiene-brochure-addressing.trycloudflare.com"
             ]
           },
           "configurations": {

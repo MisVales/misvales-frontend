@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.safeacces.lat/api/v1',
+  apiBaseUrl: 'https://testimony-hygiene-brochure-addressing.trycloudflare.com/api/v1',
 } as const;
