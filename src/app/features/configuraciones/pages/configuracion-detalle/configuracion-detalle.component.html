@@ -28,7 +28,7 @@
     <article class="rounded-xl border bg-white p-5 shadow-sm">
       <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Valor vigente</p>
       <p class="mt-2 text-2xl font-bold text-gray-950">{{ mostrarValor(item.valorActual, item) }}</p>
-      <p class="mt-2 text-sm text-gray-600">Tipo {{ item.tipoValor }} @if (item.unidad) { · {{ item.unidad }} }</p>
+      @if (item.unidad) { <p class="mt-2 text-sm text-gray-600">{{ item.unidad }}</p> }
     </article>
 
     @if (creando()) {
