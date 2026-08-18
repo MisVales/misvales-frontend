@@ -1,26 +1,25 @@
 <div class="flex-1 flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 p-8">
   <div class="text-center max-w-lg mx-auto mb-10">
     <h2 class="text-2xl font-bold text-gray-900 mb-3">Resumen y Envío a Revisión</h2>
-    <p class="text-gray-600">Revisa que todas las secciones estén completadas o marcadas como 'No aplicable' antes de enviar la solicitud al Coordinador.</p>
+    <p class="text-gray-600">El avance se calcula automáticamente con los datos guardados en cada sección. Completa los pendientes antes de enviar la solicitud al Coordinador.</p>
   </div>
 
   <div class="max-w-3xl mx-auto w-full grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 mb-10">
     <div *ngFor="let sec of getSeccionesArray()" class="flex flex-col gap-2 p-4 border border-gray-100 rounded-xl bg-gray-50">
-      <label class="font-medium text-gray-700" [attr.for]="'section-status-' + sec.id">
+      <p class="font-medium text-gray-700">
         {{ sec.label }}<span *ngIf="sec.required" class="text-red-500" aria-hidden="true"> *</span>
-      </label>
-      <select
-        [id]="'section-status-' + sec.id"
-        class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] disabled:opacity-60 disabled:cursor-not-allowed"
-        [value]="sec.status || 'PENDING'"
-        [disabled]="store.detalle()?.estado !== 'DRAFT' || actualizandoSeccion !== null"
-        (change)="actualizarEstado(sec.id, $any($event.target).value)"
+      </p>
+      <span
+        class="inline-flex w-fit rounded-full px-3 py-1 text-sm font-medium"
+        [ngClass]="{
+          'bg-emerald-100 text-emerald-800': sec.status === 'COMPLETED',
+          'bg-amber-100 text-amber-800': !sec.status || sec.status === 'PENDING',
+          'bg-slate-200 text-slate-700': sec.status === 'NOT_APPLICABLE'
+        }"
       >
-        <option value="PENDING" [selected]="!sec.status || sec.status === 'PENDING'">Pendiente</option>
-        <option value="COMPLETED" [selected]="sec.status === 'COMPLETED'">Completa</option>
-        <option value="NOT_APPLICABLE" [selected]="sec.status === 'NOT_APPLICABLE'" [disabled]="sec.required">No aplica</option>
-      </select>
-      <span *ngIf="actualizandoSeccion === sec.id" class="text-xs text-gray-500" role="status">Guardando estado…</span>
+        {{ sec.status === 'COMPLETED' ? 'Completa' : sec.status === 'NOT_APPLICABLE' ? 'No aplica' : 'Pendiente' }}
+      </span>
+      <p class="text-xs text-gray-500">Se actualiza al guardar los datos de esta sección.</p>
     </div>
   </div>
 
@@ -42,7 +41,7 @@
     </button>
 
     <div *ngIf="!canSubmit && store.detalle()?.estado === 'DRAFT'" class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-left">
-      <p class="text-red-600 text-sm font-medium mb-2">Para poder enviar a revisión, las siguientes secciones deben estar completadas o marcadas como 'No aplica':</p>
+      <p class="text-red-600 text-sm font-medium mb-2">Para poder enviar a revisión, completa las siguientes secciones:</p>
       <ul class="list-disc list-inside text-sm text-red-500 ml-2">
         <li *ngFor="let sec of faltantes">{{ sec.label }}</li>
       </ul>

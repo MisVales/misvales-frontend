@@ -41,24 +41,20 @@ describe('SolicitudesDistribuidoraApiService', () => {
     service.crearFamiliar('a1', { relationship: 'CHILD' }, 2).subscribe((value) => result = value);
     const request = http.expectOne('/api/v1/distributor-applications/a1/family-members');
     expect(request.request.body).toEqual({ relationship: 'CHILD', lock_version: 2 });
+    expect(request.request.headers.get('X-Autosave')).toBe('true');
     request.flush({ data: { id: 'f1', relationship: 'CHILD' } });
 
     expect(result).toEqual({ id: 'f1', relationship: 'CHILD' });
   });
 
-  it('actualiza las declaraciones de sección con control de versión', () => {
-    service.actualizarDeclaraciones('a1', { residence: 'COMPLETED' }, 4).subscribe();
-    const request = http.expectOne('/api/v1/distributor-applications/a1');
-    expect(request.request.method).toBe('PATCH');
-    expect(request.request.body).toEqual({
-      section_declarations: { residence: 'COMPLETED' },
-      lock_version: 4,
-    });
-    request.flush({ data: {
-      id: 'a1', application_number: 'SOL-1', status: 'DRAFT', applicant: null,
-      section_declarations: { personal_data: 'PENDING', residence: 'COMPLETED' },
-      completion: { completed_sections: 1, total_sections: 10, can_submit: false },
-      lock_version: 5, submitted_at: null, created_at: '', updated_at: '',
-    } });
+  it('desenvuelve el domicilio creado y lo marca como autosave', () => {
+    let result: any;
+    service.crearDomicilio('a1', { street: 'Av. Reforma' }, 4).subscribe((value) => result = value);
+    const request = http.expectOne('/api/v1/distributor-applications/a1/residences');
+    expect(request.request.headers.get('X-Autosave')).toBe('true');
+    expect(request.request.body).toEqual({ street: 'Av. Reforma', lock_version: 4 });
+    request.flush({ data: { id: 'r1', street: 'Av. Reforma' } });
+
+    expect(result).toEqual({ id: 'r1', street: 'Av. Reforma' });
   });
 });

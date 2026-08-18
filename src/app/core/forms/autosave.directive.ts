@@ -82,13 +82,14 @@ export class AutosaveDirective implements OnInit, OnDestroy {
       return EMPTY;
     }
 
-    if (this.formGroup.invalid) {
+    const value = this.formGroup.getRawValue();
+    if (!this.hasMeaningfulDraft(value)) {
       this.updateStatus('idle');
       return EMPTY;
     }
 
     this.updateStatus('saving');
-    return this.saveFn(this.formGroup.getRawValue()).pipe(
+    return this.saveFn(value).pipe(
       tap((result) => {
         if (result !== null) {
           this.updateStatus('saved');
@@ -108,6 +109,33 @@ export class AutosaveDirective implements OnInit, OnDestroy {
         return EMPTY;
       }),
     );
+  }
+
+  /**
+   * Los formularios de expediente se guardan por secciones mientras se llenan.
+   * Evita crear un registro al abrir una sección, pero conserva cualquier dato
+   * real aunque todavía falten campos requeridos para enviar el expediente.
+   */
+  private hasMeaningfulDraft(value: unknown): boolean {
+    if (value === null || value === undefined || value === '') {
+      return false;
+    }
+
+    if (Array.isArray(value)) {
+      return value.some((item) => this.hasMeaningfulDraft(item));
+    }
+
+    if (typeof value === 'object') {
+      return Object.entries(value as Record<string, unknown>).some(([key, item]) => {
+        if (key === 'id') {
+          return typeof item === 'string' && item.length > 0;
+        }
+
+        return this.hasMeaningfulDraft(item);
+      });
+    }
+
+    return value !== false;
   }
 
   /**

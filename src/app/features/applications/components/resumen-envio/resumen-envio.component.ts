@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { firstValueFrom } from 'rxjs';
-import { Router } from '@angular/router';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
@@ -18,12 +17,10 @@ import { apiErrorMessage } from '../../../../core/api/api-error';
 export class ResumenEnvioComponent {
   protected store = inject(SolicitudDetalleStore);
   private api = inject(SolicitudesDistribuidoraApiService);
-  private router = inject(Router);
   private alerts = inject(AlertService);
   private confirmation = inject(ConfirmationService);
 
   enviando = false;
-  actualizandoSeccion: string | null = null;
 
   get canSubmit(): boolean {
     return this.store.detalle()?.estado === 'DRAFT' &&
@@ -52,20 +49,6 @@ export class ResumenEnvioComponent {
 
   get faltantes() {
     return this.getSeccionesArray().filter(s => !s.status || s.status === 'PENDING');
-  }
-
-  async actualizarEstado(id: string, estado: string) {
-    if (this.store.detalle()?.estado !== 'DRAFT' || !estado || this.actualizandoSeccion) return;
-
-    this.actualizandoSeccion = id;
-    try {
-      await this.store.actualizarDeclaraciones({ [id]: estado });
-      this.alerts.showAlert('Estado de la sección actualizado.', 'success');
-    } catch (e: any) {
-      this.alerts.showAlert(apiErrorMessage(e, 'No fue posible actualizar el estado de la sección.'), 'error');
-    } finally {
-      this.actualizandoSeccion = null;
-    }
   }
 
   async enviarARevision() {

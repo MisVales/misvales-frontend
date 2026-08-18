@@ -37,6 +37,10 @@ export class SolicitudesDistribuidoraApiService {
     };
   }
 
+  private autosaveOptions() {
+    return { headers: new HttpHeaders().set('X-Autosave', 'true') };
+  }
+
   // ==== 1. SOLICITUD PRINCIPAL ====
   
   listarSolicitudes(
@@ -73,17 +77,6 @@ export class SolicitudesDistribuidoraApiService {
     );
   }
 
-  actualizarDeclaraciones(
-    id: string,
-    sectionDeclarations: Record<string, string>,
-    versionBloqueo: number,
-  ): Observable<SolicitudDistribuidora> {
-    return this.http.patch<SolicitudDistribuidoraResponseDTO | { data: SolicitudDistribuidoraResponseDTO }>(
-      `${this.baseUrl}/${id}`,
-      this.withLockVersion({ section_declarations: sectionDeclarations }, versionBloqueo),
-    ).pipe(map(unwrapData), map(SolicitudDistribuidoraMapper.mapToModel));
-  }
-
   enviarARevision(id: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
     return this.http.post<SolicitudDistribuidoraResponseDTO | { data: SolicitudDistribuidoraResponseDTO }>(`${this.baseUrl}/${id}/submit`, { lock_version: versionBloqueo }).pipe(
       map(unwrapData), map(SolicitudDistribuidoraMapper.mapToModel)
@@ -96,7 +89,7 @@ export class SolicitudesDistribuidoraApiService {
     return this.http.put(
       `${this.baseUrl}/${id}/personal-data`,
       this.withLockVersion(datos, versionBloqueo),
-      { headers: new HttpHeaders().set('X-Autosave', 'true') },
+      this.autosaveOptions(),
     ).pipe(
       switchMap(() => this.consultarSolicitud(id))
     );
@@ -109,13 +102,13 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   crearFamiliar(idSolicitud: string, datos: any, versionBloqueo: number): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/family-members`, this.withLockVersion(datos, versionBloqueo)).pipe(
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/family-members`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(
       map(unwrapData),
     );
   }
 
   actualizarFamiliar(idSolicitud: string, idFamiliar: string, datos: any, versionBloqueo: number): Observable<any> {
-    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, this.withLockVersion(datos, versionBloqueo)).pipe(
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/family-members/${idFamiliar}`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(
       map(unwrapData),
     );
   }
@@ -131,12 +124,12 @@ export class SolicitudesDistribuidoraApiService {
     return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/residences`).pipe(map(unwrapArray));
   }
 
-  crearDomicilio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/residences`, this.withLockVersion(datos, versionBloqueo));
+  crearDomicilio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/residences`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
-  actualizarDomicilio(idSolicitud: string, idDomicilio: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, this.withLockVersion(datos, versionBloqueo));
+  actualizarDomicilio(idSolicitud: string, idDomicilio: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/residences/${idDomicilio}`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
   eliminarDomicilio(idSolicitud: string, idDomicilio: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -150,12 +143,12 @@ export class SolicitudesDistribuidoraApiService {
     return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/vehicles`).pipe(map(unwrapArray));
   }
 
-  crearVehiculo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/vehicles`, this.withLockVersion(datos, versionBloqueo));
+  crearVehiculo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/vehicles`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
-  actualizarVehiculo(idSolicitud: string, idVehiculo: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, this.withLockVersion(datos, versionBloqueo));
+  actualizarVehiculo(idSolicitud: string, idVehiculo: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/vehicles/${idVehiculo}`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
   eliminarVehiculo(idSolicitud: string, idVehiculo: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -169,12 +162,12 @@ export class SolicitudesDistribuidoraApiService {
     return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`).pipe(map(unwrapArray));
   }
 
-  crearPatrimonio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`, this.withLockVersion(datos, versionBloqueo));
+  crearPatrimonio(idSolicitud: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
-  actualizarPatrimonio(idSolicitud: string, idPatrimonio: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, this.withLockVersion(datos, versionBloqueo));
+  actualizarPatrimonio(idSolicitud: string, idPatrimonio: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/assets-liabilities/${idPatrimonio}`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
   eliminarPatrimonio(idSolicitud: string, idPatrimonio: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -188,12 +181,12 @@ export class SolicitudesDistribuidoraApiService {
     return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/employments`).pipe(map(unwrapArray));
   }
 
-  crearEmpleo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/employments`, this.withLockVersion(datos, versionBloqueo));
+  crearEmpleo(idSolicitud: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/employments`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
-  actualizarEmpleo(idSolicitud: string, idEmpleo: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, this.withLockVersion(datos, versionBloqueo));
+  actualizarEmpleo(idSolicitud: string, idEmpleo: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/employments/${idEmpleo}`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
   eliminarEmpleo(idSolicitud: string, idEmpleo: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
@@ -207,12 +200,12 @@ export class SolicitudesDistribuidoraApiService {
     return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits`).pipe(map(unwrapArray));
   }
 
-  crearCreditoComercial(idSolicitud: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits`, this.withLockVersion(datos, versionBloqueo));
+  crearCreditoComercial(idSolicitud: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
-  actualizarCreditoComercial(idSolicitud: string, idCredito: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, this.withLockVersion(datos, versionBloqueo));
+  actualizarCreditoComercial(idSolicitud: string, idCredito: string, datos: any, versionBloqueo: number): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${idSolicitud}/commercial-credits/${idCredito}`, this.withLockVersion(datos, versionBloqueo), this.autosaveOptions()).pipe(map(unwrapData));
   }
 
   eliminarCreditoComercial(idSolicitud: string, idCredito: string, versionBloqueo: number): Observable<SolicitudDistribuidora> {
