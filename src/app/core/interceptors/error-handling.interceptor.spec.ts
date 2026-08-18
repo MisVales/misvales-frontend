@@ -87,6 +87,19 @@ describe('errorHandlingInterceptor', () => {
     expect(sessionExpired.isOpen()).toBe(true);
   });
 
+  it('does not present an expired authenticated session when the CSRF preflight fails', () => {
+    http.get('/sanctum/csrf-cookie').subscribe({
+      error: (error) => expect(error.status).toBe(419),
+    });
+
+    httpTestingController
+      .expectOne('/sanctum/csrf-cookie')
+      .flush('Page Expired', { status: 419, statusText: 'Page Expired' });
+
+    expect(sessionStoreSpy.clearSession).not.toHaveBeenCalled();
+    expect(sessionExpired.isOpen()).toBe(false);
+  });
+
   it('retries a safe read once with the refreshed access token', () => {
     sessionRefreshSpy.refresh.mockReturnValue(of(undefined));
     tokenStoreSpy.accessToken.mockReturnValue('refreshed-access-token');

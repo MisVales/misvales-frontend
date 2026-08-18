@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_CONFIG } from '@core/api/api.config';
-import { Observable, tap } from 'rxjs';
+import { Observable, switchMap, tap } from 'rxjs';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import type { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { LoginReq, LoginRes, MfaReq, RecoverReq, ResetPwdReq, InspectInvitationReq, InspectInvitationRes, SetupInvitationReq, SetupInvitationRes, CompleteInvitationReq, ResendInvitationReq, ResendInvitationRes, PasskeySetupReq, PasskeyRegisterReq, PasskeyVerifyReq, ApiMessageRes } from './auth.dtos';
@@ -22,28 +22,28 @@ export class AuthService {
   }
 
   getCsrfCookie(): Observable<unknown> {
-    return this.http.get('/sanctum/csrf-cookie');
+    return this.http.get('/sanctum/csrf-cookie', { withCredentials: true });
   }
 
   login(credentials: LoginReq): Observable<LoginRes> {
-    return this.http.post<LoginRes>(`${this.baseUrl}/login`, credentials).pipe(
+    return this.postWithCsrf<LoginRes>(`${this.baseUrl}/login`, credentials).pipe(
       tap(this.saveTokensIfPresent)
     );
   }
 
   verifyMfa(data: MfaReq): Observable<LoginRes> {
     if (data.recovery_code) {
-      return this.http.post<LoginRes>(`${this.baseUrl}/mfa/recovery-code/verify`, data).pipe(
+      return this.postWithCsrf<LoginRes>(`${this.baseUrl}/mfa/recovery-code/verify`, data).pipe(
         tap(this.saveTokensIfPresent)
       );
     }
-    return this.http.post<LoginRes>(`${this.baseUrl}/mfa/totp/verify`, data).pipe(
+    return this.postWithCsrf<LoginRes>(`${this.baseUrl}/mfa/totp/verify`, data).pipe(
       tap(this.saveTokensIfPresent)
     );
   }
 
   logout(): Observable<unknown> {
-    return this.http.post(`${this.baseUrl}/logout`, {}).pipe(
+    return this.postWithCsrf<unknown>(`${this.baseUrl}/logout`, {}).pipe(
       tap(() => this.tokenStore.clear())
     );
   }
@@ -55,44 +55,48 @@ export class AuthService {
   };
 
   recoverAccess(data: RecoverReq): Observable<ApiMessageRes> {
-    return this.http.post<ApiMessageRes>(`${this.baseUrl}/password/forgot`, data);
+    return this.postWithCsrf<ApiMessageRes>(`${this.baseUrl}/password/forgot`, data);
   }
 
   resetPassword(data: ResetPwdReq): Observable<ApiMessageRes> {
-    return this.http.post<ApiMessageRes>(`${this.baseUrl}/password/reset`, data);
+    return this.postWithCsrf<ApiMessageRes>(`${this.baseUrl}/password/reset`, data);
   }
 
   inspectInvitation(data: InspectInvitationReq): Observable<InspectInvitationRes> {
-    return this.http.post<InspectInvitationRes>(`${this.baseUrl}/invitations/inspect`, data);
+    return this.postWithCsrf<InspectInvitationRes>(`${this.baseUrl}/invitations/inspect`, data);
   }
 
   setupInvitation(data: SetupInvitationReq): Observable<SetupInvitationRes> {
-    return this.http.post<SetupInvitationRes>(`${this.baseUrl}/invitations/setup`, data);
+    return this.postWithCsrf<SetupInvitationRes>(`${this.baseUrl}/invitations/setup`, data);
   }
 
   completeInvitation(data: CompleteInvitationReq): Observable<ApiMessageRes> {
-    return this.http.post<ApiMessageRes>(`${this.baseUrl}/invitations/complete`, data);
+    return this.postWithCsrf<ApiMessageRes>(`${this.baseUrl}/invitations/complete`, data);
   }
 
   resendInvitation(data: ResendInvitationReq): Observable<ResendInvitationRes> {
-    return this.http.post<ResendInvitationRes>(`${this.baseUrl}/invitations/resend`, data);
+    return this.postWithCsrf<ResendInvitationRes>(`${this.baseUrl}/invitations/resend`, data);
   }
 
   setupPasskey(data: PasskeySetupReq): Observable<RegistrationOptionsJSON> {
-    return this.http.post<RegistrationOptionsJSON>(`${this.baseUrl}/invitations/passkey/setup`, data);
+    return this.postWithCsrf<RegistrationOptionsJSON>(`${this.baseUrl}/invitations/passkey/setup`, data);
   }
 
   registerPasskey(data: PasskeyRegisterReq): Observable<ApiMessageRes> {
-    return this.http.post<ApiMessageRes>(`${this.baseUrl}/invitations/passkey/register`, data);
+    return this.postWithCsrf<ApiMessageRes>(`${this.baseUrl}/invitations/passkey/register`, data);
   }
 
   getPasskeyOptions(data: { mfa_challenge_token: string }): Observable<AuthenticationOptionsJSON> {
-    return this.http.post<AuthenticationOptionsJSON>(`${this.baseUrl}/mfa/passkey/options`, data);
+    return this.postWithCsrf<AuthenticationOptionsJSON>(`${this.baseUrl}/mfa/passkey/options`, data);
   }
 
   verifyPasskey(data: PasskeyVerifyReq): Observable<LoginRes> {
-    return this.http.post<LoginRes>(`${this.baseUrl}/mfa/passkey/verify`, data).pipe(
+    return this.postWithCsrf<LoginRes>(`${this.baseUrl}/mfa/passkey/verify`, data).pipe(
       tap(this.saveTokensIfPresent)
     );
+  }
+
+  private postWithCsrf<T>(url: string, body: unknown): Observable<T> {
+    return this.getCsrfCookie().pipe(switchMap(() => this.http.post<T>(url, body)));
   }
 }

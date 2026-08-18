@@ -93,9 +93,11 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
       request.url.includes('/me/security/password') ||
       request.url.includes('/me/security/totp/') ||
       request.url.includes('/me/security/recovery-codes');
+    const isCsrfEndpoint = request.url.includes('/sanctum/csrf-cookie');
     const isAuthEndpoint =
       (request.url.includes('/auth/') && !request.url.includes('/logout')) ||
-      isSecurityAuthEndpoint;
+      isSecurityAuthEndpoint ||
+      isCsrfEndpoint;
 
     const canRetryAfterRefresh =
       allowRefresh &&

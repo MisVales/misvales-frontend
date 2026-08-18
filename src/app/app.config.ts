@@ -140,6 +140,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withFetch(),
+      withXsrfConfiguration({
+        cookieName: 'XSRF-TOKEN',
+        headerName: 'X-XSRF-TOKEN',
+      }),
       withInterceptors([authInterceptor, errorHandlingInterceptor]),
     ),
     importProvidersFrom(
