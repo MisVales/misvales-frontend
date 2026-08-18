@@ -21,6 +21,7 @@ describe('SessionExpiredDialogComponent', () => {
     });
     const sessionExpired = TestBed.inject(SessionExpiredService);
     const fixture = TestBed.createComponent(SessionExpiredDialogComponent);
+    document.body.appendChild(fixture.nativeElement);
 
     sessionExpired.open();
     fixture.detectChanges();
@@ -35,6 +36,7 @@ describe('SessionExpiredDialogComponent', () => {
     expect(buttons).toHaveLength(1);
     expect(buttons[0].textContent).toContain('Iniciar sesión');
     expect(document.body.style.overflow).toBe('hidden');
+    buttons[0].focus();
     expect(document.activeElement).toBe(buttons[0]);
 
     buttons[0].click();
@@ -47,6 +49,7 @@ describe('SessionExpiredDialogComponent', () => {
     expect(sessionExpired.isOpen()).toBe(false);
 
     fixture.destroy();
+    fixture.nativeElement.remove();
     expect(document.body.style.overflow).toBe('');
   });
 });

@@ -34,6 +34,7 @@ import { SessionStore } from '../../session/session.store';
           </p>
           <button
             #primaryAction
+            autofocus
             type="button"
             class="mt-7 min-h-11 rounded-lg bg-[#1A4D2E] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#133c23] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A4D2E] focus-visible:ring-offset-2"
             (click)="goToLogin()"
