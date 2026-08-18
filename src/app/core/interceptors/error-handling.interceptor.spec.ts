@@ -1,3 +1,4 @@
+﻿import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -278,3 +279,4 @@ describe('sanitizeServerError', () => {
     expect(JSON.stringify(sanitized.error)).not.toContain('SQLSTATE');
   });
 });
+
