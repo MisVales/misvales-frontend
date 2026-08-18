@@ -61,8 +61,16 @@
             <app-input-error [control]="recoverForm.controls.email" label="El correo electrónico" [serverError]="fieldError('email')"></app-input-error>
           </div>
 
+          <!-- Cloudflare Turnstile -->
+          <app-turnstile
+            (tokenChange)="onTurnstileToken($event)"
+            (error)="onTurnstileError($event)"
+            (expired)="onTurnstileExpired()"
+            (timeout)="onTurnstileExpired()">
+          </app-turnstile>
+
           <button type="submit" 
-                  [disabled]="isLoading || recoverForm.invalid"
+                  [disabled]="isSubmitDisabled"
                   class="w-full bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/70 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-all shadow-md flex items-center justify-center gap-2 mt-4">
             
             @if (!isLoading) {

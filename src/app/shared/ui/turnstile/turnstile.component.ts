@@ -41,7 +41,7 @@ export class TurnstileComponent implements OnDestroy {
 
   @Input() theme: TurnstileTheme = 'auto';
   @Input() size: TurnstileSize = 'normal';
-  @Input() language = 'es-MX';
+  @Input() language = 'es';
   @Input() action?: string;
   @Input() cData?: string;
 

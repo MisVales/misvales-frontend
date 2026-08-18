@@ -30,6 +30,7 @@ export interface MfaReq {
 
 export interface RecoverReq {
   email: string;
+  turnstile_token?: string | null;
 }
 
 export interface ResetPwdReq {
