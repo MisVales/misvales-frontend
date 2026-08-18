@@ -72,7 +72,7 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
   abrirRegistro(type: string = 'NOTE') {
     this.form.reset();
     this.serverError.set(null);
-    this.form.patchValue({ entry_type: type === 'CHARGE' ? 'DEBT' : type, occurred_at: new Date().toISOString().slice(0, 16) });
+    this.form.patchValue({ entry_type: type, occurred_at: new Date().toISOString().slice(0, 16) });
     this.mostrarModal.set(true);
   }
 
@@ -106,8 +106,11 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   getColorBadge(tipo: string): string {
     switch(tipo) {
-      case 'CHARGE': return 'bg-red-100 text-red-800';
-      case 'PAYMENT': return 'bg-green-100 text-green-800';
+      case 'DEBT':
+      case 'ADJUSTMENT_INCREASE': return 'bg-red-100 text-red-800';
+      case 'PAYMENT':
+      case 'PARTIAL_PAYMENT':
+      case 'ADJUSTMENT_DECREASE': return 'bg-green-100 text-green-800';
       case 'CREDIT': return 'bg-blue-100 text-blue-800';
       case 'NOTE': return 'bg-yellow-100 text-yellow-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -116,11 +119,14 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   getNombreTipo(tipo: string): string {
     switch(tipo) {
-      case 'CHARGE': return 'Adeudo';
+      case 'DEBT': return 'Adeudo';
       case 'PAYMENT': return 'Pago';
+      case 'PARTIAL_PAYMENT': return 'Pago parcial';
       case 'CREDIT': return 'Abono';
       case 'NOTE': return 'Nota';
-      case 'ADJUSTMENT': return 'Ajuste';
+      case 'ADJUSTMENT':
+      case 'ADJUSTMENT_INCREASE':
+      case 'ADJUSTMENT_DECREASE': return 'Ajuste';
       case 'STATUS_UPDATE': return 'Act. Estado';
       default: return tipo;
     }

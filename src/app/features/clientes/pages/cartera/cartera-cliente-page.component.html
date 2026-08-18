@@ -52,7 +52,7 @@
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
           <span class="text-xs font-bold">Registrar Pago</span>
         </button>
-        <button (click)="abrirRegistro('CHARGE')" class="bg-white hover:bg-gray-50 text-[#386641] border border-[#386641] rounded-xl py-3 flex flex-col items-center justify-center gap-1.5 transition-colors shadow-sm">
+        <button (click)="abrirRegistro('DEBT')" class="bg-white hover:bg-gray-50 text-[#386641] border border-[#386641] rounded-xl py-3 flex flex-col items-center justify-center gap-1.5 transition-colors shadow-sm">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
           <span class="text-xs font-bold">Registrar Adeudo</span>
         </button>
@@ -77,37 +77,37 @@
         <div class="relative pl-6">
           <!-- Icon Node -->
           <div class="absolute -left-[17px] top-1 w-8 h-8 rounded-full border-4 border-[#FDFDF9] flex items-center justify-center"
-               [class.bg-red-100]="m.tipo === 'CHARGE'" [class.text-red-600]="m.tipo === 'CHARGE'"
-               [class.bg-[#DCE8B4]]="m.tipo === 'PAYMENT'" [class.text-[#386641]]="m.tipo === 'PAYMENT'"
-               [class.bg-gray-200]="m.tipo === 'NOTE'" [class.text-gray-600]="m.tipo === 'NOTE'">
+               [class.bg-red-100]="m.tipo === 'DEBT' || m.tipo === 'ADJUSTMENT_INCREASE'" [class.text-red-600]="m.tipo === 'DEBT' || m.tipo === 'ADJUSTMENT_INCREASE'"
+               [class.bg-[#DCE8B4]]="m.tipo === 'PAYMENT' || m.tipo === 'PARTIAL_PAYMENT' || m.tipo === 'ADJUSTMENT_DECREASE'" [class.text-[#386641]]="m.tipo === 'PAYMENT' || m.tipo === 'PARTIAL_PAYMENT' || m.tipo === 'ADJUSTMENT_DECREASE'"
+               [class.bg-gray-200]="m.tipo === 'NOTE' || m.tipo === 'STATUS_UPDATE'" [class.text-gray-600]="m.tipo === 'NOTE' || m.tipo === 'STATUS_UPDATE'">
             <!-- Icon Adeudo -->
-            @if (m.tipo === 'CHARGE') {
+            @if (m.tipo === 'DEBT' || m.tipo === 'ADJUSTMENT_INCREASE') {
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
             }
             <!-- Icon Pago -->
-            @if (m.tipo === 'PAYMENT') {
+            @if (m.tipo === 'PAYMENT' || m.tipo === 'PARTIAL_PAYMENT' || m.tipo === 'ADJUSTMENT_DECREASE') {
               <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6"></path></svg>
             }
             <!-- Icon Nota -->
-            @if (m.tipo === 'NOTE') {
+            @if (m.tipo === 'NOTE' || m.tipo === 'STATUS_UPDATE') {
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             }
           </div>
           
           <!-- Card Content -->
           <div class="bg-white border border-gray-100 rounded-xl p-4 shadow-sm border-l-4"
-               [class.border-l-red-600]="m.tipo === 'CHARGE'" 
-               [class.border-l-[#386641]]="m.tipo === 'PAYMENT'" 
-               [class.border-l-gray-300]="m.tipo === 'NOTE'">
+               [class.border-l-red-600]="m.tipo === 'DEBT' || m.tipo === 'ADJUSTMENT_INCREASE'" 
+               [class.border-l-[#386641]]="m.tipo === 'PAYMENT' || m.tipo === 'PARTIAL_PAYMENT' || m.tipo === 'ADJUSTMENT_DECREASE'" 
+               [class.border-l-gray-300]="m.tipo === 'NOTE' || m.tipo === 'STATUS_UPDATE'">
             <div class="flex justify-between items-start mb-1">
               <span class="text-[10px] font-bold text-gray-500 uppercase">{{ m.fecha | date:'dd MMM yyyy' }}</span>
-              @if (m.tipo !== 'NOTE') {
-              <span class="text-sm font-bold" [class.text-red-600]="m.tipo === 'CHARGE'" [class.text-[#386641]]="m.tipo === 'PAYMENT'">
-                {{ m.tipo === 'CHARGE' ? '+' : '-' }}$ {{ m.importe }}
+              @if (m.tipo !== 'NOTE' && m.tipo !== 'STATUS_UPDATE') {
+              <span class="text-sm font-bold" [class.text-red-600]="m.tipo === 'DEBT' || m.tipo === 'ADJUSTMENT_INCREASE'" [class.text-[#386641]]="m.tipo === 'PAYMENT' || m.tipo === 'PARTIAL_PAYMENT' || m.tipo === 'ADJUSTMENT_DECREASE'">
+                {{ (m.tipo === 'DEBT' || m.tipo === 'ADJUSTMENT_INCREASE') ? '+' : '-' }}$ {{ m.importe }}
               </span>
               }
-              @if (m.tipo === 'NOTE') {
-              <span class="text-[10px] font-bold text-gray-400">Nota</span>
+              @if (m.tipo === 'NOTE' || m.tipo === 'STATUS_UPDATE') {
+              <span class="text-[10px] font-bold text-gray-400">{{ m.tipo === 'NOTE' ? 'Nota' : 'Estado' }}</span>
               }
             </div>
             <p class="text-sm font-bold text-gray-900">{{ getNombreTipo(m.tipo) }}</p>

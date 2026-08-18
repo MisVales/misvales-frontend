@@ -20,7 +20,10 @@ export interface Distribuidora {
   sucursal: ReferenciaSucursal;
   coordinador: ReferenciaUsuario | null;
   categoria: CategoriaDistribuidora | null;
+  lineaInicial: string | null;
+  restriccionInicialActiva: boolean;
   creadaEn: string | null;
   activadaEn: string | null;
   versionBloqueo: number;
 }
+

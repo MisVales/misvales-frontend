@@ -59,8 +59,16 @@ export class ClientesApiService {
           state: address.state ?? '', country: address.country ?? 'MX', valid_from: address.starts_at ?? item.created_at,
         },
         active_bank_account: bank ? {
-          id: bank.id ?? '', bank_name: bank.bank_name, account_holder: bank.account_holder_name,
-          masked_account_number: bank.account_number_masked ?? null, masked_clabe: bank.clabe_masked, valid_from: bank.starts_at ?? item.created_at,
+          id: bank.id ?? '',
+          bank_name: bank.bank_name,
+          account_holder_name: bank.account_holder_name ?? bank.account_holder ?? '',
+          account_number_masked: bank.account_number_masked ?? bank.masked_account_number ?? null,
+          clabe_masked: bank.clabe_masked ?? bank.masked_clabe ?? '',
+          is_current: bank.is_current ?? true,
+          starts_at: bank.starts_at ?? item.created_at,
+          ends_at: bank.ends_at ?? null,
+          change_reason: bank.change_reason ?? null,
+          lock_version: bank.lock_version ?? 1,
         } : null,
         active_assignment: {
           distributor_id: assignment.distributor_id ?? item.distributor?.id ?? '', branch_id: assignment.branch_id ?? item.branch?.id ?? '',
@@ -84,15 +92,31 @@ export class ClientesApiService {
 
   listarCuentas(id: string): Observable<ClientBankAccountResponseDto[]> {
     return this.http.get<{ data: any[] }>(`${this.baseUrl}/${id}/bank-accounts`).pipe(map(({ data }) => data.map((item) => ({
-      id: item.id, bank_name: item.bank_name, account_holder: item.account_holder_name,
-      masked_account_number: item.account_number_masked, masked_clabe: item.clabe_masked, valid_from: item.starts_at,
+      id: item.id,
+      bank_name: item.bank_name,
+      account_holder_name: item.account_holder_name ?? item.account_holder,
+      account_number_masked: item.account_number_masked ?? item.masked_account_number,
+      clabe_masked: item.clabe_masked ?? item.masked_clabe,
+      is_current: item.is_current ?? true,
+      starts_at: item.starts_at ?? item.valid_from,
+      ends_at: item.ends_at ?? null,
+      change_reason: item.change_reason ?? null,
+      lock_version: item.lock_version ?? 1,
     }))));
   }
 
   crearCuenta(id: string, entrada: CreateClientBankAccountRequestDto): Observable<ClientBankAccountResponseDto> {
     return this.http.post<{ data: any }>(`${this.baseUrl}/${id}/bank-accounts`, entrada).pipe(map(({ data }) => ({
-      id: data.id, bank_name: data.bank_name, account_holder: data.account_holder_name,
-      masked_account_number: data.account_number_masked, masked_clabe: data.clabe_masked, valid_from: data.starts_at,
+      id: data.id,
+      bank_name: data.bank_name,
+      account_holder_name: data.account_holder_name ?? data.account_holder,
+      account_number_masked: data.account_number_masked ?? data.masked_account_number,
+      clabe_masked: data.clabe_masked ?? data.masked_clabe,
+      is_current: data.is_current ?? true,
+      starts_at: data.starts_at ?? data.valid_from,
+      ends_at: data.ends_at ?? null,
+      change_reason: data.change_reason ?? null,
+      lock_version: data.lock_version ?? 1,
     })));
   }
 }

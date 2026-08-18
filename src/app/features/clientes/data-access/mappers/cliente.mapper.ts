@@ -72,10 +72,10 @@ export class ClienteMapper {
       cuentaBancariaVigente: dto.active_bank_account ? {
         id: dto.active_bank_account.id,
         banco: dto.active_bank_account.bank_name,
-        titular: dto.active_bank_account.account_holder,
-        cuentaEnmascarada: dto.active_bank_account.masked_account_number,
-        clabeEnmascarada: dto.active_bank_account.masked_clabe,
-        vigenteDesde: dto.active_bank_account.valid_from
+        titular: dto.active_bank_account.account_holder_name,
+        cuentaEnmascarada: dto.active_bank_account.account_number_masked,
+        clabeEnmascarada: dto.active_bank_account.clabe_masked,
+        vigenteDesde: dto.active_bank_account.starts_at
       } : null,
       asignacionVigente: {
         distribuidoraId: dto.active_assignment.distributor_id,
@@ -99,12 +99,14 @@ export class ClienteMapper {
   static portfolioEntryFromDto(dto: ClientPortfolioEntryResponseDto): MovimientoCartera {
     return {
       id: dto.id,
-      fecha: dto.date,
-      tipo: dto.type,
+      fecha: dto.occurred_at,
+      tipo: dto.entry_type,
       importe: dto.amount,
-      concepto: dto.concept,
-      saldoNuevo: dto.new_balance,
-      registradoPor: dto.registered_by
+      concepto: dto.note ?? dto.informational_status ?? dto.entry_type,
+      saldoNuevo: null,
+      registradoPor: dto.recorded_by,
+      estadoInformativo: dto.informational_status,
+      versionBloqueo: dto.lock_version
     };
   }
 }
