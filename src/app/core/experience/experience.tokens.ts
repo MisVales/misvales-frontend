@@ -33,4 +33,3 @@ export const EXPERIENCE_VIEWPORT_LIMITS: Readonly<Record<ExperienceType, Viewpor
     maxLongEdge: 1024,
   },
 };
-

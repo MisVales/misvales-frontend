@@ -45,4 +45,3 @@ export function resolveRoleExperience(roles: readonly string[]): RoleExperienceR
     roles: knownRoles,
   };
 }
-
