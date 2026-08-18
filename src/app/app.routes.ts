@@ -39,6 +39,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
+        path: 'acceso-denegado',
+        data: { statusPage: 'forbidden' },
+        loadComponent: () =>
+          import('./shared/ui/http-status-page/http-status-page.component').then(
+            (m) => m.HttpStatusPageComponent,
+          ),
+      },
+      {
         path: '',
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
       },
@@ -72,13 +80,6 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/configuraciones/configuraciones.routes').then(
             (m) => m.CONFIGURACIONES_ROUTES,
-          ),
-      },
-      {
-        path: 'periodos-canje',
-        loadChildren: () =>
-          import('./features/periodos-canje/periodos-canje.routes').then(
-            (m) => m.PERIODOS_CANJE_ROUTES,
           ),
       },
       {
@@ -117,10 +118,6 @@ export const routes: Routes = [
           ),
       },
       {
-        path: 'puntos',
-        loadChildren: () => import('./features/puntos/puntos.routes').then((m) => m.puntosRoutes),
-      },
-      {
         path: 'riesgo',
         loadChildren: () => import('./features/riesgo/riesgo.routes').then((m) => m.riesgoRoutes),
       },
@@ -140,9 +137,10 @@ export const routes: Routes = [
       },
       {
         path: '**',
+        data: { statusPage: 'not-found' },
         loadComponent: () =>
-          import('./shared/ui/placeholder/placeholder.component').then(
-            (m) => m.PlaceholderComponent,
+          import('./shared/ui/http-status-page/http-status-page.component').then(
+            (m) => m.HttpStatusPageComponent,
           ),
       },
     ],

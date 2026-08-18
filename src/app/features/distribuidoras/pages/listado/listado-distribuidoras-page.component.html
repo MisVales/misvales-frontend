@@ -69,7 +69,7 @@
                 </span>
               </td>
               <td class="py-4 px-4 text-right">
-                <button (click)="irADetalle(item.id)" class="text-gray-400 hover:text-[#1A4D2E] transition-colors">
+                <button type="button" (click)="irADetalle(item.id)" [attr.aria-label]="'Ver detalle de ' + item.nombreCompleto" class="text-gray-400 hover:text-[#1A4D2E] transition-colors">
                   <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"></path></svg>
                 </button>
               </td>
@@ -93,7 +93,7 @@
 
       <!-- Cards View for Tablet (Coordinador) -->
       <div *ngIf="userRole() === 'COORDINADOR'" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div *ngFor="let item of store.listado()" (click)="irADetalle(item.id)" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer hover:shadow-md transition-shadow">
+        <a *ngFor="let item of store.listado()" [routerLink]="['/distribuidoras', item.id]" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1A4D2E] focus-visible:ring-offset-2">
           <div class="flex justify-between items-start mb-4">
             <div>
               <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">#DIST-{{ item.numero }}</span>
@@ -105,7 +105,7 @@
             <p><span class="font-medium text-gray-900">Sucursal:</span> {{ item.sucursal.nombre }}</p>
             <p><span class="font-medium text-gray-900">Línea:</span> ${{ item.lineaInicial }}</p>
           </div>
-        </div>
+        </a>
       </div>
 
       <!-- Compact View for Mobile (Propia Distribuidora) -->
@@ -133,7 +133,7 @@
           </div>
         </div>
         
-        <button (click)="irADetalle(store.listado()[0]?.id || '')" class="w-full mt-6 py-3 bg-[#1A4D2E] text-white rounded-xl font-bold hover:bg-[#133c23] transition-colors">
+        <button type="button" (click)="irADetalle(store.listado()[0]?.id || '')" class="w-full mt-6 py-3 bg-[#1A4D2E] text-white rounded-xl font-bold hover:bg-[#133c23] transition-colors">
           Ver Mi Perfil Completo
         </button>
       </div>

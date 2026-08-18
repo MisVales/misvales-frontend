@@ -6,17 +6,29 @@ function collectIds(items: readonly NavItemData[]): string[] {
   return items.flatMap((item) => [item.id, ...collectIds(item.children ?? [])]);
 }
 
+function collectItems(items: readonly NavItemData[]): NavItemData[] {
+  return items.flatMap((item) => [item, ...collectItems(item.children ?? [])]);
+}
+
 describe('sidebar permission filtering', () => {
   const allItems = NAV_GROUPS.flatMap((group) => group.items);
 
   it('no publica rutas heredadas que no existen en el router', () => {
-    const routes = allItems.map((item) => item.route);
+    const items = collectItems(allItems);
+    const routes = items.map((item) => item.route);
 
     expect(routes).not.toContain('/reportes');
     expect(routes).not.toContain('/auditoria');
     expect(routes).not.toContain('/logs');
     expect(routes).not.toContain('/notificaciones');
     expect(routes.some((route) => route?.startsWith('/movilidad/'))).toBe(false);
+    expect(routes.some((route) => route?.startsWith('/puntos'))).toBe(false);
+    expect(routes).not.toContain('/periodos-canje');
+    expect(
+      items.some((item) =>
+        item.permissions?.some((permission) => permission.startsWith('points.')),
+      ),
+    ).toBe(false);
     expect(routes).toContain('/centro-operacion');
     expect(routes).toContain('/transferencias');
   });

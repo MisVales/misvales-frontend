@@ -102,7 +102,6 @@ import {
   SlidersHorizontal,
   Smartphone,
   Split,
-  Star,
   Store,
   Tags,
   Target,
@@ -141,6 +140,10 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideHttpClient(
       withFetch(),
+      withXsrfConfiguration({
+        cookieName: 'XSRF-TOKEN',
+        headerName: 'X-XSRF-TOKEN',
+      }),
       withInterceptors([authInterceptor, errorHandlingInterceptor]),
     ),
     importProvidersFrom(
@@ -159,7 +162,7 @@ export const appConfig: ApplicationConfig = {
         OctagonAlert, Package, PackageCheck, PanelLeftClose, PanelLeftOpen,
         Percent, Plus, ReceiptText, RefreshCw, Save, ScanSearch, ScrollText,
         Search, Settings, Shield, ShieldAlert, ShieldCheck, SlidersHorizontal,
-        Smartphone, Split, Star, Store, Tags, Target, Terminal, Ticket,
+        Smartphone, Split, Store, Tags, Target, Terminal, Ticket,
         TicketCheck, TrendingUp, Undo2, User, UserCheck, UserCog, UserRound,
         UserRoundX, Users, UsersRound, Wallet, Workflow, X,
       }),

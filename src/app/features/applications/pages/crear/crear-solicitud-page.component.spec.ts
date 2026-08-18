@@ -14,7 +14,7 @@ describe('CrearSolicitudPageComponent catalogs', () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     TestBed.configureTestingModule({
       providers: [
         { provide: OrganizationApiService, useValue: organizationApi },
@@ -27,7 +27,7 @@ describe('CrearSolicitudPageComponent catalogs', () => {
     });
   });
 
-  it('publishes the API branch response through a signal in zoneless mode', async () => {
+  it('loads the global branch catalog only for a general manager', async () => {
     TestBed.inject(SessionStore).setSession(
       { id: 'manager', name: 'Gerencia', email: 'manager@example.test' },
       ['general_manager'],
@@ -45,7 +45,13 @@ describe('CrearSolicitudPageComponent catalogs', () => {
 
     await component.ngOnInit();
 
+    expect(organizationApi.getBranches).toHaveBeenCalledWith({
+      per_page: 100,
+      status: 'ACTIVE',
+    });
+    expect(organizationApi.getBranchAssignments).not.toHaveBeenCalled();
     expect(component.branches().map((branch) => branch.id)).toEqual(['a', 'b']);
+    expect(component.catalogError()).toBeNull();
   });
 
   it('uses the authenticated coordinator scope without requesting the global branch catalog', async () => {
@@ -64,5 +70,71 @@ describe('CrearSolicitudPageComponent catalogs', () => {
       branch_id: 'branch-a',
       coordinator_id: 'coordinator-a',
     });
+    expect(organizationApi.getBranchAssignments).not.toHaveBeenCalled();
+    expect(component.catalogError()).toBeNull();
+  });
+
+  it('loads only the active branch assignments for a branch manager', async () => {
+    TestBed.inject(SessionStore).setSession(
+      { id: 'manager-a', name: 'Gerencia A', email: 'manager-a@example.test' },
+      ['branch_manager'],
+      ['distributor_applications.create'],
+      'branch-a',
+    );
+    organizationApi.getBranchAssignments.mockReturnValue(
+      of({
+        data: [
+          assignment('active-coordinator', 'coordinator', 'ACTIVE'),
+          assignment('ended-coordinator', 'coordinator', 'ENDED'),
+          assignment('active-verifier', 'verifier', 'ACTIVE'),
+        ],
+      }),
+    );
+    const component = TestBed.runInInjectionContext(() => new CrearSolicitudPageComponent());
+
+    await component.ngOnInit();
+
+    expect(organizationApi.getBranches).not.toHaveBeenCalled();
+    expect(organizationApi.getBranchAssignments).toHaveBeenCalledWith('branch-a');
+    expect(component.coordinators().map((candidate) => candidate.user.id)).toEqual([
+      'active-coordinator',
+    ]);
+    expect(component.crearForm.controls.branch_id.value).toBe('branch-a');
+  });
+
+  it('fails closed when a scoped role has no active branch context', async () => {
+    TestBed.inject(SessionStore).setSession(
+      { id: 'coordinator-a', name: 'Coordinación A', email: 'coordinator@example.test' },
+      ['coordinator'],
+      ['distributor_applications.create'],
+      null,
+    );
+    const component = TestBed.runInInjectionContext(() => new CrearSolicitudPageComponent());
+
+    await component.ngOnInit();
+
+    expect(organizationApi.getBranches).not.toHaveBeenCalled();
+    expect(organizationApi.getBranchAssignments).not.toHaveBeenCalled();
+    expect(component.crearForm.invalid).toBe(true);
+    expect(component.catalogError()).toContain('sucursal activa');
   });
 });
+
+function assignment(
+  userId: string,
+  roleCode: string,
+  status: 'ACTIVE' | 'ENDED' | 'REVOKED',
+) {
+  return {
+    assignment_id: `assignment-${userId}`,
+    user: { id: userId, name: userId, email: `${userId}@example.test`, state: 'ACTIVE' },
+    role: { id: `role-${roleCode}`, code: roleCode, name: roleCode },
+    branch_id: 'branch-a',
+    scope: 'BRANCH' as const,
+    assignment_status: status,
+    assigned_at: '2026-08-18T00:00:00Z',
+    assignment_reason: null,
+    revoked_at: null,
+    revocation_reason: null,
+  };
+}

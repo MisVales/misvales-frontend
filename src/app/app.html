@@ -1,4 +1,11 @@
-<router-outlet></router-outlet>
-<app-mfa-reauth-modal></app-mfa-reauth-modal>
-<app-alert></app-alert>
-<app-confirmation-host></app-confirmation-host>
+<div
+  data-testid="application-surface"
+  [attr.inert]="sessionExpired.isOpen() ? '' : null"
+  [attr.aria-hidden]="sessionExpired.isOpen() ? 'true' : null"
+>
+  <router-outlet></router-outlet>
+  <app-mfa-reauth-modal></app-mfa-reauth-modal>
+  <app-alert></app-alert>
+  <app-confirmation-host></app-confirmation-host>
+</div>
+<app-session-expired-dialog></app-session-expired-dialog>

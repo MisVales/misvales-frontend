@@ -1,7 +1,9 @@
-import { Directive, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Directive, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
-import { Observable, Subscription, of } from 'rxjs';
-import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { EMPTY, Observable, Subscription } from 'rxjs';
+import { catchError, concatMap, debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import { SessionExpiredService } from '../session/session-expired.service';
 
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -19,47 +21,31 @@ export class AutosaveDirective implements OnInit, OnDestroy {
 
   public currentStatus: AutosaveStatus = 'idle';
   public hasUnsavedChanges = false;
-  
+
+  private readonly sessionExpired = inject(SessionExpiredService);
   private sub = new Subscription();
-  private lastSavedValue: any = null;
+  private changeVersion = 0;
+  private networkDisabled = false;
 
   ngOnInit() {
     if (!this.formGroup || !this.saveFn) return;
 
-    this.lastSavedValue = this.formGroup.getRawValue();
-
     this.sub.add(
       this.formGroup.valueChanges.pipe(
         tap(() => {
+          this.changeVersion += 1;
           this.hasUnsavedChanges = true;
           this.updateStatus('idle'); // pending save
         }),
         debounceTime(this.debounceMs),
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
-        switchMap(val => {
-          this.updateStatus('saving');
-          return this.saveFn(this.formGroup.getRawValue()).pipe(
-            catchError(err => {
-              this.updateStatus('error');
-              return of(null);
-            })
-          );
-        })
-      ).subscribe(res => {
-        if (res !== null) {
-          this.updateStatus('saved');
-          this.hasUnsavedChanges = false;
-          this.lastSavedValue = this.formGroup.getRawValue();
-        }
-      })
+        map(() => this.changeVersion),
+        concatMap((version) => this.persistCurrentValue(version)),
+      ).subscribe(),
     );
   }
 
   ngOnDestroy() {
-    if (this.hasUnsavedChanges) {
-      const flush$ = this.flush();
-      if (flush$) flush$.subscribe();
-    }
     this.sub.unsubscribe();
   }
 
@@ -74,21 +60,42 @@ export class AutosaveDirective implements OnInit, OnDestroy {
    */
   public flush(): Observable<any> | void {
     if (this.hasUnsavedChanges) {
-      this.updateStatus('saving');
-      return this.saveFn(this.formGroup.getRawValue()).pipe(
-        tap(res => {
-          if (res !== null) {
-            this.updateStatus('saved');
-            this.hasUnsavedChanges = false;
-            this.lastSavedValue = this.formGroup.getRawValue();
-          }
-        }),
-        catchError(err => {
-          this.updateStatus('error');
-          return of(null);
-        })
-      );
+      if (this.networkDisabled || this.sessionExpired.isOpen()) {
+        this.updateStatus('error');
+        return;
+      }
+
+      return this.persistCurrentValue(this.changeVersion);
     }
+  }
+
+  private persistCurrentValue(version: number): Observable<any> {
+    if (this.networkDisabled || this.sessionExpired.isOpen()) {
+      this.updateStatus('error');
+      return EMPTY;
+    }
+
+    this.updateStatus('saving');
+    return this.saveFn(this.formGroup.getRawValue()).pipe(
+      tap((result) => {
+        if (result !== null) {
+          this.updateStatus('saved');
+          if (this.changeVersion === version) {
+            this.hasUnsavedChanges = false;
+          }
+        }
+      }),
+      catchError((error: unknown) => {
+        if (
+          error instanceof HttpErrorResponse &&
+          (error.status === 401 || error.status === 419)
+        ) {
+          this.networkDisabled = true;
+        }
+        this.updateStatus('error');
+        return EMPTY;
+      }),
+    );
   }
 
   /**
