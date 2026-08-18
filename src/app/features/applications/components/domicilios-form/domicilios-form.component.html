@@ -50,12 +50,14 @@
   </div>
 
   <!-- FORMULARIO DE ALTA / EDICIÓN -->
-  <div *ngIf="mostrandoFormulario && formularioActual" [formGroup]="formularioActual" [appAutosave]="formularioActual" [saveFn]="saveCurrentAddress" (statusChange)="autosaveStatus = $event" class="bg-white rounded-xl shadow-sm border border-[#C1E1C1] p-6 relative">
+  <div *ngIf="mostrandoFormulario && formularioActual" [formGroup]="formularioActual" [appApplicationFormErrorState]="formularioActual" [appAutosave]="formularioActual" [saveFn]="saveCurrentAddress" (statusChange)="autosaveStatus = $event" class="bg-white rounded-xl shadow-sm border border-[#C1E1C1] p-6 relative">
     <h3 class="text-lg font-bold text-gray-900 mb-4">{{ indiceEdicion !== null ? 'Editar Domicilio' : 'Nuevo Domicilio' }}</h3>
     
     <div class="mb-4">
       <app-address-form
         [initialAddress]="mapToAddressResult(formularioActual.value)"
+        [showValidationState]="true"
+        [enableStreetAutocomplete]="false"
         (addressChange)="onAddressChange($event)">
       </app-address-form>
     </div>

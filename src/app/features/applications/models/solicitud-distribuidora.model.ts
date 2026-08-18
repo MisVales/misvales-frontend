@@ -34,6 +34,7 @@ export interface DatosPersonales {
   identification_country?: string | null;
   official_id_type: string;
   official_id_number?: string | null;
+  has_identification_evidence?: boolean;
 }
 
 export type EstadoSolicitudDistribuidora = 

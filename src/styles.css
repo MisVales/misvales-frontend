@@ -55,6 +55,11 @@ body {
   border-color: var(--mv-primary-600) !important;
   box-shadow: 0 0 0 3px rgb(56 102 65 / 12%) !important;
 }
+.app-application-control-invalid,
+.app-application-control-invalid .ng-select-container {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px #dc2626 !important;
+}
 :where(button, a).bg-\[\#386641\], :where(button, a).bg-blue-600 { background-color: var(--mv-primary-600) !important; }
 :where(button, a).bg-\[\#386641\]:hover,
 :where(button, a).hover\:bg-\[\#6A994E\]:hover,

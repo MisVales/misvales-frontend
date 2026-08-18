@@ -7,11 +7,12 @@ import { firstValueFrom } from 'rxjs';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { Branch, PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
 import { SessionStore } from '../../../../core/session/session.store';
+import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
 
 @Component({
   selector: 'app-crear-solicitud-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, ApplicationFormErrorStateDirective],
   templateUrl: './crear-solicitud-page.component.html',
   styleUrls: ['./crear-solicitud-page.component.css']
 })

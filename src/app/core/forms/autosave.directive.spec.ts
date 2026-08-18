@@ -128,7 +128,7 @@ describe('AutosaveDirective', () => {
     expect(directive.currentStatus).toBe('idle');
   });
 
-  it('persists a partial draft even if the section is still invalid', () => {
+  it('persists the valid fields of a draft while an invalid field is being corrected', () => {
     const saveFn = vi.fn(() => of({ ok: true }));
     const form = new FormGroup({
       firstName: new FormControl('Daniel', { validators: [Validators.required] }),

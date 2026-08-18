@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -12,11 +12,12 @@ import { ConfirmationService } from '../../../../shared/services/confirmation.se
 import { apiErrorMessage } from '../../../../core/api/api-error';
 import { AddressFormComponent } from '../../../../shared/components/address-form/address-form';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
+import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
 
 @Component({
   selector: 'app-domicilios-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AddressFormComponent, AutosaveDirective],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AddressFormComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
   templateUrl: './domicilios-form.component.html',
   styleUrls: ['./domicilios-form.component.css']
 })
@@ -34,6 +35,13 @@ export class DomiciliosFormComponent implements OnInit {
   formularioActual: FormGroup | null = null;
   indiceEdicion: number | null = null;
   autosaveStatus: AutosaveStatus = 'idle';
+  mensajeBloqueoCambio?: string;
+
+  @ViewChild(AddressFormComponent)
+  private addressForm?: AddressFormComponent;
+
+  @ViewChildren(AutosaveDirective)
+  private autoguardados!: QueryList<AutosaveDirective>;
 
   saveCurrentAddress = (): Observable<unknown> =>
     this.formularioActual ? from(this.guardarDomicilioDirecto(this.formularioActual)) : from([]);
@@ -58,6 +66,36 @@ export class DomiciliosFormComponent implements OnInit {
 
   get domiciliosGroups(): FormGroup[] {
     return this.domiciliosArray.controls as FormGroup[];
+  }
+
+  puedeCambiarDePaso(): boolean {
+    if (!this.mostrandoFormulario || !this.formularioActual) return true;
+
+    this.formularioActual.markAllAsTouched();
+    const direccionEditada = this.addressForm?.form.dirty ?? false;
+    const esDomicilioNuevo = !this.formularioActual.value.id;
+
+    // El subformulario usa catálogos externos sólo para facilitar la captura.
+    // Sincroniza cambios reales, pero la validez que se guarda es la del
+    // formulario de domicilio, no la disponibilidad del catálogo.
+    if (direccionEditada || esDomicilioNuevo) {
+      this.addressForm?.validarAntesDeSalir();
+    }
+    this.cdr.markForCheck();
+
+    if (!this.formularioActual.valid) {
+      this.mensajeBloqueoCambio = 'Corrige los campos marcados antes de cambiar de pestaña.';
+      return false;
+    }
+
+    if (this.autoguardados.some((autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving')) {
+      this.mensajeBloqueoCambio = 'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
+      this.autoguardados.forEach((autosave) => autosave.flush());
+      return false;
+    }
+
+    this.mensajeBloqueoCambio = undefined;
+    return true;
   }
 
   async cargarDomicilios() {

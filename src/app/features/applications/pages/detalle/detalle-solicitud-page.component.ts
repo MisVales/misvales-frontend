@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -38,6 +38,27 @@ export class DetalleSolicitudPageComponent implements OnInit {
 
   pasoActual: StepName = 'datos-personales';
 
+  @ViewChild(DatosPersonalesFormComponent)
+  private datosPersonalesForm?: DatosPersonalesFormComponent;
+
+  @ViewChild(FamiliaresFormComponent)
+  private familiaresForm?: FamiliaresFormComponent;
+
+  @ViewChild(DomiciliosFormComponent)
+  private domiciliosForm?: DomiciliosFormComponent;
+
+  @ViewChild(VehiculosFormComponent)
+  private vehiculosForm?: VehiculosFormComponent;
+
+  @ViewChild(PatrimonioFormComponent)
+  private patrimonioForm?: PatrimonioFormComponent;
+
+  @ViewChild(EmpleosFormComponent)
+  private empleosForm?: EmpleosFormComponent;
+
+  @ViewChild(CreditosComercialesFormComponent)
+  private creditosForm?: CreditosComercialesFormComponent;
+
   pasos: { id: StepName; label: string }[] = [
     { id: 'datos-personales', label: 'Datos Personales' },
     { id: 'familiares', label: 'Familiares' },
@@ -59,8 +80,32 @@ export class DetalleSolicitudPageComponent implements OnInit {
   }
 
   cambiarPaso(paso: StepName) {
+    if (paso !== this.pasoActual) {
+      const seccionActual = this.obtenerSeccionActual();
+      if (seccionActual && !seccionActual.puedeCambiarDePaso()) {
+        this.alerts.showAlert(
+          seccionActual.mensajeBloqueoCambio ?? 'Corrige los campos marcados antes de cambiar de pestaña.',
+          'warning',
+        );
+        return;
+      }
+    }
+
     this.alerts.clear();
     this.pasoActual = paso;
+  }
+
+  private obtenerSeccionActual(): SeccionValidable | undefined {
+    return {
+      'datos-personales': this.datosPersonalesForm,
+      familiares: this.familiaresForm,
+      domicilios: this.domiciliosForm,
+      vehiculos: this.vehiculosForm,
+      patrimonio: this.patrimonioForm,
+      empleos: this.empleosForm,
+      creditos: this.creditosForm,
+      resumen: undefined,
+    }[this.pasoActual];
   }
 
   getPasoCompletado(pasoId: StepName): boolean {
@@ -105,4 +150,9 @@ export class DetalleSolicitudPageComponent implements OnInit {
   isEditable(): boolean {
     return this.store.detalle()?.estado === 'DRAFT';
   }
+}
+
+interface SeccionValidable {
+  mensajeBloqueoCambio?: string;
+  puedeCambiarDePaso(): boolean;
 }

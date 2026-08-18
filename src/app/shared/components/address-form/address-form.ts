@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { AddressApiService, State, Municipality, Colony } from '../../../core/services/address-api';
 import { InputErrorComponent } from '../../ui/input-error/input-error.component';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil, switchMap, of, filter, tap } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, Subject, takeUntil, switchMap, of, filter, tap } from 'rxjs';
 
 export interface AddressResult {
   full_address: string;
@@ -30,6 +30,8 @@ export interface AddressResult {
 })
 export class AddressFormComponent implements OnInit, OnDestroy {
   @Input() initialAddress?: Partial<AddressResult>;
+  @Input() showValidationState = false;
+  @Input() enableStreetAutocomplete = true;
   @Output() addressChange = new EventEmitter<AddressResult>();
 
   private fb = inject(FormBuilder);
@@ -60,15 +62,19 @@ export class AddressFormComponent implements OnInit, OnDestroy {
       this.form.patchValue({
         street: this.initialAddress.street || '',
         exteriorNumber: this.initialAddress.exterior_number || '',
-        interiorNumber: this.initialAddress.interior_number || '',
-        zipCode: this.initialAddress.zip_code || ''
+        interiorNumber: this.initialAddress.interior_number || ''
       }, { emitEvent: false });
+
+      // Un domicilio ya guardado debe seguir siendo editable aunque el
+      // catálogo de código postal tarde o no esté disponible.
+      this.form.get('street')?.enable({ emitEvent: false });
+      this.form.get('exteriorNumber')?.enable({ emitEvent: false });
+      this.form.get('interiorNumber')?.enable({ emitEvent: false });
       
-      // If zip_code exists, it will trigger the zipCode listener later when we manually emit 
-      // or we can just trigger it now:
       if (this.initialAddress.zip_code && this.initialAddress.zip_code.length === 5) {
         this.pendingColonyName = this.initialAddress.neighborhood || null;
-        this.form.get('zipCode')?.updateValueAndValidity();
+        // Dispara la misma carga de catálogo que se usa al capturar un CP.
+        this.form.get('zipCode')?.setValue(this.initialAddress.zip_code);
       }
     }
   }
@@ -121,6 +127,11 @@ export class AddressFormComponent implements OnInit, OnDestroy {
       if (cp && cp.length === 5) {
         this.addressApi.getInfoByZipCode(cp).subscribe({
           next: (info) => {
+            if (!info) {
+              this.conservarDireccionInicialSinCatalogo();
+              return;
+            }
+
             this.colonies = info.colonias;
             this.form.get('colony')?.enable({ emitEvent: false });
             this.form.get('street')?.enable({ emitEvent: false });
@@ -149,7 +160,7 @@ export class AddressFormComponent implements OnInit, OnDestroy {
             }
           },
           error: () => {
-            this.resetLowerFields();
+            this.conservarDireccionInicialSinCatalogo();
           }
         });
       } else if (!cp || cp.length < 5) {
@@ -163,7 +174,7 @@ export class AddressFormComponent implements OnInit, OnDestroy {
       debounceTime(600),
       distinctUntilChanged(),
       switchMap(text => {
-        if (!text || text.length < 3 || this.isSelectingSuggestion) {
+        if (!text || text.length < 3 || this.isSelectingSuggestion || !this.enableStreetAutocomplete) {
           this.streetSuggestions = [];
           return of(null);
         }
@@ -172,8 +183,15 @@ export class AddressFormComponent implements OnInit, OnDestroy {
         const state = val.state ? (this.states.find(s => s.id === val.state)?.name || '') : '';
         const city = val.municipality ? (this.municipalities.find(m => m.id === val.municipality)?.name || '') : '';
         const cp = val.zipCode || '';
+
+        if (!state || !city || !cp) {
+          this.streetSuggestions = [];
+          return of(null);
+        }
         
-        return this.addressApi.autocomplete(text, city, state, cp);
+        return this.addressApi.autocomplete(text, city, state, cp).pipe(
+          catchError(() => of(null))
+        );
       })
     ).subscribe(res => {
       if (this.isSelectingSuggestion) {
@@ -211,6 +229,17 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     this.form.get('interiorNumber')?.disable();
   }
 
+  private conservarDireccionInicialSinCatalogo(): void {
+    if (!this.initialAddress) {
+      this.resetLowerFields();
+      return;
+    }
+
+    this.form.get('street')?.enable({ emitEvent: false });
+    this.form.get('exteriorNumber')?.enable({ emitEvent: false });
+    this.form.get('interiorNumber')?.enable({ emitEvent: false });
+  }
+
   selectSuggestion(feature: any) {
     this.isSelectingSuggestion = true;
     this.streetSuggestions = [];
@@ -219,7 +248,8 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     const postcode = props.postcode;
     const neighborhood = props.neighborhood || props.suburb;
 
-    this.form.patchValue({ street: streetName });
+    this.form.patchValue({ street: streetName }, { emitEvent: false });
+    this.emitChange();
     
     if (postcode && postcode.length === 5) {
       this.pendingColonyName = neighborhood || null;
@@ -255,31 +285,40 @@ export class AddressFormComponent implements OnInit, OnDestroy {
     return null;
   }
 
-  private emitChange(lat?: number, lng?: number) {
-    // Si la colonia u otro campo está deshabilitado, consideramos que el formulario aún está incompleto.
-    const rawVal = this.form.getRawValue();
-    if (this.form.invalid || !rawVal.colony || !rawVal.street) {
-      return;
-    }
-    
-    const val = rawVal;
-    const stateName = this.states.find(s => s.id === val.state)?.name || '';
-    const cityName = this.municipalities.find(m => m.id === val.municipality)?.name || '';
-    const colonyName = this.colonies.find(c => c.id === val.colony)?.name || '';
+  validarAntesDeSalir(): boolean {
+    this.form.markAllAsTouched();
+    this.emitChange();
+    return this.form.valid;
+  }
 
-    const full_address = `${val.street} ${val.exteriorNumber}, ${colonyName}, ${val.zipCode} ${cityName}, ${stateName}`;
+  mostrarError(campo: string): boolean {
+    const control = this.form.get(campo);
+    return this.showValidationState && !!control && control.invalid && control.touched;
+  }
+
+  private emitChange(lat?: number, lng?: number) {
+    const rawVal = this.form.getRawValue();
+    const val = rawVal;
+    const stateName = this.states.find(s => s.id === val.state)?.name
+      || (typeof val.state === 'string' ? val.state : this.initialAddress?.state || '');
+    const cityName = this.municipalities.find(m => m.id === val.municipality)?.name
+      || (typeof val.municipality === 'string' ? val.municipality : this.initialAddress?.city || this.initialAddress?.municipality || '');
+    const colonyName = this.colonies.find(c => c.id === val.colony)?.name
+      || (typeof val.colony === 'string' ? val.colony : this.initialAddress?.neighborhood || '');
+
+    const full_address = `${val.street || ''} ${val.exteriorNumber || ''}, ${colonyName}, ${val.zipCode || ''} ${cityName}, ${stateName}`;
 
     this.addressChange.emit({
       full_address,
-      street: val.street,
-      exterior_number: val.exteriorNumber,
-      interior_number: val.interiorNumber,
+      street: val.street || '',
+      exterior_number: val.exteriorNumber || '',
+      interior_number: val.interiorNumber || '',
       neighborhood: colonyName,
-      zip_code: val.zipCode,
+      zip_code: val.zipCode || '',
       municipality: cityName,
       city: cityName,
       state: stateName,
-      country: 'MX',
+      country: this.initialAddress?.country || 'MX',
       lat,
       lng
     });

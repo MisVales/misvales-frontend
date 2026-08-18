@@ -15,7 +15,7 @@
   </div>
 
   <div *ngIf="!cargando && vehiculosArray.length > 0" class="space-y-6">
-    <div *ngFor="let form of vehiculosGroups; let i = index" [formGroup]="form" [appAutosave]="form" [saveFn]="getSaveFn(i)" (statusChange)="autosaveStatuses[i] = $event" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative">
+    <div *ngFor="let form of vehiculosGroups; let i = index" [formGroup]="form" [appApplicationFormErrorState]="form" [appAutosave]="form" [saveFn]="getSaveFn(i)" (statusChange)="autosaveStatuses[i] = $event" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative">
       
       <div class="absolute right-4 top-4 flex items-center gap-4" *ngIf="store.detalle()?.estado === 'DRAFT'">
         <!-- Indicador de Autosave -->

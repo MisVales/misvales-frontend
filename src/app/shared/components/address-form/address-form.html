@@ -8,6 +8,8 @@
                  bindValue="id"
                  formControlName="state"
                  placeholder="Selecciona un estado..."
+                 [class.app-application-control-invalid]="mostrarError('state')"
+                 [attr.aria-invalid]="mostrarError('state')"
                  class="w-full text-sm">
       </ng-select>
       <app-input-error [control]="form.get('state')" label="El estado"></app-input-error>
@@ -19,6 +21,8 @@
                  bindValue="id"
                  formControlName="municipality"
                  placeholder="Selecciona un municipio..."
+                 [class.app-application-control-invalid]="mostrarError('municipality')"
+                 [attr.aria-invalid]="mostrarError('municipality')"
                  class="w-full text-sm">
       </ng-select>
       <app-input-error [control]="form.get('municipality')" label="El municipio"></app-input-error>
@@ -30,6 +34,7 @@
     <div>
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Código Postal *</label>
       <input type="text" formControlName="zipCode" placeholder="Ej. 27000" maxlength="5" autocomplete="off"
+        [class.app-application-control-invalid]="mostrarError('zipCode')" [attr.aria-invalid]="mostrarError('zipCode')"
         class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border">
       <app-input-error [control]="form.get('zipCode')" label="El código postal" [customMessages]="{ pattern: 'El código postal debe tener exactamente 5 dígitos numéricos.' }"></app-input-error>
     </div>
@@ -40,6 +45,8 @@
                  bindValue="id"
                  formControlName="colony"
                  placeholder="Selecciona una colonia..."
+                 [class.app-application-control-invalid]="mostrarError('colony')"
+                 [attr.aria-invalid]="mostrarError('colony')"
                  class="w-full text-sm">
       </ng-select>
       <app-input-error [control]="form.get('colony')" label="La colonia"></app-input-error>
@@ -53,6 +60,7 @@
       <input type="text" formControlName="street" placeholder="Ej. Av. Morelos" autocomplete="off"
         (blur)="onStreetBlur()"
         (keydown.escape)="streetSuggestions = []"
+        [class.app-application-control-invalid]="mostrarError('street')" [attr.aria-invalid]="mostrarError('street')"
         class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
       <app-input-error [control]="form.get('street')" label="La calle"></app-input-error>
       
@@ -72,6 +80,7 @@
     <div class="md:col-span-2">
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Ext *</label>
       <input type="text" formControlName="exteriorNumber" autocomplete="off" placeholder="Ej. 123"
+        [class.app-application-control-invalid]="mostrarError('exteriorNumber')" [attr.aria-invalid]="mostrarError('exteriorNumber')"
         class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
       <app-input-error [control]="form.get('exteriorNumber')" label="El número exterior"></app-input-error>
     </div>

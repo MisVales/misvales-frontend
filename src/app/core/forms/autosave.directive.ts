@@ -145,9 +145,9 @@ export class AutosaveDirective implements OnInit, OnDestroy {
   }
 
   /**
-   * El autoguardado conserva el avance válido del borrador. Los campos que el
-   * formulario ya identifica como inválidos se omiten hasta que el usuario los
-   * corrija; el backend sigue siendo la validación definitiva al enviar.
+   * Mantiene el avance ya válido mientras otro campo aún está en edición.
+   * El valor inválido queda exclusivamente en el formulario hasta que la
+   * persona termine de corregirlo; no se envía como una actualización parcial.
    */
   private withoutInvalidFields(value: Record<string, unknown>): Record<string, unknown> {
     return Object.fromEntries(Object.entries(value).filter(([field]) => !this.formGroup.get(field)?.invalid));

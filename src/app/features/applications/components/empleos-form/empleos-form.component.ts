@@ -1,5 +1,5 @@
 import { firstValueFrom, from, Observable } from 'rxjs';
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef, QueryList, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -9,11 +9,12 @@ import { InputErrorComponent } from '../../../../shared/ui/input-error/input-err
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
+import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
 
 @Component({
   selector: 'app-empleos-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
   templateUrl: './empleos-form.component.html',
   styleUrls: ['./empleos-form.component.css']
 })
@@ -29,9 +30,31 @@ export class EmpleosFormComponent implements OnInit {
   cargando = false;
   
   autosaveStatuses: Record<number, AutosaveStatus> = {};
+  mensajeBloqueoCambio?: string;
+
+  @ViewChildren(AutosaveDirective)
+  private autoguardados!: QueryList<AutosaveDirective>;
 
   get empleosGroups(): FormGroup[] {
     return this.empleosArray.controls as FormGroup[];
+  }
+
+  puedeCambiarDePaso(): boolean {
+    this.empleosGroups.forEach((form) => form.markAllAsTouched());
+    this.cdr.markForCheck();
+    if (!this.empleosGroups.every((form) => form.valid)) {
+      this.mensajeBloqueoCambio = 'Corrige los campos marcados antes de cambiar de pestaña.';
+      return false;
+    }
+
+    if (this.autoguardados.some((autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving')) {
+      this.mensajeBloqueoCambio = 'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
+      this.autoguardados.forEach((autosave) => autosave.flush());
+      return false;
+    }
+
+    this.mensajeBloqueoCambio = undefined;
+    return true;
   }
 
   getSaveFn(index: number) {

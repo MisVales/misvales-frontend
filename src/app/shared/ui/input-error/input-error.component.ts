@@ -31,8 +31,10 @@ export class InputErrorComponent {
       if (Array.isArray(this.serverError) && this.serverError.length > 0) return true;
       if (typeof this.serverError === 'string' && this.serverError.trim().length > 0) return true;
     }
-    if (this.forceShow) return true;
-    return !!this.control && this.control.invalid && (this.control.touched || this.control.dirty);
+    if (this.forceShow) return !!this.control && this.control.invalid;
+    // La validación se presenta cuando la persona termina de editar el campo.
+    // Mostrarla por `dirty` interrumpía la captura mientras aún se estaba escribiendo.
+    return !!this.control && this.control.invalid && this.control.touched;
   }
 
   getErrorMessages(): string[] {
@@ -124,7 +126,11 @@ export class InputErrorComponent {
     }
 
     if (errs['mustBeAdult']) {
-      errors.push(custom['mustBeAdult'] ?? `Debes tener al menos 18 años para realizar la solicitud.`);
+      errors.push(custom['mustBeAdult'] ?? `${this.label} corresponde a una persona menor de edad.`);
+    }
+
+    if (errs['invalidBirthDate']) {
+      errors.push(custom['invalidBirthDate'] ?? `${this.label} no es válida.`);
     }
 
     // Direct string errors or custom error object messages
@@ -158,7 +164,8 @@ export class InputErrorComponent {
           'rangoInvalido',
           'futureDate',
           'pastDate',
-          'mustBeAdult'
+          'mustBeAdult',
+          'invalidBirthDate'
         ].includes(key)
       ) {
         continue;

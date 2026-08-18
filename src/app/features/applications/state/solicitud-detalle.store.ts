@@ -149,6 +149,7 @@ function actualizarEstadoAutoguardado(detalle: SolicitudDistribuidora, resultado
     'curp_masked', 'rfc', 'birth_country', 'birth_date', 'birth_state',
     'birth_city', 'email', 'phone_number', 'identification_country',
     'official_id_type', 'official_id_number', 'official_id_number_masked',
+    'has_identification_evidence',
   ];
   const hasPersonalData = personalFields.some((field) =>
     Object.prototype.hasOwnProperty.call(resultado ?? {}, field),
