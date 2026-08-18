@@ -21,6 +21,15 @@
   <form [formGroup]="form" [appAutosave]="form" [saveFn]="saveFn" (statusChange)="autosaveStatus = $event" class="space-y-6">
     
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Nacionalidad -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Nacionalidad <span class="text-red-500">*</span></label>
+        <select formControlName="nationality" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] bg-white">
+          <option value="MEXICAN">Mexicana</option>
+          <option value="FOREIGN">Extranjera</option>
+        </select>
+      </div>
+
       <!-- Nombre -->
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre(s) <span class="text-red-500">*</span></label>
@@ -36,8 +45,8 @@
       </div>
 
       <!-- CURP -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">CURP <span class="text-red-500">*</span></label>
+      <div *ngIf="form.get('nationality')?.value === 'MEXICAN' || form.get('nationality')?.value === 'FOREIGN'">
+        <label class="block text-xs font-semibold text-gray-700 mb-1">CURP <span *ngIf="form.get('nationality')?.value === 'MEXICAN'" class="text-red-500">*</span></label>
         <div class="relative flex items-center">
           <input type="text" formControlName="curp" [readonly]="isCurpMasked" [class.bg-gray-50]="isCurpMasked" [class.text-gray-500]="isCurpMasked" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase">
           <button type="button" *ngIf="isCurpMasked" (click)="editarCurp()" class="absolute right-2 text-xs font-semibold text-[#1A4D2E] hover:underline bg-gray-50 px-2">Editar</button>
@@ -58,17 +67,17 @@
         <input type="date" formControlName="birth_date" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
       </div>
 
-      <!-- Lugar Nacimiento -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Lugar de Nacimiento</label>
-        <input type="text" formControlName="birth_place" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+      <!-- País Nacimiento -->
+      <div *ngIf="form.get('nationality')?.value === 'FOREIGN'">
+        <label class="block text-xs font-semibold text-gray-700 mb-1">País de Nacimiento <span class="text-red-500">*</span></label>
+        <input type="text" formControlName="birth_country" placeholder="Ej. US" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Estado de Nacimiento</label>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Estado de Nacimiento <span class="text-red-500">*</span></label>
         <input type="text" formControlName="birth_state" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Ciudad de Nacimiento</label>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Ciudad de Nacimiento <span class="text-red-500">*</span></label>
         <input type="text" formControlName="birth_city" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
       </div>
 
@@ -87,6 +96,10 @@
 
     <!-- Identificación -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+      <div *ngIf="form.get('nationality')?.value === 'FOREIGN'">
+        <label class="block text-xs font-semibold text-gray-700 mb-1">País Emisor de Identificación <span class="text-red-500">*</span></label>
+        <input type="text" formControlName="identification_country" placeholder="Ej. US" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase">
+      </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo de Identificación Oficial <span class="text-red-500">*</span></label>
         <select formControlName="official_id_type" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] bg-white">
@@ -100,6 +113,22 @@
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Número de Identificación <span class="text-red-500">*</span></label>
         <input type="text" formControlName="official_id_number" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+      </div>
+
+      <!-- Evidencia -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1">Subir Evidencia de Identificación <span class="text-red-500">*</span></label>
+        <input type="file" accept="image/*,.pdf" (change)="onFileChange($event)" class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        
+        <div *ngIf="uploadingEvidence" class="text-blue-600 text-xs mt-1 flex items-center gap-1">
+          <svg class="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          Subiendo evidencia...
+        </div>
+        <div *ngIf="evidenceError" class="text-red-500 text-xs mt-1">{{ evidenceError }}</div>
+        <div *ngIf="form.get('evidence_uploaded')?.value === true" class="text-green-600 text-xs mt-1 flex items-center gap-1">
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+          Evidencia subida correctamente.
+        </div>
       </div>
     </div>
 

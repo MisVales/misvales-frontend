@@ -4,8 +4,9 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DatosPersonalesFormFactory } from '../../forms/datos-personales-form.factory';
 import { ResumenSolicitante } from '../../models/solicitud-distribuidora.model';
-import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';
+import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 import { from, Observable } from 'rxjs';
+import { MediaApiService } from '../../../../core/services/media-api.service';
 
 @Component({
   selector: 'app-datos-personales-form',
@@ -19,18 +20,24 @@ export class DatosPersonalesFormComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   private cdr = inject(ChangeDetectorRef);
+  private mediaApi = inject(MediaApiService);
 
   form: FormGroup = DatosPersonalesFormFactory.create(this.fb);
   
   // View states
   isCurpMasked = false;
   isRfcMasked = false;
+  uploadingEvidence = false;
+  evidenceError: string | null = null;
   
   autosaveStatus: AutosaveStatus = 'idle';
 
   saveFn = (rawValue: any): Observable<any> => {
     const payload: any = { ...rawValue };
     
+    // Remove local view tracking props
+    delete payload.evidence_uploaded;
+
     if (this.isCurpMasked) {
       delete payload.curp;
     }
@@ -63,6 +70,9 @@ export class DatosPersonalesFormComponent implements OnInit {
   }
 
   cargarDatosActuales(solicitante: ResumenSolicitante) {
+    // Determine initial values for backend-stored fields
+    // Assuming the backend has nationality or other fields returned (not currently in ResumenSolicitanteDTO unless added)
+    // For now we patch what we have.
     this.form.patchValue({
       first_name: solicitante.nombre,
       first_last_name: solicitante.apellidoPaterno,
@@ -78,5 +88,37 @@ export class DatosPersonalesFormComponent implements OnInit {
   editarCurp() {
     this.isCurpMasked = false;
     this.form.get('curp')?.setValue('');
+  }
+
+  onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const applicationId = this.store.detalle()?.id;
+      if (!applicationId) return;
+
+      this.uploadingEvidence = true;
+      this.evidenceError = null;
+      this.cdr.markForCheck();
+
+      this.mediaApi.upload({
+        file: file,
+        owner_type: 'distributor_application',
+        owner_id: applicationId,
+        purpose: 'IDENTIFICATION'
+      }).subscribe({
+        next: () => {
+          this.uploadingEvidence = false;
+          this.form.get('evidence_uploaded')?.setValue(true);
+          this.cdr.markForCheck();
+        },
+        error: (err: any) => {
+          this.uploadingEvidence = false;
+          this.evidenceError = err.error?.message || 'Error al subir la evidencia';
+          this.form.get('evidence_uploaded')?.setValue(false);
+          this.cdr.markForCheck();
+        }
+      });
+    }
   }
 }

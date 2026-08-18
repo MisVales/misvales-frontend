@@ -7,7 +7,7 @@ import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitude
 import { from, Observable, firstValueFrom } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
-import { AutosaveDirective, AutosaveStatus } from '../../../core/forms/autosave.directive';
+import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 
 @Component({
   selector: 'app-vehiculos-form',
