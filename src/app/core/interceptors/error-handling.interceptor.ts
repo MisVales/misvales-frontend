@@ -6,6 +6,7 @@ import {
 } from '@angular/common/http';
 import { inject, isDevMode } from '@angular/core';
 import { catchError, from, Observable, switchMap, throwError } from 'rxjs';
+import { apiErrorCode, normalizeApiError } from '../api/api-error';
 import { AlertService } from '../../shared/services/alert.service';
 import { MfaReauthService } from '../services/mfa-reauth.service';
 import { AuthTokenStore } from '../session/auth-token.store';
@@ -14,26 +15,22 @@ import { SessionRefreshService } from '../session/session-refresh.service';
 import { SessionStore } from '../session/session.store';
 
 const PRODUCTION_SERVER_ERROR_MESSAGE = 'Ocurrió un error interno. Intenta nuevamente más tarde.';
+const SAFE_REQUEST_ID = /^[A-Za-z0-9-]{8,100}$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function errorCode(error: HttpErrorResponse): string | null {
-  if (!isRecord(error.error)) return null;
-
-  const nestedError = error.error['error'];
-  if (isRecord(nestedError) && typeof nestedError['code'] === 'string') {
-    return nestedError['code'];
-  }
-
-  return typeof error.error['code'] === 'string' ? error.error['code'] : null;
+function requestReference(error: HttpErrorResponse): string {
+  const requestId = normalizeApiError(error).requestId;
+  return requestId && SAFE_REQUEST_ID.test(requestId) ? ` Referencia: ${requestId}.` : '';
 }
 
 export function isConcurrencyConflict(error: HttpErrorResponse): boolean {
+  if (error.status === 412) return true;
   if (error.status !== 409) return false;
 
-  const code = errorCode(error);
+  const code = apiErrorCode(error, '');
   return code === 'CONCURRENT_REQUEST' || code === 'VERSION_CONFLICT' || code?.endsWith('_VERSION_CONFLICT') === true;
 }
 
@@ -46,8 +43,13 @@ export function sanitizeServerError(error: HttpErrorResponse, developmentMode: b
     return error;
   }
 
+  const normalized = normalizeApiError(error);
   return new HttpErrorResponse({
-    error: { message: PRODUCTION_SERVER_ERROR_MESSAGE },
+    error: {
+      code: 'SERVER_ERROR',
+      message: PRODUCTION_SERVER_ERROR_MESSAGE,
+      request_id: normalized.requestId,
+    },
     headers: error.headers,
     status: error.status,
     statusText: error.statusText,
@@ -136,6 +138,12 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
 
     if (!isAuthEndpoint && error.status === 403) {
       alertService.showAlert('No tiene permiso para realizar esta acción.', 'error', 6000);
+    } else if (error.status === 404) {
+      alertService.showAlert(
+        'El recurso solicitado ya no existe o no está disponible.',
+        'error',
+        6000,
+      );
     } else if (isConcurrencyConflict(error)) {
       alertService.showAlert(
         'La información cambió mientras trabajaba. Recargue los datos e inténtelo de nuevo.',
@@ -154,9 +162,15 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
         'error',
         7000,
       );
+    } else if (error.status === 502 || error.status === 503 || error.status === 504) {
+      alertService.showAlert(
+        `El servicio no está disponible temporalmente. Intenta nuevamente.${requestReference(error)}`,
+        'error',
+        7000,
+      );
     } else if (error.status >= 500) {
       alertService.showAlert(
-        'No se pudo completar la operación. Tus datos capturados no se han eliminado.',
+        `No se pudo completar la operación. Tus datos capturados no se han eliminado.${requestReference(error)}`,
         'error',
         7000,
       );

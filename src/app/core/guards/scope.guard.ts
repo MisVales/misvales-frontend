@@ -11,6 +11,5 @@ export const scopeGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  // Opcional: Redirigir a la raíz por defecto si no hay sucursal
-  return router.createUrlTree(['/']);
+  return router.createUrlTree(['/acceso-denegado']);
 };

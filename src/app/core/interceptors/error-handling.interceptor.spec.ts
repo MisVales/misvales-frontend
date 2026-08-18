@@ -187,12 +187,64 @@ describe('errorHandlingInterceptor', () => {
       7000,
     );
   });
+
+  it('reports a 412 precondition failure as stale information', () => {
+    http.patch('/test', {}).subscribe({ error: (error) => expect(error.status).toBe(412) });
+
+    httpTestingController
+      .expectOne('/test')
+      .flush(
+        { error: { code: 'PRECONDITION_FAILED' } },
+        { status: 412, statusText: 'Precondition Failed' },
+      );
+
+    expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
+      'La información cambió mientras trabajaba. Recargue los datos e inténtelo de nuevo.',
+      'error',
+      7000,
+    );
+  });
+
+  it('distinguishes a temporary 503 from an internal server failure', () => {
+    http.get('/test').subscribe({ error: (error) => expect(error.status).toBe(503) });
+
+    httpTestingController
+      .expectOne('/test')
+      .flush({}, { status: 503, statusText: 'Service Unavailable' });
+
+    expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
+      'El servicio no está disponible temporalmente. Intenta nuevamente.',
+      'error',
+      7000,
+    );
+  });
+
+  it('shows a safe request reference for an internal server failure', () => {
+    http.get('/test').subscribe({ error: (error) => expect(error.status).toBe(500) });
+
+    httpTestingController
+      .expectOne('/test')
+      .flush(
+        { error: { request_id: 'request-500' } },
+        { status: 500, statusText: 'Internal Server Error' },
+      );
+
+    expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
+      'No se pudo completar la operación. Tus datos capturados no se han eliminado. Referencia: request-500.',
+      'error',
+      7000,
+    );
+  });
 });
 
 describe('isConcurrencyConflict', () => {
   it('recognizes both nested and top-level version conflict codes', () => {
     expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { error: { code: 'CREDIT_LINE_VERSION_CONFLICT' } } }))).toBe(true);
     expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { code: 'VERSION_CONFLICT' } }))).toBe(true);
+  });
+
+  it('recognizes HTTP 412 as a concurrency conflict', () => {
+    expect(isConcurrencyConflict(new HttpErrorResponse({ status: 412 }))).toBe(true);
   });
 
   it('rejects non-concurrency business conflicts', () => {
@@ -210,10 +262,14 @@ describe('sanitizeServerError', () => {
   });
 
   it('hides technical server details in production', () => {
-    const error = new HttpErrorResponse({ error: { message: sqlMessage }, status: 500 });
+    const error = new HttpErrorResponse({
+      error: { message: sqlMessage, request_id: 'request-500' },
+      status: 500,
+    });
     const sanitized = sanitizeServerError(error, false);
 
     expect(sanitized.error.message).toBe('Ocurrió un error interno. Intenta nuevamente más tarde.');
+    expect(sanitized.error.request_id).toBe('request-500');
     expect(JSON.stringify(sanitized.error)).not.toContain('SQLSTATE');
   });
 });

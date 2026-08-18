@@ -39,6 +39,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
+        path: 'acceso-denegado',
+        data: { statusPage: 'forbidden' },
+        loadComponent: () =>
+          import('./shared/ui/http-status-page/http-status-page.component').then(
+            (m) => m.HttpStatusPageComponent,
+          ),
+      },
+      {
         path: '',
         loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
       },
@@ -129,9 +137,10 @@ export const routes: Routes = [
       },
       {
         path: '**',
+        data: { statusPage: 'not-found' },
         loadComponent: () =>
-          import('./shared/ui/placeholder/placeholder.component').then(
-            (m) => m.PlaceholderComponent,
+          import('./shared/ui/http-status-page/http-status-page.component').then(
+            (m) => m.HttpStatusPageComponent,
           ),
       },
     ],
