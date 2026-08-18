@@ -18,6 +18,7 @@
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Motivo del reenvío <span class="text-red-500">*</span></label>
         <textarea formControlName="reason" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm resize-none" placeholder="Ej. El correo caducó, la distribuidora lo borró por error..."></textarea>
+        <app-input-error [control]="form.controls['reason']" label="El motivo del reenvío"></app-input-error>
       </div>
 
       <div class="pt-4 flex justify-end gap-3 mt-2">

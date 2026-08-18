@@ -32,13 +32,16 @@
     </div>
     
     <div class="form-group">
-      <label>Dato Observado (Opcional si hay descripción clara)</label>
+      <label>Dato Observado</label>
       <input type="text" class="form-control" [ngModel]="datoObservado()" (ngModelChange)="datoObservado.set($event)" placeholder="¿Qué dato encontró en su lugar?" [disabled]="isProcessing()">
     </div>
     
     <div class="form-group">
-      <label>Descripción / Motivo</label>
+      <label>Descripción / Motivo *</label>
       <textarea class="form-control" [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" rows="3" placeholder="Explique la diferencia encontrada..." [disabled]="isProcessing()"></textarea>
+      @if (submitted() && !datoObservado() && !descripcion()) {
+        <p class="text-sm text-danger mt-1">Debes ingresar el dato observado o una descripción explicativa de la diferencia.</p>
+      }
     </div>
     
     <div class="editor-actions">

@@ -44,7 +44,7 @@
         </div>
 
         <div class="form-group mt-4">
-          <label>Decisión Gerencial</label>
+          <label>Decisión Gerencial *</label>
           <div class="radio-group authorization-radios">
             <label class="radio-label auth-approved">
               <input type="radio" name="decision" value="APPROVED" [ngModel]="decision()" (ngModelChange)="decision.set($event)" [disabled]="facade.isLoading()">
@@ -61,11 +61,17 @@
               </div>
             </label>
           </div>
+          @if (submitted() && !decision()) {
+            <p class="text-sm text-danger mt-1">Debes seleccionar una decisión gerencial (Aprobar o Rechazar).</p>
+          }
         </div>
 
         <div class="form-group mt-4">
-          <label>Comentarios Adicionales (Obligatorio para rechazos)</label>
+          <label>Comentarios Adicionales {{ decision() === 'REJECTED' ? '*' : '' }}</label>
           <textarea class="form-control" rows="4" placeholder="Observaciones de la gerencia..." [ngModel]="comentarios()" (ngModelChange)="comentarios.set($event)" [disabled]="facade.isLoading()"></textarea>
+          @if (submitted() && decision() === 'REJECTED' && !comentarios()) {
+            <p class="text-sm text-danger mt-1">Es obligatorio proporcionar un motivo o comentarios para el rechazo.</p>
+          }
         </div>
       </div>
 

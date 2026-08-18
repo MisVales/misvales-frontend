@@ -175,7 +175,7 @@
       
       <form (submit)="submitAssignment(); $event.preventDefault()" class="space-y-4">
         <div>
-          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Rol</label>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Rol *</label>
           <select [ngModel]="newAssignment().role_id" (ngModelChange)="onAssignmentRoleChange($event)"
                   name="role_id" required
                   class="block w-full px-3 py-3 bg-white border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm">
@@ -184,11 +184,16 @@
               <option [value]="role.id">{{ role.name }}</option>
             }
           </select>
+          @if (assignFormTouched() && !newAssignment().role_id) {
+            <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
+              <span>•</span> <span>Debe seleccionar un rol.</span>
+            </p>
+          }
         </div>
 
         @if (assignmentRequiresBranch()) {
           <div>
-            <label for="assignment-branch" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Sucursal</label>
+            <label for="assignment-branch" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Sucursal *</label>
             <select id="assignment-branch" [ngModel]="newAssignment().branch_id" (ngModelChange)="newAssignment.set({ ...newAssignment(), branch_id: $event })"
                     name="branch_id" required
                     class="block w-full px-3 py-3 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm">
@@ -197,6 +202,11 @@
                 <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
               }
             </select>
+            @if (assignFormTouched() && !newAssignment().branch_id) {
+              <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
+                <span>•</span> <span>La sucursal es obligatoria para este rol.</span>
+              </p>
+            }
           </div>
         }
 

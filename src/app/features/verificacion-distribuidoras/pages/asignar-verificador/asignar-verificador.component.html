@@ -22,7 +22,7 @@
 
       <div class="card-body">
         <div class="form-group">
-          <label for="verifierSelect">Seleccione un Verificador</label>
+          <label for="verifierSelect">Seleccione un Verificador *</label>
           <select id="verifierSelect" class="form-control" [(ngModel)]="verifierId" [disabled]="facade.isLoading()">
             <option value="">Seleccione...</option>
             @for (verifier of facade.verificadoresDisponibles(); track verifier.id) {
@@ -31,6 +31,9 @@
               </option>
             }
           </select>
+          @if (submitted && !verifierId) {
+            <p class="text-sm text-danger mt-1">Debes seleccionar un verificador.</p>
+          }
           @if (facade.verificadoresDisponibles().length === 0 && !facade.isLoading()) {
             <p class="text-sm text-danger mt-1">No hay verificadores disponibles en este momento.</p>
           }

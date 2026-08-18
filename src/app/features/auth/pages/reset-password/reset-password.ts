@@ -3,10 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthFacade } from '../../state/auth.facade';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 
 @Component({
   selector: 'app-reset-password',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent],
   templateUrl: './reset-password.html',
   styleUrls: ['./reset-password.css'],
 })

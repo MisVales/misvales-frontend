@@ -117,7 +117,7 @@
 
           @if (visita.estado !== 'COMPLETED') {
             <div class="form-group mt-4">
-              <label>Resultado Físico de la Visita</label>
+              <label>Resultado Físico de la Visita *</label>
               <div class="radio-group">
                 <label class="radio-label">
                   <input type="radio" name="resultado" value="FAVORABLE" [ngModel]="resultadoFinal()" (ngModelChange)="resultadoFinal.set($event)">
@@ -128,11 +128,17 @@
                   <span>Desfavorable</span>
                 </label>
               </div>
+              @if (submittedFinal() && !resultadoFinal()) {
+                <p class="text-sm text-danger mt-1">Debes seleccionar un resultado final de la visita (Favorable o Desfavorable).</p>
+              }
             </div>
 
             <div class="form-group mt-4">
-              <label>Observaciones Generales</label>
+              <label>Observaciones Generales {{ resultadoFinal() === 'UNFAVORABLE' ? '*' : '' }}</label>
               <textarea class="form-control" rows="4" placeholder="Observaciones generales de la visita..." [ngModel]="observacionesFila()" (ngModelChange)="observacionesFila.set($event)"></textarea>
+              @if (submittedFinal() && resultadoFinal() === 'UNFAVORABLE' && !observacionesFila()) {
+                <p class="text-sm text-danger mt-1">Debes incluir observaciones detalladas si el resultado es desfavorable.</p>
+              }
             </div>
 
             <div class="alert alert-warning mt-4">

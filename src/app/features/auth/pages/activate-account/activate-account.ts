@@ -3,12 +3,13 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators, FormGroup, AbstractControl, ValidationErrors } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthFacade } from '../../state/auth.facade';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import * as QRCode from 'qrcode';
 
 @Component({
   selector: 'app-activate-account',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent],
   templateUrl: './activate-account.html',
   styleUrls: ['./activate-account.css'],
 })
@@ -17,6 +18,10 @@ export class ActivateAccount implements OnInit, OnDestroy {
   private authFacade = inject(AuthFacade);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+
+  fieldError(field: string): string | null {
+    return this.authFacade.validationErrors()[field]?.[0] ?? null;
+  }
 
   activationForm: FormGroup = this.fb.group({
     password: ['', [

@@ -18,6 +18,7 @@ export class AutorizacionGerencialComponent implements OnInit, OnDestroy {
 
   decision = signal<'APPROVED' | 'REJECTED' | null>(null);
   comentarios = signal<string>('');
+  submitted = signal(false);
   
   // Simulated manager credentials for double auth in a real world scenario
   password = signal<string>('');
@@ -34,16 +35,15 @@ export class AutorizacionGerencialComponent implements OnInit, OnDestroy {
   }
 
   async onAuthorize() {
+    this.submitted.set(true);
     const solicitud = this.facade.solicitudSeleccionada();
     if (!solicitud) return;
 
     if (!this.decision()) {
-      alert('Debes seleccionar una decisión.');
       return;
     }
     
     if (this.decision() === 'REJECTED' && !this.comentarios()) {
-      alert('Es obligatorio proporcionar un motivo de rechazo.');
       return;
     }
 

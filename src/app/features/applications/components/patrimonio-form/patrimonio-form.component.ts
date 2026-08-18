@@ -4,12 +4,13 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { PatrimonioFormFactory } from '../../forms/patrimonio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-patrimonio-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './patrimonio-form.component.html',
   styleUrls: ['./patrimonio-form.component.css']
 })

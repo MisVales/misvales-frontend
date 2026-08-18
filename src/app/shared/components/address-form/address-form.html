@@ -2,7 +2,7 @@
   <!-- Estado y Municipio -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Estado</label>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Estado *</label>
       <ng-select [items]="states"
                  bindLabel="name"
                  bindValue="id"
@@ -10,9 +10,10 @@
                  placeholder="Selecciona un estado..."
                  class="w-full text-sm">
       </ng-select>
+      <app-input-error [control]="form.get('state')" label="El estado"></app-input-error>
     </div>
     <div>
-      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Municipio</label>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Municipio *</label>
       <ng-select [items]="municipalities"
                  bindLabel="name"
                  bindValue="id"
@@ -20,18 +21,20 @@
                  placeholder="Selecciona un municipio..."
                  class="w-full text-sm">
       </ng-select>
+      <app-input-error [control]="form.get('municipality')" label="El municipio"></app-input-error>
     </div>
   </div>
 
   <!-- CP y Colonia -->
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
-      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Código Postal</label>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Código Postal *</label>
       <input type="text" formControlName="zipCode" placeholder="Ej. 27000" maxlength="5" autocomplete="off"
-        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border">
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border">
+      <app-input-error [control]="form.get('zipCode')" label="El código postal" [customMessages]="{ pattern: 'El código postal debe tener exactamente 5 dígitos numéricos.' }"></app-input-error>
     </div>
     <div>
-      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Colonia</label>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Colonia *</label>
       <ng-select [items]="colonies"
                  bindLabel="name"
                  bindValue="id"
@@ -39,33 +42,36 @@
                  placeholder="Selecciona una colonia..."
                  class="w-full text-sm">
       </ng-select>
+      <app-input-error [control]="form.get('colony')" label="La colonia"></app-input-error>
     </div>
   </div>
 
   <!-- Calle (Autocomplete) y Números -->
   <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
     <div class="md:col-span-8 relative">
-      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Calle</label>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Calle *</label>
       <input type="text" formControlName="street" placeholder="Ej. Av. Morelos" autocomplete="off"
-        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+      <app-input-error [control]="form.get('street')" label="La calle"></app-input-error>
       
       <!-- Autocomplete Dropdown -->
       <ul *ngIf="streetSuggestions.length > 0" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
         <li *ngFor="let suggestion of streetSuggestions" (click)="selectSuggestion(suggestion)"
-            class="px-4 py-2 hover:bg-blue-50 cursor-pointer text-sm">
+            class="px-4 py-2 hover:bg-green-50 cursor-pointer text-sm">
           {{ suggestion.properties.formatted }}
         </li>
       </ul>
     </div>
     <div class="md:col-span-2">
-      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Ext</label>
-      <input type="text" formControlName="exteriorNumber" autocomplete="off"
-        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Ext *</label>
+      <input type="text" formControlName="exteriorNumber" autocomplete="off" placeholder="Ej. 123"
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+      <app-input-error [control]="form.get('exteriorNumber')" label="El número exterior"></app-input-error>
     </div>
     <div class="md:col-span-2">
       <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Int</label>
       <input type="text" formControlName="interiorNumber" placeholder="Opcional" autocomplete="off"
-        class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
     </div>
   </div>
 </form>

@@ -4,12 +4,13 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { EmpleoFormFactory } from '../../forms/empleo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-empleos-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './empleos-form.component.html',
   styleUrls: ['./empleos-form.component.css']
 })

@@ -5,10 +5,12 @@ import { Router } from '@angular/router';
 import { ConfiguracionesStore } from '../../estado/configuraciones.store';
 import { ConfiguracionDefinicion, ConfiguracionVersion } from '../../data-access/configuraciones.dtos';
 import { DateTime } from 'luxon';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 
 @Component({
   selector: 'app-configuracion-formulario',
-  imports: [CommonModule, ReactiveFormsModule],
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './configuracion-formulario.component.html',
   styleUrls: ['./configuracion-formulario.component.css']
 })

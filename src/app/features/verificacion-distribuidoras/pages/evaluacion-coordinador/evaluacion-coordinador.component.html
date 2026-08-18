@@ -33,7 +33,7 @@
         </div>
 
         <div class="form-group">
-          <label>Dictamen de Evaluación</label>
+          <label>Dictamen de Evaluación *</label>
           <div class="radio-group">
             <label class="radio-label">
               <input type="radio" name="dictamen" value="COMPLIES" [ngModel]="dictamen()" (ngModelChange)="dictamen.set($event)" [disabled]="facade.isLoading()">
@@ -44,11 +44,17 @@
               <span>No cumple (Desfavorable)</span>
             </label>
           </div>
+          @if (submitted() && !dictamen()) {
+            <p class="text-sm text-danger mt-1">Debes seleccionar un dictamen de evaluación.</p>
+          }
         </div>
 
         <div class="form-group mt-4">
-          <label>Motivo / Observaciones del Coordinador</label>
+          <label>Motivo / Observaciones del Coordinador *</label>
           <textarea class="form-control" rows="4" placeholder="Indique el sustento de su evaluación..." [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" [disabled]="facade.isLoading()"></textarea>
+          @if (submitted() && !motivo()) {
+            <p class="text-sm text-danger mt-1">Debes proporcionar un motivo para tu dictamen.</p>
+          }
         </div>
       </div>
 

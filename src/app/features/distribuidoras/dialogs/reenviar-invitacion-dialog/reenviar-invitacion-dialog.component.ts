@@ -2,11 +2,12 @@ import { Component, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ResendDistributorInvitationRequestDto } from '../../data-access/dtos/resend-distributor-invitation-request.dto';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 
 @Component({
   selector: 'app-reenviar-invitacion-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './reenviar-invitacion-dialog.component.html',
   styleUrls: ['./reenviar-invitacion-dialog.component.css']
 })

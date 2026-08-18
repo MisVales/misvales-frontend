@@ -30,7 +30,12 @@ export class Invitations implements OnInit {
   readonly totalItems = signal(0);
   readonly isModalOpen = signal(false);
   readonly isSubmitting = signal(false);
+  readonly formTouched = signal(false);
   readonly newInvitation = signal({ name: '', email: '', role_id: '', branch_id: '' });
+
+  readonly isNameValid = computed(() => !!this.newInvitation().name.trim());
+  readonly isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.newInvitation().email.trim()));
+  readonly isBranchValid = computed(() => !this.isBranchRequired() || !!this.newInvitation().branch_id);
 
   readonly filteredBranches = computed(() => {
     const roleId = this.newInvitation().role_id;
@@ -105,11 +110,13 @@ export class Invitations implements OnInit {
   openModal(): void {
     this.newInvitation.set({ name: '', email: '', role_id: '', branch_id: '' });
     this.error.set('');
+    this.formTouched.set(false);
     this.isModalOpen.set(true);
   }
 
   closeModal(): void {
     this.isModalOpen.set(false);
+    this.formTouched.set(false);
   }
 
   onRoleChange(roleId: string): void {
@@ -126,9 +133,9 @@ export class Invitations implements OnInit {
   }
 
   async submitInvitation(): Promise<void> {
+    this.formTouched.set(true);
     const data = this.newInvitation();
-    if (!data.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email.trim())) {
-      this.error.set('Ingrese un nombre y un correo electrónico válidos.');
+    if (!this.isNameValid() || !this.isEmailValid() || !this.isBranchValid()) {
       return;
     }
 

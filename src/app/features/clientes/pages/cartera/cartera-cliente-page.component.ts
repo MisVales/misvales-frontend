@@ -5,11 +5,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ClientesStore } from '../../state/clientes.store';
 import { CarteraApiService } from '../../data-access/api/cartera-api.service';
 import { MovimientoCartera } from '../../models/movimiento-cartera.model';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-cartera-cliente-page',
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent],
   templateUrl: './cartera-cliente-page.component.html',
   styleUrls: ['./cartera-cliente-page.component.css']
 })
@@ -26,11 +28,28 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
   mostrarModal = signal(false);
   form: FormGroup;
   guardando = this.store.registrandoMovimiento;
+  serverError = signal<string | null>(null);
 
   constructor() {
     this.form = this.fb.group({
-      entry_type: ['NOTE', Validators.required], amount: [''], informational_status: [''],
-      occurred_at: ['', Validators.required], due_date: [''], last_payment_at: [''], note: ['']
+      entry_type: ['NOTE', Validators.required],
+      amount: ['', [Validators.pattern(/^\d+(\.\d{1,4})?$/)]],
+      informational_status: [''],
+      occurred_at: ['', Validators.required],
+      due_date: [''],
+      last_payment_at: [''],
+      note: ['', [Validators.maxLength(500)]]
+    });
+
+    this.form.get('entry_type')?.valueChanges.subscribe(type => {
+      const amountCtrl = this.form.get('amount');
+      if (type === 'NOTE' || type === 'STATUS_UPDATE') {
+        amountCtrl?.clearValidators();
+        amountCtrl?.setValue('');
+      } else {
+        amountCtrl?.setValidators([Validators.required, Validators.min(0.01), Validators.pattern(/^\d+(\.\d{1,4})?$/)]);
+      }
+      amountCtrl?.updateValueAndValidity();
     });
   }
 
@@ -50,12 +69,14 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
 
   abrirRegistro(type: string = 'NOTE') {
     this.form.reset();
+    this.serverError.set(null);
     this.form.patchValue({ entry_type: type === 'CHARGE' ? 'DEBT' : type, occurred_at: new Date().toISOString().slice(0, 16) });
     this.mostrarModal.set(true);
   }
 
   cerrarRegistro() {
     this.mostrarModal.set(false);
+    this.serverError.set(null);
   }
 
   async registrarMovimiento() {

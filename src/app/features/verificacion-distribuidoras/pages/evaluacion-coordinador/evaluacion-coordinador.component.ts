@@ -18,6 +18,7 @@ export class EvaluacionCoordinadorComponent implements OnInit, OnDestroy {
 
   dictamen = signal<'COMPLIES' | 'DOES_NOT_COMPLY' | null>(null);
   motivo = signal<string>('');
+  submitted = signal(false);
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -31,16 +32,15 @@ export class EvaluacionCoordinadorComponent implements OnInit, OnDestroy {
   }
 
   async onEvaluate() {
+    this.submitted.set(true);
     const solicitud = this.facade.solicitudSeleccionada();
     if (!solicitud) return;
 
     if (!this.dictamen()) {
-      alert('Debes seleccionar un dictamen.');
       return;
     }
 
     if (!this.motivo()) {
-      alert('Debes proporcionar un motivo para tu dictamen.');
       return;
     }
     

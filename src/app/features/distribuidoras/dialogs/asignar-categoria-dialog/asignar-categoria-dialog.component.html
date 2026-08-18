@@ -22,25 +22,28 @@
 
       <div class="space-y-4">
         <div>
-          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1.5">Nueva Categoría</label>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1.5">Nueva Categoría *</label>
           <select formControlName="category_version_id" class="w-full px-4 py-3 border border-[#E8EEE8] rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm bg-white text-gray-800 transition-colors">
             <option value="">Seleccione una categoría...</option>
             <option *ngFor="let cat of categorias()" [value]="cat.version_id">
-              {{ cat.code }} — {{ cat.name }} ({{ cat.profit_margin }})
+              {{ cat.code }} — {{ cat.name }} (Margen: {{ cat.profit_margin }})
             </option>
           </select>
+          <app-input-error [control]="form.controls['category_version_id']" label="La categoría"></app-input-error>
           @if (cargandoCategorias()) { <p class="mt-1 text-xs text-gray-500">Cargando categorías…</p> }
           @if (errorCategorias()) { <p class="mt-1 text-xs text-red-700">{{ errorCategorias() }}</p> }
         </div>
 
         <div>
-          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1.5">Fecha de Inicio</label>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1.5">Fecha de Inicio *</label>
           <input type="date" formControlName="starts_at" class="w-full px-4 py-3 border border-[#E8EEE8] rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm text-gray-800 transition-colors bg-white">
+          <app-input-error [control]="form.controls['starts_at']" label="La fecha de inicio"></app-input-error>
         </div>
 
         <div>
-          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1.5">Motivo del Cambio</label>
+          <label class="block text-[11px] font-bold text-gray-600 uppercase tracking-wide mb-1.5">Motivo del Cambio *</label>
           <textarea formControlName="reason" rows="3" class="w-full px-4 py-3 border border-[#E8EEE8] rounded-xl focus:outline-none focus:border-[#1A4D2E] focus:ring-1 focus:ring-[#1A4D2E] text-sm resize-none text-gray-800 transition-colors" placeholder="Detalle la justificación para este cambio de categoría..."></textarea>
+          <app-input-error [control]="form.controls['reason']" label="El motivo del cambio"></app-input-error>
         </div>
       </div>
 

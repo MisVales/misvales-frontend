@@ -44,6 +44,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   
   observacionesFila = signal<string>('');
   resultadoFinal = signal<'FAVORABLE' | 'UNFAVORABLE' | null>(null);
+  submittedFinal = signal<boolean>(false);
 
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -175,16 +176,15 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   }
 
   async finalizarVisita() {
+    this.submittedFinal.set(true);
     const visita = this.facade.visitaSeleccionada();
     if (!visita) return;
 
     if (!this.resultadoFinal()) {
-      alert('Debes seleccionar un resultado final.');
       return;
     }
 
     if (this.resultadoFinal() === 'UNFAVORABLE' && !this.observacionesFila()) {
-      alert('Debes incluir observaciones si el resultado es desfavorable.');
       return;
     }
 

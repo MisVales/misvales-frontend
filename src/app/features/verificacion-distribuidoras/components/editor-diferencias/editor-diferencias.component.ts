@@ -33,6 +33,7 @@ export class EditorDiferenciasComponent {
   campo = signal<string>('');
   datoObservado = signal<string>('');
   descripcion = signal<string>('');
+  submitted = signal<boolean>(false);
   
   // Derived state (no computed to keep simple binds in template)
   datoDeclarado = signal<string>('');
@@ -55,8 +56,8 @@ export class EditorDiferenciasComponent {
   }
 
   onGuardar() {
+    this.submitted.set(true);
     if (!this.seccion() || !this.campo() || (!this.datoObservado() && !this.descripcion())) {
-      alert('Debes completar todos los campos obligatorios para registrar una diferencia.');
       return;
     }
     

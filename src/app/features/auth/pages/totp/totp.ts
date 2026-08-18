@@ -3,10 +3,11 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthFacade } from '../../state/auth.facade';
 import { MfaMethod } from '../../data-access/auth.dtos';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 
 @Component({
   selector: 'app-totp',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, InputErrorComponent],
   templateUrl: './totp.html',
 })
 export class Totp implements OnInit, OnDestroy {

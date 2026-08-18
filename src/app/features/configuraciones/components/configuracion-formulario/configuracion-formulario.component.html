@@ -44,21 +44,29 @@
       <!-- Formulario -->
       <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">Nuevo Monto de Recargo</label>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Nuevo Monto o Valor de Configuración *</label>
           <div class="relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span class="text-gray-500 sm:text-sm">$</span>
             </div>
-            <input formControlName="valor" type="text" class="w-full pl-8 pr-12 border-gray-300 rounded-lg focus:ring-[#1A4D2E] focus:border-[#1A4D2E] py-2.5" placeholder="Ej: 25.50">
+            <input formControlName="valor" type="text" class="w-full pl-8 pr-4 border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#1A4D2E] focus:border-[#1A4D2E] py-2.5 text-sm" placeholder="Ej: 25.50">
           </div>
-          <p class="text-xs text-gray-500 mt-2">Ingrese el valor numérico. Se tratará como texto para validación interna.</p>
+          <app-input-error [control]="form.controls['valor']" label="El valor de configuración"></app-input-error>
+          <p class="text-xs text-gray-500 mt-2">Ingrese el valor numérico o textual requerido para este parámetro.</p>
         </div>
 
         <div>
-          <label class="block text-sm font-bold text-gray-700 mb-2">Fecha y Hora de Efectividad</label>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Fecha y Hora de Efectividad *</label>
           <div class="relative">
-            <input formControlName="inicioVigencia" type="datetime-local" class="w-full border-gray-300 rounded-lg focus:ring-[#1A4D2E] focus:border-[#1A4D2E] py-2.5">
+            <input formControlName="inicioVigencia" type="datetime-local" class="w-full border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#1A4D2E] focus:border-[#1A4D2E] py-2.5 text-sm">
           </div>
+          <app-input-error [control]="form.controls['inicioVigencia']" label="La fecha de inicio de vigencia"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-sm font-bold text-gray-700 mb-2">Motivo del Cambio *</label>
+          <textarea formControlName="motivo" rows="3" class="w-full border border-gray-300 rounded-lg focus:ring-1 focus:ring-[#1A4D2E] focus:border-[#1A4D2E] py-2.5 px-3 text-sm resize-none" placeholder="Especifique el motivo justificado para modificar este parámetro (mínimo 10 caracteres)..."></textarea>
+          <app-input-error [control]="form.controls['motivo']" label="El motivo"></app-input-error>
         </div>
 
         <!-- Botones -->

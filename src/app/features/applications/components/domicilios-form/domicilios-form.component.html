@@ -57,48 +57,59 @@
       <div class="md:col-span-2">
         <label class="block text-xs font-semibold text-gray-700 mb-1">Calle <span class="text-red-500">*</span></label>
         <input type="text" formControlName="street" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['street']" label="La calle"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">No. Ext <span class="text-red-500">*</span></label>
         <input type="text" formControlName="exterior_number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['exterior_number']" label="El número exterior"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">No. Int</label>
         <input type="text" formControlName="interior_number" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['interior_number']" label="El número interior"></app-input-error>
       </div>
       <div class="md:col-span-2">
         <label class="block text-xs font-semibold text-gray-700 mb-1">Colonia <span class="text-red-500">*</span></label>
         <input type="text" formControlName="neighborhood" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['neighborhood']" label="La colonia"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Código Postal <span class="text-red-500">*</span></label>
-        <input type="text" formControlName="postal_code" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <input type="text" formControlName="postal_code" maxlength="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['postal_code']" label="El código postal" [customMessages]="{ pattern: 'El código postal debe contener 5 dígitos numéricos.' }"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Municipio / Alcaldía <span class="text-red-500">*</span></label>
         <input type="text" formControlName="municipality" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['municipality']" label="El municipio"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Ciudad <span class="text-red-500">*</span></label>
         <input type="text" formControlName="city" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['city']" label="La ciudad"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Estado <span class="text-red-500">*</span></label>
         <input type="text" formControlName="state" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['state']" label="El estado"></app-input-error>
       </div>
 
       <!-- Métricas (String Decimal) -->
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Frente (mts) <span class="text-red-500">*</span></label>
         <input type="text" formControlName="width_meters" placeholder="Ej. 10.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['width_meters']" label="El frente" [customMessages]="{ invalidDecimalString: 'Debe ser un valor numérico válido (ej. 10.5).' }"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Fondo (mts) <span class="text-red-500">*</span></label>
         <input type="text" formControlName="length_meters" placeholder="Ej. 20.0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['length_meters']" label="El fondo" [customMessages]="{ invalidDecimalString: 'Debe ser un valor numérico válido (ej. 20.0).' }"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Área Construida (m2) <span class="text-red-500">*</span></label>
         <input type="text" formControlName="built_area_square_meters" placeholder="Ej. 150.25" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+        <app-input-error [control]="formularioActual.controls['built_area_square_meters']" label="El área construida" [customMessages]="{ invalidDecimalString: 'Debe ser un valor numérico válido (ej. 150.25).' }"></app-input-error>
       </div>
 
       <!-- Estatus de Propiedad -->
@@ -111,6 +122,7 @@
           <option value="BORROWED">Prestada</option>
           <option value="OTHER">Otro</option>
         </select>
+        <app-input-error [control]="formularioActual.controls['housing_tenure']" label="La tenencia"></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Financiamiento <span class="text-red-500">*</span></label>
@@ -123,6 +135,7 @@
           <option value="OTHER">Otro</option>
           <option value="NOT_APPLICABLE">No Aplica</option>
         </select>
+        <app-input-error [control]="formularioActual.controls['financing_status']" label="El financiamiento"></app-input-error>
       </div>
     </div>
     

@@ -4,12 +4,13 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { CreditoComercialFormFactory } from '../../forms/credito-comercial-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-creditos-comerciales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './creditos-comerciales-form.component.html',
   styleUrls: ['./creditos-comerciales-form.component.css']
 })

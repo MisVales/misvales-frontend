@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { CommonModule } from '@angular/common';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { AddressApiService, State, Municipality, Colony } from '../../../core/services/address-api';
+import { InputErrorComponent } from '../../ui/input-error/input-error.component';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil, switchMap, of, filter, tap } from 'rxjs';
 
 export interface AddressResult {
@@ -23,7 +24,7 @@ export interface AddressResult {
 @Component({
   selector: 'app-address-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgSelectModule],
+  imports: [CommonModule, ReactiveFormsModule, NgSelectModule, InputErrorComponent],
   templateUrl: './address-form.html',
   styleUrls: ['./address-form.css']
 })

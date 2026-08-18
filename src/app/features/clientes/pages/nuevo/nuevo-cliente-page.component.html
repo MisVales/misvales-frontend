@@ -1,6 +1,192 @@
-<div class="mx-auto max-w-5xl p-6"><a routerLink="/clientes" class="text-[#386641] hover:underline">&larr; Volver a clientes</a><h1 class="my-4 text-2xl font-bold">Alta de cliente</h1><p class="mb-5 text-sm text-gray-600">El registro solo está disponible para la distribuidora activa responsable.</p>
-<form [formGroup]="form" (ngSubmit)="confirmar()" class="grid gap-4 rounded-xl bg-white p-6 shadow md:grid-cols-3">
-<h2 class="text-lg font-bold md:col-span-3">Identidad</h2><label>Nombre(s)<input class="mt-1 w-full rounded border p-2" formControlName="first_name"></label><label>Primer apellido<input class="mt-1 w-full rounded border p-2" formControlName="first_last_name"></label><label>Segundo apellido<input class="mt-1 w-full rounded border p-2" formControlName="second_last_name"></label><label>CURP<input class="mt-1 w-full rounded border p-2 uppercase" maxlength="18" formControlName="curp"></label><label>RFC<input class="mt-1 w-full rounded border p-2 uppercase" formControlName="rfc"></label><label>Fecha de nacimiento<input class="mt-1 w-full rounded border p-2" type="date" formControlName="birth_date"></label><label>Lugar de nacimiento<input class="mt-1 w-full rounded border p-2" formControlName="birth_place"></label><label>Estado de nacimiento<input class="mt-1 w-full rounded border p-2" formControlName="birth_state"></label><label>Ciudad de nacimiento<input class="mt-1 w-full rounded border p-2" formControlName="birth_city"></label><label>Tipo de identificación<select class="mt-1 w-full rounded border p-2" formControlName="official_id_type"><option value="INE">INE</option><option value="PASSPORT">Pasaporte</option><option value="PROFESSIONAL_LICENSE">Cédula profesional</option><option value="OTHER">Otra</option></select></label><label>Número de identificación<input class="mt-1 w-full rounded border p-2" formControlName="official_id_number"></label>
-<h2 class="mt-3 text-lg font-bold md:col-span-3">Domicilio</h2><label>Calle<input class="mt-1 w-full rounded border p-2" formControlName="street"></label><label>Número exterior<input class="mt-1 w-full rounded border p-2" formControlName="exterior_number"></label><label>Número interior<input class="mt-1 w-full rounded border p-2" formControlName="interior_number"></label><label>Colonia<input class="mt-1 w-full rounded border p-2" formControlName="neighborhood"></label><label>Código postal<input class="mt-1 w-full rounded border p-2" maxlength="5" formControlName="postal_code"></label><label>Municipio<input class="mt-1 w-full rounded border p-2" formControlName="municipality"></label><label>Ciudad<input class="mt-1 w-full rounded border p-2" formControlName="city"></label><label>Estado<input class="mt-1 w-full rounded border p-2" formControlName="state"></label>
-<h2 class="mt-3 text-lg font-bold md:col-span-3">Cuenta bancaria</h2><label>Banco<input class="mt-1 w-full rounded border p-2" formControlName="bank_name"></label><label>Titular<input class="mt-1 w-full rounded border p-2" formControlName="account_holder_name"></label><label>Número de cuenta<input class="mt-1 w-full rounded border p-2" formControlName="account_number"></label><label>CLABE<input class="mt-1 w-full rounded border p-2" maxlength="18" formControlName="clabe"></label>
-@if(errorEnvio){<p class="text-red-700 md:col-span-3">{{errorEnvio}}</p>}<div class="flex justify-end gap-3 md:col-span-3"><a routerLink="/clientes" class="rounded border px-4 py-2">Cancelar</a><button class="rounded bg-[#2D452F] px-5 py-2 text-white" [disabled]="form.invalid||enviando">{{enviando?'Registrando…':'Registrar cliente'}}</button></div></form></div>
+<div class="mx-auto max-w-5xl p-6">
+  <a routerLink="/clientes" class="text-[#386641] hover:underline flex items-center gap-1 text-sm font-medium mb-4">
+    &larr; Volver a clientes
+  </a>
+  
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Alta de Cliente</h1>
+    <p class="text-sm text-gray-600">El registro solo está disponible para la distribuidora activa responsable.</p>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="confirmar()" class="rounded-2xl bg-white p-6 shadow-sm border border-gray-100 space-y-8">
+    
+    <!-- SECCIÓN 1: IDENTIDAD -->
+    <div>
+      <h2 class="text-lg font-bold text-[#386641] border-b border-gray-100 pb-2 mb-4">1. Identidad</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Nombre(s) *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="first_name" placeholder="Ej. Juan">
+          <app-input-error [control]="form.controls.first_name" label="El nombre"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Primer Apellido *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="first_last_name" placeholder="Ej. Pérez">
+          <app-input-error [control]="form.controls.first_last_name" label="El primer apellido"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Segundo Apellido</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="second_last_name" placeholder="Ej. López">
+          <app-input-error [control]="form.controls.second_last_name" label="El segundo apellido"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">CURP *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm uppercase focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" maxlength="18" formControlName="curp" placeholder="18 caracteres">
+          <app-input-error [control]="form.controls.curp" label="El CURP" [customMessages]="{ curp: 'El CURP debe tener un formato oficial válido de 18 caracteres.' }"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">RFC</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm uppercase focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="rfc" placeholder="Opcional (con homoclave)">
+          <app-input-error [control]="form.controls.rfc" label="El RFC" [customMessages]="{ pattern: 'El RFC debe tener un formato válido de 10 a 13 caracteres.' }"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Fecha de Nacimiento *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" type="date" formControlName="birth_date">
+          <app-input-error [control]="form.controls.birth_date" label="La fecha de nacimiento"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Lugar de Nacimiento *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="birth_place" placeholder="Ej. Hospital General">
+          <app-input-error [control]="form.controls.birth_place" label="El lugar de nacimiento"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Estado de Nacimiento *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="birth_state" placeholder="Ej. Coahuila">
+          <app-input-error [control]="form.controls.birth_state" label="El estado de nacimiento"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Ciudad de Nacimiento *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="birth_city" placeholder="Ej. Torreón">
+          <app-input-error [control]="form.controls.birth_city" label="La ciudad de nacimiento"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Tipo de Identificación *</label>
+          <select class="w-full rounded-lg border border-gray-300 p-2.5 text-sm bg-white focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="official_id_type">
+            <option value="INE">INE / IFE</option>
+            <option value="PASSPORT">Pasaporte</option>
+            <option value="PROFESSIONAL_LICENSE">Cédula Profesional</option>
+            <option value="OTHER">Otra</option>
+          </select>
+          <app-input-error [control]="form.controls.official_id_type" label="El tipo de identificación"></app-input-error>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número de Identificación</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="official_id_number" placeholder="Ej. Clave de elector o folio">
+          <app-input-error [control]="form.controls.official_id_number" label="El número de identificación"></app-input-error>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: DOMICILIO -->
+    <div>
+      <h2 class="text-lg font-bold text-[#386641] border-b border-gray-100 pb-2 mb-4">2. Domicilio</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Calle *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="street" placeholder="Ej. Av. Juárez">
+          <app-input-error [control]="form.controls.street" label="La calle"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número Exterior *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="exterior_number" placeholder="Ej. 123">
+          <app-input-error [control]="form.controls.exterior_number" label="El número exterior"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número Interior</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="interior_number" placeholder="Opcional">
+          <app-input-error [control]="form.controls.interior_number" label="El número interior"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Colonia *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="neighborhood" placeholder="Ej. Centro">
+          <app-input-error [control]="form.controls.neighborhood" label="La colonia"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Código Postal *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" maxlength="5" formControlName="postal_code" placeholder="5 dígitos">
+          <app-input-error [control]="form.controls.postal_code" label="El código postal" [customMessages]="{ pattern: 'El código postal debe tener exactamente 5 dígitos numéricos.' }"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Municipio / Alcaldía *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="municipality" placeholder="Ej. Torreón">
+          <app-input-error [control]="form.controls.municipality" label="El municipio"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Ciudad *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="city" placeholder="Ej. Torreón">
+          <app-input-error [control]="form.controls.city" label="La ciudad"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Estado *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="state" placeholder="Ej. Coahuila">
+          <app-input-error [control]="form.controls.state" label="El estado"></app-input-error>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 3: CUENTA BANCARIA -->
+    <div>
+      <h2 class="text-lg font-bold text-[#386641] border-b border-gray-100 pb-2 mb-4">3. Cuenta Bancaria</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Banco *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="bank_name" placeholder="Ej. BBVA">
+          <app-input-error [control]="form.controls.bank_name" label="El banco"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Nombre del Titular *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="account_holder_name" placeholder="Nombre completo del titular">
+          <app-input-error [control]="form.controls.account_holder_name" label="El titular"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número de Cuenta</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="account_number" placeholder="Opcional (solo dígitos)">
+          <app-input-error [control]="form.controls.account_number" label="El número de cuenta" [customMessages]="{ pattern: 'Debe contener entre 4 y 30 dígitos numéricos.' }"></app-input-error>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">CLABE Interbancaria *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none font-mono" maxlength="18" formControlName="clabe" placeholder="18 dígitos">
+          <app-input-error [control]="form.controls.clabe" label="La CLABE" [customMessages]="{ pattern: 'La CLABE interbancaria debe contener exactamente 18 dígitos numéricos.' }"></app-input-error>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error de Envío General -->
+    @if (errorEnvio) {
+      <div class="p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
+        {{ errorEnvio }}
+      </div>
+    }
+
+    <!-- Botones de Acción -->
+    <div class="flex justify-end gap-3 pt-4 border-t border-gray-100">
+      <a routerLink="/clientes" class="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+        Cancelar
+      </a>
+      <button type="submit" class="rounded-xl bg-[#386641] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#2c5234] disabled:opacity-50 disabled:cursor-not-allowed transition-colors" [disabled]="form.invalid || enviando">
+        {{ enviando ? 'Registrando…' : 'Registrar Cliente' }}
+      </button>
+    </div>
+
+  </form>
+</div>

@@ -166,17 +166,31 @@
 
         @if (form.get('entry_type')?.value !== 'NOTE' && form.get('entry_type')?.value !== 'STATUS_UPDATE') {
         <div>
-          <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Importe ($)</label>
+          <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Importe ($) *</label>
           <input type="number" formControlName="amount" min="1" step="0.01" placeholder="Ej. 1500.00" class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-lg font-bold text-gray-900">
+          <app-input-error [control]="form.controls['amount']" label="El importe" [customMessages]="{ required: 'El importe es obligatorio.', min: 'El importe debe ser mayor a 0.' }"></app-input-error>
         </div>
         }
 
         <div>
           <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Nota</label>
           <textarea formControlName="note" rows="3" placeholder="Detalle del movimiento..." class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-sm resize-none"></textarea>
+          <app-input-error [control]="form.controls['note']" label="La nota"></app-input-error>
         </div>
-        <div><label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Fecha del movimiento</label><input type="datetime-local" formControlName="occurred_at" class="w-full px-4 py-3 border rounded-xl"></div>
-        <div><label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Estado informativo</label><select formControlName="informational_status" class="w-full px-4 py-3 border rounded-xl"><option value="">Sin cambio</option><option value="PENDING">Pendiente</option><option value="PARTIALLY_PAID">Pago parcial</option><option value="PAID">Pagada</option></select></div>
+        <div>
+          <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Fecha del movimiento *</label>
+          <input type="datetime-local" formControlName="occurred_at" class="w-full px-4 py-3 border rounded-xl">
+          <app-input-error [control]="form.controls['occurred_at']" label="La fecha del movimiento"></app-input-error>
+        </div>
+        <div>
+          <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Estado informativo</label>
+          <select formControlName="informational_status" class="w-full px-4 py-3 border rounded-xl">
+            <option value="">Sin cambio</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="PARTIALLY_PAID">Pago parcial</option>
+            <option value="PAID">Pagada</option>
+          </select>
+        </div>
 
       </div>
 

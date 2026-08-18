@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { AuthFacade } from '../../state/auth.facade';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent],
   templateUrl: './login.html',
   styleUrls: ['./login.css'],
 })

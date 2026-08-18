@@ -17,6 +17,7 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
 
   verifierId = '';
+  submitted = false;
 
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -31,8 +32,8 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   }
 
   async onAssign() {
+    this.submitted = true;
     if (!this.verifierId) {
-      alert('Debes seleccionar un verificador.');
       return;
     }
     const solicitud = this.facade.solicitudSeleccionada();

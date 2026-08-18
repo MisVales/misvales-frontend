@@ -30,6 +30,7 @@
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo de Vehículo <span class="text-red-500">*</span></label>
           <input type="text" formControlName="vehicle_type" placeholder="Ej. Automóvil, Motocicleta" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <app-input-error [control]="form.controls['vehicle_type']" label="El tipo de vehículo"></app-input-error>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Estatus de Propiedad <span class="text-red-500">*</span></label>
@@ -40,19 +41,22 @@
             <option value="COMPANY">De empresa</option>
             <option value="OTHER">Otro</option>
           </select>
+          <app-input-error [control]="form.controls['ownership_status']" label="El estatus de propiedad"></app-input-error>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Marca</label>
           <input type="text" formControlName="brand" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <app-input-error [control]="form.controls['brand']" label="La marca"></app-input-error>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Modelo</label>
           <input type="text" formControlName="model" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <app-input-error [control]="form.controls['model']" label="El modelo"></app-input-error>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Año</label>
           <input type="number" formControlName="model_year" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
-          <p *ngIf="form.controls['model_year'].invalid" class="text-red-500 text-xs mt-1">Año no razonable.</p>
+          <app-input-error [control]="form.controls['model_year']" label="El año del vehículo" [customMessages]="{ min: 'El año no es válido.', max: 'El año no puede ser futuro.' }"></app-input-error>
         </div>
       </div>
     </div>

@@ -4,11 +4,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { AssignDistributorCategoryRequestDto } from '../../data-access/dtos/assign-distributor-category-request.dto';
 import { CategoriasService } from '../../../categorias/data-access/categorias.service';
 import { CategoryDto } from '../../../categorias/data-access/categorias.dtos';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 
 @Component({
   selector: 'app-asignar-categoria-dialog',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './asignar-categoria-dialog.component.html',
   styleUrls: ['./asignar-categoria-dialog.component.css']
 })

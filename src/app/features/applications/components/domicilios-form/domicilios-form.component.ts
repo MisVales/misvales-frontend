@@ -4,12 +4,13 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DomicilioFormFactory } from '../../forms/domicilio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
   selector: 'app-domicilios-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './domicilios-form.component.html',
   styleUrls: ['./domicilios-form.component.css']
 })

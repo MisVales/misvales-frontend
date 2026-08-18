@@ -4,11 +4,12 @@ import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DatosPersonalesFormFactory } from '../../forms/datos-personales-form.factory';
 import { ResumenSolicitante } from '../../models/solicitud-distribuidora.model';
+import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 
 @Component({
   selector: 'app-datos-personales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './datos-personales-form.component.html',
   styleUrls: ['./datos-personales-form.component.css']
 })

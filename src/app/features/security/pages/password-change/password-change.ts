@@ -20,6 +20,7 @@ export class PasswordChange {
   currentPassword = signal('');
   newPassword = signal('');
   confirmPassword = signal('');
+  touched = signal(false);
 
   passwordCriteria = computed(() => {
     const pw = this.newPassword();
@@ -32,24 +33,30 @@ export class PasswordChange {
     };
   });
 
+  isPasswordValid = computed(() => {
+    const c = this.passwordCriteria();
+    return c.length && c.uppercase && c.lowercase && c.number && c.symbol;
+  });
+
+  passwordsMismatch = computed(() => {
+    return !!this.confirmPassword() && this.newPassword() !== this.confirmPassword();
+  });
+
   loading = signal(false);
   success = signal(false);
   error = signal('');
 
   async submit() {
-    if (this.newPassword() !== this.confirmPassword()) {
-      this.error.set('Las contraseñas nuevas no coinciden.');
+    this.touched.set(true);
+    if (!this.currentPassword()) {
       return;
     }
 
-    const pw = this.newPassword();
-    if (pw.length < 12) {
-      this.error.set('La nueva contraseña debe tener al menos 12 caracteres.');
+    if (!this.isPasswordValid()) {
       return;
     }
 
-    if (!/[A-Z]/.test(pw) || !/[a-z]/.test(pw) || !/\d/.test(pw) || !/[@$!%*?&_\-#.+]/.test(pw)) {
-      this.error.set('La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo especial.');
+    if (this.passwordsMismatch()) {
       return;
     }
 

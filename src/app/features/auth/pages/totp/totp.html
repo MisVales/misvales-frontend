@@ -61,13 +61,17 @@
           autocomplete="one-time-code"
           [attr.inputmode]="selectedFactor() === 'TOTP' ? 'numeric' : 'text'"
           [attr.maxlength]="selectedFactor() === 'TOTP' ? 6 : null"
+          placeholder="{{ selectedFactor() === 'TOTP' ? '123456' : 'Ingresa tu código de recuperación' }}"
           class="block w-full px-4 py-3 border rounded-lg text-center tracking-widest font-mono"
         />
-        @if (mfaForm.controls.code.touched && mfaForm.controls.code.invalid) {
-          <p class="mt-2 text-xs text-red-600" role="alert">
-            {{ selectedFactor() === 'TOTP' ? 'Ingresa exactamente seis dígitos.' : 'Ingresa tu código de recuperación.' }}
-          </p>
-        }
+        <app-input-error
+          [control]="mfaForm.controls.code"
+          [label]="selectedFactor() === 'TOTP' ? 'El código' : 'El código de recuperación'"
+          [customMessages]="{
+            required: selectedFactor() === 'TOTP' ? 'Ingresa el código de 6 dígitos.' : 'Ingresa tu código de recuperación.',
+            pattern: 'Ingresa exactamente seis dígitos numéricos.'
+          }"
+        ></app-input-error>
 
         <button
           type="submit"

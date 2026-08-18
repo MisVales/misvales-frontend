@@ -1,10 +1,80 @@
-<div class="container mx-auto max-w-3xl p-4"><a routerLink="/productos" class="text-blue-600 hover:underline">&larr; Volver a Productos</a><h2 class="my-4 text-2xl font-bold">{{ isNew() ? 'Nuevo Producto' : 'Crear nueva versión del producto' }}</h2>
-<form [formGroup]="form" (ngSubmit)="guardar()" class="grid gap-4 rounded bg-white p-8 shadow md:grid-cols-2">
-  <label>Código<input class="mt-1 w-full rounded border p-2" formControlName="code"></label><label>Nombre<input class="mt-1 w-full rounded border p-2" formControlName="name"></label>
-  <label class="md:col-span-2">Descripción<textarea class="mt-1 w-full rounded border p-2" formControlName="description"></textarea></label>
-  <label>Valor nominal<input class="mt-1 w-full rounded border p-2" type="number" step="100" formControlName="nominal_amount"></label><label>Quincenas<input class="mt-1 w-full rounded border p-2" type="number" formControlName="fortnights_count"></label>
-  <label>Comisión de préstamo (0 a 1)<input class="mt-1 w-full rounded border p-2" type="number" step="0.000001" formControlName="loan_commission_percentage"></label><label>Interés simple (0 a 1)<input class="mt-1 w-full rounded border p-2" type="number" step="0.000001" formControlName="simple_interest_percentage"></label>
-  <label>Importe del seguro<input class="mt-1 w-full rounded border p-2" type="number" step="0.01" formControlName="insurance_amount"></label><label>Vigente desde<input class="mt-1 w-full rounded border p-2" type="date" formControlName="effective_from"></label>
-  <label class="md:col-span-2">Motivo<textarea class="mt-1 w-full rounded border p-2" formControlName="reason"></textarea></label>
-  @if(error()){<p class="text-red-700 md:col-span-2">{{error()}}</p>} @if(canWrite()){<button class="rounded bg-blue-600 px-4 py-2 text-white md:col-span-2" [disabled]="form.invalid || saving()">{{saving()?'Guardando…':(isNew()?'Crear producto':'Crear versión')}}</button>}
-</form></div>
+<div class="container mx-auto max-w-3xl p-4">
+  <a routerLink="/productos" class="text-[#386641] hover:underline flex items-center gap-1 text-sm font-medium mb-4">
+    &larr; Volver a Productos
+  </a>
+  <h2 class="my-4 text-2xl font-bold text-gray-900">
+    {{ isNew() ? 'Nuevo Producto' : 'Crear nueva versión del producto' }}
+  </h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="grid gap-4 rounded-xl bg-white p-8 shadow-sm border border-gray-100 md:grid-cols-2">
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Código *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" formControlName="code" placeholder="PROD-5000">
+      <app-input-error [control]="form.controls.code" label="El código"></app-input-error>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" formControlName="name" placeholder="Vale Estándar $5,000">
+      <app-input-error [control]="form.controls.name" label="El nombre"></app-input-error>
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Descripción</label>
+      <textarea class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" formControlName="description" rows="2" placeholder="Opcional"></textarea>
+      <app-input-error [control]="form.controls.description" label="La descripción"></app-input-error>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Valor nominal *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" type="number" step="100" formControlName="nominal_amount" placeholder="5000">
+      <app-input-error [control]="form.controls.nominal_amount" label="El valor nominal" [customMessages]="{ min: 'El monto nominal mínimo es de $100.00.' }"></app-input-error>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Número de Quincenas *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" type="number" formControlName="fortnights_count" placeholder="10">
+      <app-input-error [control]="form.controls.fortnights_count" label="El número de quincenas" [customMessages]="{ min: 'Debe ser al menos 1 quincena.' }"></app-input-error>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Comisión de préstamo (0 a 1) *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm font-mono focus:outline-none focus:border-[#386641]" type="number" step="0.000001" formControlName="loan_commission_percentage" placeholder="0.1000">
+      <app-input-error [control]="form.controls.loan_commission_percentage" label="La comisión" [customMessages]="{ min: 'Debe ser mayor o igual a 0.', max: 'No puede ser mayor a 1.0.' }"></app-input-error>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Interés simple (0 a 1) *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm font-mono focus:outline-none focus:border-[#386641]" type="number" step="0.000001" formControlName="simple_interest_percentage" placeholder="0.0500">
+      <app-input-error [control]="form.controls.simple_interest_percentage" label="El interés simple" [customMessages]="{ min: 'Debe ser mayor o igual a 0.', max: 'No puede ser mayor a 1.0.' }"></app-input-error>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Importe del seguro *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm font-mono focus:outline-none focus:border-[#386641]" type="number" step="0.01" formControlName="insurance_amount" placeholder="50.00">
+      <app-input-error [control]="form.controls.insurance_amount" label="El importe del seguro" [customMessages]="{ min: 'No puede ser negativo.' }"></app-input-error>
+    </div>
+
+    <div>
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Vigente desde *</label>
+      <input class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" type="date" formControlName="effective_from">
+      <app-input-error [control]="form.controls.effective_from" label="La fecha de vigencia"></app-input-error>
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="block text-xs font-semibold text-gray-700 mb-1">Motivo / Justificación *</label>
+      <textarea class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" formControlName="reason" rows="2" placeholder="Motivo del alta o actualización..."></textarea>
+      <app-input-error [control]="form.controls.reason" label="El motivo"></app-input-error>
+    </div>
+
+    @if (error()) {
+      <p class="text-xs text-red-700 bg-red-50 p-3 rounded-lg border border-red-200 md:col-span-2">{{ error() }}</p>
+    }
+
+    @if (canWrite()) {
+      <button class="rounded-xl bg-[#386641] px-5 py-2.5 text-sm font-semibold text-white md:col-span-2 hover:bg-[#2c5234] disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm" [disabled]="form.invalid || saving()">
+        {{ saving() ? 'Guardando…' : (isNew() ? 'Crear producto' : 'Crear versión') }}
+      </button>
+    }
+  </form>
+</div>

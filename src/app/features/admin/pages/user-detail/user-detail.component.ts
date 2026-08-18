@@ -36,6 +36,7 @@ export class UserDetailComponent implements OnInit {
   readonly isBlockModalOpen = signal(false);
   readonly isDisableModalOpen = signal(false);
   readonly isAssignModalOpen = signal(false);
+  readonly assignFormTouched = signal(false);
   readonly isActionLoading = signal<string | null>(null);
   readonly newAssignment = signal({ role_id: '', branch_id: '' });
 
@@ -184,20 +185,24 @@ export class UserDetailComponent implements OnInit {
 
   openAssignModal(): void {
     this.newAssignment.set({ role_id: '', branch_id: '' });
+    this.assignFormTouched.set(false);
     this.isAssignModalOpen.set(true);
   }
 
-  closeAssignModal(): void { this.isAssignModalOpen.set(false); }
+  closeAssignModal(): void {
+    this.assignFormTouched.set(false);
+    this.isAssignModalOpen.set(false);
+  }
 
   onAssignmentRoleChange(roleId: string): void {
     this.newAssignment.set({ role_id: roleId, branch_id: '' });
   }
 
   async submitAssignment(): Promise<void> {
+    this.assignFormTouched.set(true);
     const id = this.userId();
     const assignment = this.newAssignment();
     if (!id || !assignment.role_id || (this.assignmentRequiresBranch() && !assignment.branch_id)) {
-      this.pageError.set('Seleccione el rol y la sucursal requerida para su alcance.');
       return;
     }
 
