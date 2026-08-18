@@ -38,7 +38,8 @@ export class ConfiguracionesListaComponent implements OnInit {
       return `Día ${String(value['start'])} al ${String(value['end'])}`;
     }
     if (typeof value === 'object') return JSON.stringify(value);
-    return `${String(value)}${definition.unidad ? ` ${definition.unidad}` : ''}`;
+    const unit = this.etiquetaUnidad(definition.unidad);
+    return `${String(value)}${unit ? ` ${unit}` : ''}`;
   }
 
   protected etiquetaTipo(type: ConfiguracionDefinicion['tipoValor']): string {
@@ -55,6 +56,21 @@ export class ConfiguracionesListaComponent implements OnInit {
       JSON: 'Datos estructurados',
     };
     return labels[type];
+  }
+
+  private etiquetaUnidad(unit: string | null): string | null {
+    if (unit === null) return null;
+
+    const labels: Record<string, string> = {
+      day_of_month: 'días',
+      days: 'días',
+      days_after_cutoff: 'días después del corte',
+      hours: 'horas',
+      minutes: 'minutos',
+      percentage: '%',
+    };
+
+    return labels[unit] ?? unit.replaceAll('_', ' ');
   }
 
   private isObject(value: ConfigurationValue): value is { [key: string]: ConfigurationValue } {

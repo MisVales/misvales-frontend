@@ -109,7 +109,10 @@ export class ConfiguracionDetalleComponent implements OnInit {
     if (definition?.clave === 'EARLY_PAYMENT_PERIOD' && this.isObject(value)) {
       return `Día ${String(value['start'])} al ${String(value['end'])} después del corte`;
     }
-    return typeof value === 'object' ? JSON.stringify(value) : String(value);
+    if (typeof value === 'object') return JSON.stringify(value);
+
+    const unit = this.etiquetaUnidad(definition?.unidad ?? null);
+    return `${String(value)}${unit ? ` ${unit}` : ''}`;
   }
 
   protected esPeriodo(definition: ConfiguracionDefinicion): boolean {
@@ -118,6 +121,21 @@ export class ConfiguracionDetalleComponent implements OnInit {
 
   protected esBanco(definition: ConfiguracionDefinicion): boolean {
     return definition.clave === 'RELATION_PAYMENT_BANK';
+  }
+
+  private etiquetaUnidad(unit: string | null): string | null {
+    if (unit === null) return null;
+
+    const labels: Record<string, string> = {
+      day_of_month: 'días',
+      days: 'días',
+      days_after_cutoff: 'días después del corte',
+      hours: 'horas',
+      minutes: 'minutos',
+      percentage: '%',
+    };
+
+    return labels[unit] ?? unit.replaceAll('_', ' ');
   }
 
   private valorFormulario(definition: ConfiguracionDefinicion): ConfigurationValue {
