@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, Input, effect, ChangeDetectorRef } from '@angular/core';
+import { Component, inject, OnInit, effect, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -7,6 +7,8 @@ import { ResumenSolicitante } from '../../models/solicitud-distribuidora.model';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 import { from, Observable } from 'rxjs';
 import { MediaApiService } from '../../../../core/services/media-api.service';
+import { apiErrorMessage } from '../../../../core/api/api-error';
+import { ISO_COUNTRIES } from '../../../../shared/data/iso-countries';
 
 @Component({
   selector: 'app-datos-personales-form',
@@ -31,6 +33,7 @@ export class DatosPersonalesFormComponent implements OnInit {
   evidenceError: string | null = null;
   
   autosaveStatus: AutosaveStatus = 'idle';
+  readonly countries = ISO_COUNTRIES;
 
   saveFn = (rawValue: any): Observable<any> => {
     const payload: any = { ...rawValue };
@@ -58,26 +61,40 @@ export class DatosPersonalesFormComponent implements OnInit {
     // Escuchar los cambios en detalle() para reaccionar asíncronamente
     effect(() => {
       const detalle = this.store.detalle();
-      if (detalle && detalle.solicitante) {
-        this.cargarDatosActuales(detalle.solicitante);
+      if (detalle && detalle.datosPersonales) {
+        this.cargarDatosActuales(detalle.datosPersonales);
         this.cdr.markForCheck();
       }
     });
   }
 
   ngOnInit() {
-    // Removido, ahora se hace por medio de effect()
+    this.form.controls['nationality'].valueChanges.subscribe((nationality) => {
+      if (nationality === 'FOREIGN') {
+        this.form.patchValue({ birth_country: '', identification_country: '' });
+      } else if (nationality === 'MEXICAN') {
+        this.form.patchValue({ birth_country: 'MX', identification_country: 'MX' });
+      }
+    });
   }
 
-  cargarDatosActuales(solicitante: ResumenSolicitante) {
-    // Determine initial values for backend-stored fields
-    // Assuming the backend has nationality or other fields returned (not currently in ResumenSolicitanteDTO unless added)
-    // For now we patch what we have.
+  cargarDatosActuales(solicitante: ResumenSolicitante | any) {
     this.form.patchValue({
-      first_name: solicitante.nombre,
-      first_last_name: solicitante.apellidoPaterno,
-      second_last_name: solicitante.apellidoMaterno,
-      curp: solicitante.curpEnmascarada
+      nationality: solicitante.nationality ?? 'MEXICAN',
+      first_name: solicitante.first_name ?? solicitante.nombre,
+      first_last_name: solicitante.first_last_name ?? solicitante.apellidoPaterno,
+      second_last_name: solicitante.second_last_name ?? solicitante.apellidoMaterno,
+      curp: solicitante.curp ?? solicitante.curp_masked ?? solicitante.curpEnmascarada,
+      rfc: solicitante.rfc ?? '',
+      birth_country: solicitante.birth_country ?? 'MX',
+      birth_date: solicitante.birth_date ?? '',
+      birth_state: solicitante.birth_state ?? '',
+      birth_city: solicitante.birth_city ?? '',
+      email: solicitante.email ?? '',
+      phone_number: solicitante.phone_number ?? '',
+      identification_country: solicitante.identification_country ?? '',
+      official_id_type: solicitante.official_id_type ?? '',
+      official_id_number: solicitante.official_id_number ?? '',
     }, { emitEvent: false });
     
     if (solicitante.curpEnmascarada && solicitante.curpEnmascarada.includes('*')) {
@@ -114,7 +131,7 @@ export class DatosPersonalesFormComponent implements OnInit {
         },
         error: (err: any) => {
           this.uploadingEvidence = false;
-          this.evidenceError = err.error?.message || 'Error al subir la evidencia';
+          this.evidenceError = apiErrorMessage(err, 'No fue posible subir la evidencia.');
           this.form.get('evidence_uploaded')?.setValue(false);
           this.cdr.markForCheck();
         }

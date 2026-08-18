@@ -47,6 +47,13 @@ export class AutosaveDirective implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.sub.unsubscribe();
+    // Las secciones del expediente se desmontan al cambiar de pestaña. Si el
+    // usuario cambia antes del debounce, conserva el último valor en vez de
+    // dejar una sección visualmente completa pero sin persistir.
+    const pendingSave = this.flush();
+    if (pendingSave) {
+      pendingSave.subscribe();
+    }
   }
 
   private updateStatus(status: AutosaveStatus) {

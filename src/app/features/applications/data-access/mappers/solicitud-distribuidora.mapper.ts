@@ -23,6 +23,7 @@ export class SolicitudDistribuidoraMapper {
         curpEnmascarada: dto.applicant.curp_masked || '',
         nombreCompleto: dto.applicant.full_name ?? [dto.applicant.first_name, dto.applicant.first_last_name, dto.applicant.second_last_name].filter(Boolean).join(' ')
       } : null,
+      datosPersonales: dto.personal_data ?? null,
       declaracionesSeccion: {
         datosPersonales: dto.section_declarations?.personal_data,
         domicilios: dto.section_declarations?.residence,

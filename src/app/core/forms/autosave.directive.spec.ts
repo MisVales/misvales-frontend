@@ -48,7 +48,7 @@ describe('AutosaveDirective', () => {
     directive.ngOnDestroy();
   });
 
-  it('does not perform a network flush while the directive is being destroyed', async () => {
+  it('persists a pending change while the directive is being destroyed', async () => {
     const saveFn = vi.fn(() => of({ ok: true }));
     const { directive, form } = setupDirective(saveFn, 100);
 
@@ -56,8 +56,8 @@ describe('AutosaveDirective', () => {
     directive.ngOnDestroy();
     await vi.advanceTimersByTimeAsync(200);
 
-    expect(saveFn).not.toHaveBeenCalled();
-    expect(directive.hasUnsavedChanges).toBe(true);
+    expect(saveFn).toHaveBeenCalledOnce();
+    expect(directive.hasUnsavedChanges).toBe(false);
   });
 
   it('stops all later writes after an expired-session response', async () => {

@@ -1,8 +1,10 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { AuthFacade } from '../../../auth/state/auth.facade';
+import { AuthTokenStore } from '../../../../core/session/auth-token.store';
+import { SessionStore } from '../../../../core/session/session.store';
 import { firstValueFrom } from 'rxjs';
 import { SecurityService } from '../../data-access/security.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
@@ -15,7 +17,9 @@ import { apiErrorMessage } from '../../../../core/api/api-error';
 })
 export class PasswordChange {
   private securityService = inject(SecurityService);
-  private authFacade = inject(AuthFacade);
+  private router = inject(Router);
+  private tokenStore = inject(AuthTokenStore);
+  private sessionStore = inject(SessionStore);
 
   currentPassword = signal('');
   newPassword = signal('');
@@ -71,10 +75,12 @@ export class PasswordChange {
       this.newPassword.set('');
       this.confirmPassword.set('');
       
-      // Cerramos sesión después de 3 segundos para obligarlo a loguearse de nuevo
-      setTimeout(() => {
-        this.authFacade.logout();
-      }, 3000);
+      // El backend invalida las sesiones al confirmar el cambio. No intentamos
+      // llamar a logout con un bearer que puede quedar revocado: cerramos el
+      // estado local y llevamos al usuario a iniciar sesión inmediatamente.
+      this.tokenStore.clear();
+      this.sessionStore.clearSession();
+      await this.router.navigate(['/auth/login'], { replaceUrl: true });
     } catch (error: unknown) {
       this.error.set(apiErrorMessage(error, 'No fue posible cambiar la contraseña. Revise su contraseña actual.'));
     } finally {

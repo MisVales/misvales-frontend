@@ -5,15 +5,17 @@ import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DomicilioFormFactory } from '../../forms/domicilio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { firstValueFrom } from 'rxjs';
+import { from, Observable } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
 import { AddressFormComponent } from '../../../../shared/components/address-form/address-form';
+import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 
 @Component({
   selector: 'app-domicilios-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, AddressFormComponent],
+  imports: [CommonModule, ReactiveFormsModule, AddressFormComponent, AutosaveDirective],
   templateUrl: './domicilios-form.component.html',
   styleUrls: ['./domicilios-form.component.css']
 })
@@ -30,6 +32,10 @@ export class DomiciliosFormComponent implements OnInit {
   mostrandoFormulario = false;
   formularioActual: FormGroup | null = null;
   indiceEdicion: number | null = null;
+  autosaveStatus: AutosaveStatus = 'idle';
+
+  saveCurrentAddress = (): Observable<unknown> =>
+    this.formularioActual ? from(this.guardarDomicilioDirecto(this.formularioActual)) : from([]);
 
   async ngOnInit() {
     await this.esperarDetalle();
@@ -135,20 +141,7 @@ export class DomiciliosFormComponent implements OnInit {
     });
   }
 
-  async guardarFormulario() {
-    if (!this.formularioActual) return;
-    
-    if (this.formularioActual.invalid) {
-      this.formularioActual.markAllAsTouched();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    await this.guardarDomicilioDirecto(this.formularioActual);
-    this.cancelarFormulario();
-  }
-
-  async guardarDomicilioDirecto(formGroup: FormGroup) {
+  async guardarDomicilioDirecto(formGroup: FormGroup): Promise<void> {
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
 
@@ -160,7 +153,9 @@ export class DomiciliosFormComponent implements OnInit {
       if (idDomicilio) {
         await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, this.store.detalle()!.versionBloqueo));
       } else {
-        await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
+        const created: any = await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
+        const createdId = created?.id ?? created?.data?.id;
+        if (createdId) formGroup.patchValue({ id: createdId }, { emitEvent: false });
       }
       await this.store.cargarDetalle(idSolicitud);
       await this.cargarDomicilios();

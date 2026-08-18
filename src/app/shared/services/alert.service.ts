@@ -31,4 +31,8 @@ export class AlertService {
   removeAlert(id: string) {
     this.alerts.update(current => current.filter(a => a.id !== id));
   }
+
+  clear(): void {
+    this.alerts.set([]);
+  }
 }

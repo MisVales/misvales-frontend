@@ -42,7 +42,7 @@ export class Invitations implements OnInit {
 
   readonly filteredBranches = computed(() => {
     const roleId = this.newInvitation().role_id;
-    const branches = this.organizationFacade.branches();
+    const branches = this.organizationFacade.branches().filter((branch) => branch.status === 'ACTIVE');
 
     if (!roleId) return branches;
 
@@ -71,7 +71,7 @@ export class Invitations implements OnInit {
     await Promise.all([
       this.loadInvitations(),
       this.loadRoles(),
-      this.organizationFacade.loadBranches(1, 100),
+      this.organizationFacade.loadBranches(1, 100, undefined, 'ACTIVE'),
     ]);
   }
 

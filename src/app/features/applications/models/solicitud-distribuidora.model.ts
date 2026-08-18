@@ -7,6 +7,7 @@ export interface SolicitudDistribuidora {
   sucursal?: { id: string; nombre: string };
   coordinador?: { id: string; nombre: string };
   solicitante: ResumenSolicitante | null;
+  datosPersonales?: DatosPersonales | null;
   declaracionesSeccion: DeclaracionesSeccion;
   avance: AvanceExpediente;
   versionBloqueo: number;
@@ -14,6 +15,25 @@ export interface SolicitudDistribuidora {
   enviadaEn: string | null;
   creadaEn: string;
   actualizadaEn: string;
+}
+
+export interface DatosPersonales {
+  nationality: 'MEXICAN' | 'FOREIGN';
+  first_name: string;
+  first_last_name: string;
+  second_last_name?: string | null;
+  curp?: string | null;
+  curp_masked?: string | null;
+  rfc?: string | null;
+  birth_country: string;
+  birth_date: string;
+  birth_state: string;
+  birth_city: string;
+  email: string;
+  phone_number: string;
+  identification_country?: string | null;
+  official_id_type: string;
+  official_id_number?: string | null;
 }
 
 export type EstadoSolicitudDistribuidora = 

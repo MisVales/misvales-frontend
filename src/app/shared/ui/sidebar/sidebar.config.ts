@@ -43,6 +43,7 @@ const GG_AD_GS_CO: readonly RoleCode[] = [...GG_AD_GS, 'coordinator'];
 const GG_AD_GS_CO_VE: readonly RoleCode[] = [...GG_AD_GS_CO, 'verifier'];
 const VE: readonly RoleCode[] = ['verifier'];
 const GG_AD_GS_CO_DI: readonly RoleCode[] = [...GG_AD_GS_CO, 'distributor'];
+const GG_AD_GS_DI: readonly RoleCode[] = [...GG_AD_GS, 'distributor'];
 const GG_AD_GS_CO_DI_CA: readonly RoleCode[] = [...GG_AD_GS_CO_DI, 'cashier'];
 
 export const NAV_GROUPS: NavGroupData[] = [
@@ -154,7 +155,7 @@ export const NAV_GROUPS: NavGroupData[] = [
         title: 'Líneas de crédito',
         icon: 'credit-card',
         route: '/distribuidoras/lineas-credito',
-        roles: GG_AD_GS_CO_DI,
+        roles: GG_AD_GS_DI,
         permissions: [
           'credit_lines.view_own',
           'credit_lines.view_assigned',
