@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
+import { apiErrorMessage } from '../../../../core/api/api-error';
 import { CreditoApiService, CreditIncreaseView } from '../../data-access/api/credito-api.service';
 
 @Component({
@@ -17,7 +18,24 @@ import { CreditoApiService, CreditIncreaseView } from '../../data-access/api/cre
       @else if (!requests().length) { <div class="rounded-xl border border-dashed bg-white p-10 text-center text-gray-500">No existen solicitudes visibles.</div> }
       @else { <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.7fr)]">
         <div class="overflow-x-auto rounded-xl border bg-white shadow-sm"><table class="min-w-full text-sm"><thead class="bg-gray-50 text-left"><tr><th class="p-3">Solicitud</th><th class="p-3">Distribuidora</th><th class="p-3">Importes</th><th class="p-3">Estado</th></tr></thead><tbody>
-          @for (request of requests(); track request.id) { <tr class="cursor-pointer border-t hover:bg-blue-50" [class.bg-blue-50]="selected()?.id === request.id" (click)="select(request.id)"><td class="p-3 font-semibold">{{ request.request_number }}<br><span class="font-normal text-gray-500">{{ request.requested_at | date:'short' }}</span></td><td class="p-3">{{ request.distributor?.distributor_number }}<br><span class="text-gray-500">{{ request.distributor?.full_name }}</span></td><td class="p-3">Solicitado: {{ request.requested_amount | currency:'MXN' }}<br><span class="text-gray-500">Recomendado: {{ request.recommended_amount ? (request.recommended_amount | currency:'MXN') : '—' }}</span></td><td class="p-3"><span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold">{{ request.status }}</span></td></tr> }
+          @for (request of requests(); track request.id) {
+            <tr class="border-t hover:bg-blue-50" [class.bg-blue-50]="selected()?.id === request.id">
+              <td class="p-3 font-semibold">
+                <button
+                  type="button"
+                  class="rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                  [attr.aria-label]="'Abrir solicitud ' + request.request_number"
+                  (click)="select(request.id)"
+                >
+                  {{ request.request_number }}<br>
+                  <span class="font-normal text-gray-500">{{ request.requested_at | date:'short' }}</span>
+                </button>
+              </td>
+              <td class="p-3">{{ request.distributor?.distributor_number }}<br><span class="text-gray-500">{{ request.distributor?.full_name }}</span></td>
+              <td class="p-3">Solicitado: {{ request.requested_amount | currency:'MXN' }}<br><span class="text-gray-500">Recomendado: {{ request.recommended_amount ? (request.recommended_amount | currency:'MXN') : '—' }}</span></td>
+              <td class="p-3"><span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold">{{ request.status }}</span></td>
+            </tr>
+          }
         </tbody></table></div>
         @if (selected(); as item) { <aside class="space-y-4 rounded-xl border bg-white p-5 shadow-sm"><div><h2 class="text-lg font-bold">{{ item.request_number }}</h2><p class="text-sm text-gray-500">{{ item.branch?.name || 'Sin sucursal visible' }}</p></div><dl class="grid grid-cols-2 gap-3 text-sm"><div><dt class="text-gray-500">Línea al solicitar</dt><dd>{{ item.line_total_at_request | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Disponible</dt><dd>{{ item.available_balance_at_request | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Solicitado</dt><dd>{{ item.requested_amount | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Recomendado</dt><dd>{{ item.recommended_amount ? (item.recommended_amount | currency:'MXN') : '—' }}</dd></div></dl><p class="rounded-lg bg-gray-50 p-3 text-sm"><strong>Motivo:</strong> {{ item.request_reason }}</p>
           @if (item.capabilities?.can_preauthorize || item.capabilities?.can_reject_by_coordinator) { <form class="space-y-3" (ngSubmit)="review(item)"><label class="block text-sm">Importe recomendado<input class="mt-1 w-full rounded-lg border p-2" [(ngModel)]="recommendedAmount" name="recommended" inputmode="decimal"></label><label class="block text-sm">Motivo obligatorio<textarea class="mt-1 w-full rounded-lg border p-2" [(ngModel)]="reason" name="coordinatorReason" maxlength="255" required></textarea></label><div class="flex gap-2">@if (item.capabilities?.can_preauthorize) { <button class="rounded-lg bg-blue-700 px-4 py-2 text-white" [disabled]="saving()" type="submit">Preautorizar</button> } @if (item.capabilities?.can_reject_by_coordinator) { <button class="rounded-lg border border-red-300 px-4 py-2 text-red-700" [disabled]="saving()" type="button" (click)="reject(item)">Rechazar</button> }</div></form> }
@@ -47,11 +65,9 @@ export class IncrementosLineaPageComponent implements OnInit {
   decide(item: CreditIncreaseView): void { if (!this.reason.trim() || (this.decision === 'APPROVE_LOWER' && !this.authorizedAmount)) return; this.run(this.api.decidir(item.id, this.decision, this.reason.trim(), item.lock_version, this.authorizedAmount)); }
   private run(request: ReturnType<CreditoApiService['consultarIncremento']>): void { this.saving.set(true); this.error.set(''); request.pipe(finalize(() => this.saving.set(false))).subscribe({ next: value => { this.selected.set(value); this.requests.update(items => items.map(item => item.id === value.id ? value : item)); this.reason = ''; }, error: (error: HttpErrorResponse) => this.error.set(this.errorMessage(error)) }); }
   private errorMessage(error: HttpErrorResponse): string {
-    const businessError = error.error?.error;
-    if (typeof businessError?.message === 'string') {
-      return businessError.code ? `${businessError.code}: ${businessError.message}` : businessError.message;
-    }
-    if (typeof error.error?.message === 'string') return error.error.message;
-    return 'La operación fue rechazada. Verifica permisos, estado y versión de la solicitud.';
+    return apiErrorMessage(
+      error,
+      'La operación fue rechazada. Verifica permisos, estado y versión de la solicitud.',
+    );
   }
 }

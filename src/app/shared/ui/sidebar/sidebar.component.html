@@ -79,8 +79,6 @@
         [class.nav-item--has-active]="hasActiveDescendant(item)"
         [style.padding-left.px]="isCollapsed() ? 12 : (level * 16 + 12)"
         (click)="toggleGroup(item, parentId ?? undefined)"
-        (keydown.enter)="toggleGroup(item, parentId ?? undefined)"
-        (keydown.space)="toggleGroup(item, parentId ?? undefined); $event.preventDefault()"
         [attr.aria-expanded]="isGroupOpen(item.id, parentId)"
         [attr.aria-controls]="'submenu-' + item.id"
         type="button"
