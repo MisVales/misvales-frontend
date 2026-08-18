@@ -36,29 +36,28 @@ export class FamiliaresFormComponent implements OnInit {
   }
 
   getSaveFn(index: number) {
-    return (rawValue: any): Observable<any> => {
-      const idSolicitud = this.store.detalle()?.id;
-      if (!idSolicitud) return from([]);
+    return (rawValue: any): Observable<any> => from(this.store.ejecutarGuardado(async () => {
+      const detalle = this.store.detalle();
+      const idSolicitud = detalle?.id;
+      if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
 
       const payload = { ...rawValue };
       const idFamiliar = payload.id;
       delete payload.id;
 
-      let request$;
-      if (idFamiliar) {
-        request$ = this.api.actualizarFamiliar(idSolicitud, idFamiliar, payload, this.store.detalle()!.versionBloqueo);
-      } else {
-        request$ = this.api.crearFamiliar(idSolicitud, payload, this.store.detalle()!.versionBloqueo);
-      }
-      
-      return from(request$.toPromise().then(res => {
+      const request$ = idFamiliar
+        ? this.api.actualizarFamiliar(idSolicitud, idFamiliar, payload, detalle.versionBloqueo)
+        : this.api.crearFamiliar(idSolicitud, payload, detalle.versionBloqueo);
+
+      return firstValueFrom(request$).then(res => {
         // Update form with real ID if created
         if (!idFamiliar && res && res.id) {
            this.familiaresArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
         }
-        return this.store.cargarDetalle(idSolicitud).then(() => res);
-      }));
-    };
+        this.store.registrarAutoguardado(res);
+        return res;
+      });
+    }));
   }
 
   async ngOnInit() {

@@ -12,8 +12,7 @@
   @if (definicion(); as item) {
     <header class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
       <div>
-        <p class="font-mono text-xs text-gray-500">{{ item.clave }}</p>
-        <h1 class="mt-1 text-3xl font-bold text-gray-950">{{ item.nombre }}</h1>
+        <h1 class="text-3xl font-bold text-gray-950">{{ item.nombre }}</h1>
         <p class="mt-2 max-w-3xl text-sm text-gray-600">{{ item.descripcion }}</p>
       </div>
       <button

@@ -9,6 +9,7 @@ import {
   ConfigurationValue,
 } from '../../data-access/configuraciones.dtos';
 import { ConfiguracionesStore } from '../../estado/configuraciones.store';
+import { esConfiguracionVisible } from '../../data-access/configuraciones-visibilidad';
 
 @Component({
   selector: 'app-configuracion-detalle',
@@ -42,7 +43,7 @@ export class ConfiguracionDetalleComponent implements OnInit {
 
   ngOnInit(): void {
     this.clave = this.route.snapshot.paramMap.get('clave') ?? '';
-    if (!this.clave) {
+    if (!this.clave || !esConfiguracionVisible(this.clave)) {
       void this.router.navigate(['/configuraciones']);
       return;
     }

@@ -34,28 +34,27 @@ export class VehiculosFormComponent implements OnInit {
   }
 
   getSaveFn(index: number) {
-    return (rawValue: any): Observable<any> => {
-      const idSolicitud = this.store.detalle()?.id;
-      if (!idSolicitud) return from([]);
+    return (rawValue: any): Observable<any> => from(this.store.ejecutarGuardado(async () => {
+      const detalle = this.store.detalle();
+      const idSolicitud = detalle?.id;
+      if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
 
       const payload = { ...rawValue };
       const idVehiculo = payload.id;
       delete payload.id;
 
-      let request$;
-      if (idVehiculo) {
-        request$ = this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, this.store.detalle()!.versionBloqueo);
-      } else {
-        request$ = this.api.crearVehiculo(idSolicitud, payload, this.store.detalle()!.versionBloqueo);
-      }
-      
-      return from(request$.toPromise().then(res => {
+      const request$ = idVehiculo
+        ? this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, detalle.versionBloqueo)
+        : this.api.crearVehiculo(idSolicitud, payload, detalle.versionBloqueo);
+
+      return firstValueFrom(request$).then(res => {
         if (!idVehiculo && res && res.id) {
            this.vehiculosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
         }
-        return this.store.cargarDetalle(idSolicitud).then(() => res);
-      }));
-    };
+        this.store.registrarAutoguardado(res);
+        return res;
+      });
+    }));
   }
 
   async ngOnInit() {

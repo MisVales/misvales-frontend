@@ -259,7 +259,7 @@ export class AddressFormComponent implements OnInit, OnDestroy {
       municipality: cityName,
       city: cityName,
       state: stateName,
-      country: 'Mexico',
+      country: 'MX',
       lat,
       lng
     });

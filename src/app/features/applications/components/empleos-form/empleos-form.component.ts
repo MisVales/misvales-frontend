@@ -35,28 +35,27 @@ export class EmpleosFormComponent implements OnInit {
   }
 
   getSaveFn(index: number) {
-    return (rawValue: any): Observable<any> => {
-      const idSolicitud = this.store.detalle()?.id;
-      if (!idSolicitud) return from([]);
+    return (rawValue: any): Observable<any> => from(this.store.ejecutarGuardado(async () => {
+      const detalle = this.store.detalle();
+      const idSolicitud = detalle?.id;
+      if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
 
       const payload = { ...rawValue };
       const idRegistro = payload.id;
       delete payload.id;
 
-      let request$;
-      if (idRegistro) {
-        request$ = this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo);
-      } else {
-        request$ = this.api.crearEmpleo(idSolicitud, payload, this.store.detalle()!.versionBloqueo);
-      }
-      
-      return from(request$.toPromise().then(res => {
+      const request$ = idRegistro
+        ? this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, detalle.versionBloqueo)
+        : this.api.crearEmpleo(idSolicitud, payload, detalle.versionBloqueo);
+
+      return firstValueFrom(request$).then(res => {
         if (!idRegistro && res && res.id) {
            this.empleosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
         }
-        return this.store.cargarDetalle(idSolicitud).then(() => res);
-      }));
-    };
+        this.store.registrarAutoguardado(res);
+        return res;
+      });
+    }));
   }
 
   async ngOnInit() {

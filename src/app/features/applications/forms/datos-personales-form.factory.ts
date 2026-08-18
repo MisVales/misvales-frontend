@@ -1,6 +1,7 @@
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { curpValidator } from '../validators/curp.validator';
 import { rfcValidator } from '../validators/rfc.validator';
+import { adultBirthDateValidator } from '../validators/adult-birth-date.validator';
 
 export class DatosPersonalesFormFactory {
   static create(fb: FormBuilder): FormGroup {
@@ -12,7 +13,7 @@ export class DatosPersonalesFormFactory {
       curp: ['', [curpValidator()]],
       rfc: ['', [rfcValidator()]],
       birth_country: ['MX', [Validators.required, Validators.maxLength(2)]],
-      birth_date: ['', [Validators.required]],
+      birth_date: ['', [Validators.required, adultBirthDateValidator]],
       birth_state: ['', [Validators.maxLength(50)]],
       birth_city: ['', [Validators.maxLength(100)]],
       email: ['', [Validators.required, Validators.email]],

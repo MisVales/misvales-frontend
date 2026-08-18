@@ -65,6 +65,7 @@
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha de Nacimiento <span class="text-red-500">*</span></label>
         <input type="date" formControlName="birth_date" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <p *ngIf="form.controls['birth_date'].hasError('mustBeAdult')" class="text-red-500 text-xs mt-1">La persona solicitante debe tener al menos 18 años.</p>
       </div>
 
       <!-- País Nacimiento -->

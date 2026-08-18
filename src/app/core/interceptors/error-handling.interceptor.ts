@@ -135,11 +135,17 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
       );
     }
 
-    if (!isAuthEndpoint && (shouldEndSessionForHttpStatus(error.status) || error.status === 403)) {
+    if (!isAuthEndpoint && shouldEndSessionForHttpStatus(error.status)) {
       return endExpiredSession(error);
     }
 
-    if (error.status === 404) {
+    if (error.status === 403) {
+      alertService.showAlert(
+        'No tienes autorización para realizar esta acción. Tu sesión sigue activa.',
+        'error',
+        7000,
+      );
+    } else if (error.status === 404) {
       alertService.showAlert(
         'El recurso solicitado ya no existe o no está disponible.',
         'error',

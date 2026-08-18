@@ -7,7 +7,7 @@ import { ResumenSolicitante } from '../../models/solicitud-distribuidora.model';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 import { from, Observable } from 'rxjs';
 import { MediaApiService } from '../../../../core/services/media-api.service';
-import { apiErrorMessage } from '../../../../core/api/api-error';
+import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 import { ISO_COUNTRIES } from '../../../../shared/data/iso-countries';
 
 @Component({
@@ -131,7 +131,7 @@ export class DatosPersonalesFormComponent implements OnInit {
         },
         error: (err: any) => {
           this.uploadingEvidence = false;
-          this.evidenceError = apiErrorMessage(err, 'No fue posible subir la evidencia.');
+          this.evidenceError = apiValidationErrors(err)['file']?.[0] ?? apiErrorMessage(err, 'No fue posible subir la evidencia.');
           this.form.get('evidence_uploaded')?.setValue(false);
           this.cdr.markForCheck();
         }

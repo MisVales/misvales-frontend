@@ -107,7 +107,7 @@ export class DomiciliosFormComponent implements OnInit {
       this.alerts.showAlert('Ya existe un domicilio actual. Desmarca el anterior antes de guardar para conservar una sola dirección vigente.', 'warning');
     }
     this.domiciliosGroups[index].get('is_current')?.setValue(true);
-    this.guardarDomicilioDirecto(this.domiciliosGroups[index]);
+    void this.guardarDomicilioDirecto(this.domiciliosGroups[index]).catch(() => undefined);
   }
 
   mapToAddressResult(val: any) {
@@ -150,22 +150,25 @@ export class DomiciliosFormComponent implements OnInit {
     delete payload.id;
 
     try {
-      if (idDomicilio) {
-        await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, this.store.detalle()!.versionBloqueo));
-      } else {
-        const created: any = await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
-        const createdId = created?.id ?? created?.data?.id;
-        if (createdId) formGroup.patchValue({ id: createdId }, { emitEvent: false });
-      }
-      await this.store.cargarDetalle(idSolicitud);
-      await this.cargarDomicilios();
+      await this.store.ejecutarGuardado(async () => {
+        const detalle = this.store.detalle();
+        if (!detalle || detalle.versionBloqueo === undefined) return;
+
+        const saved: any = idDomicilio
+          ? await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, detalle.versionBloqueo))
+          : await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, detalle.versionBloqueo));
+
+        const createdId = saved?.id ?? saved?.data?.id;
+        if (!idDomicilio && createdId) formGroup.patchValue({ id: createdId }, { emitEvent: false });
+        this.store.registrarAutoguardado(saved);
+      });
     } catch (e: any) {
       if (e?.status === 409) {
-        await this.store.cargarDetalle(idSolicitud);
-        this.alerts.showAlert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.', 'warning');
+        this.alerts.showAlert('La información cambió en otra sesión. No se guardó este cambio; actualiza el expediente antes de reintentar.', 'warning');
       } else {
         this.alerts.showAlert(apiErrorMessage(e, 'No fue posible guardar el domicilio.'), 'error');
       }
+      throw e;
     } finally {
       this.cdr.markForCheck();
     }

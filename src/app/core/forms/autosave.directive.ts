@@ -1,9 +1,10 @@
-import { Directive, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
+import { Directive, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, inject, ElementRef, Renderer2 } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
-import { EMPTY, Observable, Subscription } from 'rxjs';
-import { catchError, concatMap, debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
+import { EMPTY, Observable, Subject, Subscription } from 'rxjs';
+import { catchError, concatMap, debounceTime, distinctUntilChanged, tap } from 'rxjs/operators';
 import { SessionExpiredService } from '../session/session-expired.service';
+import { apiValidationErrors } from '../api/api-error';
 
 export type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -23,25 +24,39 @@ export class AutosaveDirective implements OnInit, OnDestroy {
   public hasUnsavedChanges = false;
 
   private readonly sessionExpired = inject(SessionExpiredService);
+  private readonly elementRef = inject(ElementRef<HTMLElement>, { optional: true });
+  private readonly renderer = inject(Renderer2, { optional: true });
   private sub = new Subscription();
+  private readonly saveQueue$ = new Subject<{ value: Record<string, unknown>; version: number }>();
+  private saveQueueSub = new Subscription();
   private changeVersion = 0;
+  private lastQueuedVersion = 0;
+  private queueInitialized = false;
   private networkDisabled = false;
+  private lastRawValue: Record<string, unknown> = {};
 
   ngOnInit() {
     if (!this.formGroup || !this.saveFn) return;
+    this.lastRawValue = this.formGroup.getRawValue();
+
+    this.saveQueueSub.add(
+      this.saveQueue$.pipe(
+        concatMap(({ value, version }) => this.persistValue(value, version)),
+      ).subscribe(),
+    );
+    this.queueInitialized = true;
 
     this.sub.add(
       this.formGroup.valueChanges.pipe(
         tap(() => {
+          this.clearServerErrors(this.formGroup.getRawValue());
           this.changeVersion += 1;
           this.hasUnsavedChanges = true;
           this.updateStatus('idle'); // pending save
         }),
         debounceTime(this.debounceMs),
         distinctUntilChanged((a, b) => JSON.stringify(a) === JSON.stringify(b)),
-        map(() => this.changeVersion),
-        concatMap((version) => this.persistCurrentValue(version)),
-      ).subscribe(),
+      ).subscribe((value) => this.enqueueSave(value, this.changeVersion)),
     );
   }
 
@@ -50,10 +65,11 @@ export class AutosaveDirective implements OnInit, OnDestroy {
     // Las secciones del expediente se desmontan al cambiar de pestaña. Si el
     // usuario cambia antes del debounce, conserva el último valor en vez de
     // dejar una sección visualmente completa pero sin persistir.
-    const pendingSave = this.flush();
-    if (pendingSave) {
-      pendingSave.subscribe();
-    }
+    // No se cancela saveQueueSub: si ya había una petición HTTP activa, debe
+    // terminar aunque la pestaña destruya la vista. El Subject se completa
+    // después de encolar el último snapshot y concatMap deja drenar la cola.
+    this.flush();
+    this.saveQueue$.complete();
   }
 
   private updateStatus(status: AutosaveStatus) {
@@ -72,24 +88,40 @@ export class AutosaveDirective implements OnInit, OnDestroy {
         return;
       }
 
-      return this.persistCurrentValue(this.changeVersion);
+      if (!this.queueInitialized) {
+        return this.persistValue(this.formGroup.getRawValue(), this.changeVersion);
+      }
+
+      if (this.changeVersion > this.lastQueuedVersion || this.currentStatus !== 'saving') {
+        this.enqueueSave(this.formGroup.getRawValue(), this.changeVersion);
+      }
+
+      // La persistencia se ejecuta en saveQueueSub. Se conserva el contrato
+      // observable para los consumidores existentes de flush().
+      return EMPTY;
     }
   }
 
-  private persistCurrentValue(version: number): Observable<any> {
+  private enqueueSave(value: Record<string, unknown>, version: number): void {
+    if (version < this.lastQueuedVersion) return;
+
+    this.lastQueuedVersion = version;
+    this.saveQueue$.next({ value, version });
+  }
+
+  private persistValue(value: Record<string, unknown>, version: number): Observable<any> {
     if (this.networkDisabled || this.sessionExpired.isOpen()) {
       this.updateStatus('error');
       return EMPTY;
     }
 
-    const value = this.formGroup.getRawValue();
     if (!this.hasMeaningfulDraft(value)) {
       this.updateStatus('idle');
       return EMPTY;
     }
 
     this.updateStatus('saving');
-    return this.saveFn(value).pipe(
+    return this.saveFn(this.withoutInvalidFields(value)).pipe(
       tap((result) => {
         if (result !== null) {
           this.updateStatus('saved');
@@ -105,10 +137,79 @@ export class AutosaveDirective implements OnInit, OnDestroy {
         ) {
           this.networkDisabled = true;
         }
+        this.applyServerErrors(error);
         this.updateStatus('error');
         return EMPTY;
       }),
     );
+  }
+
+  /**
+   * El autoguardado conserva el avance válido del borrador. Los campos que el
+   * formulario ya identifica como inválidos se omiten hasta que el usuario los
+   * corrija; el backend sigue siendo la validación definitiva al enviar.
+   */
+  private withoutInvalidFields(value: Record<string, unknown>): Record<string, unknown> {
+    return Object.fromEntries(Object.entries(value).filter(([field]) => !this.formGroup.get(field)?.invalid));
+  }
+
+  private applyServerErrors(error: unknown): void {
+    if (!(error instanceof HttpErrorResponse)) return;
+
+    Object.entries(apiValidationErrors(error)).forEach(([field, messages]) => {
+      const control = this.formGroup.get(field);
+      if (!control) return;
+
+      control.setErrors({ ...(control.errors ?? {}), server: messages.join(' ') });
+      control.markAsTouched();
+      this.renderFieldError(field, messages.join(' '));
+    });
+  }
+
+  private clearServerErrors(currentValue: Record<string, unknown>): void {
+    Object.entries(this.formGroup.controls).forEach(([field, control]) => {
+      const changed = JSON.stringify(this.lastRawValue[field]) !== JSON.stringify(currentValue[field]);
+      if (!changed || !control.hasError('server')) return;
+
+      const errors = { ...(control.errors ?? {}) };
+      delete errors['server'];
+      control.setErrors(Object.keys(errors).length ? errors : null);
+      this.removeFieldError(field);
+    });
+
+    this.lastRawValue = currentValue;
+  }
+
+  private renderFieldError(field: string, message: string): void {
+    this.removeFieldError(field);
+    if (!this.elementRef || !this.renderer) return;
+    const host = this.elementRef.nativeElement as HTMLElement;
+    const renderer = this.renderer;
+    const input = host.querySelector<HTMLElement>(`[formControlName="${field}"]`);
+    if (!input) return;
+
+    renderer.addClass(input, 'border-red-500');
+    renderer.setAttribute(input, 'aria-invalid', 'true');
+    const error = renderer.createElement('p');
+    renderer.setAttribute(error, 'data-autosave-error-for', field);
+    renderer.addClass(error, 'text-red-500');
+    renderer.addClass(error, 'text-xs');
+    renderer.addClass(error, 'mt-1');
+    renderer.setProperty(error, 'textContent', message);
+    renderer.appendChild(input.parentElement, error);
+  }
+
+  private removeFieldError(field: string): void {
+    if (!this.elementRef || !this.renderer) return;
+    const selector = `[data-autosave-error-for="${field}"]`;
+    const host = this.elementRef.nativeElement as HTMLElement;
+    const renderer = this.renderer;
+    host.querySelectorAll(selector).forEach((element: Element) => renderer.removeChild(element.parentNode, element));
+    const input = host.querySelector<HTMLElement>(`[formControlName="${field}"]`);
+    if (input) {
+      renderer.removeClass(input, 'border-red-500');
+      renderer.removeAttribute(input, 'aria-invalid');
+    }
   }
 
   /**

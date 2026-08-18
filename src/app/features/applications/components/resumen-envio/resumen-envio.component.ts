@@ -1,8 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
-import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { firstValueFrom } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
@@ -16,7 +15,7 @@ import { apiErrorMessage } from '../../../../core/api/api-error';
 })
 export class ResumenEnvioComponent {
   protected store = inject(SolicitudDetalleStore);
-  private api = inject(SolicitudesDistribuidoraApiService);
+  private router = inject(Router);
   private alerts = inject(AlertService);
   private confirmation = inject(ConfirmationService);
 
@@ -35,16 +34,19 @@ export class ResumenEnvioComponent {
     const s = this.secciones;
     return [
       { id: 'personal_data', label: 'Datos Personales', status: s.datosPersonales, required: true },
+      { id: 'family', label: 'Familiares', status: this.combineStatuses(s.pareja, s.hijos, s.referenciasFamiliares), required: false },
       { id: 'residence', label: 'Domicilios', status: s.domicilios, required: true },
-      { id: 'partner', label: 'Pareja', status: s.pareja, required: false },
-      { id: 'children', label: 'Hijos', status: s.hijos, required: false },
-      { id: 'family_references', label: 'Referencias Familiares', status: s.referenciasFamiliares, required: false },
       { id: 'vehicles', label: 'Vehículos', status: s.vehiculos, required: false },
-      { id: 'assets', label: 'Bienes', status: s.bienes, required: false },
-      { id: 'liabilities', label: 'Pasivos', status: s.pasivos, required: false },
+      { id: 'assets_liabilities', label: 'Patrimonio', status: this.combineStatuses(s.bienes, s.pasivos), required: false },
       { id: 'employment', label: 'Empleos', status: s.empleos, required: false },
       { id: 'commercial_credits', label: 'Créditos Comerciales', status: s.creditosComerciales, required: false }
     ];
+  }
+
+  private combineStatuses(...statuses: Array<string | undefined>): string {
+    if (statuses.includes('PENDING')) return 'PENDING';
+    if (statuses.includes('COMPLETED')) return 'COMPLETED';
+    return 'NOT_APPLICABLE';
   }
 
   get faltantes() {
@@ -57,15 +59,11 @@ export class ResumenEnvioComponent {
     const confirmacion = await this.confirmation.confirm({ title: 'Enviar solicitud a revisión', message: 'La solicitud quedará bloqueada para edición y pasará al coordinador. Revisa el resumen antes de continuar.', confirmLabel: 'Sí, enviar a revisión' });
     if (!confirmacion) return;
 
-    const idSolicitud = this.store.detalle()?.id;
-    const version = this.store.detalle()?.versionBloqueo;
-    if (!idSolicitud || version === undefined) return;
-
     this.enviando = true;
     try {
-      await firstValueFrom(this.api.enviarARevision(idSolicitud, version));
-      await this.store.cargarDetalle(idSolicitud);
+      await this.store.enviarARevision();
       this.alerts.showAlert('Solicitud enviada a revisión correctamente.', 'success');
+      await this.router.navigate(['/verificacion-distribuidoras/solicitudes-distribuidora/revision']);
     } catch (e: any) {
       if (e?.status === 409) {
         this.alerts.showAlert('El expediente fue modificado por otra persona. Se requiere recargar antes de continuar.', 'warning');

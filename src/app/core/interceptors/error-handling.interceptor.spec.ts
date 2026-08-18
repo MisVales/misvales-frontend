@@ -63,7 +63,7 @@ describe('errorHandlingInterceptor', () => {
     expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login'], { replaceUrl: true });
   });
 
-  it('clears the session and redirects to login on a 403 error', () => {
+  it('keeps the session active on a 403 error', () => {
     http.get('/test').subscribe({
       error: (error) => expect(error).toBeTruthy()
     });
@@ -71,9 +71,15 @@ describe('errorHandlingInterceptor', () => {
     const req = httpTestingController.expectOne('/test');
     req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
 
-    expect(sessionStoreSpy.clearSession).toHaveBeenCalled();
+    expect(sessionStoreSpy.clearSession).not.toHaveBeenCalled();
+    expect(tokenStoreSpy.clear).not.toHaveBeenCalled();
     expect(sessionExpired.isOpen()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login'], { replaceUrl: true });
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
+    expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
+      'No tienes autorización para realizar esta acción. Tu sesión sigue activa.',
+      'error',
+      7000,
+    );
   });
 
   it('clears the session and redirects to login on a 419 response', () => {
@@ -125,7 +131,7 @@ describe('errorHandlingInterceptor', () => {
     expect(sessionExpired.isOpen()).toBe(false);
   });
 
-  it('clears the refreshed session when the retried request is forbidden', () => {
+  it('keeps the refreshed session when the retried request is forbidden', () => {
     sessionRefreshSpy.refresh.mockReturnValue(of(undefined));
     tokenStoreSpy.accessToken.mockReturnValue('refreshed-access-token');
     http.get('/test').subscribe({ error: (error) => expect(error.status).toBe(403) });
@@ -137,10 +143,10 @@ describe('errorHandlingInterceptor', () => {
       .expectOne((request) => request.headers.get('X-Session-Retry') === '1')
       .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
 
-    expect(sessionStoreSpy.clearSession).toHaveBeenCalled();
-    expect(tokenStoreSpy.clear).toHaveBeenCalled();
+    expect(sessionStoreSpy.clearSession).not.toHaveBeenCalled();
+    expect(tokenStoreSpy.clear).not.toHaveBeenCalled();
     expect(sessionExpired.isOpen()).toBe(false);
-    expect(routerSpy.navigate).toHaveBeenCalledWith(['/auth/login'], { replaceUrl: true });
+    expect(routerSpy.navigate).not.toHaveBeenCalled();
   });
 
   it('converges simultaneous expired reads on login redirection', () => {

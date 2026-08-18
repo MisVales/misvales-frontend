@@ -9,6 +9,7 @@ import {
   CreateConfigurationVersionRequestDto, 
   UpdateConfigurationVersionRequestDto 
 } from './configuraciones.dtos';
+import { esConfiguracionVisible } from './configuraciones-visibilidad';
 
 @Injectable({
   providedIn: 'root'
@@ -36,7 +37,7 @@ export class ConfiguracionesService {
   listar(): Observable<ConfigurationDefinitionDto[]> {
     return this.http
       .get<ApiResource<ConfigurationDefinitionDto[]>>(this.baseUrl)
-      .pipe(map((response) => response.data));
+      .pipe(map((response) => response.data.filter((definition) => esConfiguracionVisible(definition.key))));
   }
 
   consultarDefinicion(clave: string): Observable<ConfigurationDefinitionDto> {

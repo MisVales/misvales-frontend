@@ -20,9 +20,7 @@ export interface DiferenciaPayload {
 })
 export class EditorDiferenciasComponent {
   private readonly alerts = inject(AlertService);
-  // Configuración de campos disponibles para registrar diferencia
-  seccionesDisponibles = input<{ id: string; label: string }[]>([]);
-  camposDisponibles = input<Record<string, { id: string; label: string; valorOriginal: string }[]>>({});
+  contexto = input.required<{ seccion: string; campo: string; etiqueta: string; datoDeclarado: string }>();
   
   isProcessing = input<boolean>(false);
   
@@ -30,44 +28,21 @@ export class EditorDiferenciasComponent {
   guardar = output<DiferenciaPayload>();
   cancelar = output<void>();
 
-  // State
-  seccion = signal<string>('');
-  campo = signal<string>('');
   datoObservado = signal<string>('');
   descripcion = signal<string>('');
-  
-  // Derived state (no computed to keep simple binds in template)
-  datoDeclarado = signal<string>('');
-
-  onSeccionChange(val: string) {
-    this.seccion.set(val);
-    this.campo.set('');
-    this.datoDeclarado.set('');
-  }
-
-  onCampoChange(val: string) {
-    this.campo.set(val);
-    const campos = this.camposDisponibles()[this.seccion()] || [];
-    const found = campos.find(c => c.id === val);
-    if (found) {
-      this.datoDeclarado.set(found.valorOriginal);
-    } else {
-      this.datoDeclarado.set('');
-    }
-  }
 
   onGuardar() {
-    if (!this.seccion() || !this.campo() || (!this.datoObservado() && !this.descripcion())) {
-      this.alerts.showAlert('Completa la sección, el campo y el dato observado o su descripción.', 'warning');
+    if (!this.datoObservado().trim() && !this.descripcion().trim()) {
+      this.alerts.showAlert('Indica el dato observado o describe claramente la diferencia.', 'warning');
       return;
     }
-    
+    const contexto = this.contexto();
     this.guardar.emit({
-      seccion: this.seccion(),
-      campo: this.campo(),
-      datoDeclarado: this.datoDeclarado(),
-      datoObservado: this.datoObservado(),
-      descripcion: this.descripcion()
+      seccion: contexto.seccion,
+      campo: contexto.campo,
+      datoDeclarado: contexto.datoDeclarado,
+      datoObservado: this.datoObservado().trim(),
+      descripcion: this.descripcion().trim()
     });
   }
 }

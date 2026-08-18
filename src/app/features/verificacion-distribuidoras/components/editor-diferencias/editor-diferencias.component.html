@@ -1,53 +1,23 @@
 <div class="editor-container">
-  <h3 class="editor-title">Registrar Diferencia</h3>
-  
-  <div class="form-row">
-    <div class="form-group">
-      <label>Sección</label>
-      <select class="form-control" [ngModel]="seccion()" (ngModelChange)="onSeccionChange($event)" [disabled]="isProcessing()">
-        <option value="">Seleccione sección...</option>
-        @for (sec of seccionesDisponibles(); track sec.id) {
-          <option [value]="sec.id">{{ sec.label }}</option>
-        }
-      </select>
-    </div>
-    
-    <div class="form-group">
-      <label>Campo</label>
-      <select class="form-control" [ngModel]="campo()" (ngModelChange)="onCampoChange($event)" [disabled]="!seccion() || isProcessing()">
-        <option value="">Seleccione campo...</option>
-        @if (seccion() && camposDisponibles()[seccion()]) {
-          @for (c of camposDisponibles()[seccion()]; track c.id) {
-            <option [value]="c.id">{{ c.label }}</option>
-          }
-        }
-      </select>
-    </div>
+  <h3 id="editor-diferencia-titulo" class="editor-title">Registrar diferencia</h3>
+  <p class="editor-helper">{{ contexto().etiqueta }}</p>
+  <div class="form-group readonly-group">
+    <label>Dato declarado</label>
+    <div class="readonly-value">{{ contexto().datoDeclarado || 'Sin dato' }}</div>
   </div>
 
-  @if (campo()) {
-    <div class="form-group readonly-group">
-      <label>Dato Declarado Originalmente</label>
-      <div class="readonly-value">{{ datoDeclarado() || 'No declarado' }}</div>
-    </div>
-    
-    <div class="form-group">
-      <label>Dato Observado (Opcional si hay descripción clara)</label>
-      <input type="text" class="form-control" [ngModel]="datoObservado()" (ngModelChange)="datoObservado.set($event)" placeholder="¿Qué dato encontró en su lugar?" [disabled]="isProcessing()">
-    </div>
-    
-    <div class="form-group">
-      <label>Descripción / Motivo</label>
-      <textarea class="form-control" [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" rows="3" placeholder="Explique la diferencia encontrada..." [disabled]="isProcessing()"></textarea>
-    </div>
-    
-    <div class="editor-actions">
-      <button type="button" class="btn btn-secondary" (click)="cancelar.emit()" [disabled]="isProcessing()">Cancelar</button>
-      <button type="button" class="btn btn-primary" (click)="onGuardar()" [disabled]="isProcessing()">Guardar Diferencia</button>
-    </div>
-  } @else {
-    <div class="editor-actions">
-      <button type="button" class="btn btn-secondary" (click)="cancelar.emit()" [disabled]="isProcessing()">Cerrar</button>
-    </div>
-  }
+  <div class="form-group">
+    <label>Dato observado</label>
+    <input type="text" class="form-control" [ngModel]="datoObservado()" (ngModelChange)="datoObservado.set($event)" placeholder="¿Qué observaste durante la visita?" [disabled]="isProcessing()">
+  </div>
+
+  <div class="form-group">
+    <label>Descripción</label>
+    <textarea class="form-control" [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" rows="3" placeholder="Describe la diferencia para coordinación." [disabled]="isProcessing()"></textarea>
+  </div>
+
+  <div class="editor-actions">
+    <button type="button" class="btn btn-secondary" (click)="cancelar.emit()" [disabled]="isProcessing()">Cancelar</button>
+    <button type="button" class="btn btn-primary" (click)="onGuardar()" [disabled]="isProcessing()">Guardar diferencia</button>
+  </div>
 </div>

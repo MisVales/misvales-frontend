@@ -31,6 +31,18 @@ describe('ConfiguracionesService', () => {
     expect(result).toEqual([{ id: 'd1', key: 'CUT_DAY_OF_MONTH' }]);
   });
 
+  it('no expone la configuración interna de días posteriores al corte', () => {
+    let result: unknown[] = [];
+    service.listar().subscribe((value) => (result = value));
+    http.expectOne('/api/v1/configurations').flush({
+      data: [
+        { id: 'd1', key: 'CUT_DAY_OF_MONTH' },
+        { id: 'd2', key: 'PAYMENT_DAYS_AFTER_CUT' },
+      ],
+    });
+    expect(result).toEqual([{ id: 'd1', key: 'CUT_DAY_OF_MONTH' }]);
+  });
+
   it('envía lock_version en cuerpo y cabecera al publicar', () => {
     service.publicarVersion('v1', 3, 'Motivo operativo').subscribe();
     const request = http.expectOne('/api/v1/configuration-versions/v1/publish');

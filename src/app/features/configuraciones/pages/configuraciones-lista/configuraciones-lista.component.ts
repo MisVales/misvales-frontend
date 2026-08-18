@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConfiguracionDefinicion, ConfigurationValue } from '../../data-access/configuraciones.dtos';
+import { esConfiguracionVisible } from '../../data-access/configuraciones-visibilidad';
 import { ConfiguracionesStore } from '../../estado/configuraciones.store';
 
 @Component({
@@ -16,9 +17,9 @@ export class ConfiguracionesListaComponent implements OnInit {
   protected readonly buscar = signal('');
   protected readonly definicionesFiltradas = computed(() => {
     const term = this.buscar().trim().toLocaleLowerCase('es-MX');
-    if (!term) return this.store.definiciones();
-    return this.store
-      .definiciones()
+    const definitions = this.store.definiciones().filter((item) => esConfiguracionVisible(item.clave));
+    if (!term) return definitions;
+    return definitions
       .filter((item) => `${item.clave} ${item.nombre}`.toLocaleLowerCase('es-MX').includes(term));
   });
 
@@ -40,22 +41,6 @@ export class ConfiguracionesListaComponent implements OnInit {
     if (typeof value === 'object') return JSON.stringify(value);
     const unit = this.etiquetaUnidad(definition.unidad);
     return `${String(value)}${unit ? ` ${unit}` : ''}`;
-  }
-
-  protected etiquetaTipo(type: ConfiguracionDefinicion['tipoValor']): string {
-    const labels: Record<ConfiguracionDefinicion['tipoValor'], string> = {
-      INTEGER: 'Número entero',
-      DECIMAL: 'Número decimal',
-      PERCENTAGE: 'Porcentaje',
-      TIME: 'Hora',
-      TIMEZONE: 'Zona horaria',
-      DURATION: 'Duración',
-      DATE: 'Fecha',
-      TIME_RANGE: 'Rango de horas',
-      STRING: 'Texto',
-      JSON: 'Datos estructurados',
-    };
-    return labels[type];
   }
 
   private etiquetaUnidad(unit: string | null): string | null {
