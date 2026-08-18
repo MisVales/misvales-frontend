@@ -9,7 +9,6 @@ import { RelacionesApiService, RelationView } from '../data-access/relaciones-ap
   template: `
     <section class="space-y-6 p-6">
       <header>
-        <p class="text-xs font-semibold uppercase text-gray-500">M13</p>
         <h1 class="text-2xl font-bold">Pagos y recuperación de línea</h1>
         <p class="text-sm text-gray-600">
           Aplicación por componente y recuperación exclusiva del capital conciliado.

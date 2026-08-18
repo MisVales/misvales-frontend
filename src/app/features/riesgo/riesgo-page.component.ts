@@ -11,7 +11,6 @@ import { DelinquencyStatus, Removal, RiesgoApiService, RiskAlert } from './riesg
   template: `
     <section class="space-y-6 p-6">
       <header>
-        <p class="text-xs font-semibold uppercase text-gray-500">M16</p>
         <h1 class="text-2xl font-bold">Riesgo y morosidad</h1>
         <p class="text-sm text-gray-600">
           La morosidad aplica únicamente a la distribuidora. Tres incumplimientos generan alerta, no

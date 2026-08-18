@@ -18,7 +18,6 @@ import {
   template: `
     <section class="space-y-6 p-4 md:p-6">
       <header>
-        <p class="text-xs font-semibold uppercase text-gray-500">M17</p>
         <h1 class="text-2xl font-bold">Transferencias y cambios organizacionales</h1>
         <p class="text-sm text-gray-600">
           Cada cambio conserva origen, destino, responsables e historial. El saldo cero se valida

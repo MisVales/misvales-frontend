@@ -9,7 +9,6 @@ import { RelacionesApiService, RelationView } from '../data-access/relaciones-ap
   imports: [CommonModule],
   template: ` <section class="space-y-6 p-6">
     <header>
-      <p class="text-xs font-semibold uppercase text-gray-500">M11</p>
       <h1 class="text-2xl font-bold">Relaciones</h1>
       <p class="text-sm text-gray-600">Estado de cuenta generado por corte.</p>
     </header>

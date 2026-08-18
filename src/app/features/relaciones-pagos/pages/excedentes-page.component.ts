@@ -13,7 +13,6 @@ import {
   imports: [CommonModule, FormsModule],
   template: `<section class="space-y-6 p-6">
     <header>
-      <p class="text-xs font-semibold uppercase text-gray-500">M14</p>
       <h1 class="text-2xl font-bold">Excedentes y devoluciones</h1>
       <p class="text-sm text-gray-600">
         El excedente nunca aumenta la línea por encima del total autorizado.

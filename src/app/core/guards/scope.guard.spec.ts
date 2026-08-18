@@ -30,7 +30,7 @@ describe('scopeGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should return a UrlTree to the access-denied page if active branch is null', () => {
+  it('should return a UrlTree to login if active branch is null', () => {
     sessionStoreSpy.activeBranch.mockReturnValue(null);
     const mockUrlTree = {} as any;
     routerSpy.createUrlTree.mockReturnValue(mockUrlTree);
@@ -40,6 +40,6 @@ describe('scopeGuard', () => {
     });
 
     expect(result).toBe(mockUrlTree);
-    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/acceso-denegado']);
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
   });
 });

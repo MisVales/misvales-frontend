@@ -5,6 +5,7 @@ import {
   HttpRequest,
 } from '@angular/common/http';
 import { inject, isDevMode } from '@angular/core';
+import { Router } from '@angular/router';
 import { catchError, from, Observable, switchMap, throwError } from 'rxjs';
 import { apiErrorCode, normalizeApiError } from '../api/api-error';
 import { AlertService } from '../../shared/services/alert.service';
@@ -64,11 +65,13 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
   const tokenStore = inject(AuthTokenStore);
   const sessionExpired = inject(SessionExpiredService);
   const sessionRefresh = inject(SessionRefreshService);
+  const router = inject(Router);
 
   const endExpiredSession = (error: HttpErrorResponse): Observable<never> => {
     tokenStore.clear();
     sessionStore.clearSession();
-    sessionExpired.open();
+    sessionExpired.close();
+    void router.navigate(['/auth/login'], { replaceUrl: true });
     return throwError(() => sanitizeServerError(error, isDevMode()));
   };
 
@@ -132,13 +135,11 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
       );
     }
 
-    if (!isAuthEndpoint && shouldEndSessionForHttpStatus(error.status)) {
+    if (!isAuthEndpoint && (shouldEndSessionForHttpStatus(error.status) || error.status === 403)) {
       return endExpiredSession(error);
     }
 
-    if (!isAuthEndpoint && error.status === 403) {
-      alertService.showAlert('No tiene permiso para realizar esta acción.', 'error', 6000);
-    } else if (error.status === 404) {
+    if (error.status === 404) {
       alertService.showAlert(
         'El recurso solicitado ya no existe o no está disponible.',
         'error',

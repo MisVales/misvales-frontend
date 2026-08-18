@@ -12,7 +12,7 @@ import { CreditoApiService, CreditIncreaseView } from '../../data-access/api/cre
   imports: [CommonModule, FormsModule],
   template: `
     <section class="p-6 space-y-6">
-      <header><p class="text-xs font-semibold uppercase tracking-wider text-gray-500">M08</p><h1 class="text-2xl font-bold text-gray-900">Incrementos de línea</h1><p class="text-sm text-gray-600">Bandeja limitada por rol, asignación y sucursal desde Laravel.</p></header>
+      <header><h1 class="text-2xl font-bold text-gray-900">Incrementos de línea</h1><p class="text-sm text-gray-600">Bandeja limitada por rol, asignación y sucursal desde Laravel.</p></header>
       @if (error()) { <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{{ error() }}</div> }
       @if (loading()) { <p class="rounded-xl border bg-white p-6">Cargando solicitudes...</p> }
       @else if (!requests().length) { <div class="rounded-xl border border-dashed bg-white p-10 text-center text-gray-500">No existen solicitudes visibles.</div> }

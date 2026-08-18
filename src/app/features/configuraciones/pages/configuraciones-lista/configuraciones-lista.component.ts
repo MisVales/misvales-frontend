@@ -41,6 +41,22 @@ export class ConfiguracionesListaComponent implements OnInit {
     return `${String(value)}${definition.unidad ? ` ${definition.unidad}` : ''}`;
   }
 
+  protected etiquetaTipo(type: ConfiguracionDefinicion['tipoValor']): string {
+    const labels: Record<ConfiguracionDefinicion['tipoValor'], string> = {
+      INTEGER: 'Número entero',
+      DECIMAL: 'Número decimal',
+      PERCENTAGE: 'Porcentaje',
+      TIME: 'Hora',
+      TIMEZONE: 'Zona horaria',
+      DURATION: 'Duración',
+      DATE: 'Fecha',
+      TIME_RANGE: 'Rango de horas',
+      STRING: 'Texto',
+      JSON: 'Datos estructurados',
+    };
+    return labels[type];
+  }
+
   private isObject(value: ConfigurationValue): value is { [key: string]: ConfigurationValue } {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
   }

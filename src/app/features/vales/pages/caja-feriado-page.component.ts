@@ -16,7 +16,6 @@ import {
   imports: [CommonModule, FormsModule],
   template: `<section class="space-y-6 p-6">
     <header>
-      <p class="text-xs font-semibold uppercase text-gray-500">M10</p>
       <h1 class="text-2xl font-bold">Caja y feriado</h1>
       <p class="text-sm text-gray-600">
         MisVales registra el depósito manual; no ejecuta operaciones bancarias.

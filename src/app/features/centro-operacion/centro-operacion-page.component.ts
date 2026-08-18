@@ -15,7 +15,6 @@ import {
   template: ` <section class="space-y-6 p-4 md:p-6">
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
-        <p class="text-xs font-semibold uppercase text-gray-500">M18</p>
         <h1 class="text-2xl font-bold">Centro de operación</h1>
         <p class="text-sm text-gray-600">
           Notificaciones, reportes, auditoría y logs correlacionados.

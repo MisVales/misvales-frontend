@@ -33,7 +33,7 @@ describe('permissionGuard', () => {
     expect(result).toBe(true);
   });
 
-  it('should return a UrlTree to the access-denied page if permission is missing', () => {
+  it('should return a UrlTree to login if permission is missing', () => {
     sessionStoreSpy.permissions.mockReturnValue(['view_dashboard']);
     const mockUrlTree = {} as any;
     routerSpy.createUrlTree.mockReturnValue(mockUrlTree);
@@ -44,10 +44,10 @@ describe('permissionGuard', () => {
     });
 
     expect(result).toBe(mockUrlTree);
-    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/acceso-denegado']);
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
   });
 
-  it('uses the same dedicated page for any-permission, role and write denials', () => {
+  it('redirects any-permission, role and write denials to login', () => {
     sessionStoreSpy.permissions.mockReturnValue([]);
     sessionStoreSpy.roles.mockReturnValue([]);
     const mockUrlTree = {} as any;
@@ -67,6 +67,6 @@ describe('permissionGuard', () => {
 
     expect(results).toEqual([mockUrlTree, mockUrlTree, mockUrlTree]);
     expect(routerSpy.createUrlTree).toHaveBeenCalledTimes(3);
-    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/acceso-denegado']);
+    expect(routerSpy.createUrlTree).toHaveBeenCalledWith(['/auth/login']);
   });
 });

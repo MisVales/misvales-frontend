@@ -10,8 +10,9 @@
     </div>
 
     <div class="p-8">
-      <!-- Filtros: Only show if role is GERENTE or COORDINADOR -->
-      <div *ngIf="userRole() !== 'DISTRIBUIDORA'" class="mb-8">
+      <!-- Coordinación ya está restringida por Laravel a sus distribuidoras;
+           no carga catálogos administrativos ajenos a su experiencia. -->
+      <div *ngIf="userRole() === 'GERENTE'" class="mb-8">
         <app-filtros-distribuidoras (filtrosCambiados)="onFiltrosCambiados($event)"></app-filtros-distribuidoras>
       </div>
 

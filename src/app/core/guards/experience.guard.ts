@@ -10,7 +10,7 @@ function evaluate(url: string): boolean | ReturnType<Router['createUrlTree']> {
   if (decision.kind === 'allowed') return true;
 
   policy.rememberReturnUrl(url);
-  return router.createUrlTree(['/acceso-denegado']);
+  return router.createUrlTree(['/auth/login']);
 }
 
 export const experienceGuard: CanActivateFn = (_route, state) => evaluate(state.url);

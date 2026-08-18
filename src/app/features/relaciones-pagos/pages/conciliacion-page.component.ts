@@ -12,7 +12,6 @@ import {
   template: `
     <section class="space-y-6 p-6">
       <header>
-        <p class="text-xs font-semibold uppercase text-gray-500">M12</p>
         <h1 class="text-2xl font-bold">Conciliación bancaria</h1>
         <p class="text-sm text-gray-600">
           Resultado por movimiento del archivo externo; MisVales no se conecta al banco.

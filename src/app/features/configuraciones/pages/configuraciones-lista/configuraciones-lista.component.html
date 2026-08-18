@@ -1,7 +1,6 @@
 <section class="space-y-6 p-6 lg:p-8">
   <header class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <p class="text-xs font-semibold uppercase tracking-[0.16em] text-gray-500">M03 · Catálogo global</p>
       <h1 class="text-3xl font-bold text-gray-950">Configuraciones</h1>
       <p class="mt-1 text-sm text-gray-600">
         Valores publicados, versionados e inmutables para la operación de MisVales.
@@ -46,6 +45,7 @@
 
           </div>
           <p class="mt-5 text-lg font-bold text-gray-950">{{ mostrarValor(item) }}</p>
+          <p class="mt-2 text-xs font-medium text-gray-500">Tipo de dato: {{ etiquetaTipo(item.tipoValor) }}</p>
           <p class="mt-2 line-clamp-2 text-sm text-gray-600">{{ item.descripcion }}</p>
         </button>
       }

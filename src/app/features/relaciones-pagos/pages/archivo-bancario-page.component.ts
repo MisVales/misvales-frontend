@@ -8,7 +8,6 @@ import { BankImport, ConciliacionApiService } from '../data-access/conciliacion-
   imports: [CommonModule],
   template: `<section class="space-y-6 p-6">
     <header>
-      <p class="text-xs font-semibold uppercase text-gray-500">M12</p>
       <h1 class="text-2xl font-bold">Archivo bancario</h1>
       <p class="text-sm text-gray-600">
         Carga manual del XLSX obtenido externamente. MisVales no se conecta al banco.

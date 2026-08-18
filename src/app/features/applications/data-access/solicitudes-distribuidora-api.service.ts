@@ -93,7 +93,11 @@ export class SolicitudesDistribuidoraApiService {
   // ==== 2. DATOS PERSONALES ====
 
   guardarDatosPersonales(id: string, datos: any, versionBloqueo: number): Observable<SolicitudDistribuidora> {
-    return this.http.put(`${this.baseUrl}/${id}/personal-data`, this.withLockVersion(datos, versionBloqueo)).pipe(
+    return this.http.put(
+      `${this.baseUrl}/${id}/personal-data`,
+      this.withLockVersion(datos, versionBloqueo),
+      { headers: new HttpHeaders().set('X-Autosave', 'true') },
+    ).pipe(
       switchMap(() => this.consultarSolicitud(id))
     );
   }

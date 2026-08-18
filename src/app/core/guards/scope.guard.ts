@@ -11,5 +11,5 @@ export const scopeGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  return router.createUrlTree(['/acceso-denegado']);
+  return router.createUrlTree(['/auth/login']);
 };
