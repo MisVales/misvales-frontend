@@ -10,11 +10,12 @@ import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
+import { MoneyInputDirective } from '../../directives/money-input.directive';
 
 @Component({
   selector: 'app-creditos-comerciales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, MoneyInputDirective],
   templateUrl: './creditos-comerciales-form.component.html',
   styleUrls: ['./creditos-comerciales-form.component.css']
 })
@@ -65,7 +66,16 @@ export class CreditosComercialesFormComponent implements OnInit {
 
       const payload = { ...rawValue };
       const idRegistro = payload.id;
+      const proofType = payload.proof_type;
       delete payload.id;
+      delete payload.proof_type;
+
+      if (proofType) {
+        payload.details_payload = {
+          ...(payload.details_payload ?? {}),
+          proof_type: proofType,
+        };
+      }
 
       const request$ = idRegistro
         ? this.api.actualizarCreditoComercial(idSolicitud, idRegistro, payload, detalle.versionBloqueo)
@@ -110,7 +120,10 @@ export class CreditosComercialesFormComponent implements OnInit {
       this.creditosArray.clear();
       (data || []).forEach((item: any) => {
         const form = CreditoComercialFormFactory.create(this.fb);
-        form.patchValue(item);
+        form.patchValue({
+          ...item,
+          proof_type: item.details_payload?.proof_type ?? '',
+        });
         this.creditosArray.push(form);
       });
     } catch (e) {

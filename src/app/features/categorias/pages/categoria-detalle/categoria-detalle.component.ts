@@ -30,7 +30,6 @@ export class CategoriaDetalleComponent implements OnInit {
     description: [''],
     profit_percentage: ['', [Validators.required, Validators.pattern(/^(0(\.\d+)?|1(\.0+)?)$/)]],
     reason: ['', Validators.required],
-    effective_from: ['', Validators.required],
   });
 
   ngOnInit(): void {
@@ -44,7 +43,6 @@ export class CategoriaDetalleComponent implements OnInit {
             description: category.description,
             profit_percentage: category.profit_margin,
             reason: '',
-            effective_from: category.effective_from?.slice(0, 10)
           });
           this.form.controls.code.disable();
         },
@@ -54,6 +52,8 @@ export class CategoriaDetalleComponent implements OnInit {
   }
 
   async guardar(): Promise<void> {
+    if (this.saving()) return;
+
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
@@ -67,7 +67,6 @@ export class CategoriaDetalleComponent implements OnInit {
         description: value.description || null,
         profit_percentage: value.profit_percentage!,
         reason: value.reason!,
-        effective_from: value.effective_from!
       };
       const id = this.route.snapshot.paramMap.get('id');
       if (id) {

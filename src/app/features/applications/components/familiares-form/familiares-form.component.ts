@@ -10,6 +10,7 @@ import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
+import { MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
 
 @Component({
   selector: 'app-familiares-form',
@@ -31,6 +32,8 @@ export class FamiliaresFormComponent implements OnInit {
   
   autosaveStatuses: Record<number, AutosaveStatus> = {};
   mensajeBloqueoCambio?: string;
+  readonly minBirthDate = MIN_BIRTH_DATE;
+  readonly maxAdultDate = maxAdultDate();
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;
@@ -41,6 +44,12 @@ export class FamiliaresFormComponent implements OnInit {
   puedeCambiarDePaso(): boolean {
     this.familiaresGroups.forEach((form) => form.markAllAsTouched());
     this.cdr.markForCheck();
+
+    if (this.familiaresArray.length < 2) {
+      this.mensajeBloqueoCambio = 'Debes registrar dos referencias familiares antes de cambiar de pestaña.';
+      return false;
+    }
+
     if (!this.familiaresGroups.every((form) => form.valid)) {
       this.mensajeBloqueoCambio = 'Corrige los campos marcados antes de cambiar de pestaña.';
       return false;
@@ -150,5 +159,11 @@ export class FamiliaresFormComponent implements OnInit {
       this.cdr.markForCheck();
     }
   }
+}
+
+function maxAdultDate(): string {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - 18);
+  return date.toISOString().slice(0, 10);
 }
 

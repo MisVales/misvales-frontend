@@ -110,7 +110,15 @@ export class InputErrorComponent {
     }
 
     if (errs['invalidDecimalString'] || errs['invalidDecimal']) {
-      errors.push(custom['invalidDecimalString'] ?? `Debe ser un valor numérico válido (con hasta 4 decimales, sin comas).`);
+      errors.push(custom['invalidDecimalString'] ?? `${this.label} debe ser un número válido.`);
+    }
+
+    if (errs['negativeDecimal']) {
+      errors.push(custom['negativeDecimal'] ?? `${this.label} no puede ser negativo.`);
+    }
+
+    if (errs['positiveDecimal']) {
+      errors.push(custom['positiveDecimal'] ?? `${this.label} debe ser mayor que cero.`);
     }
 
     if (errs['dateRangeInvalid'] || errs['rangoInvalido']) {
@@ -131,6 +139,14 @@ export class InputErrorComponent {
 
     if (errs['invalidBirthDate']) {
       errors.push(custom['invalidBirthDate'] ?? `${this.label} no es válida.`);
+    }
+
+    if (errs['birthDateTooEarly']) {
+      errors.push(custom['birthDateTooEarly'] ?? `${this.label} debe ser igual o posterior al 01/01/1900.`);
+    }
+
+    if (errs['dateAfterToday']) {
+      errors.push(custom['dateAfterToday'] ?? `${this.label} no puede ser posterior a hoy.`);
     }
 
     // Direct string errors or custom error object messages
@@ -160,12 +176,16 @@ export class InputErrorComponent {
           'passwordMismatch',
           'invalidDecimalString',
           'invalidDecimal',
+          'negativeDecimal',
+          'positiveDecimal',
           'dateRangeInvalid',
           'rangoInvalido',
           'futureDate',
           'pastDate',
           'mustBeAdult',
-          'invalidBirthDate'
+          'invalidBirthDate',
+          'birthDateTooEarly',
+          'dateAfterToday'
         ].includes(key)
       ) {
         continue;

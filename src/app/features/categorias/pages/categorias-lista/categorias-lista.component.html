@@ -48,7 +48,7 @@
               <td class="py-3 px-6 text-center">
                 <a [routerLink]="[cat.id]" class="text-blue-500 hover:text-blue-700">Ver Detalle</a>
                 @if (canManageCatalogs() && cat.estadoVersion === 'DRAFT') {
-                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="requestPublication(cat.versionId, cat.versionRegistro)">Publicar</button>
+                  <button type="button" class="ml-3 text-green-700 hover:underline" (click)="requestPublication(cat.versionId, cat.versionRegistro)">Activar</button>
                 }
               </td>
             </tr>
@@ -58,4 +58,4 @@
     </div>
   }
 </section>
-<app-reason-action-dialog [open]="!!pendingPublication()" title="Publicar categoría global" message="Esta versión se convertirá en la vigente para todas las sucursales. La operación es controlada y quedará auditada." confirmLabel="Publicar globalmente" [reason]="publicationReason()" (reasonChange)="publicationReason.set($event)" [busy]="actionLoading()" dialogId="publish-category" (confirm)="confirmPublication()" (cancel)="closePublication()"></app-reason-action-dialog>
+<app-reason-action-dialog [open]="!!pendingPublication()" title="Activar categoría global" message="Esta versión quedará vigente de inmediato para todas las sucursales y operaciones autorizadas. La operación quedará auditada." confirmLabel="Activar ahora" [reason]="publicationReason()" (reasonChange)="publicationReason.set($event)" [busy]="actionLoading()" dialogId="activate-category" (confirm)="confirmPublication()" (cancel)="closePublication()"></app-reason-action-dialog>

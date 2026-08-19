@@ -47,6 +47,7 @@ export class ActivateAccount implements OnInit, OnDestroy {
   user = this.authFacade.activationUser;
   qrCodeUrl = this.authFacade.activationQrCode;
   totpSecret = this.authFacade.activationTotpSecret;
+  activationMfaBypass = this.authFacade.activationMfaBypass;
   recoveryCodes = this.authFacade.activationRecoveryCodes;
 
   generatedQrCodeUrl = signal<string | null>(null);
@@ -67,6 +68,20 @@ export class ActivateAccount implements OnInit, OnDestroy {
           .then(url => this.generatedQrCodeUrl.set(url))
           .catch(console.error);
       }
+    });
+
+    effect(() => {
+      const totpControl = this.activationForm.get('totpCode');
+      if (!totpControl) return;
+
+      if (this.activationMfaBypass()) {
+        totpControl.clearValidators();
+        totpControl.setValue('', { emitEvent: false });
+      } else {
+        totpControl.setValidators([Validators.required, Validators.pattern(/^[0-9]{6}$/)]);
+      }
+
+      totpControl.updateValueAndValidity({ emitEvent: false });
     });
   }
 
@@ -128,7 +143,7 @@ export class ActivateAccount implements OnInit, OnDestroy {
       this.authFacade.setupInvitation({
         password: this.activationForm.value.password,
         password_confirmation: this.activationForm.value.confirmPassword,
-        totp_code: this.activationForm.value.totpCode
+        totp_code: this.activationMfaBypass() ? undefined : this.activationForm.value.totpCode
       });
     } else {
       this.activationForm.markAllAsTouched();

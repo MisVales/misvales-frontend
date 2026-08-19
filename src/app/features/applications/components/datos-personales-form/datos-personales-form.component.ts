@@ -12,6 +12,7 @@ import { MediaApiService } from '../../../../core/services/media-api.service';
 import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 import { ISO_COUNTRIES } from '../../../../shared/data/iso-countries';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
+import { MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
 
 @Component({
   selector: 'app-datos-personales-form',
@@ -40,6 +41,7 @@ export class DatosPersonalesFormComponent implements OnInit {
   mensajeBloqueoCambio?: string;
   mostrarErroresDeValidacion = false;
   readonly countries = ISO_COUNTRIES;
+  readonly minBirthDate = MIN_BIRTH_DATE;
   readonly maxAdultDate: string = (() => {
     const d = new Date();
     d.setFullYear(d.getFullYear() - 18);

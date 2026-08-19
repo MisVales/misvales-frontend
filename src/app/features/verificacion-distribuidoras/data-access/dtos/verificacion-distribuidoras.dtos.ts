@@ -102,10 +102,10 @@ export interface CorreccionSolicitudResponseDto {
 
 export interface EvaluacionSolicitudResponseDto {
   id: string;
-  evaluated_by: string;
-  result: string;
-  reason: string;
-  evaluated_at: string;
+  coordinador_id: string;
+  dictamen: 'COMPLIES' | 'DOES_NOT_COMPLY';
+  motivo: string;
+  fecha_evaluacion: string;
 }
 
 export interface AutorizacionSolicitudResponseDto {

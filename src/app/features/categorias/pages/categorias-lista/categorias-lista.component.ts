@@ -53,7 +53,7 @@ export class CategoriasListaComponent implements OnInit {
       this.closePublication();
       await this.store.listar();
     } catch (error: unknown) {
-      this.actionError.set(apiErrorMessage(error, 'No fue posible publicar la categoría.'));
+      this.actionError.set(apiErrorMessage(error, 'No fue posible activar la categoría.'));
     } finally { this.actionLoading.set(false); }
   }
 }

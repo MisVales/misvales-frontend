@@ -8,6 +8,7 @@ export class CreditoComercialFormFactory {
       company_name: ['', [Validators.required, Validators.maxLength(150)]],
       credit_limit: ['', [Validators.required, decimalStringValidator()]], // Captured as string
       is_current: [true],
+      proof_type: ['', [Validators.required]],
       proof_reference: ['', [Validators.maxLength(250)]],
       details_payload: [null]
     });

@@ -14,8 +14,8 @@ export interface CategoryDto {
 }
 
 export interface CategoryListResponseDto { data: CategoryDto[]; meta: { current_page: number; last_page: number; total: number }; }
-export interface CreateCategoryRequestDto { code: string; name: string; description: string | null; profit_percentage: string; reason: string; effective_from: string; }
-export interface UpdateCategoryRequestDto { name: string; description: string | null; profit_percentage: string; reason: string; effective_from: string; lock_version: number; }
+export interface CreateCategoryRequestDto { code: string; name: string; description: string | null; profit_percentage: string; reason: string; }
+export interface UpdateCategoryRequestDto { name: string; description: string | null; profit_percentage: string; reason: string; lock_version: number; }
 
 export interface Categoria {
   id: string; versionId: string; codigo: string; nombre: string; descripcion: string | null; estado: 'ACTIVE' | 'INACTIVE'; margenGanancia: string;

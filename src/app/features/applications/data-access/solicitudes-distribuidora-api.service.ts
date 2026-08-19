@@ -8,6 +8,11 @@ import { CrearSolicitudRequestDTO } from './dtos/solicitud-distribuidora-request
 import { SolicitudDistribuidoraMapper } from './mappers/solicitud-distribuidora.mapper';
 import { PaginacionRespuesta, SolicitudDistribuidora } from '../models/solicitud-distribuidora.model';
 
+export interface CatalogoVehiculos {
+  brands: string[];
+  vehicle_types: string[];
+}
+
 function unwrapArray(res: any): any[] {
   if (Array.isArray(res)) return res;
   if (res && Array.isArray(res.data)) return res.data;
@@ -148,6 +153,12 @@ export class SolicitudesDistribuidoraApiService {
   }
 
   // ==== VEHÍCULOS ====
+  obtenerCatalogoVehiculos(): Observable<CatalogoVehiculos> {
+    return this.http.get<CatalogoVehiculos | { data: CatalogoVehiculos }>(`${this.baseUrl}/vehicle-catalog`).pipe(
+      map(unwrapData),
+    );
+  }
+
   listarVehiculos(idSolicitud: string): Observable<any[]> {
     return this.http.get<any>(`${this.baseUrl}/${idSolicitud}/vehicles`).pipe(map(unwrapArray));
   }

@@ -155,11 +155,11 @@ export class UserListComponent implements OnInit, OnDestroy {
   readonly eligibleBranchesForManager = signal<Branch[]>([]);
 
   readonly currentInviteBranches = computed(() => {
-     const role = this.selectedInviteRole();
-     if (role?.code === 'branch_manager') {
-         return this.eligibleBranchesForManager();
-     }
-     return this.availableBranches();
+    const role = this.selectedInviteRole();
+    if (role?.code === 'branch_manager') {
+      return this.eligibleBranchesForManager().filter((branch) => !branch.is_headquarters);
+    }
+    return this.availableBranches();
   });
 
   async onInviteRoleChange(roleId: string): Promise<void> {

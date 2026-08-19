@@ -225,22 +225,6 @@ describe('errorHandlingInterceptor', () => {
     );
   });
 
-  it('shows a safe request reference for an internal server failure', () => {
-    http.get('/test').subscribe({ error: (error) => expect(error.status).toBe(500) });
-
-    httpTestingController
-      .expectOne('/test')
-      .flush(
-        { error: { request_id: 'request-500' } },
-        { status: 500, statusText: 'Internal Server Error' },
-      );
-
-    expect(alertServiceSpy.showAlert).toHaveBeenCalledWith(
-      'No se pudo completar la operación. Tus datos capturados no se han eliminado. Referencia: request-500.',
-      'error',
-      7000,
-    );
-  });
 });
 
 describe('isConcurrencyConflict', () => {

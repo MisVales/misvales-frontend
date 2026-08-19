@@ -68,7 +68,9 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "allowedHosts": [
-              "richmond-participating-actor-eric.trycloudflare.com"
+              "accessed-difficulty-collective-deleted.trycloudflare.com",
+              "delivery-discounts-formats-moral.trycloudflare.com",
+              "aberdeen-skiing-photography-alot.trycloudflare.com"
             ]
           },
           "configurations": {

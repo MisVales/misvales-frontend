@@ -145,6 +145,26 @@ describe('AutosaveDirective', () => {
     expect(saveFn).toHaveBeenCalledWith({ firstName: 'Daniel' });
     expect(directive.currentStatus).toBe('saved');
   });
+
+  it('clears a server error as soon as its field is corrected', () => {
+    const { directive, form } = setupDirective(() => of({ ok: true }));
+    const error = new HttpErrorResponse({
+      status: 422,
+      error: {
+        error: {
+          fields: { value: ['La fecha de inicio no puede ser posterior a hoy.'] },
+        },
+      },
+    });
+
+    (directive as any).applyServerErrors(error);
+    expect(form.controls.value.hasError('server')).toBe(true);
+
+    form.controls.value.setValue('2025-02-12');
+
+    expect(form.controls.value.hasError('server')).toBe(false);
+    directive.ngOnDestroy();
+  });
 });
 
 function setupDirective(

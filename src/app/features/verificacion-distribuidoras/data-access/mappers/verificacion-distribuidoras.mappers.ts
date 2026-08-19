@@ -70,10 +70,10 @@ export function mapCorreccionToModel(dto: CorreccionSolicitudResponseDto): Corre
 export function mapEvaluacionToModel(dto: EvaluacionSolicitudResponseDto): EvaluacionSolicitud {
   return {
     id: dto.id,
-    coordinadorId: dto.evaluated_by,
-    dictamen: dto.result as 'COMPLIES' | 'DOES_NOT_COMPLY',
-    motivo: dto.reason,
-    fechaEvaluacion: dto.evaluated_at,
+    coordinadorId: dto.coordinador_id,
+    dictamen: dto.dictamen,
+    motivo: dto.motivo,
+    fechaEvaluacion: dto.fecha_evaluacion,
   };
 }
 

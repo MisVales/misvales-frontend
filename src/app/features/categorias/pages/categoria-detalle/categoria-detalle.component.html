@@ -34,12 +34,6 @@
       <app-input-error [control]="form.controls.profit_percentage" label="El porcentaje de ganancia" [customMessages]="{ pattern: 'Debe ser un número decimal entre 0 y 1 (ejemplo: 0.1500).' }"></app-input-error>
     </div>
 
-    <div>
-      <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">Vigente desde *</label>
-      <input type="date" formControlName="effective_from" class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]">
-      <app-input-error [control]="form.controls.effective_from" label="La fecha de vigencia"></app-input-error>
-    </div>
-
     <div class="md:col-span-2">
       <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">Motivo / Justificación *</label>
       <textarea formControlName="reason" class="w-full rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641]" rows="2" placeholder="Justificación obligatoria del cambio..."></textarea>

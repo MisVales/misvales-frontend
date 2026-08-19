@@ -30,6 +30,7 @@ export interface AuthState {
   activationUser: { name: string; email: string; roles?: string[] } | null;
   activationQrCode: string | null;
   activationTotpSecret: string | null;
+  activationMfaBypass: boolean;
   activationRecoveryCodes: string[] | null;
 }
 
@@ -47,6 +48,7 @@ const initialAuthState: AuthState = {
   activationUser: null,
   activationQrCode: null,
   activationTotpSecret: null,
+  activationMfaBypass: false,
   activationRecoveryCodes: null,
 };
 
@@ -266,6 +268,7 @@ export const AuthFacade = signalStore(
           validationErrors: {},
           activationPhase: 0,
           activationOriginalToken: token,
+          activationMfaBypass: false,
         });
         try {
           const response = await firstValueFrom(authService.inspectInvitation({ token }));
@@ -277,6 +280,7 @@ export const AuthFacade = signalStore(
             activationQrCode: response.totp_setup?.qr_code_url ?? null,
             activationTotpSecret:
               response.totp_setup?.secret ?? response.totp_setup?.secret_key ?? null,
+            activationMfaBypass: Boolean(response.development_mfa_bypass),
           });
         } catch (error: unknown) {
           fail(error, 'La invitación no es válida o ha expirado.');
@@ -297,8 +301,8 @@ export const AuthFacade = signalStore(
           );
           patchState(store, {
             isLoading: false,
-            activationPhase: 2,
-            activationRecoveryCodes: response.recovery_codes,
+            activationPhase: response.development_mfa_bypass ? 3 : 2,
+            activationRecoveryCodes: response.development_mfa_bypass ? null : response.recovery_codes,
           });
         } catch (error: unknown) {
           fail(error, 'Error al configurar la cuenta.');

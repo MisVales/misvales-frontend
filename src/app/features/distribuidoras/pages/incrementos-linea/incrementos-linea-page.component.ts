@@ -63,7 +63,7 @@ export class IncrementosLineaPageComponent implements OnInit {
   review(item: CreditIncreaseView): void { if (!this.recommendedAmount || !this.reason.trim()) return; this.run(this.api.revisarIncremento(item.id, this.recommendedAmount, this.reason.trim(), item.lock_version)); }
   reject(item: CreditIncreaseView): void { if (!this.reason.trim()) return; this.run(this.api.rechazarCoordinador(item.id, this.reason.trim(), item.lock_version)); }
   decide(item: CreditIncreaseView): void { if (!this.reason.trim() || (this.decision === 'APPROVE_LOWER' && !this.authorizedAmount)) return; this.run(this.api.decidir(item.id, this.decision, this.reason.trim(), item.lock_version, this.authorizedAmount)); }
-  private run(request: ReturnType<CreditoApiService['consultarIncremento']>): void { this.saving.set(true); this.error.set(''); request.pipe(finalize(() => this.saving.set(false))).subscribe({ next: value => { this.selected.set(value); this.requests.update(items => items.map(item => item.id === value.id ? value : item)); this.reason = ''; }, error: (error: HttpErrorResponse) => this.error.set(this.errorMessage(error)) }); }
+  private run(request: ReturnType<CreditoApiService['consultarIncremento']>): void { if (this.saving()) return; this.saving.set(true); this.error.set(''); request.pipe(finalize(() => this.saving.set(false))).subscribe({ next: value => { this.selected.set(value); this.requests.update(items => items.map(item => item.id === value.id ? value : item)); this.reason = ''; }, error: (error: HttpErrorResponse) => this.error.set(this.errorMessage(error)) }); }
   private errorMessage(error: HttpErrorResponse): string {
     return apiErrorMessage(
       error,

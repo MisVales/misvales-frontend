@@ -8,7 +8,7 @@ export class VehiculoFormFactory {
       vehicle_type: ['', [Validators.required]],
       brand: ['', [Validators.maxLength(50)]], // Optional according to doc "No hacer obligatoria marca/modelo si backend no lo exige"
       model: ['', [Validators.maxLength(50)]],
-      model_year: [null, [Validators.min(2016), Validators.max(currentYear + 1)]],
+      model_year: [null, [Validators.min(1990), Validators.max(currentYear + 1)]],
       ownership_status: ['', [Validators.required]],
       details_payload: [null]
     });

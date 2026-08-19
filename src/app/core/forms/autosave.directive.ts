@@ -33,12 +33,9 @@ export class AutosaveDirective implements OnInit, OnDestroy {
   private lastQueuedVersion = 0;
   private queueInitialized = false;
   private networkDisabled = false;
-  private lastRawValue: Record<string, unknown> = {};
 
   ngOnInit() {
     if (!this.formGroup || !this.saveFn) return;
-    this.lastRawValue = this.formGroup.getRawValue();
-
     this.saveQueueSub.add(
       this.saveQueue$.pipe(
         concatMap(({ value, version }) => this.persistValue(value, version)),
@@ -46,10 +43,13 @@ export class AutosaveDirective implements OnInit, OnDestroy {
     );
     this.queueInitialized = true;
 
+    Object.entries(this.formGroup.controls).forEach(([field, control]) => {
+      this.sub.add(control.valueChanges.subscribe(() => this.clearServerError(field)));
+    });
+
     this.sub.add(
       this.formGroup.valueChanges.pipe(
         tap(() => {
-          this.clearServerErrors(this.formGroup.getRawValue());
           this.changeVersion += 1;
           this.hasUnsavedChanges = true;
           this.updateStatus('idle'); // pending save
@@ -157,27 +157,31 @@ export class AutosaveDirective implements OnInit, OnDestroy {
     if (!(error instanceof HttpErrorResponse)) return;
 
     Object.entries(apiValidationErrors(error)).forEach(([field, messages]) => {
-      const control = this.formGroup.get(field);
+      const controlName = this.controlNameForServerField(field);
+      const control = this.formGroup.get(controlName);
       if (!control) return;
 
       control.setErrors({ ...(control.errors ?? {}), server: messages.join(' ') });
       control.markAsTouched();
-      this.renderFieldError(field, messages.join(' '));
+      this.renderFieldError(controlName, messages.join(' '));
     });
   }
 
-  private clearServerErrors(currentValue: Record<string, unknown>): void {
-    Object.entries(this.formGroup.controls).forEach(([field, control]) => {
-      const changed = JSON.stringify(this.lastRawValue[field]) !== JSON.stringify(currentValue[field]);
-      if (!changed || !control.hasError('server')) return;
+  private clearServerError(field: string): void {
+    const control = this.formGroup.get(field);
+    if (!control?.hasError('server')) return;
 
-      const errors = { ...(control.errors ?? {}) };
-      delete errors['server'];
-      control.setErrors(Object.keys(errors).length ? errors : null);
-      this.removeFieldError(field);
-    });
+    const errors = { ...(control.errors ?? {}) };
+    delete errors['server'];
+    control.setErrors(Object.keys(errors).length ? errors : null);
+    this.removeFieldError(field);
+  }
 
-    this.lastRawValue = currentValue;
+  private controlNameForServerField(field: string): string {
+    return {
+      'details_payload.proof_type': 'proof_type',
+      'details_payload.description': 'other_description',
+    }[field] ?? field;
   }
 
   private renderFieldError(field: string, message: string): void {

@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { VehiculoFormFactory } from '../../forms/vehiculo-form.factory';
-import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
+import { CatalogoVehiculos, SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { from, Observable, firstValueFrom } from 'rxjs';
+import { NgSelectModule } from '@ng-select/ng-select';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
@@ -14,7 +15,7 @@ import { ApplicationFormErrorStateDirective } from '../../directives/application
 @Component({
   selector: 'app-vehiculos-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
+  imports: [CommonModule, ReactiveFormsModule, NgSelectModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
   templateUrl: './vehiculos-form.component.html',
   styleUrls: ['./vehiculos-form.component.css']
 })
@@ -28,6 +29,12 @@ export class VehiculosFormComponent implements OnInit {
 
   vehiculosArray: FormArray = VehiculoFormFactory.createArray(this.fb);
   cargando = false;
+  cargandoCatalogo = false;
+  errorCatalogo?: string;
+  marcasVehiculos: string[] = [];
+  tiposVehiculos: string[] = [];
+  readonly minModelYear = 1990;
+  readonly maxModelYear = new Date().getFullYear() + 1;
   
   autosaveStatuses: Record<number, AutosaveStatus> = {};
   mensajeBloqueoCambio?: string;
@@ -83,7 +90,8 @@ export class VehiculosFormComponent implements OnInit {
 
   async ngOnInit() {
     await this.esperarDetalle();
-    await this.cargarVehiculos();
+    await Promise.all([this.cargarVehiculos(), this.cargarCatalogoVehiculos()]);
+    this.incluirValoresExistentesEnCatalogo();
   }
 
   private esperarDetalle(): Promise<void> {
@@ -119,6 +127,41 @@ export class VehiculosFormComponent implements OnInit {
       this.cargando = false;
       this.cdr.markForCheck();
     }
+  }
+
+  private async cargarCatalogoVehiculos(): Promise<void> {
+    this.cargandoCatalogo = true;
+    this.errorCatalogo = undefined;
+    this.cdr.markForCheck();
+
+    try {
+      const catalogo = await firstValueFrom(this.api.obtenerCatalogoVehiculos());
+      this.asignarCatalogo(catalogo);
+    } catch {
+      this.errorCatalogo = 'No fue posible cargar el catálogo de marcas y tipos de vehículos. Intenta de nuevo antes de agregar un vehículo.';
+    } finally {
+      this.cargandoCatalogo = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  private asignarCatalogo(catalogo: CatalogoVehiculos): void {
+    this.marcasVehiculos = [...new Set(catalogo.brands ?? [])].sort((a, b) => a.localeCompare(b, 'es'));
+    this.tiposVehiculos = [...new Set(catalogo.vehicle_types ?? [])].sort((a, b) => a.localeCompare(b, 'es'));
+  }
+
+  private incluirValoresExistentesEnCatalogo(): void {
+    this.vehiculosGroups.forEach((form) => {
+      this.incluirValorLegado(this.marcasVehiculos, form.value.brand);
+      this.incluirValorLegado(this.tiposVehiculos, form.value.vehicle_type);
+    });
+  }
+
+  private incluirValorLegado(catalogo: string[], value: unknown): void {
+    if (typeof value !== 'string' || value.trim() === '' || catalogo.includes(value)) return;
+
+    catalogo.push(value);
+    catalogo.sort((a, b) => a.localeCompare(b, 'es'));
   }
 
   agregarVehiculo() {

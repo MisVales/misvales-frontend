@@ -44,7 +44,11 @@ export class ActivacionDistribuidoraPageComponent implements OnInit {
         firstValueFrom(this.categoriesApi.listar(1, 100))
       ]);
       this.solicitud.set(application);
-      this.categorias.set(categories.data.filter(c => c.status === 'ACTIVE' && c.version_status === 'PUBLISHED' && !!c.version_id));
+      this.categorias.set(categories.data.filter((categoria) =>
+        categoria.status === 'ACTIVE'
+        && categoria.version_status === 'PUBLISHED'
+        && !!categoria.version_id
+      ));
       if (application.status !== 'AUTHORIZED_PENDING_ACTIVATION') {
         this.error.set('La solicitud no está autorizada y pendiente de activación.');
       }

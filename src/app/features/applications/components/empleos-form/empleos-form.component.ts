@@ -31,6 +31,7 @@ export class EmpleosFormComponent implements OnInit {
   
   autosaveStatuses: Record<number, AutosaveStatus> = {};
   mensajeBloqueoCambio?: string;
+  readonly today = new Date().toISOString().slice(0, 10);
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;

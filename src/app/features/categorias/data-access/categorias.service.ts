@@ -31,7 +31,7 @@ export class CategoriasService {
   actualizar(id: string, datos: UpdateCategoryRequestDto): Observable<CategoryDto> {
     return this.http.post<any>(`${this.baseUrl}/${id}/versions`, {
       name: datos.name, description: datos.description, profit_percentage: datos.profit_percentage,
-      reason: datos.reason, effective_from: datos.effective_from,
+      reason: datos.reason,
     }).pipe(map((version) => this.adapt({ id, code: '', status: 'ACTIVE', created_at: version.created_at, versions: [version] })));
   }
 

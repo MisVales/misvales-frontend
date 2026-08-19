@@ -177,12 +177,6 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
         'error',
         7000,
       );
-    } else if (error.status >= 500) {
-      alertService.showAlert(
-        `No se pudo completar la operación. Tus datos capturados no se han eliminado.${requestReference(error)}`,
-        'error',
-        7000,
-      );
     }
 
     return throwError(() => sanitizeServerError(error, isDevMode()));

@@ -47,6 +47,7 @@ export interface InspectInvitationReq {
 export interface InspectInvitationRes {
   exchange_token: string;
   step?: 'setup' | 'passkey';
+  development_mfa_bypass?: boolean;
   user: {
     name: string;
     email: string;
@@ -68,6 +69,7 @@ export interface SetupInvitationReq {
 
 export interface SetupInvitationRes {
   recovery_codes: string[];
+  development_mfa_bypass?: boolean;
 }
 
 export interface CompleteInvitationReq {
