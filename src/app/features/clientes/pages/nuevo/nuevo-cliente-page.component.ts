@@ -7,6 +7,21 @@ import { curpValidator } from '../../validators/curp.validators';
 import { ClientesStore } from '../../state/clientes.store';
 import { CreateClientRequestDto } from '../../data-access/dtos/create-client-request.dto';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+
+export function ageValidator(minAge: number): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) return null;
+    const birthDate = new Date(control.value);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age >= minAge ? null : { underage: true };
+  };
+}
 
 @Component({
   selector: 'app-nuevo-cliente-page',
@@ -27,13 +42,13 @@ export class NuevoClientePageComponent {
     first_last_name: ['', [Validators.required, Validators.maxLength(100)]],
     second_last_name: ['', [Validators.maxLength(100)]],
     curp: ['', [Validators.required, curpValidator()]],
-    rfc: ['', [Validators.pattern(/^([A-ZÑ&]{3,4}\d{6}[A-V1-9][A-Z1-9][0-9A])?$/)]],
-    birth_date: ['', Validators.required],
+    rfc: ['', [Validators.maxLength(13), Validators.pattern(/^([A-ZÑ&]{3,4}\d{6}[A-V1-9][A-Z1-9][0-9A])?$/i)]],
+    birth_date: ['', [Validators.required, ageValidator(18)]],
     birth_place: ['', Validators.required],
     birth_state: ['', Validators.required],
     birth_city: ['', Validators.required],
     official_id_type: ['INE', Validators.required],
-    official_id_number: [''],
+    official_id_number: ['', [Validators.maxLength(50)]],
     street: ['', Validators.required],
     exterior_number: ['', Validators.required],
     interior_number: [''],
@@ -44,8 +59,7 @@ export class NuevoClientePageComponent {
     state: ['', Validators.required],
     bank_name: ['', Validators.required],
     account_holder_name: ['', Validators.required],
-    account_number: ['', Validators.pattern(/^\d{4,30}$/)],
-    clabe: ['', [Validators.required, Validators.pattern(/^\d{18}$/)]]
+    cuenta_clabe: ['', [Validators.required, Validators.pattern(/^(\d{16}|\d{18})$/)]]
   });
 
   constructor() {
@@ -95,8 +109,8 @@ export class NuevoClientePageComponent {
       bank_account: {
         bank_name: v.bank_name!,
         account_holder_name: v.account_holder_name!,
-        account_number: v.account_number || null,
-        clabe: v.clabe!
+        account_number: v.cuenta_clabe!.length === 16 ? v.cuenta_clabe! : null,
+        clabe: v.cuenta_clabe!.length === 18 ? v.cuenta_clabe! : null
       }
     };
     try {

@@ -40,14 +40,14 @@
 
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">RFC</label>
-          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm uppercase focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="rfc" placeholder="Opcional (con homoclave)">
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm uppercase focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" maxlength="13" formControlName="rfc" placeholder="Opcional (con homoclave)">
           <app-input-error [control]="form.controls.rfc" label="El RFC" [customMessages]="{ pattern: 'El RFC debe tener un formato válido de 10 a 13 caracteres.' }"></app-input-error>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Fecha de Nacimiento *</label>
           <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" type="date" formControlName="birth_date">
-          <app-input-error [control]="form.controls.birth_date" label="La fecha de nacimiento"></app-input-error>
+          <app-input-error [control]="form.controls.birth_date" label="La fecha de nacimiento" [customMessages]="{ underage: 'El cliente debe ser mayor de 18 años.' }"></app-input-error>
         </div>
 
         <div>
@@ -81,7 +81,7 @@
 
         <div class="md:col-span-2">
           <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número de Identificación</label>
-          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="official_id_number" placeholder="Ej. Clave de elector o folio">
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" maxlength="50" formControlName="official_id_number" placeholder="Ej. Clave de elector o folio">
           <app-input-error [control]="form.controls.official_id_number" label="El número de identificación"></app-input-error>
         </div>
       </div>
@@ -158,15 +158,9 @@
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número de Cuenta</label>
-          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" formControlName="account_number" placeholder="Opcional (solo dígitos)">
-          <app-input-error [control]="form.controls.account_number" label="El número de cuenta" [customMessages]="{ pattern: 'Debe contener entre 4 y 30 dígitos numéricos.' }"></app-input-error>
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">CLABE Interbancaria *</label>
-          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none font-mono" maxlength="18" formControlName="clabe" placeholder="18 dígitos">
-          <app-input-error [control]="form.controls.clabe" label="La CLABE" [customMessages]="{ pattern: 'La CLABE interbancaria debe contener exactamente 18 dígitos numéricos.' }"></app-input-error>
+          <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número de Cuenta o CLABE *</label>
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none font-mono" maxlength="18" formControlName="cuenta_clabe" placeholder="16 o 18 dígitos">
+          <app-input-error [control]="form.controls.cuenta_clabe" label="El número de cuenta" [customMessages]="{ pattern: 'Debe contener 16 dígitos (tarjeta) o 18 dígitos (CLABE).' }"></app-input-error>
         </div>
       </div>
     </div>
@@ -183,7 +177,7 @@
       <a routerLink="/clientes" class="rounded-xl border border-gray-300 px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
         Cancelar
       </a>
-      <button type="submit" class="rounded-xl bg-[#386641] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#2c5234] disabled:opacity-50 disabled:cursor-not-allowed transition-colors" [disabled]="form.invalid || enviando">
+      <button type="submit" class="rounded-xl bg-[#386641] px-6 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#2c5234] disabled:opacity-50 disabled:cursor-not-allowed transition-colors" [disabled]="enviando">
         {{ enviando ? 'Registrando…' : 'Registrar Cliente' }}
       </button>
     </div>
