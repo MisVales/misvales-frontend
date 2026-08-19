@@ -1,4 +1,4 @@
-﻿import {
+import {
   HttpErrorResponse,
   HttpEvent,
   HttpInterceptorFn,
@@ -110,8 +110,7 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
       allowRefresh &&
       error.status === 401 &&
       !isAuthEndpoint &&
-      !request.headers.has('X-Session-Retry') &&
-      (request.method === 'GET' || request.method === 'HEAD');
+      !request.headers.has('X-Session-Retry');
 
     if (canRetryAfterRefresh) {
       return sessionRefresh.refresh().pipe(
