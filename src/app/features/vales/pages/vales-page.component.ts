@@ -1,36 +1,176 @@
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 import { SessionStore } from '../../../core/session/session.store';
-import { ClientesApiService } from '../../clientes/data-access/api/clientes-api.service';
-import { Cliente } from '../../clientes/models/cliente.model';
-import { ValesApiService, VoucherPreview, VoucherProduct, VoucherView } from '../data-access/vales-api.service';
+import { ValesApiService, VoucherClient, VoucherPreview, VoucherProduct, VoucherView } from '../data-access/vales-api.service';
 
 @Component({
-  selector: 'app-vales-page', standalone: true, imports: [CommonModule, FormsModule],
-  template: `
-    <section class="space-y-6 p-4 md:p-6"><header><h1 class="text-2xl font-bold">Prevales y vales digitales</h1><p class="text-sm text-gray-600">El cálculo mostrado y el folio son confirmados por Laravel.</p></header>
-      <ol class="flex gap-2 overflow-x-auto text-xs font-semibold" aria-label="Flujo para generar un vale"><li class="rounded-full bg-blue-50 px-3 py-2">1 Cliente</li><li class="rounded-full bg-blue-50 px-3 py-2">2 Elegibilidad</li><li class="rounded-full bg-blue-50 px-3 py-2">3 Producto</li><li class="rounded-full bg-blue-50 px-3 py-2">4 Crédito</li><li class="rounded-full bg-blue-50 px-3 py-2">5 Resumen</li><li class="rounded-full bg-blue-50 px-3 py-2">6 Confirmación</li><li class="rounded-full bg-blue-50 px-3 py-2">7 Folio</li></ol>
-      @if (error()) { <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700"><strong>{{ errorCode() }}</strong> {{ error() }}</div> }
-      @if (canCreate()) { <div class="grid gap-5 xl:grid-cols-2"><form class="space-y-4 rounded-xl border bg-white p-5 shadow-sm" (ngSubmit)="preview()"><h2 class="font-bold">Generar vale</h2><label class="block text-sm">Buscar cliente<input class="mt-1 w-full rounded-lg border p-2" [(ngModel)]="search" name="search" (ngModelChange)="searchClients()" placeholder="Nombre o número"></label><label class="block text-sm">Cliente<select class="mt-1 w-full rounded-lg border p-2" [(ngModel)]="clientId" name="client" required><option value="">Selecciona</option>@for (client of clients(); track client.id) { <option [value]="client.id">{{ client.numero }} — {{ client.nombreCompleto }}</option> }</select></label><label class="block text-sm">Producto<select class="mt-1 w-full rounded-lg border p-2" [(ngModel)]="productVersionId" name="product" required><option value="">Selecciona</option>@for (product of products(); track product.id) { <option [value]="product.id">{{ product.name }} — {{ product.nominal_amount | currency:'MXN' }}</option> }</select></label><button class="rounded-lg bg-blue-700 px-4 py-2 text-white disabled:opacity-50" [disabled]="busy() || !clientId || !productVersionId">Previsualizar</button></form>
-        @if (previewData(); as data) { <article class="space-y-4 rounded-xl border bg-white p-5 shadow-sm"><div class="flex items-center justify-between"><h2 class="font-bold">Confirmación</h2><span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700">{{ data.voucher_type }}</span></div><p>{{ data.client.client_number }} — {{ data.client.full_name }}</p><p class="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm"><strong>{{ data.product.name }}</strong> · {{ data.calculation.fortnights_count }} quincenas. La comisión del préstamo pertenece al cálculo MisVales; la ganancia de distribuidora es un concepto separado.</p><dl class="grid grid-cols-2 gap-3 text-sm"><div><dt class="text-gray-500">Capital</dt><dd>{{ data.calculation.capital | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Disponible</dt><dd>{{ data.credit.available_balance | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Comisión del préstamo</dt><dd>{{ data.calculation.loan_commission_amount | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Interés</dt><dd>{{ data.calculation.interest_total | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Seguro</dt><dd>{{ data.calculation.insurance_amount | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Total MisVales</dt><dd class="font-semibold">{{ data.calculation.misvales_total | currency:'MXN' }}</dd></div><div class="rounded-lg bg-emerald-50 p-2"><dt class="text-emerald-800">Ganancia de distribuidora</dt><dd class="font-semibold">{{ data.calculation.distributor_profit_total | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Pago cliente/quincena</dt><dd>{{ data.calculation.client_payment_per_fortnight | currency:'MXN' }}</dd></div><div><dt class="text-gray-500">Total cliente</dt><dd class="font-semibold">{{ data.calculation.client_total | currency:'MXN' }}</dd></div></dl>@if (data.credit.has_active_restriction) { <p class="rounded-lg bg-amber-50 p-3 text-sm">Regla del primer vale activa. Rango permitido: {{ data.credit.lower_limit | currency:'MXN' }} a {{ data.credit.upper_limit | currency:'MXN' }}.</p> }<button class="w-full rounded-lg bg-emerald-700 px-4 py-2 text-white disabled:opacity-50" [disabled]="busy()" (click)="generate()">Confirmar y obtener folio</button></article> }
-      </div> }
-      @if (generated(); as voucher) { <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5"><p class="text-sm">Vale generado correctamente</p><p class="text-2xl font-bold">{{ voucher.folio }}</p><p>{{ voucher.type }} · {{ voucher.status }} · Siguiente paso: validación en caja.</p></div> }
-      <section class="rounded-xl border bg-white shadow-sm"><h2 class="border-b p-4 font-bold">Historial visible</h2>@if (loading()) { <p class="p-5">Cargando vales...</p> } @else if (!vouchers().length) { <p class="p-8 text-center text-gray-500">No existen vales visibles.</p> } @else { <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-gray-50 text-left"><tr><th class="p-3">Folio</th><th class="p-3">Cliente</th><th class="p-3">Tipo</th><th class="p-3">Capital</th><th class="p-3">Estado</th></tr></thead><tbody>@for (voucher of vouchers(); track voucher.id) { <tr class="border-t"><td class="p-3 font-semibold">{{ voucher.folio }}</td><td class="p-3">{{ voucher.client?.full_name }}</td><td class="p-3">{{ voucher.type }}</td><td class="p-3">{{ voucher.capital | currency:'MXN' }}</td><td class="p-3">{{ voucher.status }}</td></tr> }</tbody></table></div> }</section>
-    </section>`,
+  selector: 'app-vales-page',
+  standalone: true,
+  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  templateUrl: './vales-page.component.html',
+  styleUrl: './vales-page.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ValesPageComponent implements OnInit {
-  private readonly api = inject(ValesApiService); private readonly clientsApi = inject(ClientesApiService); private readonly session = inject(SessionStore);
-  readonly products = signal<VoucherProduct[]>([]); readonly clients = signal<Cliente[]>([]); readonly vouchers = signal<VoucherView[]>([]); readonly previewData = signal<VoucherPreview | null>(null); readonly generated = signal<VoucherView | null>(null); readonly loading = signal(true); readonly busy = signal(false); readonly error = signal(''); readonly errorCode = signal('');
-  search = ''; clientId = ''; productVersionId = '';
-  ngOnInit(): void { this.reload(); if (this.canCreate()) { this.api.listarProductos().subscribe({ next: value => this.products.set(value), error: error => this.handle(error) }); this.searchClients(); } }
-  canCreate(): boolean { return this.session.roles().includes('distributor') && this.session.permissions().includes('vouchers.create_own'); }
-  searchClients(): void { this.clientsApi.listar({ search: this.search, page: 1, perPage: 20 }).subscribe({ next: value => this.clients.set(value.data), error: error => this.handle(error) }); }
-  preview(): void { if (this.busy() || !this.clientId || !this.productVersionId) return; this.busy.set(true); this.clearError(); this.api.previsualizar(this.clientId, this.productVersionId).pipe(finalize(() => this.busy.set(false))).subscribe({ next: value => this.previewData.set(value), error: error => this.handle(error) }); }
-  generate(): void { if (this.busy() || !this.clientId || !this.productVersionId) return; this.busy.set(true); this.clearError(); this.api.generar(this.clientId, this.productVersionId).pipe(finalize(() => this.busy.set(false))).subscribe({ next: value => { this.generated.set(value); this.previewData.set(null); this.reload(); }, error: error => this.handle(error) }); }
-  private reload(): void { this.api.listar().subscribe({ next: value => { this.vouchers.set(value.data); this.loading.set(false); }, error: error => { this.loading.set(false); this.handle(error); } }); }
-  private clearError(): void { this.error.set(''); this.errorCode.set(''); }
-  private handle(error: HttpErrorResponse): void { this.errorCode.set(error.error?.error?.code ?? 'VOUCHER_REQUEST_FAILED'); this.error.set(error.error?.error?.message ?? 'No fue posible completar la operación.'); }
+  private readonly api = inject(ValesApiService);
+  private readonly session = inject(SessionStore);
+  private readonly formBuilder = inject(FormBuilder);
+  private readonly destroyRef = inject(DestroyRef);
+
+  protected readonly form = this.formBuilder.nonNullable.group({
+    search: this.formBuilder.nonNullable.control(''),
+    clientId: this.formBuilder.nonNullable.control(''),
+    productVersionId: this.formBuilder.nonNullable.control(''),
+  });
+  private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
+  protected readonly products = signal<VoucherProduct[]>([]);
+  protected readonly clients = signal<VoucherClient[]>([]);
+  protected readonly vouchers = signal<VoucherView[]>([]);
+  protected readonly previewData = signal<VoucherPreview | null>(null);
+  protected readonly generated = signal<VoucherView | null>(null);
+  protected readonly loadingHistory = signal(true);
+  protected readonly loadingProducts = signal(false);
+  protected readonly searchingClients = signal(false);
+  protected readonly searchedClients = signal(false);
+  protected readonly busy = signal(false);
+  protected readonly error = signal('');
+
+  protected readonly selectedClient = computed(() => this.clients().find((client) => client.id === this.formValue().clientId) ?? null);
+  protected readonly selectedProduct = computed(() => this.products().find((product) => product.id === this.formValue().productVersionId) ?? null);
+  protected readonly currentStep = computed(() => this.previewData() || this.selectedProduct() ? 3 : this.selectedClient() ? 2 : 1);
+  protected readonly canPreview = computed(() => !!this.selectedClient() && !!this.selectedProduct() && !this.busy());
+
+  ngOnInit(): void {
+    this.reloadHistory();
+    if (!this.canCreate()) return;
+    this.loadingProducts.set(true);
+    this.api.listarProductos().pipe(finalize(() => this.loadingProducts.set(false))).subscribe({
+      next: (products) => this.products.set(products),
+      error: (error) => this.handle(error),
+    });
+    this.form.controls.search.valueChanges.pipe(
+      map((value) => value.trim()),
+      debounceTime(250),
+      distinctUntilChanged(),
+      tap((term) => {
+        this.searchedClients.set(term.length >= 2);
+        this.form.controls.clientId.setValue('');
+        this.previewData.set(null);
+        this.generated.set(null);
+        if (term.length < 2) {
+          this.clients.set([]);
+          this.searchingClients.set(false);
+        }
+      }),
+      switchMap((term) => {
+        if (term.length < 2) return of<VoucherClient[]>([]);
+        this.searchingClients.set(true);
+        return this.api.buscarClientesElegibles(term).pipe(
+          catchError((error: HttpErrorResponse) => {
+            this.handle(error);
+            return of<VoucherClient[]>([]);
+          }),
+          finalize(() => this.searchingClients.set(false)),
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef),
+    ).subscribe((clients) => this.clients.set(clients));
+  }
+
+  protected canCreate(): boolean {
+    return this.session.roles().includes('distributor') && this.session.permissions().includes('vouchers.create_own');
+  }
+
+  protected selectClient(client: VoucherClient): void {
+    this.form.controls.clientId.setValue(client.id);
+    this.previewData.set(null);
+    this.generated.set(null);
+    this.clearError();
+  }
+
+  protected selectProduct(product: VoucherProduct): void {
+    this.form.controls.productVersionId.setValue(product.id);
+    this.previewData.set(null);
+    this.generated.set(null);
+    this.clearError();
+  }
+
+  protected preview(): void {
+    const { clientId, productVersionId } = this.form.getRawValue();
+    if (this.busy() || !clientId || !productVersionId) return;
+    this.busy.set(true);
+    this.clearError();
+    this.generated.set(null);
+    this.api.previsualizar(clientId, productVersionId).pipe(finalize(() => this.busy.set(false))).subscribe({
+      next: (data) => this.previewData.set(data),
+      error: (error) => this.handle(error),
+    });
+  }
+
+  protected generate(): void {
+    const { clientId, productVersionId } = this.form.getRawValue();
+    if (this.busy() || !clientId || !productVersionId || !this.previewData()) return;
+    this.busy.set(true);
+    this.clearError();
+    this.api.generar(clientId, productVersionId).pipe(finalize(() => this.busy.set(false))).subscribe({
+      next: (voucher) => {
+        this.generated.set(voucher);
+        this.previewData.set(null);
+        this.form.patchValue({ clientId: '', productVersionId: '', search: '' });
+        this.clients.set([]);
+        this.searchedClients.set(false);
+        this.reloadHistory();
+      },
+      error: (error) => this.handle(error),
+    });
+  }
+
+  protected typeLabel(type: VoucherView['type'] | VoucherPreview['voucher_type']): string {
+    return type === 'PREVALE' ? 'Prevale' : 'Vale digital';
+  }
+
+  protected statusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      GENERATED: 'Generado · pendiente de caja', RELEASED: 'Liberado · pendiente de cobro',
+      CASHED: 'Cobrado', CANCELLED: 'Cancelado', VOIDED: 'Anulado',
+    };
+    return labels[status] ?? status.replaceAll('_', ' ').toLocaleLowerCase('es-MX');
+  }
+
+  private reloadHistory(): void {
+    this.loadingHistory.set(true);
+    this.api.listar().subscribe({
+      next: (response) => { this.vouchers.set(response.data); this.loadingHistory.set(false); },
+      error: (error) => { this.loadingHistory.set(false); this.handle(error); },
+    });
+  }
+
+  private clearError(): void { this.error.set(''); }
+
+  private handle(error: HttpErrorResponse): void {
+    const code = error.error?.error?.code;
+    const details = error.error?.error?.details;
+    if (code === 'CREDIT_50_PERCENT_RULE_NOT_SATISFIED' && details?.lower_limit && details?.upper_limit) {
+      this.error.set(`Por la regla temporal de tu línea de crédito, el siguiente vale debe estar entre ${this.formatCurrency(details.lower_limit)} y ${this.formatCurrency(details.upper_limit)}. Elige un importe dentro de ese rango.`);
+
+      return;
+    }
+    const messages: Record<string, string> = {
+      VOUCHER_FINANCIAL_CONFIGURATION_MISSING: 'Gerencia debe publicar las condiciones financieras antes de otorgar este vale.',
+      PRODUCT_FINANCIAL_CONFIGURATION_MISSING: 'El producto publicado no tiene completas sus condiciones financieras. Solicita que publiquen una versión completa.',
+      CLIENT_NOT_ASSIGNED_TO_DISTRIBUTOR: 'Esta persona no pertenece a tu distribuidora activa. Busca una persona de tu cartera o registra una nueva.',
+      CREDIT_INSUFFICIENT: 'El importe elegido supera el crédito disponible. Elige otro producto o solicita un incremento.',
+      CREDIT_50_PERCENT_RULE_NOT_SATISFIED: 'El importe no cumple la regla temporal de tu línea de crédito. Revisa el rango permitido antes de continuar.',
+    };
+    this.error.set(messages[code] ?? error.error?.error?.message ?? 'No fue posible completar la operación. Inténtalo nuevamente.');
+  }
+
+  private formatCurrency(value: string | number): string {
+    return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(value));
+  }
 }

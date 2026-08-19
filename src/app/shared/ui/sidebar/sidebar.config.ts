@@ -3,7 +3,7 @@
  *
  * `roles` define la audiencia funcional entregada por el negocio. Cuando una
  * opción también declara `permissions`, ambos controles deben cumplirse. La
- * autorización definitiva permanece en Laravel.
+ * autorización definitiva permanece en el servidor.
  */
 
 import type { RoleCode } from '@core/experience/experience.models';
@@ -304,12 +304,11 @@ export const NAV_GROUPS: NavGroupData[] = [
     items: [
       {
         id: 'organizational-transfers',
-        title: 'Transferencias y reasignaciones',
+        title: 'Reasignar distribuidoras',
         icon: 'arrow-left-right',
         route: '/transferencias',
         roles: GG_AD_GS_CO_DI,
         permissions: [
-          'client_transfers.view',
           'organization_changes.view',
           'organization_changes.manage_branch',
           'organization_changes.manage_global',

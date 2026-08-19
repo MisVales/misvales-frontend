@@ -12,28 +12,22 @@ import { CreditoApiService, CreditIncreaseView } from '../../data-access/api/cre
   imports: [CommonModule, FormsModule],
   template: `
     <section class="p-6 space-y-6">
-      <header><h1 class="text-2xl font-bold text-gray-900">Incrementos de línea</h1><p class="text-sm text-gray-600">Bandeja limitada por rol, asignación y sucursal desde Laravel.</p></header>
+      <header><h1 class="text-2xl font-bold text-gray-900">Incrementos de línea</h1><p class="text-sm text-gray-600">Consulta las solicitudes disponibles para tu sucursal.</p></header>
       @if (error()) { <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">{{ error() }}</div> }
       @if (loading()) { <p class="rounded-xl border bg-white p-6">Cargando solicitudes...</p> }
       @else if (!requests().length) { <div class="rounded-xl border border-dashed bg-white p-10 text-center text-gray-500">No existen solicitudes visibles.</div> }
       @else { <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.7fr)]">
-        <div class="overflow-x-auto rounded-xl border bg-white shadow-sm"><table class="min-w-full text-sm"><thead class="bg-gray-50 text-left"><tr><th class="p-3">Solicitud</th><th class="p-3">Distribuidora</th><th class="p-3">Importes</th><th class="p-3">Estado</th></tr></thead><tbody>
+        <div class="overflow-x-auto rounded-xl border bg-white shadow-sm"><table class="min-w-full text-sm"><thead class="bg-gray-50 text-left"><tr><th class="p-3">Solicitud</th><th class="p-3">Distribuidora</th><th class="p-3">Importes</th><th class="p-3">Estado</th><th class="p-3 text-right">Acciones</th></tr></thead><tbody>
           @for (request of requests(); track request.id) {
             <tr class="border-t hover:bg-blue-50" [class.bg-blue-50]="selected()?.id === request.id">
               <td class="p-3 font-semibold">
-                <button
-                  type="button"
-                  class="rounded text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
-                  [attr.aria-label]="'Abrir solicitud ' + request.request_number"
-                  (click)="select(request.id)"
-                >
-                  {{ request.request_number }}<br>
-                  <span class="font-normal text-gray-500">{{ request.requested_at | date:'short' }}</span>
-                </button>
+                {{ request.request_number }}<br>
+                <span class="font-normal text-gray-500">{{ request.requested_at | date:'short' }}</span>
               </td>
-              <td class="p-3">{{ request.distributor?.distributor_number }}<br><span class="text-gray-500">{{ request.distributor?.full_name }}</span></td>
+              <td class="p-3 font-medium">{{ request.distributor?.full_name ?? 'Distribuidora sin nombre disponible' }}</td>
               <td class="p-3">Solicitado: {{ request.requested_amount | currency:'MXN' }}<br><span class="text-gray-500">Recomendado: {{ request.recommended_amount ? (request.recommended_amount | currency:'MXN') : '—' }}</span></td>
-              <td class="p-3"><span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold">{{ request.status }}</span></td>
+              <td class="p-3"><span class="rounded-full px-2 py-1 text-xs font-semibold" [class]="statusClass(request.status)">{{ statusLabel(request.status) }}</span></td>
+              <td class="p-3 text-right"><button type="button" class="rounded-lg bg-[#386641] px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#2f5937] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#386641] focus-visible:ring-offset-2" [attr.aria-label]="'Ver solicitud ' + request.request_number" (click)="select(request.id)">Ver</button></td>
             </tr>
           }
         </tbody></table></div>
@@ -69,5 +63,14 @@ export class IncrementosLineaPageComponent implements OnInit {
       error,
       'La operación fue rechazada. Verifica permisos, estado y versión de la solicitud.',
     );
+  }
+  statusLabel(status: string): string {
+    return ({ REQUESTED: 'Pendiente de coordinación', PREAUTHORIZED: 'Pendiente de gerencia', AUTHORIZED_TOTAL: 'Autorizado', AUTHORIZED_PARTIAL: 'Autorizado parcialmente', REJECTED_BY_COORDINATOR: 'Rechazado por coordinación', REJECTED_BY_MANAGER: 'Rechazado por gerencia', COMPLETED: 'Completado' } as Record<string, string>)[status] ?? 'Estado actualizado';
+  }
+  statusClass(status: string): string {
+    if (status.startsWith('AUTHORIZED') || status === 'COMPLETED') return 'bg-emerald-100 text-emerald-900';
+    if (status.startsWith('REJECTED')) return 'bg-red-100 text-red-800';
+    if (status === 'PREAUTHORIZED') return 'bg-amber-100 text-amber-900';
+    return 'bg-sky-100 text-sky-900';
   }
 }

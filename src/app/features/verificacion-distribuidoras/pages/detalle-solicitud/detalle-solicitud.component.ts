@@ -9,11 +9,12 @@ import { SessionStore } from '../../../../core/session/session.store';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { presentarRegistrosDeclarados } from './datos-declarados.presenter';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-detalle-solicitud',
   standalone: true,
-  imports: [DatePipe, KeyValuePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, FormsModule],
+  imports: [DatePipe, KeyValuePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, FormsModule, StatusLabelPipe],
   templateUrl: './detalle-solicitud.component.html',
   styleUrl: './detalle-solicitud.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

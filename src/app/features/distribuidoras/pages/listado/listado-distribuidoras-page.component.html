@@ -10,7 +10,7 @@
     </div>
 
     <div class="p-8">
-      <!-- Coordinación ya está restringida por Laravel a sus distribuidoras;
+      <!-- Coordinación ya está restringida a sus distribuidoras;
            no carga catálogos administrativos ajenos a su experiencia. -->
       <div *ngIf="userRole() === 'GERENTE'" class="mb-8">
         <app-filtros-distribuidoras (filtrosCambiados)="onFiltrosCambiados($event)"></app-filtros-distribuidoras>
@@ -100,7 +100,7 @@
               <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">#DIST-{{ item.numero }}</span>
               <h3 class="font-bold text-lg text-gray-900 leading-tight">{{ item.nombreCompleto }}</h3>
             </div>
-            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-blue-50 text-blue-700">{{ item.estado }}</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-blue-50 text-blue-700">{{ item.estado | statusLabel }}</span>
           </div>
           <div class="space-y-2 text-sm text-gray-600">
             <p><span class="font-medium text-gray-900">Sucursal:</span> {{ item.sucursal.nombre }}</p>
@@ -130,7 +130,7 @@
           </div>
           <div class="flex justify-between items-center pt-3 border-t border-gray-200">
             <span class="text-sm text-gray-500">Estado</span>
-            <span class="px-2 py-1 bg-[#E8F3E8] text-[#1A4D2E] rounded text-xs font-bold">{{ store.listado()[0]?.estado }}</span>
+            <span class="px-2 py-1 bg-[#E8F3E8] text-[#1A4D2E] rounded text-xs font-bold">{{ store.listado()[0]?.estado | statusLabel }}</span>
           </div>
         </div>
         

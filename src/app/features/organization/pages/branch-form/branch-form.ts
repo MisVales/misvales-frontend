@@ -6,6 +6,7 @@ import { OrganizationFacade } from '../../state/organization.facade';
 import { AddressFormComponent, AddressResult } from '../../../../shared/components/address-form/address-form';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-branch-form',
@@ -44,17 +45,18 @@ import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
         <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
           <div>
             <label for="branch-name" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
-              Nombre de la sucursal *
+              Nombre de la sucursal <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
             </label>
             <input id="branch-name" type="text" formControlName="name" autocomplete="off"
+                   (focus)="markNameErrorVisible()"
                    placeholder="Nombre descriptivo de la ubicación"
                    class="block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 focus:border-[#386641] focus:outline-none focus:ring-1 focus:ring-[#386641] sm:text-sm">
-            <app-input-error [control]="form.controls.name" label="El nombre"></app-input-error>
+            <app-input-error [control]="form.controls.name" label="El nombre" [forceShow]="nameErrorVisible"></app-input-error>
           </div>
 
           <div>
             <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
-              Dirección *
+              Dirección
             </label>
             <app-address-form #addressForm (addressChange)="onAddressChange($event)"></app-address-form>
             <p class="mt-2 flex items-start gap-2 text-xs text-gray-500">
@@ -84,9 +86,11 @@ export class BranchForm implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly alerts = inject(AlertService);
 
   isEditMode = false;
   branchId: string | null = null;
+  nameErrorVisible = false;
 
   @ViewChild('addressForm') addressForm!: AddressFormComponent;
 
@@ -115,6 +119,11 @@ export class BranchForm implements OnInit {
     this.router.navigate(['/organizacion/sucursales']);
   }
 
+  markNameErrorVisible(): void {
+    this.nameErrorVisible = true;
+    this.form.controls.name.markAsTouched();
+  }
+
   onAddressChange(result: AddressResult): void {
     this.form.patchValue({ 
       address: result.full_address,
@@ -126,6 +135,7 @@ export class BranchForm implements OnInit {
   async onSubmit(): Promise<void> {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.addressForm?.validarAntesDeSalir();
       return;
     }
 
@@ -140,7 +150,12 @@ export class BranchForm implements OnInit {
       ? await this.facade.updateBranch(this.branchId, name.trim(), address.trim(), lat, lng)
       : await this.facade.createBranch({ name: name.trim(), address: address.trim(), lat, lng });
 
-    if (success) this.goBack();
+    if (success) {
+      if (!this.isEditMode) {
+        this.alerts.success('La sucursal se creó correctamente.');
+      }
+      this.goBack();
+    }
   }
 
   private async loadBranch(): Promise<void> {

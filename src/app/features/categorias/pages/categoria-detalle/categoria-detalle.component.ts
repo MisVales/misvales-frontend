@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CategoriasService } from '../../data-access/categorias.service';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-categoria-detalle',
@@ -19,10 +20,12 @@ export class CategoriaDetalleComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly service = inject(CategoriasService);
+  private readonly alerts = inject(AlertService);
 
   readonly isNew = !this.route.snapshot.paramMap.get('id');
   readonly saving = signal(false);
   readonly error = signal('');
+  readonly controlesConErrorVisible = signal<ReadonlySet<keyof typeof this.form.controls>>(new Set());
 
   readonly form = this.fb.group({
     code: ['', [Validators.required, Validators.maxLength(255)]],
@@ -56,6 +59,7 @@ export class CategoriaDetalleComponent implements OnInit {
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.controlesConErrorVisible.set(new Set(['code', 'name', 'profit_percentage', 'reason']));
       return;
     }
     this.saving.set(true);
@@ -74,11 +78,23 @@ export class CategoriaDetalleComponent implements OnInit {
       } else {
         await firstValueFrom(this.service.crear({ code: value.code!, ...payload }));
       }
+      this.alerts.success(id
+        ? 'La nueva versión de la categoría se creó correctamente.'
+        : 'La categoría se guardó como borrador correctamente.');
       await this.router.navigate(['/categorias']);
     } catch (error: any) {
       this.error.set(error?.error?.message ?? 'No fue posible guardar la categoría.');
     } finally {
       this.saving.set(false);
     }
+  }
+
+  marcarCampoAlEnfocar(control: keyof typeof this.form.controls): void {
+    this.form.controls[control].markAsTouched();
+    this.controlesConErrorVisible.update((controles) => new Set([...controles, control]));
+  }
+
+  mostrarError(control: keyof typeof this.form.controls): boolean {
+    return this.controlesConErrorVisible().has(control);
   }
 }

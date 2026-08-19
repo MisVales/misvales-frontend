@@ -19,7 +19,7 @@ const version: ConfigurationVersionDto = {
 };
 
 describe('ConfiguracionesMapper', () => {
-  it('conserva el contrato real y obtiene el valor vigente cargado por Laravel', () => {
+  it('conserva el contrato real y obtiene el valor vigente cargado por el servidor', () => {
     const definition: ConfigurationDefinitionDto = {
       id: 'd1',
       key: 'EARLY_PAYMENT_PERIOD',

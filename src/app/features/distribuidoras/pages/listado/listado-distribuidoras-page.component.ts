@@ -4,11 +4,12 @@ import { DistribuidorasStore } from '../../state/distribuidoras.store';
 import { FiltrosDistribuidorasComponent } from '../../components/filtros-distribuidoras/filtros-distribuidoras.component';
 import { Router, RouterLink } from '@angular/router';
 import { SessionStore } from '../../../../core/session/session.store';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-listado-distribuidoras-page',
   standalone: true,
-  imports: [CommonModule, FiltrosDistribuidorasComponent, RouterLink],
+  imports: [CommonModule, FiltrosDistribuidorasComponent, RouterLink, StatusLabelPipe],
   templateUrl: './listado-distribuidoras-page.component.html',
   styleUrls: ['./listado-distribuidoras-page.component.css']
 })

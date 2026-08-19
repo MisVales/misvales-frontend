@@ -11,6 +11,7 @@ import { EmpleosFormComponent } from '../../components/empleos-form/empleos-form
 import { CreditosComercialesFormComponent } from '../../components/creditos-comerciales-form/creditos-comerciales-form.component';
 import { ResumenEnvioComponent } from '../../components/resumen-envio/resumen-envio.component';
 import { AlertService } from '../../../../shared/services/alert.service';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' | 'patrimonio' | 'empleos' | 'creditos' | 'resumen';
 
@@ -26,7 +27,8 @@ type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' |
     PatrimonioFormComponent,
     EmpleosFormComponent,
     CreditosComercialesFormComponent,
-    ResumenEnvioComponent
+    ResumenEnvioComponent,
+    StatusLabelPipe,
   ],
   templateUrl: './detalle-solicitud-page.component.html',
   styleUrls: ['./detalle-solicitud-page.component.css']

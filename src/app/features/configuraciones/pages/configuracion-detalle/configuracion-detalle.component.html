@@ -17,7 +17,7 @@
       </div>
       <button
         type="button"
-        class="rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white"
+        class="cursor-pointer rounded-lg bg-emerald-800 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2"
         (click)="creando.set(!creando())"
       >
         {{ creando() ? 'Cancelar' : 'Crear nueva versión' }}
@@ -38,43 +38,77 @@
 
         @if (esPeriodo(item)) {
           <div class="grid gap-4 sm:grid-cols-2">
-            <label class="text-sm font-medium">Inicio (días después del corte)
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="0" formControlName="periodStart" />
-            </label>
-            <label class="text-sm font-medium">Fin (días después del corte)
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="1" formControlName="periodEnd" />
-            </label>
+            <div>
+              <label class="text-sm font-medium">Inicio (días después del corte)
+                <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+                <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="0" placeholder="Ej. 0" formControlName="periodStart" (focus)="marcarControlVersionAlEnfocar('periodStart')" (input)="actualizarPeriodo('periodStart', $any($event.target).value)" />
+              </label>
+              <app-input-error [control]="versionForm.controls.periodStart" label="El inicio del periodo" [forceShow]="mostrarErrorVersion('periodStart')"></app-input-error>
+            </div>
+            <div>
+              <label class="text-sm font-medium">Fin (días después del corte)
+                <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+                <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="1" placeholder="Ej. 7" formControlName="periodEnd" (focus)="marcarControlVersionAlEnfocar('periodEnd')" (input)="actualizarPeriodo('periodEnd', $any($event.target).value)" />
+              </label>
+              <app-input-error [control]="versionForm.controls.periodEnd" label="El fin del periodo" [forceShow]="mostrarErrorVersion('periodEnd')"></app-input-error>
+              @if (periodoInvalido()) { <p class="mt-1 text-xs text-red-600">El fin del periodo debe ser mayor que el inicio.</p> }
+            </div>
           </div>
         } @else if (esBanco(item)) {
           <div class="grid gap-4 sm:grid-cols-2">
-            <label class="text-sm font-medium">Banco
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="bankName" />
-            </label>
-            <label class="text-sm font-medium">Beneficiario
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="bankBeneficiary" />
-            </label>
-            <label class="text-sm font-medium">Convenio
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="bankAgreement" />
-            </label>
-            <label class="text-sm font-medium">CLABE de 18 dígitos
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" inputmode="numeric" autocomplete="off" maxlength="18" formControlName="bankClabe" />
-            </label>
+            <div>
+              <label class="text-sm font-medium">Banco
+                <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+                <input class="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Ej. BBVA" formControlName="bankName" (focus)="marcarControlVersionAlEnfocar('bankName')" (input)="actualizarControlVersion('bankName', $any($event.target).value)" />
+              </label>
+              <app-input-error [control]="versionForm.controls.bankName" label="El banco" [forceShow]="mostrarErrorVersion('bankName')"></app-input-error>
+            </div>
+            <div>
+              <label class="text-sm font-medium">Beneficiario
+                <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+                <input class="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Ej. MisVales" formControlName="bankBeneficiary" (focus)="marcarControlVersionAlEnfocar('bankBeneficiary')" (input)="actualizarControlVersion('bankBeneficiary', $any($event.target).value)" />
+              </label>
+              <app-input-error [control]="versionForm.controls.bankBeneficiary" label="El beneficiario" [forceShow]="mostrarErrorVersion('bankBeneficiary')"></app-input-error>
+            </div>
+            <div>
+              <label class="text-sm font-medium">Convenio
+                <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+                <input class="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Ej. CONV-123" formControlName="bankAgreement" (focus)="marcarControlVersionAlEnfocar('bankAgreement')" (input)="actualizarControlVersion('bankAgreement', $any($event.target).value)" />
+              </label>
+              <app-input-error [control]="versionForm.controls.bankAgreement" label="El convenio" [forceShow]="mostrarErrorVersion('bankAgreement')"></app-input-error>
+            </div>
+            <div>
+              <label class="text-sm font-medium">CLABE de 18 dígitos
+                <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+                <input class="mt-1 w-full rounded-lg border px-3 py-2" inputmode="numeric" autocomplete="off" maxlength="18" placeholder="18 dígitos" formControlName="bankClabe" (focus)="marcarControlVersionAlEnfocar('bankClabe')" (input)="actualizarControlVersion('bankClabe', $any($event.target).value)" />
+              </label>
+              <app-input-error [control]="versionForm.controls.bankClabe" label="La CLABE" [forceShow]="mostrarErrorVersion('bankClabe')" [customMessages]="{ pattern: 'La CLABE debe tener exactamente 18 dígitos.' }"></app-input-error>
+            </div>
           </div>
         } @else {
-          <label class="block text-sm font-medium">Valor
-            <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="scalar" />
+          <label class="block text-sm font-medium">Valor <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+            <input class="mt-1 w-full rounded-lg border px-3 py-2" [type]="tipoEntrada(item)" [attr.step]="pasoEntrada(item)" [attr.min]="tipoEntrada(item) === 'number' ? 0 : null" [placeholder]="placeholderValor(item)" formControlName="scalar" (focus)="marcarControlVersionAlEnfocar('scalar')" (input)="actualizarControlVersion('scalar', $any($event.target).value)" />
           </label>
+          <app-input-error [control]="versionForm.controls.scalar" label="El valor" [forceShow]="mostrarErrorVersion('scalar')"></app-input-error>
+          <p class="mt-2 text-xs leading-5 text-gray-600">{{ ayudaValor(item) }}</p>
         }
 
         <div class="grid gap-4 sm:grid-cols-2">
-          <label class="text-sm font-medium">Inicio de vigencia
-            <input class="mt-1 w-full rounded-lg border px-3 py-2" type="datetime-local" formControlName="effectiveFrom" />
-          </label>
-          <label class="text-sm font-medium">Motivo
-            <input class="mt-1 w-full rounded-lg border px-3 py-2" formControlName="reason" />
-          </label>
+          <div>
+            <label class="text-sm font-medium">Inicio de vigencia <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="datetime-local" placeholder="Selecciona fecha y hora" formControlName="effectiveFrom" (focus)="marcarControlVersionAlEnfocar('effectiveFrom')" (input)="actualizarControlVersion('effectiveFrom', $any($event.target).value)" (change)="actualizarControlVersion('effectiveFrom', $any($event.target).value)" />
+            </label>
+            <app-input-error [control]="versionForm.controls.effectiveFrom" label="El inicio de vigencia" [forceShow]="mostrarErrorVersion('effectiveFrom')"></app-input-error>
+          </div>
+          <div>
+            <label class="text-sm font-medium">Motivo <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" placeholder="Explica el motivo del cambio" formControlName="reason" (focus)="marcarControlVersionAlEnfocar('reason')" (input)="actualizarControlVersion('reason', $any($event.target).value)" />
+            </label>
+            <app-input-error [control]="versionForm.controls.reason" label="El motivo" [forceShow]="mostrarErrorVersion('reason')" [customMessages]="{ minlength: 'El motivo debe tener al menos 10 caracteres.' }"></app-input-error>
+            <p class="mt-1 flex items-start gap-1 text-xs font-normal text-red-600"><span class="mt-0.5 inline-block leading-none">•</span><span>Mínimo 10 caracteres.</span></p>
+          </div>
         </div>
-        <button type="submit" class="rounded-lg bg-emerald-800 px-4 py-2.5 font-semibold text-white">
+        <button type="submit" class="cursor-pointer rounded-lg bg-emerald-800 px-4 py-2.5 font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2">
           Guardar borrador
         </button>
       </form>
@@ -87,9 +121,11 @@
       </div>
 
       <form class="max-w-xl" [formGroup]="transitionForm">
-        <label class="text-sm font-medium">Motivo para publicar o desactivar
-          <input class="mt-1 w-full rounded-lg border bg-white px-3 py-2" formControlName="reason" />
+        <label class="text-sm font-medium">Motivo para publicar o desactivar <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
+          <input class="mt-1 w-full rounded-lg border bg-white px-3 py-2" placeholder="Explica por qué se publica o desactiva" formControlName="reason" (focus)="marcarMotivoTransicionAlEnfocar()" (input)="actualizarMotivoTransicion($any($event.target).value)" />
         </label>
+        <app-input-error [control]="transitionForm.controls.reason" label="El motivo" [forceShow]="motivoTransicionConErrorVisible()" [customMessages]="{ minlength: 'El motivo debe tener al menos 10 caracteres.' }"></app-input-error>
+        <p class="mt-1 flex items-start gap-1 text-xs font-normal text-red-600"><span class="mt-0.5 inline-block leading-none">•</span><span>Mínimo 10 caracteres.</span></p>
       </form>
 
       @if (!store.versiones().length) {
@@ -101,7 +137,7 @@
             <div>
               <div class="flex items-center gap-2">
                 <h3 class="font-bold text-gray-950">Versión {{ version.numero }}</h3>
-                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">{{ version.estado }}</span>
+                <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">{{ version.estado | statusLabel }}</span>
               </div>
               <p class="mt-2 text-lg font-semibold">{{ mostrarValor(version.valor, item) }}</p>
               <p class="mt-1 text-sm text-gray-600">Vigencia: {{ version.inicioVigencia | date: 'medium' }}</p>
@@ -109,12 +145,12 @@
             </div>
             <div class="flex gap-2">
               @if (version.estado === 'DRAFT') {
-                <button type="button" class="rounded-lg bg-emerald-800 px-3 py-2 text-sm font-semibold text-white" (click)="publicar(version)">
+                <button type="button" class="cursor-pointer rounded-lg bg-emerald-800 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2" (click)="publicar(version)">
                   Publicar
                 </button>
               }
               @if (version.estado === 'PUBLISHED') {
-                <button type="button" class="rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700" (click)="desactivar(version)">
+                <button type="button" class="cursor-pointer rounded-lg border border-red-300 px-3 py-2 text-sm font-semibold text-red-700 transition-colors hover:border-red-700 hover:bg-red-700 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-700 focus-visible:ring-offset-2" (click)="desactivar(version)">
                   Desactivar
                 </button>
               }

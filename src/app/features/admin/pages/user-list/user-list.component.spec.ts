@@ -8,6 +8,7 @@ import { OrganizationApiService } from '../../../organization/data-access/organi
 import { RoleService } from '../../data-access/role.service';
 import { UserService } from '../../data-access/user.service';
 import { UserListComponent } from './user-list.component';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 describe('UserListComponent', () => {
   let component: UserListComponent;
@@ -18,6 +19,7 @@ describe('UserListComponent', () => {
     blockUser: vi.fn(),
     unblockUser: vi.fn(),
   };
+  const alerts = { success: vi.fn() };
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -31,6 +33,7 @@ describe('UserListComponent', () => {
         { provide: RoleService, useValue: { getRoles: () => of([]) } },
         { provide: OrganizationApiService, useValue: { getBranches: () => of([]) } },
         { provide: SessionStore, useValue: { permissions: () => ['users.view'] } },
+        { provide: AlertService, useValue: alerts },
       ],
     }).compileComponents();
 
@@ -54,5 +57,25 @@ describe('UserListComponent', () => {
 
     expect(component.inviteError()).toContain('datos válidos');
     expect(userService.createAccount).not.toHaveBeenCalled();
+  });
+
+  it('muestra el mensaje específico al enfocar un campo obligatorio vacío', () => {
+    component.markInviteFieldAsTouched('email');
+
+    expect(component.inviteFieldError('email')).toBe('El correo electrónico es obligatorio.');
+  });
+
+  it('notifica al enviar una invitación correctamente', async () => {
+    userService.createAccount.mockReturnValue(of({
+      message: 'La invitación se envió correctamente.',
+      user: { id: 'user-1', name: 'Usuario', email: 'usuario@ejemplo.com', state: 'INVITED' },
+    }));
+    component.inviteName.set('Usuario');
+    component.inviteEmail.set('usuario@ejemplo.com');
+    component.inviteRoleId.set('role-id');
+
+    await component.inviteUser();
+
+    expect(alerts.success).toHaveBeenCalledWith('La invitación se envió correctamente.');
   });
 });

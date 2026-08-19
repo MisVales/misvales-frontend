@@ -70,9 +70,12 @@ export class OrganizationApiService {
     });
   }
 
-  getBranchAssignments(branchId: string, includeHistory = true): Observable<PaginatedRes<PersonnelAssignment>> {
+  getBranchAssignments(
+    branchId: string,
+    options: { includeHistory?: boolean; status?: PersonnelAssignment['assignment_status'] } = {},
+  ): Observable<PaginatedRes<PersonnelAssignment>> {
     return this.http.get<PaginatedRes<PersonnelAssignment>>(`${this.baseUrl}/branches/${branchId}/assignments`, {
-      params: this.params({ include_history: includeHistory, per_page: 100 }),
+      params: this.params({ include_history: options.includeHistory, status: options.status, per_page: 100 }),
     });
   }
 

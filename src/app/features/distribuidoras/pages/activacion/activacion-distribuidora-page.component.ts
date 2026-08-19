@@ -9,11 +9,12 @@ import { CategoryDto } from '../../../categorias/data-access/categorias.dtos';
 import { VerificacionDistribuidorasApiService } from '../../../verificacion-distribuidoras/data-access/api/verificacion-distribuidoras-api.service';
 import { SolicitudDistribuidoraResponseDto } from '../../../verificacion-distribuidoras/data-access/dtos/verificacion-distribuidoras.dtos';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-activacion-distribuidora-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, StatusLabelPipe],
   templateUrl: './activacion-distribuidora-page.component.html',
   styleUrls: ['./activacion-distribuidora-page.component.css']
 })

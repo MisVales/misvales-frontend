@@ -6,12 +6,14 @@ import { SessionStore } from '../../../../core/session/session.store';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { CrearSolicitudPageComponent } from './crear-solicitud-page.component';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 describe('CrearSolicitudPageComponent catalogs', () => {
   const organizationApi = {
     getBranches: vi.fn(),
     getBranchAssignments: vi.fn(),
   };
+  const store = { guardandoSeccion: () => false, error: () => null, crearSolicitud: vi.fn() };
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -20,7 +22,7 @@ describe('CrearSolicitudPageComponent catalogs', () => {
         { provide: OrganizationApiService, useValue: organizationApi },
         {
           provide: SolicitudDetalleStore,
-          useValue: { guardandoSeccion: () => false, error: () => null, crearSolicitud: vi.fn() },
+          useValue: store,
         },
         { provide: Router, useValue: { navigate: vi.fn() } },
       ],
@@ -117,6 +119,19 @@ describe('CrearSolicitudPageComponent catalogs', () => {
     expect(organizationApi.getBranchAssignments).not.toHaveBeenCalled();
     expect(component.crearForm.invalid).toBe(true);
     expect(component.catalogError()).toContain('sucursal activa');
+  });
+
+  it('notifica al crear el expediente', async () => {
+    const alerts = TestBed.inject(AlertService);
+    const success = vi.spyOn(alerts, 'success');
+    store.crearSolicitud.mockResolvedValue('solicitud-nueva');
+    const component = TestBed.runInInjectionContext(() => new CrearSolicitudPageComponent());
+    component.crearForm.setValue({ branch_id: 'branch-a', coordinator_id: 'coordinator-a' });
+
+    await component.onSubmit();
+
+    expect(store.crearSolicitud).toHaveBeenCalledWith({ branch_id: 'branch-a', coordinator_id: 'coordinator-a' });
+    expect(success).toHaveBeenCalledWith('El expediente se creó correctamente.');
   });
 });
 

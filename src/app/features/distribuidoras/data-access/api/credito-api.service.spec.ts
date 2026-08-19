@@ -18,20 +18,25 @@ describe('CreditoApiService', () => {
     TestBed.resetTestingModule();
   });
 
-  it('consulta únicamente líneas reales de las distribuidoras y omite las inexistentes', () => {
+  it('consulta en una sola petición las líneas reales visibles para el alcance actual', () => {
     let result: any[] = [];
     service.listarLineas().subscribe(value => result = value);
-    http.expectOne('/api/v1/distributors?per_page=100').flush({ data: [{ id: 'd1' }, { id: 'd2' }] });
-    http.expectOne('/api/v1/distributors/d1/credit-line').flush({ data: { id: 'l1', distributor: { id: 'd1' } } });
-    http.expectOne('/api/v1/distributors/d2/credit-line').flush({ message: 'Sin línea' }, { status: 404, statusText: 'Not Found' });
+    http.expectOne('/api/v1/credit-lines').flush({ data: [{ id: 'l1', distributor: { id: 'd1' } }] });
     expect(result.map(line => line.id)).toEqual(['l1']);
   });
 
   it('envía paginación canónica para incrementos existentes de M08', () => {
     service.listarIncrementos(2).subscribe();
-    const request = http.expectOne('/api/v1/credit-increase-requests?page=2&per_page=15');
+    const request = http.expectOne('/api/v1/credit-increase-requests?page=2&per_page=100');
     expect(request.request.method).toBe('GET');
     request.flush({ data: [], meta: { current_page: 2, last_page: 2, total: 15 } });
+  });
+
+  it('consulta los movimientos en orden descendente para el historial de la línea', () => {
+    service.listarMovimientos('d1').subscribe();
+    const request = http.expectOne('/api/v1/distributors/d1/credit-line/movements?per_page=100&sort=-occurred_at');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: [] });
   });
 
   it('crea una solicitud con decimal exacto, versión e idempotencia', () => {

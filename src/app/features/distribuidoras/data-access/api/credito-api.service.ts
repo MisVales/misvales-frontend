@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../../../core/api/api.config';
 
 export interface CreditLineView {
@@ -9,9 +9,25 @@ export interface CreditLineView {
   total_authorized: string;
   used_balance: string;
   available_balance: string;
-  restriction: { has_admissible_range: boolean; reference_amount: string; lower_limit: string; upper_limit: string } | null;
+  restriction: { restriction_type: string; restriction_status: string; has_admissible_range: boolean; reference_amount: string; lower_limit: string; upper_limit: string } | null;
+  last_movement?: { type: string; amount: string; occurred_at: string } | null;
   capabilities?: { can_request_increase: boolean; can_review_increase: boolean; can_decide_increase: boolean; can_view_movements: boolean };
   lock_version: number;
+}
+
+export interface CreditMovementView {
+  id: string;
+  sequence: number;
+  type: string;
+  amount: string;
+  total_authorized_before: string;
+  total_authorized_after: string;
+  used_balance_before: string;
+  used_balance_after: string;
+  available_balance_before: string;
+  available_balance_after: string;
+  performed_by?: { id: string; name: string } | null;
+  occurred_at: string;
 }
 
 export interface CreditIncreaseView {
@@ -41,19 +57,8 @@ export class CreditoApiService {
   private readonly config = inject(API_CONFIG);
 
   listarLineas(): Observable<CreditLineView[]> {
-    return this.http.get<{ data: Array<{ id: string }> }>(`${this.config.baseUrl}/distributors`, {
-      params: new HttpParams().set('per_page', '100'),
-    }).pipe(
-      switchMap((response) => {
-        const requests = response.data.map((distributor) =>
-          this.http.get<{ data?: CreditLineView } | CreditLineView>(`${this.config.baseUrl}/distributors/${distributor.id}/credit-line`).pipe(
-            map((line) => 'data' in line && line.data ? line.data : line as CreditLineView),
-            catchError(() => of(null)),
-          ),
-        );
-        return requests.length ? forkJoin(requests) : of([]);
-      }),
-      map((lines) => lines.filter((line): line is CreditLineView => line !== null)),
+    return this.http.get<{ data: CreditLineView[] }>(`${this.config.baseUrl}/credit-lines`).pipe(
+      map((response) => response.data),
     );
   }
 
@@ -61,11 +66,18 @@ export class CreditoApiService {
     return this.http.get<{ data: CreditLineView }>(`${this.config.baseUrl}/me/credit-line`).pipe(map(response => response.data));
   }
 
-  listarIncrementos(page = 1): Observable<{ data: CreditIncreaseView[]; meta: { current_page: number; last_page: number; total: number } }> {
+  listarIncrementos(page = 1, perPage = 100): Observable<{ data: CreditIncreaseView[]; meta: { current_page: number; last_page: number; total: number } }> {
     return this.http.get<{ data: CreditIncreaseView[]; meta: { current_page: number; last_page: number; total: number } }>(
       `${this.config.baseUrl}/credit-increase-requests`,
-      { params: new HttpParams().set('page', page.toString()).set('per_page', '15') },
+      { params: new HttpParams().set('page', page.toString()).set('per_page', perPage.toString()) },
     );
+  }
+
+  listarMovimientos(distributorId: string): Observable<CreditMovementView[]> {
+    return this.http.get<{ data: CreditMovementView[] }>(
+      `${this.config.baseUrl}/distributors/${distributorId}/credit-line/movements`,
+      { params: new HttpParams().set('per_page', '100').set('sort', '-occurred_at') },
+    ).pipe(map(response => response.data));
   }
 
   consultarIncremento(id: string): Observable<CreditIncreaseView> {

@@ -26,7 +26,7 @@
                   [class.badge-info]="visita.estado === 'ASSIGNED'" 
                   [class.badge-warning]="visita.estado === 'IN_PROGRESS'"
                   [class.badge-success]="visita.estado === 'COMPLETED'">
-              {{ visita.estado }}
+              {{ visita.estado | statusLabel }}
             </span>
           </div>
           <div class="card-body">

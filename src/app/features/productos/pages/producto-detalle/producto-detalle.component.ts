@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { ProductosService } from '../../data-access/productos.service';
 import { SessionStore } from '../../../../core/session/session.store';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-producto-detalle',
@@ -21,11 +22,13 @@ export class ProductoDetalleComponent implements OnInit {
   private router = inject(Router);
   private service = inject(ProductosService);
   private session = inject(SessionStore);
+  private readonly alerts = inject(AlertService);
 
   protected isNew = computed(() => !this.route.snapshot.paramMap.get('id') || this.route.snapshot.paramMap.get('id') === 'nuevo');
   protected canWrite = computed(() => this.session.roles().includes('general_manager'));
   protected saving = signal(false);
   protected error = signal<string | null>(null);
+  protected readonly controlesConErrorVisible = signal<ReadonlySet<keyof typeof this.form.controls>>(new Set());
   private lockVersion = 0;
 
   protected form = this.fb.group({
@@ -36,9 +39,8 @@ export class ProductoDetalleComponent implements OnInit {
     loan_commission_percentage: ['', [Validators.required, Validators.min(0), Validators.max(1)]],
     simple_interest_percentage: ['', [Validators.required, Validators.min(0), Validators.max(1)]],
     insurance_amount: ['', [Validators.required, Validators.min(0)]],
-    fortnights_count: [1, [Validators.required, Validators.min(1)]],
+    fortnights_count: ['', [Validators.required, Validators.min(1)]],
     reason: ['', Validators.required],
-    effective_from: ['', Validators.required]
   });
 
   ngOnInit() {
@@ -58,6 +60,10 @@ export class ProductoDetalleComponent implements OnInit {
   async guardar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.controlesConErrorVisible.set(new Set([
+        'code', 'name', 'nominal_amount', 'loan_commission_percentage',
+        'simple_interest_percentage', 'insurance_amount', 'fortnights_count', 'reason',
+      ]));
       return;
     }
     if (this.saving()) return;
@@ -74,7 +80,6 @@ export class ProductoDetalleComponent implements OnInit {
       insurance_amount: String(v.insurance_amount),
       fortnights_count: Number(v.fortnights_count),
       reason: v.reason!,
-      effective_from: v.effective_from!
     };
 
     try {
@@ -84,11 +89,23 @@ export class ProductoDetalleComponent implements OnInit {
       } else {
         await firstValueFrom(this.service.actualizar(id!, { ...payload, lock_version: this.lockVersion }));
       }
+      this.alerts.success(this.isNew()
+        ? 'El producto se guardó como borrador correctamente.'
+        : 'La nueva edición del producto se guardó correctamente.');
       await this.router.navigate(['/productos']);
     } catch (e: any) {
       this.error.set(e?.error?.message ?? 'No fue posible guardar el producto.');
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected marcarCampoAlEnfocar(control: keyof typeof this.form.controls): void {
+    this.form.controls[control].markAsTouched();
+    this.controlesConErrorVisible.update((controles) => new Set([...controles, control]));
+  }
+
+  protected mostrarError(control: keyof typeof this.form.controls): boolean {
+    return this.controlesConErrorVisible().has(control);
   }
 }

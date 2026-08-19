@@ -8,6 +8,7 @@ import { OrganizationApiService } from '../../../organization/data-access/organi
 import { Branch, PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
 import { SessionStore } from '../../../../core/session/session.store';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 @Component({
   selector: 'app-crear-solicitud-page',
@@ -22,6 +23,7 @@ export class CrearSolicitudPageComponent {
   protected store = inject(SolicitudDetalleStore);
   private organizationApi = inject(OrganizationApiService);
   protected session = inject(SessionStore);
+  private readonly alerts = inject(AlertService);
 
   branches = signal<Branch[]>([]);
   coordinators = signal<PersonnelAssignment[]>([]);
@@ -143,8 +145,8 @@ export class CrearSolicitudPageComponent {
         branch_id: this.crearForm.value.branch_id!,
         coordinator_id: this.crearForm.value.coordinator_id!
       });
-      // Redirect to detail
-      this.router.navigate(['/solicitudes-distribuidoras', id]);
+      this.alerts.success('El expediente se creó correctamente.');
+      await this.router.navigate(['/solicitudes-distribuidoras', id]);
     } catch (e) {
       // Error handled by store
     }
@@ -152,6 +154,10 @@ export class CrearSolicitudPageComponent {
 
   cancelar() {
     this.router.navigate(['/solicitudes-distribuidoras']);
+  }
+
+  marcarCampoAlEnfocar(control: keyof typeof this.crearForm.controls): void {
+    this.crearForm.controls[control].markAsTouched();
   }
 
   private blockForIncompleteContext(message: string): void {

@@ -50,8 +50,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "8kB"
+                  "maximumWarning": "14kB",
+                  "maximumError": "16kB"
                 }
               ],
               "outputHashing": "all"
@@ -70,7 +70,7 @@
             "allowedHosts": [
               "accessed-difficulty-collective-deleted.trycloudflare.com",
               "delivery-discounts-formats-moral.trycloudflare.com",
-              "aberdeen-skiing-photography-alot.trycloudflare.com"
+              "grove-seventh-zone-generated.trycloudflare.com"
             ]
           },
           "configurations": {

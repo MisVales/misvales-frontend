@@ -64,7 +64,7 @@ import {
                 <p>{{ voucher.client?.full_name }}</p>
                 <p>
                   {{ voucher.identity?.official_id_type }} ·
-                  {{ voucher.identity?.official_id_number_masked }}
+                  {{ voucher.identity?.official_id_number }}
                 </p>
               </section>
               <section>

@@ -33,6 +33,15 @@ export class ProductosListaComponent implements OnInit {
     return permissions.includes('catalogs.manage') || permissions.includes('all');
   }
 
+  protected estadoProducto(estado: 'ACTIVE' | 'INACTIVE'): string {
+    return estado === 'ACTIVE' ? 'Disponible' : 'Desactivado';
+  }
+
+  protected estadoEdicion(estado: string): string {
+    const labels: Record<string, string> = { DRAFT: 'Borrador', PUBLISHED: 'Publicado', INACTIVE: 'Archivado' };
+    return labels[estado] ?? estado;
+  }
+
   requestPublication(versionId: string, lockVersion: number): void {
     this.publicationReason.set(''); this.actionError.set('');
     this.pendingPublication.set({ versionId, lockVersion });

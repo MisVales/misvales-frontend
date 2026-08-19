@@ -7,6 +7,7 @@ import { VoucherView } from './vales-api.service';
 export interface CashVoucher extends VoucherView {
   identity?: {
     official_id_type: string;
+    official_id_number: string | null;
     official_id_number_masked: string | null;
     official_id_media_id: string | null;
   };

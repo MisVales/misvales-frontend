@@ -4,11 +4,12 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrganizationApiService } from '../../data-access/organization-api.service';
 import { PersonnelAssignment } from '../../data-access/organization.dtos';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-staff-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, StatusLabelPipe],
   templateUrl: './staff-list.html',
   styleUrls: ['./staff-list.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

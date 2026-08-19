@@ -9,6 +9,7 @@ import { ReenviarInvitacionDialogComponent } from '../../dialogs/reenviar-invita
 import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 import { firstValueFrom } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-detalle-distribuidora-page',
@@ -19,6 +20,7 @@ import { AlertService } from '../../../../shared/services/alert.service';
     HistorialCategoriasComponent,
     AsignarCategoriaDialogComponent,
     ReenviarInvitacionDialogComponent
+    , StatusLabelPipe
   ],
   templateUrl: './detalle-distribuidora-page.component.html',
   styleUrls: ['./detalle-distribuidora-page.component.css']

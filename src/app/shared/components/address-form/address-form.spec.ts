@@ -116,4 +116,24 @@ describe('AddressFormComponent suggestion semantics', () => {
       state: 'Coahuila',
     });
   });
+
+  it('shows the required message as soon as an empty field receives focus', () => {
+    TestBed.configureTestingModule({
+      imports: [AddressFormComponent],
+      providers: [{
+        provide: AddressApiService,
+        useValue: {
+          getStates: () => of([]), getMunicipalities: () => of([]), getInfoByZipCode: () => of(null),
+          autocomplete: () => of(null), geocode: () => of(null),
+        },
+      }],
+    });
+    const fixture = TestBed.createComponent(AddressFormComponent);
+    fixture.detectChanges();
+
+    fixture.componentInstance.marcarCampoAlEnfocar('zipCode');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('El código postal es obligatorio.');
+  });
 });

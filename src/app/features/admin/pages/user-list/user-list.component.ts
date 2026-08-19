@@ -13,8 +13,10 @@ import { OrganizationApiService } from '../../../organization/data-access/organi
 import { RoleRes, UserRes, UserState } from '../../data-access/admin.dtos';
 import { RoleService } from '../../data-access/role.service';
 import { UserService } from '../../data-access/user.service';
+import { AlertService } from '../../../../shared/services/alert.service';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+type InviteField = 'name' | 'email' | 'role' | 'branch';
 
 @Component({
   selector: 'app-user-list',
@@ -29,6 +31,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   private readonly roleService = inject(RoleService);
   private readonly organizationApi = inject(OrganizationApiService);
   private readonly sessionStore = inject(SessionStore);
+  private readonly alerts = inject(AlertService);
 
   readonly users = signal<UserRes[]>([]);
   readonly totalUsers = signal(0);
@@ -41,7 +44,6 @@ export class UserListComponent implements OnInit, OnDestroy {
   readonly filterSearch = signal('');
   readonly page = signal(1);
   readonly isActionLoading = signal<string | null>(null);
-  readonly activeTab = signal<'directory' | 'roles'>('directory');
 
   readonly showInviteModal = signal(false);
   readonly inviteName = signal('');
@@ -50,6 +52,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   readonly inviteBranchId = signal('');
   readonly inviteError = signal('');
   readonly inviteValidationErrors = signal<ValidationErrorsByField>({});
+  readonly inviteTouchedFields = signal<ReadonlySet<InviteField>>(new Set());
   readonly availableRoles = signal<RoleRes[]>([]);
   readonly assignableRoles = signal<RoleRes[]>([]);
   readonly availableBranches = signal<Branch[]>([]);
@@ -165,6 +168,8 @@ export class UserListComponent implements OnInit, OnDestroy {
   async onInviteRoleChange(roleId: string): Promise<void> {
     this.inviteRoleId.set(roleId);
     this.inviteBranchId.set('');
+    this.inviteError.set('');
+    this.clearInviteValidationErrors('role_id', 'branch_id');
     
     const role = this.selectedInviteRole();
     if (role?.code === 'branch_manager') {
@@ -191,10 +196,57 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.inviteBranchId.set('');
     this.inviteError.set('');
     this.inviteValidationErrors.set({});
+    this.inviteTouchedFields.set(new Set());
+  }
+
+  updateInviteName(value: string): void {
+    this.inviteName.set(value);
+    this.inviteError.set('');
+    this.clearInviteValidationErrors('name');
+  }
+
+  updateInviteEmail(value: string): void {
+    this.inviteEmail.set(value);
+    this.inviteError.set('');
+    this.clearInviteValidationErrors('email');
+  }
+
+  updateInviteBranch(value: string): void {
+    this.inviteBranchId.set(value);
+    this.inviteError.set('');
+    this.clearInviteValidationErrors('branch_id');
+  }
+
+  markInviteFieldAsTouched(field: InviteField): void {
+    this.inviteTouchedFields.update((fields) => new Set([...fields, field]));
+  }
+
+  inviteFieldError(field: InviteField): string | null {
+    const serverField = field === 'role' ? 'role_id' : field === 'branch' ? 'branch_id' : field;
+    const serverErrors = this.inviteValidationErrors()[serverField];
+    if (serverErrors?.length) return serverErrors[0];
+
+    if (!this.inviteTouchedFields().has(field)) return null;
+
+    if (field === 'name' && !this.inviteName().trim()) return 'El nombre es obligatorio.';
+    if (field === 'email') {
+      if (!this.inviteEmail().trim()) return 'El correo electrónico es obligatorio.';
+      if (!EMAIL_PATTERN.test(this.inviteEmail().trim())) return 'Ingresa un correo electrónico válido.';
+    }
+    if (field === 'role' && !this.inviteRoleId()) return 'Selecciona un rol para la persona.';
+    if (field === 'branch' && this.inviteRequiresBranch() && !this.inviteBranchId()) {
+      return 'Selecciona una sucursal.';
+    }
+
+    return null;
   }
 
   async inviteUser(): Promise<void> {
     if (!this.inviteIsValid() || this.isActionLoading()) {
+      this.markInviteFieldAsTouched('name');
+      this.markInviteFieldAsTouched('email');
+      this.markInviteFieldAsTouched('role');
+      if (this.inviteRequiresBranch()) this.markInviteFieldAsTouched('branch');
       this.inviteError.set('Complete nombre, correo, rol y el alcance requerido con datos válidos.');
       return;
     }
@@ -210,15 +262,21 @@ export class UserListComponent implements OnInit, OnDestroy {
         branch_id: this.inviteBranchId() || null,
         send_invitation: true,
       }));
+      this.alerts.success(response.message || 'La invitación se envió correctamente.');
       this.closeInviteModal();
       await this.loadUsers();
-      this.pageMessage.set(response.message);
     } catch (error: unknown) {
       this.inviteError.set(apiErrorMessage(error, 'No fue posible crear y enviar la invitación.'));
       this.inviteValidationErrors.set(apiValidationErrors(error));
     } finally {
       this.isActionLoading.set(null);
     }
+  }
+
+  private clearInviteValidationErrors(...fields: string[]): void {
+    const errors = { ...this.inviteValidationErrors() };
+    fields.forEach((field) => delete errors[field]);
+    this.inviteValidationErrors.set(errors);
   }
 
   openBlockModal(user: UserRes): void {

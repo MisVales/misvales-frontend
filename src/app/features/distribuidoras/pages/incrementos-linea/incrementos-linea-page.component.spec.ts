@@ -5,7 +5,7 @@ import { CreditoApiService, CreditIncreaseView } from '../../data-access/api/cre
 import { IncrementosLineaPageComponent } from './incrementos-linea-page.component';
 
 describe('IncrementosLineaPageComponent row action', () => {
-  it('opens a request from an explicitly named native button', () => {
+  it('opens a request from the visible action button', () => {
     const request: CreditIncreaseView = {
       id: 'increase-1',
       request_number: 'INC-001',
@@ -31,7 +31,7 @@ describe('IncrementosLineaPageComponent row action', () => {
     fixture.detectChanges();
 
     const openButton = fixture.nativeElement.querySelector(
-      'tbody button[aria-label="Abrir solicitud INC-001"]',
+      'tbody button[aria-label="Ver solicitud INC-001"]',
     ) as HTMLButtonElement;
     expect(openButton).toBeTruthy();
     expect(openButton.type).toBe('button');

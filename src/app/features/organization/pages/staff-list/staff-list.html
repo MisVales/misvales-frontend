@@ -63,7 +63,7 @@
                 <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                       [class.bg-green-100]="user.assignment_status === 'ACTIVE'" [class.text-green-800]="user.assignment_status === 'ACTIVE'"
                       [class.bg-red-100]="user.assignment_status !== 'ACTIVE'" [class.text-red-800]="user.assignment_status !== 'ACTIVE'">
-                  {{ user.assignment_status }}
+                  {{ user.assignment_status | statusLabel }}
                 </span>
               </td>
               <td class="px-6 py-4 flex items-center gap-3">

@@ -63,4 +63,12 @@ describe('OrganizationApiService', () => {
     expect(request.request.headers.get('If-Match')).toBe('"1"');
     request.flush({ data: { ...branch, status: 'INACTIVE', lock_version: 2 } });
   });
+
+  it('consulta las asignaciones con el filtro de vigencia solicitado', () => {
+    service.getBranchAssignments('branch-1', { status: 'REVOKED' }).subscribe();
+
+    const request = http.expectOne('/api/v1/branches/branch-1/assignments?status=REVOKED&per_page=100');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: [], meta: { current_page: 1, last_page: 1, per_page: 100, total: 0 } });
+  });
 });

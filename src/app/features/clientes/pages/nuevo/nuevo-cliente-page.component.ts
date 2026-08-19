@@ -48,7 +48,7 @@ export class NuevoClientePageComponent {
     birth_state: ['', Validators.required],
     birth_city: ['', Validators.required],
     official_id_type: ['INE', Validators.required],
-    official_id_number: ['', [Validators.maxLength(50)]],
+    official_id_number: ['', [Validators.maxLength(25)]],
     street: ['', Validators.required],
     exterior_number: ['', Validators.required],
     interior_number: [''],

@@ -1,4 +1,4 @@
-import { Directive, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, inject, ElementRef, Renderer2 } from '@angular/core';
+import { Directive, Input, Output, EventEmitter, OnInit, OnDestroy, HostListener, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormGroup } from '@angular/forms';
 import { EMPTY, Observable, Subject, Subscription } from 'rxjs';
@@ -24,8 +24,6 @@ export class AutosaveDirective implements OnInit, OnDestroy {
   public hasUnsavedChanges = false;
 
   private readonly sessionExpired = inject(SessionExpiredService);
-  private readonly elementRef = inject(ElementRef<HTMLElement>, { optional: true });
-  private readonly renderer = inject(Renderer2, { optional: true });
   private sub = new Subscription();
   private readonly saveQueue$ = new Subject<{ value: Record<string, unknown>; version: number }>();
   private saveQueueSub = new Subscription();
@@ -163,7 +161,6 @@ export class AutosaveDirective implements OnInit, OnDestroy {
 
       control.setErrors({ ...(control.errors ?? {}), server: messages.join(' ') });
       control.markAsTouched();
-      this.renderFieldError(controlName, messages.join(' '));
     });
   }
 
@@ -174,7 +171,6 @@ export class AutosaveDirective implements OnInit, OnDestroy {
     const errors = { ...(control.errors ?? {}) };
     delete errors['server'];
     control.setErrors(Object.keys(errors).length ? errors : null);
-    this.removeFieldError(field);
   }
 
   private controlNameForServerField(field: string): string {
@@ -182,38 +178,6 @@ export class AutosaveDirective implements OnInit, OnDestroy {
       'details_payload.proof_type': 'proof_type',
       'details_payload.description': 'other_description',
     }[field] ?? field;
-  }
-
-  private renderFieldError(field: string, message: string): void {
-    this.removeFieldError(field);
-    if (!this.elementRef || !this.renderer) return;
-    const host = this.elementRef.nativeElement as HTMLElement;
-    const renderer = this.renderer;
-    const input = host.querySelector<HTMLElement>(`[formControlName="${field}"]`);
-    if (!input) return;
-
-    renderer.addClass(input, 'border-red-500');
-    renderer.setAttribute(input, 'aria-invalid', 'true');
-    const error = renderer.createElement('p');
-    renderer.setAttribute(error, 'data-autosave-error-for', field);
-    renderer.addClass(error, 'text-red-500');
-    renderer.addClass(error, 'text-xs');
-    renderer.addClass(error, 'mt-1');
-    renderer.setProperty(error, 'textContent', message);
-    renderer.appendChild(input.parentElement, error);
-  }
-
-  private removeFieldError(field: string): void {
-    if (!this.elementRef || !this.renderer) return;
-    const selector = `[data-autosave-error-for="${field}"]`;
-    const host = this.elementRef.nativeElement as HTMLElement;
-    const renderer = this.renderer;
-    host.querySelectorAll(selector).forEach((element: Element) => renderer.removeChild(element.parentNode, element));
-    const input = host.querySelector<HTMLElement>(`[formControlName="${field}"]`);
-    if (input) {
-      renderer.removeClass(input, 'border-red-500');
-      renderer.removeAttribute(input, 'aria-invalid');
-    }
   }
 
   /**

@@ -81,7 +81,8 @@
 
         <div class="md:col-span-2">
           <label class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">Número de Identificación</label>
-          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" maxlength="50" formControlName="official_id_number" placeholder="Ej. Clave de elector o folio">
+          <input class="w-full rounded-lg border border-gray-300 p-2.5 text-sm focus:border-[#386641] focus:ring-1 focus:ring-[#386641] outline-none" maxlength="25" formControlName="official_id_number" placeholder="Ej. Clave de elector o folio">
+          <p class="mt-1 text-xs text-gray-500">Máximo 25 caracteres.</p>
           <app-input-error [control]="form.controls.official_id_number" label="El número de identificación"></app-input-error>
         </div>
       </div>

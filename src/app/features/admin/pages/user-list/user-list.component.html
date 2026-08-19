@@ -1,8 +1,8 @@
 <div class="max-w-6xl mx-auto space-y-6">
   <app-page-header
     eyebrow="Acceso y seguridad"
-    title="Usuarios y roles"
-    description="Administra identidades, estados de acceso y alcances autorizados."
+    title="Usuarios"
+    description="Administra identidades y estados de acceso."
   >
     @if (canInviteUsers()) {
     <button pageHeaderActions class="bg-[#386641] hover:bg-[#6A994E] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2" (click)="showInviteModal.set(true)">
@@ -18,39 +18,6 @@
   @if (pageMessage()) {
     <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700" role="status">{{ pageMessage() }}</div>
   }
-
-  <div class="border-b border-gray-200 mb-6">
-    <nav class="-mb-px flex gap-6 overflow-x-auto" aria-label="Vistas de usuarios" role="tablist">
-      <button 
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'directory'"
-        (click)="activeTab.set('directory')"
-        [class.border-[#386641]]="activeTab() === 'directory'"
-        [class.text-[#386641]]="activeTab() === 'directory'"
-        [class.border-transparent]="activeTab() !== 'directory'"
-        [class.text-gray-500]="activeTab() !== 'directory'"
-        class="hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-        Directorio de usuarios
-      </button>
-      @if (canViewRoles()) {
-      <button 
-        type="button"
-        role="tab"
-        [attr.aria-selected]="activeTab() === 'roles'"
-        (click)="activeTab.set('roles')"
-        [class.border-[#386641]]="activeTab() === 'roles'"
-        [class.text-[#386641]]="activeTab() === 'roles'"
-        [class.border-transparent]="activeTab() !== 'roles'"
-        [class.text-gray-500]="activeTab() !== 'roles'"
-        class="hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors">
-        Roles y alcances
-      </button>
-      }
-    </nav>
-  </div>
-
-  @if (activeTab() === 'directory') {
 
   <div class="flex flex-wrap gap-3 mb-6" aria-label="Filtros del directorio">
     <input type="search" [ngModel]="filterSearch()" (ngModelChange)="filterSearch.set($event); onFilterChange(true)" aria-label="Buscar usuarios" placeholder="Buscar por nombre o correo" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1">
@@ -150,23 +117,6 @@
       </tbody>
     </table>
   </div>
-  }
-} @else if (activeTab() === 'roles') {
-  <section class="bg-white rounded-xl border border-gray-200 p-6" aria-labelledby="roles-summary-title">
-    <h3 id="roles-summary-title" class="text-lg font-bold text-gray-800">Roles disponibles</h3>
-    <p class="text-sm text-gray-500 max-w-2xl mt-1 mb-5">Consulta los roles activos que pueden asignarse. La autorización efectiva también depende del alcance vigente.</p>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-left w-full">
-      @for (role of availableRoles(); track role.id) {
-        <div class="p-4 border border-gray-100 rounded-lg bg-gray-50">
-          <h4 class="font-bold text-gray-800 mb-1">{{ role.name }}</h4>
-          <div class="flex justify-between items-center gap-3 text-sm mt-3">
-            <span class="text-gray-500">Tipo</span>
-            <app-status-badge [tone]="role.is_system ? 'info' : 'neutral'">{{ role.is_system ? 'Sistema' : 'Personalizado' }}</app-status-badge>
-          </div>
-        </div>
-      }
-    </div>
-  </section>
 }
 </div>
 
@@ -180,33 +130,37 @@
       }
       
       <div class="mb-4">
-        <label for="invite-name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Nombre</label>
-        <input id="invite-name" type="text" [ngModel]="inviteName()" (ngModelChange)="inviteName.set($event)" maxlength="255" autocomplete="name" placeholder="Juan Pérez"
+        <label for="invite-name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Nombre <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+        <input id="invite-name" type="text" [ngModel]="inviteName()" (ngModelChange)="updateInviteName($event)" (focus)="markInviteFieldAsTouched('name')" maxlength="255" autocomplete="name" placeholder="Juan Pérez"
+               [class.border-red-600]="inviteFieldError('name')" [attr.aria-invalid]="!!inviteFieldError('name')" aria-describedby="invite-name-error"
                class="block w-full px-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
-        @if (inviteValidationErrors()['name']; as errors) { <p class="mt-1 text-xs text-red-600">{{ errors[0] }}</p> }
+        @if (inviteFieldError('name'); as error) { <p id="invite-name-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
       </div>
       
       <div class="mb-4">
-        <label for="invite-email" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Correo electrónico</label>
-        <input id="invite-email" type="email" [ngModel]="inviteEmail()" (ngModelChange)="inviteEmail.set($event)" autocomplete="email" maxlength="255" placeholder="correo@ejemplo.com"
+        <label for="invite-email" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Correo electrónico <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+        <input id="invite-email" type="email" [ngModel]="inviteEmail()" (ngModelChange)="updateInviteEmail($event)" (focus)="markInviteFieldAsTouched('email')" autocomplete="email" maxlength="255" placeholder="correo@ejemplo.com"
+               [class.border-red-600]="inviteFieldError('email')" [attr.aria-invalid]="!!inviteFieldError('email')" aria-describedby="invite-email-error"
                class="block w-full px-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
-        @if (inviteValidationErrors()['email']; as errors) { <p class="mt-1 text-xs text-red-600">{{ errors[0] }}</p> }
+        @if (inviteFieldError('email'); as error) { <p id="invite-email-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
       </div>
       
       <div class="mb-6">
-        <label for="invite-role" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Rol a asignar</label>
-        <select id="invite-role" [ngModel]="inviteRoleId()" (ngModelChange)="onInviteRoleChange($event)"
+        <label for="invite-role" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Rol a asignar <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+        <select id="invite-role" [ngModel]="inviteRoleId()" (ngModelChange)="onInviteRoleChange($event)" (focus)="markInviteFieldAsTouched('role')"
+                [class.border-red-600]="inviteFieldError('role')" [attr.aria-invalid]="!!inviteFieldError('role')" aria-describedby="invite-role-error"
                 class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
           <option value="" disabled>Selecciona un rol...</option>
           @for (role of assignableRoles(); track role.id) {
             <option [value]="role.id">{{ role.name }}</option>
           }
         </select>
+        @if (inviteFieldError('role'); as error) { <p id="invite-role-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
       </div>
 
       @if (inviteRequiresBranch()) {
         <div class="mb-6">
-          <label for="invite-branch" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Sucursal</label>
+          <label for="invite-branch" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Sucursal <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
           
           @if (selectedInviteRole()?.code === 'branch_manager' && isFetchingEligibleBranches()) {
             <div class="text-sm text-gray-500 py-2">Buscando sucursales elegibles...</div>
@@ -215,7 +169,8 @@
               No hay sucursales disponibles para asignar un gerente.
             </div>
           } @else {
-            <select id="invite-branch" [ngModel]="inviteBranchId()" (ngModelChange)="inviteBranchId.set($event)"
+            <select id="invite-branch" [ngModel]="inviteBranchId()" (ngModelChange)="updateInviteBranch($event)" (focus)="markInviteFieldAsTouched('branch')"
+                    [class.border-red-600]="inviteFieldError('branch')" [attr.aria-invalid]="!!inviteFieldError('branch')" aria-describedby="invite-branch-error"
                     class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
               <option value="" disabled>Selecciona una sucursal...</option>
               @for (branch of currentInviteBranches(); track branch.id) {
@@ -223,7 +178,7 @@
               }
             </select>
           }
-          @if (inviteValidationErrors()['branch_id']; as errors) { <p class="mt-1 text-xs text-red-600">{{ errors[0] }}</p> }
+          @if (inviteFieldError('branch'); as error) { <p id="invite-branch-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
         </div>
       }
 

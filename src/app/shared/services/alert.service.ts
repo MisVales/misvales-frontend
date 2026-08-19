@@ -15,7 +15,11 @@ export interface Alert {
 export class AlertService {
   alerts = signal<Alert[]>([]);
 
-  showAlert(message: string, type: AlertType = 'info', duration: number = 5000) {
+  success(message: string, duration = 5000): void {
+    this.showAlert(message, 'success', duration);
+  }
+
+  showAlert(message: string, type: AlertType = 'info', duration: number = 5000): void {
     const id = Math.random().toString(36).substring(2, 9);
     const alert: Alert = { id, type, message, duration };
     
@@ -28,7 +32,7 @@ export class AlertService {
     }
   }
 
-  removeAlert(id: string) {
+  removeAlert(id: string): void {
     this.alerts.update(current => current.filter(a => a.id !== id));
   }
 

@@ -10,7 +10,6 @@ export const transferenciasRoutes: Routes = [
       ),
     canActivate: [
       anyPermissionGuard([
-        'client_transfers.view',
         'organization_changes.view',
         'organization_changes.manage_branch',
         'organization_changes.manage_global',

@@ -10,7 +10,7 @@
           <p class="text-xs font-bold text-gray-500">{{ cliente.numero }}</p>
           <h2 class="mt-1 font-bold">{{ cliente.nombreCompleto }}</h2>
           <p class="mt-4 text-sm">Saldo informativo: <strong>{{ cliente.resumenCartera.saldoActual | currency:'MXN' }}</strong></p>
-          <p class="text-sm">Estado: {{ cliente.resumenCartera.estadoInformativo || 'Sin estado' }}</p>
+          <p class="text-sm">Estado: {{ cliente.resumenCartera.estadoInformativo | statusLabel }}</p>
           <a [routerLink]="['/clientes', cliente.id, 'cartera']" class="mt-4 inline-block font-semibold text-[#386641]">Ver movimientos</a>
         </article>
       }

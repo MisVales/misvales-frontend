@@ -52,6 +52,7 @@ export class AddressFormComponent implements OnInit, OnDestroy {
   municipalities: Municipality[] = [];
   colonies: Colony[] = [];
   streetSuggestions: any[] = [];
+  private visibleErrorFields = new Set<string>();
   private pendingColonyName: string | null = null;
   
   ngOnInit() {
@@ -293,7 +294,20 @@ export class AddressFormComponent implements OnInit, OnDestroy {
 
   mostrarError(campo: string): boolean {
     const control = this.form.get(campo);
-    return this.showValidationState && !!control && control.invalid && control.touched;
+    return !!control && control.invalid && (
+      (this.showValidationState && control.touched)
+      || this.visibleErrorFields.has(campo)
+    );
+  }
+
+  marcarCampoAlEnfocar(campo: string): void {
+    this.visibleErrorFields.add(campo);
+    this.form.get(campo)?.markAsTouched();
+  }
+
+  mostrarMensajeError(campo: string): boolean {
+    const control = this.form.get(campo);
+    return !!control && control.invalid && this.visibleErrorFields.has(campo);
   }
 
   private emitChange(lat?: number, lng?: number) {

@@ -94,7 +94,7 @@
             @for (visita of solicitud.visitas; track visita.id) {
               <div class="visita-summary">
                 <div class="visita-header">
-                  <strong>Estado de Visita:</strong> {{ visita.estado }} 
+                  <strong>Estado de Visita:</strong> {{ visita.estado | statusLabel }}
                   @if (visita.resultadoFisico) {
                     <span class="badge" [class.badge-success]="visita.resultadoFisico === 'FAVORABLE'" [class.badge-danger]="visita.resultadoFisico === 'UNFAVORABLE'">
                       {{ visita.resultadoFisico }}

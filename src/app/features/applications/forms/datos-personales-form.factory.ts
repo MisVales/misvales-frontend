@@ -23,7 +23,7 @@ export class DatosPersonalesFormFactory {
       // cuando se selecciona esa nacionalidad.
       identification_country: ['MX', [Validators.maxLength(2)]],
       official_id_type: ['', [Validators.required]],
-      official_id_number: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+      official_id_number: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(25)]],
       evidence_uploaded: [false, [Validators.requiredTrue]] // Estado derivado de la evidencia privada ya almacenada
     });
   }

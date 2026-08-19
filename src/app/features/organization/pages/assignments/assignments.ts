@@ -5,10 +5,12 @@ import { RouterModule } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '@core/api/api-error';
 import { SessionStore } from '@core/session/session.store';
-import { RoleScopeRes, UserRes } from '../../../admin/data-access/admin.dtos';
+import { UserRes } from '../../../admin/data-access/admin.dtos';
 import { UserService } from '../../../admin/data-access/user.service';
 import { OrganizationApiService } from '../../data-access/organization-api.service';
 import { MisvalesDateTimePipe } from '../../../../shared/pipes/misvales-date-time.pipe';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
+import { AlertService } from '../../../../shared/services/alert.service';
 import {
   Branch,
   CoordinatorDistributorAssignment,
@@ -16,10 +18,85 @@ import {
   PersonnelAssignment,
 } from '../../data-access/organization.dtos';
 
+type OrganizationalRole = {
+  id: string;
+  code: string;
+  name: string;
+};
+
+export type PersonnelCandidate = {
+  id: string;
+  name: string;
+  email: string;
+  role: OrganizationalRole;
+  isReactivation: boolean;
+};
+
+const ORGANIZATIONAL_ROLE_CODES = new Set(['branch_manager', 'coordinator', 'verifier', 'cashier']);
+
+export function personnelCandidates(
+  users: UserRes[],
+  personnelHistory: PersonnelAssignment[],
+): PersonnelCandidate[] {
+  const candidates = new Map<string, PersonnelCandidate>();
+  const activeAssignmentUserIds = new Set(
+    personnelHistory
+      .filter((assignment) => assignment.assignment_status === 'ACTIVE')
+      .map((assignment) => assignment.user.id),
+  );
+
+  for (const user of users) {
+    const role = organizationalRole(user);
+    if (user.state !== 'ACTIVE' || !role || activeAssignmentUserIds.has(user.id)) continue;
+
+    candidates.set(user.id, {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role,
+      isReactivation: false,
+    });
+  }
+
+  for (const assignment of personnelHistory) {
+    if (
+      assignment.assignment_status !== 'REVOKED'
+      || assignment.user.state !== 'ACTIVE'
+      || candidates.has(assignment.user.id)
+      || activeAssignmentUserIds.has(assignment.user.id)
+    ) {
+      continue;
+    }
+
+    const role = assignment.role;
+    if (!ORGANIZATIONAL_ROLE_CODES.has(role.code)) continue;
+
+    candidates.set(assignment.user.id, {
+      id: assignment.user.id,
+      name: assignment.user.name,
+      email: assignment.user.email,
+      role,
+      isReactivation: true,
+    });
+  }
+
+  return [...candidates.values()].sort((left, right) => left.name.localeCompare(right.name, 'es'));
+}
+
+function organizationalRole(user: UserRes): OrganizationalRole | null {
+  const role = user.role_scopes?.find((scope) =>
+    typeof scope.role.id === 'string'
+    && typeof scope.role.code === 'string'
+    && ORGANIZATIONAL_ROLE_CODES.has(scope.role.code),
+  )?.role;
+
+  return role?.id && role.code ? { id: role.id, code: role.code, name: role.name } : null;
+}
+
 @Component({
   selector: 'app-organization-assignments',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MisvalesDateTimePipe],
+  imports: [CommonModule, FormsModule, RouterModule, MisvalesDateTimePipe, StatusLabelPipe],
   templateUrl: './assignments.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -27,19 +104,23 @@ export class AssignmentsPage implements OnInit {
   private readonly api = inject(OrganizationApiService);
   private readonly userService = inject(UserService);
   private readonly session = inject(SessionStore);
+  private readonly alerts = inject(AlertService);
 
   readonly branches = signal<Branch[]>([]);
   readonly users = signal<UserRes[]>([]);
   readonly personnel = signal<PersonnelAssignment[]>([]);
+  readonly personnelHistory = signal<PersonnelAssignment[]>([]);
   readonly distributorAssignments = signal<CoordinatorDistributorAssignment[]>([]);
   readonly distributors = signal<DistributorCandidate[]>([]);
   readonly selectedBranch = signal<Branch | null>(null);
   readonly activeTab = signal<'personnel' | 'distributors'>('personnel');
+  readonly personnelStatus = signal<PersonnelAssignment['assignment_status']>('ACTIVE');
   readonly isLoading = signal(false);
   readonly actionLoading = signal(false);
   readonly pageError = signal('');
   readonly pageMessage = signal('');
   readonly personnelForm = signal({ user_id: '', reason: '' });
+  readonly personnelTouchedFields = signal<ReadonlySet<'user_id' | 'reason'>>(new Set());
   readonly distributorForm = signal({ distributor_id: '', coordinator_id: '', reason: '' });
   readonly pendingWithdrawal = signal<
     | { type: 'personnel'; assignment: PersonnelAssignment }
@@ -47,14 +128,13 @@ export class AssignmentsPage implements OnInit {
     | null
   >(null);
   readonly withdrawalReason = signal('');
+  readonly withdrawalReasonTouched = signal(false);
 
-  readonly eligibleUsers = computed(() => this.users().filter((user) =>
-    user.state === 'ACTIVE' && this.organizationalRole(user) !== null,
-  ));
-  readonly selectedPersonnelRole = computed(() => {
-    const user = this.users().find((item) => item.id === this.personnelForm().user_id);
-    return user ? this.organizationalRole(user) : null;
-  });
+  readonly eligibleUsers = computed(() => personnelCandidates(this.users(), this.personnelHistory()));
+  readonly selectedPersonnelCandidate = computed(() =>
+    this.eligibleUsers().find((candidate) => candidate.id === this.personnelForm().user_id) ?? null,
+  );
+  readonly selectedPersonnelRole = computed(() => this.selectedPersonnelCandidate()?.role ?? null);
   readonly coordinators = computed(() => {
     const seen = new Set<string>();
     return this.personnel()
@@ -88,6 +168,7 @@ export class AssignmentsPage implements OnInit {
   async openBranch(branch: Branch): Promise<void> {
     this.selectedBranch.set(branch);
     this.activeTab.set('personnel');
+    this.personnelStatus.set('ACTIVE');
     this.pageMessage.set('');
     await this.reload();
   }
@@ -95,6 +176,7 @@ export class AssignmentsPage implements OnInit {
   showBranches(): void {
     this.selectedBranch.set(null);
     this.personnel.set([]);
+    this.personnelHistory.set([]);
     this.distributorAssignments.set([]);
     this.distributors.set([]);
     this.pageError.set('');
@@ -108,12 +190,14 @@ export class AssignmentsPage implements OnInit {
     this.isLoading.set(true);
     this.pageError.set('');
     try {
-      const [personnel, coordinatorAssignments, distributors] = await Promise.all([
-        firstValueFrom(this.api.getBranchAssignments(branch.id)),
+      const [personnel, personnelHistory, coordinatorAssignments, distributors] = await Promise.all([
+        firstValueFrom(this.api.getBranchAssignments(branch.id, { status: this.personnelStatus() })),
+        firstValueFrom(this.api.getBranchAssignments(branch.id, { includeHistory: true })),
         firstValueFrom(this.api.getCoordinatorDistributorAssignments(branch.id)),
         firstValueFrom(this.api.getActiveDistributorCandidates(branch.id)),
       ]);
       this.personnel.set(personnel.data);
+      this.personnelHistory.set(personnelHistory.data);
       this.distributorAssignments.set(coordinatorAssignments);
       this.distributors.set(distributors);
     } catch (error: unknown) {
@@ -123,13 +207,23 @@ export class AssignmentsPage implements OnInit {
     }
   }
 
+  async changePersonnelStatus(status: string): Promise<void> {
+    if (status !== 'ACTIVE' && status !== 'REVOKED') return;
+    if (this.personnelStatus() === status) return;
+
+    this.personnelStatus.set(status);
+    await this.reload();
+  }
+
   async assignPersonnel(): Promise<void> {
     const branch = this.selectedBranch();
     const form = this.personnelForm();
+    const candidate = this.selectedPersonnelCandidate();
     const role = this.selectedPersonnelRole();
-    const roleId = role?.role.id;
+    const roleId = role?.id;
     if (!branch || !form.user_id || !roleId || !form.reason.trim()) {
-      this.pageError.set('Seleccione una persona con rol organizacional y capture el motivo.');
+      this.markPersonnelFieldAsTouched('user_id');
+      this.markPersonnelFieldAsTouched('reason');
       return;
     }
 
@@ -141,12 +235,16 @@ export class AssignmentsPage implements OnInit {
         assignment_reason: form.reason.trim(),
       }));
       this.personnelForm.set({ user_id: '', reason: '' });
-      this.pageMessage.set('El personal quedó asignado con el rol que ya tiene registrado.');
+      this.personnelTouchedFields.set(new Set());
+      this.alerts.success(candidate?.isReactivation
+        ? `${candidate.name} se reactivó como ${role.name}.`
+        : 'El personal quedó asignado con el rol que ya tiene registrado.');
     });
   }
 
   requestEndPersonnel(assignment: PersonnelAssignment): void {
     this.withdrawalReason.set('');
+    this.withdrawalReasonTouched.set(false);
     this.pendingWithdrawal.set({ type: 'personnel', assignment });
   }
 
@@ -176,19 +274,62 @@ export class AssignmentsPage implements OnInit {
       return;
     }
     this.withdrawalReason.set('');
+    this.withdrawalReasonTouched.set(false);
     this.pendingWithdrawal.set({ type: 'distributor', assignment });
   }
 
   closeWithdrawalDialog(): void {
     this.pendingWithdrawal.set(null);
     this.withdrawalReason.set('');
+    this.withdrawalReasonTouched.set(false);
+  }
+
+  updatePersonnelUser(userId: string): void {
+    this.personnelForm.set({ ...this.personnelForm(), user_id: userId });
+    this.pageError.set('');
+  }
+
+  updatePersonnelReason(reason: string): void {
+    this.personnelForm.set({ ...this.personnelForm(), reason });
+    this.pageError.set('');
+  }
+
+  markPersonnelFieldAsTouched(field: 'user_id' | 'reason'): void {
+    this.personnelTouchedFields.update((fields) => new Set([...fields, field]));
+  }
+
+  personnelFieldError(field: 'user_id' | 'reason'): string | null {
+    const form = this.personnelForm();
+    const touched = this.personnelTouchedFields().has(field);
+
+    if (field === 'user_id' && touched && !form.user_id) return 'Selecciona una persona.';
+    if (field === 'reason' && (touched || Boolean(form.user_id)) && !form.reason.trim()) {
+      return 'El motivo de asignación es obligatorio.';
+    }
+
+    return null;
+  }
+
+  updateWithdrawalReason(reason: string): void {
+    this.withdrawalReason.set(reason);
+    this.pageError.set('');
+  }
+
+  markWithdrawalReasonAsTouched(): void {
+    this.withdrawalReasonTouched.set(true);
+  }
+
+  withdrawalReasonError(): string | null {
+    return this.withdrawalReasonTouched() && !this.withdrawalReason().trim()
+      ? 'El motivo del retiro es obligatorio.'
+      : null;
   }
 
   async confirmWithdrawal(): Promise<void> {
     const pending = this.pendingWithdrawal();
     const reason = this.withdrawalReason().trim();
     if (!pending || !reason) {
-      this.pageError.set('Capture el motivo del retiro para conservar la trazabilidad.');
+      this.markWithdrawalReasonAsTouched();
       return;
     }
 
@@ -203,7 +344,7 @@ export class AssignmentsPage implements OnInit {
         await firstValueFrom(this.api.terminateCoordinatorDistributorAssignment(pending.assignment.id, reason));
       }
       this.closeWithdrawalDialog();
-      this.pageMessage.set('La asignación se retiró sin borrar el historial.');
+      this.alerts.success('La asignación se retiró sin borrar el historial.');
     });
   }
 
@@ -212,12 +353,7 @@ export class AssignmentsPage implements OnInit {
   }
 
   roleLabel(user: UserRes): string {
-    return this.organizationalRole(user)?.role.name ?? 'Sin rol organizacional';
-  }
-
-  private organizationalRole(user: UserRes): RoleScopeRes | null {
-    const allowed = new Set(['branch_manager', 'coordinator', 'verifier', 'cashier']);
-    return user.role_scopes?.find((scope) => scope.role.code && allowed.has(scope.role.code)) ?? null;
+    return organizationalRole(user)?.name ?? 'Sin rol organizacional';
   }
 
   private async runAction(action: () => Promise<void>): Promise<void> {

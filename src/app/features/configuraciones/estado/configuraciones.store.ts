@@ -10,6 +10,17 @@ import {
   UpdateConfigurationVersionRequestDto 
 } from '../data-access/configuraciones.dtos';
 
+type ErrorApiConfiguracion = {
+  message?: string;
+  error?: { message?: string; code?: string };
+};
+
+/** Obtiene el mensaje de la envoltura estándar de errores de la API. */
+export function mensajeErrorConfiguracion(error: unknown, mensajePorDefecto: string): string {
+  const respuesta = (error as { error?: ErrorApiConfiguracion } | null)?.error;
+  return respuesta?.error?.message ?? respuesta?.message ?? mensajePorDefecto;
+}
+
 export interface ConfiguracionesFiltros {
   grupo?: string;
   estado?: string;
@@ -60,7 +71,7 @@ export const ConfiguracionesStore = signalStore(
             operacionEnProceso: null
           });
         } catch (err: any) {
-          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al listar configuraciones', operacionEnProceso: null });
+          patchState(store, { estadoCarga: false, error: mensajeErrorConfiguracion(err, 'Error al listar configuraciones'), operacionEnProceso: null });
         }
       },
       
@@ -70,7 +81,7 @@ export const ConfiguracionesStore = signalStore(
           const res = await firstValueFrom(service.consultarDefinicion(clave));
           patchState(store, { definicionSeleccionada: ConfiguracionesMapper.fromDefinitionDto(res), estadoCarga: false, operacionEnProceso: null });
         } catch (err: any) {
-          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al consultar definición', operacionEnProceso: null });
+          patchState(store, { estadoCarga: false, error: mensajeErrorConfiguracion(err, 'Error al consultar definición'), operacionEnProceso: null });
         }
       },
 
@@ -84,7 +95,7 @@ export const ConfiguracionesStore = signalStore(
             operacionEnProceso: null
           });
         } catch (err: any) {
-          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al consultar versiones', operacionEnProceso: null });
+          patchState(store, { estadoCarga: false, error: mensajeErrorConfiguracion(err, 'Error al consultar versiones'), operacionEnProceso: null });
         }
       },
 
@@ -96,7 +107,7 @@ export const ConfiguracionesStore = signalStore(
           await this.consultarVersiones(clave);
           patchState(store, { estadoCarga: false, operacionEnProceso: 'crearVersionSuccess' });
         } catch (err: any) {
-          patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al crear versión', operacionEnProceso: null });
+          patchState(store, { estadoCarga: false, error: mensajeErrorConfiguracion(err, 'Error al crear versión'), operacionEnProceso: null });
         }
       },
 
@@ -151,7 +162,7 @@ export const ConfiguracionesStore = signalStore(
             operacionEnProceso: null 
           });
         } else {
-          patchState(store, { estadoCarga: false, error: err?.error?.message || mensajePorDefecto, operacionEnProceso: null });
+          patchState(store, { estadoCarga: false, error: mensajeErrorConfiguracion(err, mensajePorDefecto), operacionEnProceso: null });
         }
       },
 

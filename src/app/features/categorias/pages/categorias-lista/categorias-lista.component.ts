@@ -8,10 +8,11 @@ import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/api/api-error';
 import { ReasonActionDialogComponent } from '../../../../shared/ui/reason-action-dialog/reason-action-dialog.component';
 import { MisvalesDateTimePipe } from '../../../../shared/pipes/misvales-date-time.pipe';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-categorias-lista',
-  imports: [CommonModule, RouterModule, ReasonActionDialogComponent, MisvalesDateTimePipe],
+  imports: [CommonModule, RouterModule, ReasonActionDialogComponent, MisvalesDateTimePipe, StatusLabelPipe],
   templateUrl: './categorias-lista.component.html',
   styleUrls: ['./categorias-lista.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,

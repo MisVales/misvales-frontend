@@ -1,0 +1,137 @@
+<main class="voucher-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Otorgamiento</p>
+      <h1>Prevales y vales</h1>
+      <p class="page-intro">Primero encuentra a la persona, elige el importe y revisa el cálculo antes de crear el folio.</p>
+    </div>
+    <p class="type-note"><strong>Prevale</strong> para el primer otorgamiento; los siguientes se crean como <strong>vales digitales</strong>.</p>
+  </header>
+
+  @if (error()) {
+    <div class="notice notice-error" role="alert">{{ error() }}</div>
+  }
+
+  @if (canCreate()) {
+    <section class="flow" aria-label="Flujo para otorgar un vale">
+      <ol class="steps">
+        <li [class.is-current]="currentStep() === 1" [class.is-complete]="currentStep() > 1"><span>1</span><div><strong>Persona</strong><small>Busca y selecciona</small></div></li>
+        <li [class.is-current]="currentStep() === 2" [class.is-complete]="currentStep() > 2"><span>2</span><div><strong>Importe</strong><small>Elige el producto</small></div></li>
+        <li [class.is-current]="currentStep() === 3"><span>3</span><div><strong>Confirmación</strong><small>Revisa y crea</small></div></li>
+      </ol>
+
+      <div class="grant-grid">
+        <form class="grant-form" [formGroup]="form" (ngSubmit)="preview()">
+          <section class="form-section" aria-labelledby="person-heading">
+            <div class="section-heading">
+              <div><p class="section-number">Paso 1</p><h2 id="person-heading">¿A quién se le otorgará?</h2></div>
+              <a routerLink="/clientes/nuevo" class="secondary-link">Registrar persona nueva</a>
+            </div>
+            <label class="field-label" for="voucher-client-search">Busca por nombre, apellidos o número de cliente</label>
+            <input id="voucher-client-search" class="search-input" type="search" formControlName="search" autocomplete="off" placeholder="Escribe al menos 2 caracteres" />
+            <p class="field-help">Sólo se muestran personas asignadas a tu distribuidora activa.</p>
+
+            @if (searchingClients()) {
+              <p class="search-state" aria-live="polite">Buscando personas…</p>
+            } @else if (searchedClients() && !clients().length) {
+              <div class="empty-search"><strong>No encontramos coincidencias.</strong><span>Revisa la búsqueda o registra a la persona antes de crear su primer Prevale.</span></div>
+            } @else if (clients().length) {
+              <div class="client-results" role="listbox" aria-label="Resultados de personas">
+                @for (client of clients(); track client.id) {
+                  <button type="button" role="option" class="client-result" [class.is-selected]="selectedClient()?.id === client.id" [attr.aria-selected]="selectedClient()?.id === client.id" (click)="selectClient(client)">
+                    <span class="client-name">{{ client.full_name }}</span>
+                    <span class="client-number">Cliente {{ client.client_number }}</span>
+                  </button>
+                }
+              </div>
+            }
+
+            @if (selectedClient(); as client) {
+              <div class="selection-summary"><span>Persona elegida</span><strong>{{ client.full_name }}</strong><small>Cliente {{ client.client_number }}</small></div>
+            }
+          </section>
+
+          <section class="form-section product-section" aria-labelledby="product-heading">
+            <div class="section-heading">
+              <div><p class="section-number">Paso 2</p><h2 id="product-heading">Elige el importe</h2></div>
+              <span class="section-aside">Las condiciones se aplican al otorgar el vale.</span>
+            </div>
+            @if (loadingProducts()) {
+              <p class="search-state">Cargando importes disponibles…</p>
+            } @else if (!products().length) {
+              <div class="empty-search"><strong>No hay productos disponibles para otorgar vales.</strong><span>Pide a gerencia publicar una versión vigente con importe, comisión, interés, seguro y número de quincenas.</span></div>
+            } @else {
+              <div class="product-options" role="radiogroup" aria-label="Importes disponibles">
+                @for (product of products(); track product.id) {
+                  <button type="button" role="radio" class="product-option" [class.is-selected]="selectedProduct()?.id === product.id" [attr.aria-checked]="selectedProduct()?.id === product.id" (click)="selectProduct(product)">
+                    <span class="product-name">{{ product.name }}</span>
+                    <strong>{{ product.nominal_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong>
+                  </button>
+                }
+              </div>
+            }
+          </section>
+
+          <div class="form-action">
+            <div><strong>El cálculo siempre se confirma en el servidor.</strong><span>Se usarán las condiciones publicadas con el producto elegido y quedarán guardadas en este vale.</span></div>
+            <button type="submit" class="primary-button" [disabled]="!canPreview()">{{ busy() ? 'Calculando…' : 'Revisar cálculo' }}</button>
+          </div>
+        </form>
+
+        <aside class="review-panel" aria-live="polite">
+          @if (previewData(); as data) {
+            <div class="review-heading"><div><p class="eyebrow">Paso 3</p><h2>Resumen antes de crear</h2></div><span class="type-badge">{{ typeLabel(data.voucher_type) }}</span></div>
+            <p class="review-person"><strong>{{ data.client.full_name }}</strong><span>Cliente {{ data.client.client_number }}</span></p>
+            <p class="review-product">{{ data.product.name }} · {{ data.calculation.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</p>
+
+            <div class="calculation-block">
+              <p class="calculation-title">Deuda base de MisVales</p>
+              <dl>
+                <div><dt>Capital</dt><dd>{{ data.calculation.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                <div><dt>Comisión del préstamo</dt><dd>{{ data.calculation.loan_commission_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                <div><dt>Interés total</dt><dd>{{ data.calculation.interest_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                <div><dt>Seguro</dt><dd>{{ data.calculation.insurance_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                <div class="total-row"><dt>Total base</dt><dd>{{ data.calculation.misvales_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+              </dl>
+            </div>
+
+            <div class="payment-summary">
+              <div><span>Pago base por quincena</span><strong>{{ data.calculation.misvales_payment_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong></div>
+              <div><span>Ganancia de distribuidora por quincena</span><strong>{{ data.calculation.distributor_profit_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong></div>
+              <div class="client-payment"><span>Cliente paga por quincena</span><strong>{{ data.calculation.client_payment_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong><small>{{ data.calculation.fortnights_count }} quincenas · Total {{ data.calculation.client_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</small></div>
+            </div>
+
+            <dl class="credit-summary"><div><dt>Crédito disponible</dt><dd>{{ data.credit.available_balance | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div><div><dt>Importe solicitado</dt><dd>{{ data.calculation.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div></dl>
+            @if (data.credit.has_active_restriction) {
+              <p class="notice notice-caution">Este es el primer vale después de un incremento. El importe permitido está entre {{ data.credit.lower_limit | currency:'MXN':'symbol-narrow':'1.2-2' }} y {{ data.credit.upper_limit | currency:'MXN':'symbol-narrow':'1.2-2' }}.</p>
+            }
+            <button type="button" class="primary-button primary-button-wide" [disabled]="busy()" (click)="generate()">{{ busy() ? 'Creando folio…' : 'Crear vale y obtener folio' }}</button>
+          } @else {
+            <div class="review-placeholder"><p class="eyebrow">Resumen</p><h2>Todo claro antes de crear</h2><p>Al elegir una persona y un importe podrás revisar la deuda base, los pagos quincenales, el crédito disponible y el tipo de vale que se generará.</p></div>
+          }
+        </aside>
+      </div>
+    </section>
+  } @else {
+    <section class="access-state"><h2>Consulta de vales</h2><p>Tu perfil puede consultar el historial disponible, pero no otorgar vales.</p></section>
+  }
+
+  @if (generated(); as voucher) {
+    <section class="success-panel" aria-live="polite"><p class="eyebrow">Vale creado</p><h2>{{ voucher.folio }}</h2><p>{{ typeLabel(voucher.type) }} generado. El siguiente paso es su atención en caja.</p></section>
+  }
+
+  <section class="history-section" aria-labelledby="history-heading">
+    <div class="history-heading"><div><p class="eyebrow">Seguimiento</p><h2 id="history-heading">Vales recientes</h2></div><p>El más reciente aparece primero.</p></div>
+    @if (loadingHistory()) {
+      <div class="history-skeleton"><span></span><span></span><span></span></div>
+    } @else if (!vouchers().length) {
+      <div class="history-empty">Aún no hay vales visibles para este perfil.</div>
+    } @else {
+      <div class="voucher-history">
+        @for (voucher of vouchers(); track voucher.id) {
+          <article class="history-row"><div><strong>{{ voucher.folio }}</strong><span>{{ voucher.client?.full_name ?? 'Persona registrada' }}</span></div><span class="history-type">{{ typeLabel(voucher.type) }}</span><strong class="history-amount">{{ voucher.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong><span class="history-status">{{ statusLabel(voucher.status) }}</span></article>
+        }
+      </div>
+    }
+  </section>
+</main>

@@ -39,6 +39,15 @@ export class ConfiguracionesListaComponent implements OnInit {
       return `Día ${String(value['start'])} al ${String(value['end'])}`;
     }
     if (typeof value === 'object') return JSON.stringify(value);
+    if (definition.unidad === 'percentage' && !Number.isNaN(Number(value))) {
+      return `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 4 }).format(Number(value) * 100)} %`;
+    }
+    if (definition.unidad === 'MXN' && !Number.isNaN(Number(value))) {
+      return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(value));
+    }
+    if (definition.unidad === 'fortnights') {
+      return `${String(value)} ${Number(value) === 1 ? 'quincena' : 'quincenas'}`;
+    }
     const unit = this.etiquetaUnidad(definition.unidad);
     return `${String(value)}${unit ? ` ${unit}` : ''}`;
   }
