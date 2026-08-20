@@ -7,14 +7,6 @@
     </button>
   </div>
 
-  <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-    <label class="block text-sm font-semibold text-gray-700">Evidencia de vehículos</label>
-    <input type="file" accept="image/*,.pdf" (change)="onEvidenceChange($event)" [disabled]="uploadingEvidence" class="mt-2 block w-full text-sm">
-    <p *ngIf="uploadingEvidence" class="mt-1 text-xs text-gray-500">Subiendo evidencia...</p>
-    <p *ngIf="evidenceUploaded" class="mt-1 text-xs text-green-600">Evidencia cargada correctamente.</p>
-    <p *ngIf="evidenceError" class="mt-1 text-xs text-red-600">{{ evidenceError }}</p>
-  </div>
-
   <div *ngIf="cargando" class="text-gray-500 py-8 text-center">Cargando vehículos...</div>
   <p *ngIf="cargandoCatalogo" class="mb-4 text-sm text-gray-500">Cargando catálogo de marcas y tipos de vehículo...</p>
   <p *ngIf="errorCatalogo" class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ errorCatalogo }}</p>
@@ -82,6 +74,14 @@
           <p class="mt-1 text-xs text-gray-500">Captura un año entre {{ minModelYear }} y {{ maxModelYear }}.</p>
           <app-input-error [control]="form.controls['model_year']" label="El año del vehículo" [customMessages]="{ min: 'El año del vehículo debe ser 1990 o posterior.', max: 'El año del vehículo no puede ser superior al año próximo.' }"></app-input-error>
         </div>
+      </div>
+
+      <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <label class="block text-sm font-semibold text-gray-700">Evidencia del vehículo</label>
+        <input type="file" accept="image/*,.pdf" (change)="onEvidenceChange($event)" [disabled]="uploadingEvidence" class="mt-2 block w-full text-sm">
+        <p *ngIf="uploadingEvidence" class="mt-1 text-xs text-gray-500">Subiendo evidencia...</p>
+        <p *ngIf="evidenceUploaded" class="mt-1 text-xs text-green-600">Evidencia cargada correctamente.</p>
+        <p *ngIf="evidenceError" class="mt-1 text-xs text-red-600">{{ evidenceError }}</p>
       </div>
     </div>
   </div>
