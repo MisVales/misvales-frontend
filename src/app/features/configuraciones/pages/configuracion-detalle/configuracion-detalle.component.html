@@ -87,18 +87,18 @@
           </div>
         } @else {
           <label class="block text-sm font-medium">Valor <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
-            <input class="mt-1 w-full rounded-lg border px-3 py-2" [type]="tipoEntrada(item)" [attr.step]="pasoEntrada(item)" [attr.min]="tipoEntrada(item) === 'number' ? 0 : null" [placeholder]="placeholderValor(item)" formControlName="scalar" (focus)="marcarControlVersionAlEnfocar('scalar')" (input)="actualizarControlVersion('scalar', $any($event.target).value)" />
+            <input class="mt-1 w-full rounded-lg border px-3 py-2" [type]="tipoEntrada(item)" [attr.step]="pasoEntrada(item)" [attr.min]="esDiaGlobalDeCorte(item) ? 1 : tipoEntrada(item) === 'number' ? 0 : null" [attr.max]="esDiaGlobalDeCorte(item) ? 31 : null" [attr.maxlength]="esDiaGlobalDeCorte(item) ? 2 : null" [placeholder]="placeholderValor(item)" formControlName="scalar" (focus)="marcarControlVersionAlEnfocar('scalar')" (input)="esDiaGlobalDeCorte(item) ? actualizarDiaGlobalDeCorte($event) : actualizarControlVersion('scalar', $any($event.target).value)" />
           </label>
-          <app-input-error [control]="versionForm.controls.scalar" label="El valor" [forceShow]="mostrarErrorVersion('scalar')"></app-input-error>
+          <app-input-error [control]="versionForm.controls.scalar" label="El valor" [forceShow]="mostrarErrorVersion('scalar')" [customMessages]="{ pattern: 'El día global de corte debe ser un número entero.', min: 'El día global de corte debe ser un número entre 1 y 31.', max: 'El día global de corte debe ser un número entre 1 y 31.' }"></app-input-error>
           <p class="mt-2 text-xs leading-5 text-gray-600">{{ ayudaValor(item) }}</p>
         }
 
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
             <label class="text-sm font-medium">Inicio de vigencia <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="datetime-local" placeholder="Selecciona fecha y hora" formControlName="effectiveFrom" (focus)="marcarControlVersionAlEnfocar('effectiveFrom')" (input)="actualizarControlVersion('effectiveFrom', $any($event.target).value)" (change)="actualizarControlVersion('effectiveFrom', $any($event.target).value)" />
+              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="datetime-local" [min]="minimoInicioVigencia()" placeholder="Selecciona fecha y hora" formControlName="effectiveFrom" (focus)="marcarControlVersionAlEnfocar('effectiveFrom')" (input)="actualizarControlVersion('effectiveFrom', $any($event.target).value)" (change)="actualizarControlVersion('effectiveFrom', $any($event.target).value)" />
             </label>
-            <app-input-error [control]="versionForm.controls.effectiveFrom" label="El inicio de vigencia" [forceShow]="mostrarErrorVersion('effectiveFrom')"></app-input-error>
+            <app-input-error [control]="versionForm.controls.effectiveFrom" label="El inicio de vigencia" [forceShow]="mostrarErrorVersion('effectiveFrom')" [customMessages]="{ pastDate: 'El inicio de vigencia no puede ser una fecha u hora pasada.' }"></app-input-error>
           </div>
           <div>
             <label class="text-sm font-medium">Motivo <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
