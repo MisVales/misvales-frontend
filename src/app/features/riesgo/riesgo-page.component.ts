@@ -2,12 +2,13 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SessionStore } from '../../core/session/session.store';
-import { DelinquencyStatus, Removal, RiesgoApiService, RiskAlert } from './riesgo-api.service';
+import { DelinquencyStatus, Removal, RiesgoApiService, RiskAlert, RelationDetail } from './riesgo-api.service';
+import { RelationDetailsDialogComponent } from './relation-details-dialog.component';
 
 @Component({
   selector: 'app-riesgo-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RelationDetailsDialogComponent],
   template: `
     <section class="space-y-6 p-6">
       <header>
@@ -49,14 +50,29 @@ import { DelinquencyStatus, Removal, RiesgoApiService, RiskAlert } from './riesg
                 <strong>{{ alert.consecutive_defaults }} relaciones consecutivas</strong>
                 <span>{{ alert.status }}</span>
               </div>
-              <p>Saldo vencido {{ alert.overdue_balance | currency: 'MXN' }}</p>
-              <p class="text-sm">Relaciones: {{ alert.relation_ids.join(', ') }}</p>
+              <p class="text-sm font-semibold">
+                Saldo vencido {{ alert.overdue_balance | currency: 'MXN' }}
+              </p>
+              
+              <div class="mt-2 mb-4">
+                <button
+                  class="text-sm font-semibold text-blue-600 hover:text-blue-800 underline flex items-center gap-1"
+                  (click)="viewDetails(alert)"
+                >
+                  Ver detalle de cortes ({{ alert.relation_details?.length || alert.relation_ids.length }})
+                </button>
+              </div>
+
               @if (canDecide() && alert.status === 'OPEN') {
                 <textarea
                   class="my-2 w-full rounded-lg border p-2"
+                  [class.border-red-600]="showReasonError && !reason"
                   [(ngModel)]="reason"
                   placeholder="Evidencia y motivo"
                 ></textarea>
+                @if (showReasonError && !reason) {
+                  <p class="text-xs font-semibold text-red-600 mb-2">El motivo es obligatorio para registrar tu decisión.</p>
+                }
                 <button
                   class="mr-2 rounded-lg bg-red-700 px-3 py-2 text-white"
                   (click)="decide(alert, 'APPLY')"
@@ -87,19 +103,29 @@ import { DelinquencyStatus, Removal, RiesgoApiService, RiskAlert } from './riesg
               @if (removal.status === 'REQUESTED') {
                 <input
                   class="my-2 w-full rounded-lg border p-2"
+                  [class.border-red-600]="showReasonError && !reason"
                   [(ngModel)]="reason"
                   placeholder="Motivo"
                 />
-                <button class="mr-2" (click)="decideRemoval(removal, 'AUTHORIZE')">
+                @if (showReasonError && !reason) {
+                  <p class="text-xs font-semibold text-red-600 mb-2">El motivo es obligatorio para registrar tu decisión.</p>
+                }
+                <button class="mr-2 rounded-lg border px-3 py-2" (click)="decideRemoval(removal, 'AUTHORIZE')">
                   Autorizar retiro
                 </button>
-                <button (click)="decideRemoval(removal, 'REJECT')">Rechazar</button>
+                <button class="rounded-lg border px-3 py-2" (click)="decideRemoval(removal, 'REJECT')">Rechazar</button>
               }
             </article>
           }
         </section>
       }
     </section>
+
+    <app-relation-details-dialog
+      [open]="dialogOpen()"
+      [relations]="selectedRelations()"
+      (close)="closeDialog()"
+    ></app-relation-details-dialog>
   `,
 })
 export class RiesgoPageComponent {
@@ -109,7 +135,12 @@ export class RiesgoPageComponent {
   readonly alerts = signal<RiskAlert[]>([]);
   readonly removals = signal<Removal[]>([]);
   readonly status = signal<DelinquencyStatus | null>(null);
+
+  readonly dialogOpen = signal(false);
+  readonly selectedRelations = signal<RelationDetail[]>([]);
+
   reason = '';
+  showReasonError = false;
 
   constructor() {
     this.load();
@@ -146,18 +177,39 @@ export class RiesgoPageComponent {
   }
 
   decide(alert: RiskAlert, decision: 'APPLY' | 'DO_NOT_APPLY'): void {
-    if (!this.reason) return;
-    this.api.decide(alert.id, decision, this.reason).subscribe(() => this.load());
+    if (!this.reason) {
+      this.showReasonError = true;
+      return;
+    }
+    this.showReasonError = false;
+    this.api.decide(alert.id, decision, this.reason).subscribe(() => {
+      this.reason = '';
+      this.load();
+    });
   }
 
   requestRemoval(alert: RiskAlert): void {
-    if (!this.reason) return;
-    this.api.requestRemoval(alert.distributor_id, this.reason).subscribe(() => this.load());
+    if (!this.reason) {
+      this.showReasonError = true;
+      return;
+    }
+    this.showReasonError = false;
+    this.api.requestRemoval(alert.distributor_id, this.reason).subscribe(() => {
+      this.reason = '';
+      this.load();
+    });
   }
 
   decideRemoval(removal: Removal, decision: 'AUTHORIZE' | 'REJECT'): void {
-    if (!this.reason) return;
-    this.api.decideRemoval(removal.id, decision, this.reason).subscribe(() => this.load());
+    if (!this.reason) {
+      this.showReasonError = true;
+      return;
+    }
+    this.showReasonError = false;
+    this.api.decideRemoval(removal.id, decision, this.reason).subscribe(() => {
+      this.reason = '';
+      this.load();
+    });
   }
 
   private load(): void {
@@ -173,5 +225,16 @@ export class RiesgoPageComponent {
     if (this.canDecideRemoval()) {
       this.api.removals().subscribe((removals) => this.removals.set(removals));
     }
+  }
+
+  viewDetails(alert: RiskAlert): void {
+    if (alert.relation_details && alert.relation_details.length > 0) {
+      this.selectedRelations.set(alert.relation_details);
+      this.dialogOpen.set(true);
+    }
+  }
+
+  closeDialog(): void {
+    this.dialogOpen.set(false);
   }
 }
