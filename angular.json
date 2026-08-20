@@ -64,6 +64,11 @@
         },
         "serve": {
           "builder": "@angular/build:dev-server",
+          "options": {
+            "allowedHosts": [
+              "expert-damages-voices-rough.trycloudflare.com"
+            ]
+          },
           "configurations": {
             "production": {
               "buildTarget": "misvales-frontend:build:production"
