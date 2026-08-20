@@ -7,14 +7,6 @@
     </button>
   </div>
 
-  <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-    <label class="block text-sm font-semibold text-gray-700">Evidencia de créditos comerciales</label>
-    <input type="file" accept="image/*,.pdf" (change)="onEvidenceChange($event)" [disabled]="uploadingEvidence" class="mt-2 block w-full text-sm">
-    <p *ngIf="uploadingEvidence" class="mt-1 text-xs text-gray-500">Subiendo evidencia...</p>
-    <p *ngIf="evidenceUploaded" class="mt-1 text-xs text-green-600">Evidencia cargada correctamente.</p>
-    <p *ngIf="evidenceError" class="mt-1 text-xs text-red-600">{{ evidenceError }}</p>
-  </div>
-
   <div *ngIf="cargando" class="text-gray-500 py-8 text-center">Cargando créditos comerciales...</div>
 
   <div *ngIf="!cargando && creditosArray.length === 0" class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50">
@@ -82,6 +74,14 @@
           <p class="mt-1 text-xs text-gray-500">Selecciona el documento con el que se comprueba el crédito.</p>
           <app-input-error [control]="form.controls['proof_type']" label="El comprobante"></app-input-error>
         </div>
+      </div>
+
+      <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <label class="block text-sm font-semibold text-gray-700">Evidencia de crédito comercial</label>
+        <input type="file" accept="image/*,.pdf" (change)="onEvidenceChange($event)" [disabled]="uploadingEvidence" class="mt-2 block w-full text-sm">
+        <p *ngIf="uploadingEvidence" class="mt-1 text-xs text-gray-500">Subiendo evidencia...</p>
+        <p *ngIf="evidenceUploaded" class="mt-1 text-xs text-green-600">Evidencia cargada correctamente.</p>
+        <p *ngIf="evidenceError" class="mt-1 text-xs text-red-600">{{ evidenceError }}</p>
       </div>
       
     </div>
