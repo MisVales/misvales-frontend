@@ -17,6 +17,9 @@ export interface SolicitudDistribuidoraResponseDTO {
   submitted_at: string | null;
   created_at: string;
   updated_at: string;
+  has_vehicle_evidence?: boolean;
+  has_assets_evidence?: boolean;
+  has_commercial_credit_evidence?: boolean;
 }
 
 export interface PersonalDataDTO extends ResumenSolicitanteDTO {

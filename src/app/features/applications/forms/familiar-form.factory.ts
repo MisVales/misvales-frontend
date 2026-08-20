@@ -7,6 +7,7 @@ export class FamiliarFormFactory {
     return fb.group({
       id: [null], // Frontend logic only
       relationship: ['', [Validators.required]],
+      other_relationship: ['', [Validators.maxLength(80)]],
       first_name: ['', [Validators.required, Validators.maxLength(100), personNameValidator]],
       first_last_name: ['', [Validators.required, Validators.maxLength(100), personNameValidator]],
       second_last_name: ['', [Validators.maxLength(100), personNameValidator]],

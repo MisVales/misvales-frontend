@@ -45,7 +45,10 @@ export class SolicitudDistribuidoraMapper {
       enviadaPor: dto.submitted_by ?? null,
       enviadaEn: dto.submitted_at,
       creadaEn: dto.created_at,
-      actualizadaEn: dto.updated_at
+      actualizadaEn: dto.updated_at,
+      hasVehicleEvidence: dto.has_vehicle_evidence === true,
+      hasAssetsEvidence: dto.has_assets_evidence === true,
+      hasCommercialCreditEvidence: dto.has_commercial_credit_evidence === true,
     };
   }
 

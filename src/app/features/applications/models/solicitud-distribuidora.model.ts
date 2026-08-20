@@ -15,6 +15,9 @@ export interface SolicitudDistribuidora {
   enviadaEn: string | null;
   creadaEn: string;
   actualizadaEn: string;
+  hasVehicleEvidence?: boolean;
+  hasAssetsEvidence?: boolean;
+  hasCommercialCreditEvidence?: boolean;
 }
 
 export interface DatosPersonales {

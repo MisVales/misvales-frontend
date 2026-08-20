@@ -11,6 +11,8 @@ import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
+import { MediaApiService } from '../../../../core/services/media-api.service';
+import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 
 @Component({
   selector: 'app-vehiculos-form',
@@ -26,6 +28,7 @@ export class VehiculosFormComponent implements OnInit {
   private cdr = inject(ChangeDetectorRef);
   private alerts = inject(AlertService);
   private confirmation = inject(ConfirmationService);
+  private mediaApi = inject(MediaApiService);
 
   vehiculosArray: FormArray = VehiculoFormFactory.createArray(this.fb);
   cargando = false;
@@ -38,6 +41,9 @@ export class VehiculosFormComponent implements OnInit {
   
   autosaveStatuses: Record<number, AutosaveStatus> = {};
   mensajeBloqueoCambio?: string;
+  uploadingEvidence = false;
+  evidenceUploaded = false;
+  evidenceError?: string;
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;
@@ -90,8 +96,21 @@ export class VehiculosFormComponent implements OnInit {
 
   async ngOnInit() {
     await this.esperarDetalle();
+    this.evidenceUploaded = this.store.detalle()?.hasVehicleEvidence === true;
     await Promise.all([this.cargarVehiculos(), this.cargarCatalogoVehiculos()]);
     this.incluirValoresExistentesEnCatalogo();
+  }
+
+  onEvidenceChange(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    const applicationId = this.store.detalle()?.id;
+    if (!file || !applicationId) return;
+    this.uploadingEvidence = true;
+    this.evidenceError = undefined;
+    this.mediaApi.upload({ file, owner_type: 'distributor_application', owner_id: applicationId, purpose: 'VEHICLE_EVIDENCE' }).subscribe({
+      next: () => { this.uploadingEvidence = false; this.evidenceUploaded = true; this.cdr.markForCheck(); },
+      error: (error) => { this.uploadingEvidence = false; this.evidenceError = apiValidationErrors(error)['file']?.[0] ?? apiErrorMessage(error, 'No fue posible subir la evidencia.'); this.cdr.markForCheck(); },
+    });
   }
 
   private esperarDetalle(): Promise<void> {

@@ -1,7 +1,7 @@
 import { firstValueFrom, from, Observable } from 'rxjs';
 import { Component, inject, OnInit, ChangeDetectorRef, QueryList, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { FamiliarFormFactory } from '../../forms/familiar-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
@@ -74,6 +74,13 @@ export class FamiliaresFormComponent implements OnInit {
       const payload = { ...rawValue };
       const idFamiliar = payload.id;
       delete payload.id;
+      const otherRelationship = payload.other_relationship;
+      delete payload.other_relationship;
+      payload.details_payload = {
+        ...(payload.details_payload ?? {}),
+        ...(payload.relationship === 'OTHER' ? { other_relationship: otherRelationship?.trim() ?? '' } : {}),
+      };
+      if (payload.relationship !== 'OTHER') delete payload.details_payload.other_relationship;
 
       const request$ = idFamiliar
         ? this.api.actualizarFamiliar(idSolicitud, idFamiliar, payload, detalle.versionBloqueo)
@@ -120,6 +127,8 @@ export class FamiliaresFormComponent implements OnInit {
       (data || []).forEach((familiar: any) => {
         const form = FamiliarFormFactory.create(this.fb);
         form.patchValue(familiar);
+        form.patchValue({ other_relationship: familiar.details_payload?.other_relationship ?? '' });
+        this.configurarParentescoOtro(form);
         this.familiaresArray.push(form);
       });
     } catch (e) {
@@ -132,8 +141,32 @@ export class FamiliaresFormComponent implements OnInit {
 
   agregarFamiliar() {
     if (this.familiaresArray.length >= 2) return;
-    this.familiaresArray.push(FamiliarFormFactory.create(this.fb));
+    const form = FamiliarFormFactory.create(this.fb);
+    this.configurarParentescoOtro(form);
+    this.familiaresArray.push(form);
     this.cdr.markForCheck();
+  }
+
+  esOtro(form: FormGroup): boolean {
+    return form.controls['relationship'].value === 'OTHER';
+  }
+
+  private configurarParentescoOtro(form: FormGroup): void {
+    const otherRelationship = form.controls['other_relationship'];
+    form.controls['relationship'].valueChanges.subscribe(() => {
+      if (form.controls['relationship'].value === 'OTHER') {
+        otherRelationship.setValidators([Validators.required, Validators.maxLength(80)]);
+      } else {
+        otherRelationship.setValidators([Validators.maxLength(80)]);
+        otherRelationship.setValue('', { emitEvent: false });
+      }
+      otherRelationship.updateValueAndValidity({ emitEvent: false });
+      this.cdr.markForCheck();
+    });
+    if (form.controls['relationship'].value === 'OTHER') {
+      otherRelationship.setValidators([Validators.required, Validators.maxLength(80)]);
+    }
+    otherRelationship.updateValueAndValidity({ emitEvent: false });
   }
 
   removerFamiliarVisual(index: number) {
@@ -166,4 +199,3 @@ function maxAdultDate(): string {
   date.setFullYear(date.getFullYear() - 18);
   return date.toISOString().slice(0, 10);
 }
-
