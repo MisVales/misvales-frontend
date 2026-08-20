@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { AbstractControl, FormBuilder, ReactiveFormsModule, ValidationErrors, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { DateTime } from 'luxon';
 import {
@@ -13,6 +13,15 @@ import { esConfiguracionVisible } from '../../data-access/configuraciones-visibi
 import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { AlertService } from '../../../../shared/services/alert.service';
+
+const fechaVigenciaNoPasada = (control: AbstractControl): ValidationErrors | null => {
+  if (!control.value) return null;
+
+  const fecha = DateTime.fromISO(control.value, { zone: 'America/Monterrey' });
+  return fecha.isValid && fecha < DateTime.now().setZone('America/Monterrey').startOf('minute')
+    ? { pastDate: true }
+    : null;
+};
 
 @Component({
   selector: 'app-configuracion-detalle',
@@ -40,7 +49,7 @@ export class ConfiguracionDetalleComponent implements OnInit {
     bankBeneficiary: ['', Validators.required],
     bankAgreement: ['', Validators.required],
     bankClabe: ['', [Validators.required, Validators.pattern(/^\d{18}$/)]],
-    effectiveFrom: ['', Validators.required],
+    effectiveFrom: ['', [Validators.required, fechaVigenciaNoPasada]],
     reason: ['', [Validators.required, Validators.minLength(10)]],
   });
   protected readonly transitionForm = this.fb.nonNullable.group({
@@ -52,6 +61,14 @@ export class ConfiguracionDetalleComponent implements OnInit {
     if (!this.clave || !esConfiguracionVisible(this.clave)) {
       void this.router.navigate(['/configuraciones']);
       return;
+    }
+    if (this.clave === 'CUT_DAY_OF_MONTH') {
+      this.versionForm.controls.scalar.addValidators([
+        Validators.pattern(/^\d+$/),
+        Validators.min(1),
+        Validators.max(31),
+      ]);
+      this.versionForm.controls.scalar.updateValueAndValidity();
     }
     void this.store.consultarDefinicion(this.clave);
     void this.store.consultarVersiones(this.clave);
@@ -141,12 +158,22 @@ export class ConfiguracionDetalleComponent implements OnInit {
     value: string,
   ): void {
     this.versionForm.controls[control].setValue(value);
+    if (control === 'scalar' && this.esDiaGlobalDeCorte()) {
+      this.marcarControlVersionAlEnfocar(control);
+    }
     this.store.limpiarError();
   }
 
   protected actualizarPeriodo(control: 'periodStart' | 'periodEnd', value: string): void {
     // -1 conserva el campo inválido si se vacía, en lugar de aceptar un 0 implícito.
     this.versionForm.controls[control].setValue(value === '' ? -1 : Number(value));
+    this.store.limpiarError();
+  }
+
+  protected actualizarDiaGlobalDeCorte(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.versionForm.controls.scalar.setValue(input.value);
+    this.marcarControlVersionAlEnfocar('scalar');
     this.store.limpiarError();
   }
 
@@ -167,6 +194,21 @@ export class ConfiguracionDetalleComponent implements OnInit {
     if (definition.unidad === 'MXN') return 'Ej. 500.00';
     if (definition.unidad === 'fortnights') return 'Ej. 12';
     return 'Captura el valor';
+  }
+
+  protected esDiaGlobalDeCorte(definition = this.definicion()): boolean {
+    return definition?.clave === 'CUT_DAY_OF_MONTH' || this.clave === 'CUT_DAY_OF_MONTH';
+  }
+
+  protected diaCorteFueraDeRango(): boolean {
+    if (!this.esDiaGlobalDeCorte()) return false;
+
+    const valor = Number(this.versionForm.controls.scalar.value);
+    return Number.isFinite(valor) && (valor < 1 || valor > 31);
+  }
+
+  protected minimoInicioVigencia(): string {
+    return DateTime.now().setZone('America/Monterrey').toFormat("yyyy-LL-dd'T'HH:mm");
   }
 
   protected periodoInvalido(): boolean {
@@ -290,7 +332,7 @@ export class ConfiguracionDetalleComponent implements OnInit {
     if (this.esBanco(definition)) {
       return controls.bankName.valid && controls.bankBeneficiary.valid && controls.bankAgreement.valid && controls.bankClabe.valid;
     }
-    return controls.scalar.valid;
+    return controls.scalar.valid && !this.diaCorteFueraDeRango();
   }
 
   private formularioVersionValido(definition: ConfiguracionDefinicion): boolean {

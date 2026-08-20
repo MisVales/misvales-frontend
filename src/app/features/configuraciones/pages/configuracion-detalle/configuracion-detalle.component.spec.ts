@@ -84,6 +84,41 @@ describe('ConfiguracionDetalleComponent', () => {
     expect(valueInput.placeholder).toBe('Ej. 25');
   });
 
+  it('muestra el error y bloquea días de corte fuera del rango mensual', () => {
+    const instance = component as any;
+    instance.creando.set(true);
+    fixture.detectChanges();
+
+    const valueInput = fixture.nativeElement.querySelector('input[formcontrolname="scalar"]') as HTMLInputElement;
+    valueInput.value = '31';
+    valueInput.dispatchEvent(new Event('input'));
+    expect(instance.versionForm.controls.scalar.value).toBe('31');
+
+    valueInput.value = '32';
+    valueInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(valueInput.max).toBe('31');
+    expect(instance.versionForm.controls.scalar.value).toBe('32');
+    expect(instance.versionForm.controls.scalar.invalid).toBe(true);
+    expect(fixture.nativeElement.textContent).toContain('El día global de corte debe ser un número entre 1 y 31.');
+  });
+
+  it('no permite guardar una vigencia pasada e indica el motivo', async () => {
+    const instance = component as any;
+    instance.creando.set(true);
+    instance.versionForm.patchValue({
+      scalar: '25',
+      effectiveFrom: DateTime.now().minus({ days: 1 }).toFormat("yyyy-LL-dd'T'HH:mm"),
+      reason: 'Actualización programada del corte',
+    });
+
+    await instance.crearVersion();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('El inicio de vigencia no puede ser una fecha u hora pasada.');
+    expect(store.crearVersion).not.toHaveBeenCalled();
+  });
+
   it('indica que el motivo debe tener al menos 10 caracteres', () => {
     const instance = component as any;
     instance.creando.set(true);
