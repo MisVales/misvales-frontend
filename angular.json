@@ -68,6 +68,7 @@
           "builder": "@angular/build:dev-server",
           "options": {
             "allowedHosts": [
+              "expert-damages-voices-rough.trycloudflare.com",
               "accessed-difficulty-collective-deleted.trycloudflare.com",
               "delivery-discounts-formats-moral.trycloudflare.com",
               "grove-seventh-zone-generated.trycloudflare.com"
