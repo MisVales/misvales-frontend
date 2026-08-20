@@ -22,7 +22,7 @@ export class SessionRefreshService {
     if (this.inFlight) return this.inFlight;
 
     this.inFlight = this.http
-      .get('/sanctum/csrf-cookie', { withCredentials: true })
+      .get(this.csrfCookieUrl(), { withCredentials: true })
       .pipe(
         switchMap(() => {
           let headers = new HttpHeaders({ 'X-Request-Id': uuidv4() });
@@ -47,5 +47,9 @@ export class SessionRefreshService {
       );
 
     return this.inFlight;
+  }
+
+  private csrfCookieUrl(): string {
+    return `${this.apiConfig.baseUrl.replace(/\/api\/v1\/?$/, '')}/sanctum/csrf-cookie`;
   }
 }

@@ -9,9 +9,15 @@ import { SessionRefreshService } from './session-refresh.service';
 describe('SessionRefreshService', () => {
   let service: SessionRefreshService;
   let http: HttpTestingController;
-  let tokenStore: AuthTokenStore;
+  let tokenStore: Pick<AuthTokenStore, 'set' | 'accessToken'>;
 
   beforeEach(() => {
+    let accessToken: string | null = null;
+    tokenStore = {
+      set: (token: string) => { accessToken = token; },
+      accessToken: () => accessToken,
+    };
+
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(
@@ -22,13 +28,13 @@ describe('SessionRefreshService', () => {
         ),
         provideHttpClientTesting(),
         SessionRefreshService,
+        { provide: AuthTokenStore, useValue: tokenStore },
         { provide: API_CONFIG, useValue: { baseUrl: 'https://api.example.test/api/v1' } },
       ],
     });
 
     service = TestBed.inject(SessionRefreshService);
     http = TestBed.inject(HttpTestingController);
-    tokenStore = TestBed.inject(AuthTokenStore);
     document.cookie = 'XSRF-TOKEN=csrf-test-token; path=/';
   });
 
@@ -40,7 +46,7 @@ describe('SessionRefreshService', () => {
   it('obtiene CSRF antes de renovar y conserva la sesión con API absoluta', async () => {
     const refresh = firstValueFrom(service.refresh());
 
-    const csrf = http.expectOne('/sanctum/csrf-cookie');
+    const csrf = http.expectOne('https://api.example.test/sanctum/csrf-cookie');
     expect(csrf.request.method).toBe('GET');
     expect(csrf.request.withCredentials).toBe(true);
     csrf.flush({});

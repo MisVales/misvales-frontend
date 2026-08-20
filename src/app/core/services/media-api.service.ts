@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { defaultApiConfig } from '../api/api.config';
+import { API_CONFIG } from '../api/api.config';
 
 export interface UploadMediaPayload {
   file: File;
@@ -25,8 +25,8 @@ export interface MediaFileResponse {
   providedIn: 'root'
 })
 export class MediaApiService {
-  private http = inject(HttpClient);
-  private apiUrl = defaultApiConfig.baseUrl;
+  private readonly http = inject(HttpClient);
+  private readonly apiConfig = inject(API_CONFIG);
 
   upload(payload: UploadMediaPayload): Observable<MediaFileResponse> {
     const formData = new FormData();
@@ -35,7 +35,7 @@ export class MediaApiService {
     formData.append('owner_id', payload.owner_id);
     formData.append('purpose', payload.purpose);
 
-    return this.http.post<MediaFileResponse>(`${this.apiUrl}/media`, formData, {
+    return this.http.post<MediaFileResponse>(`${this.apiConfig.baseUrl}/media`, formData, {
       headers: new HttpHeaders().set('Idempotency-Key', crypto.randomUUID()),
     });
   }

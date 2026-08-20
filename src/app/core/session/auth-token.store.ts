@@ -13,7 +13,12 @@ export class AuthTokenStore {
   readonly tokens = this.tokensState.asReadonly();
 
   constructor() {
-    globalThis.localStorage?.removeItem('auth_tokens');
+    // Los tokens no se persisten. La guardia adicional permite ejecutar la
+    // aplicación y sus pruebas en entornos donde localStorage es un shim.
+    const storage = globalThis.localStorage;
+    if (typeof storage?.removeItem === 'function') {
+      storage.removeItem('auth_tokens');
+    }
   }
 
   set(accessToken: string, expiresInSeconds: number): void {

@@ -109,7 +109,7 @@ export class CreditosComercialesFormComponent implements OnInit {
     if (!file || !applicationId) return;
     this.uploadingEvidence = true;
     this.evidenceError = undefined;
-    this.mediaApi.upload({ file, owner_type: 'distributor_application', owner_id: applicationId, purpose: 'COMMERCIAL_CREDIT_EVIDENCE' }).subscribe({
+    this.mediaApi.upload({ file, owner_type: 'distributor_application', owner_id: applicationId, purpose: 'COMMERCIAL_EVIDENCE' }).subscribe({
       next: () => { this.uploadingEvidence = false; this.evidenceUploaded = true; this.cdr.markForCheck(); },
       error: (error) => { this.uploadingEvidence = false; this.evidenceError = apiValidationErrors(error)['file']?.[0] ?? apiErrorMessage(error, 'No fue posible subir la evidencia.'); this.cdr.markForCheck(); },
     });
