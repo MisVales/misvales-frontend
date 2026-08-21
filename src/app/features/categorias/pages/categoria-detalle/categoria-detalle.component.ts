@@ -31,7 +31,7 @@ export class CategoriaDetalleComponent implements OnInit {
     code: ['', [Validators.required, Validators.maxLength(255)]],
     name: ['', Validators.required],
     description: [''],
-    profit_percentage: ['', [Validators.required, Validators.pattern(/^(0(\.\d+)?|1(\.0+)?)$/)]],
+    profit_percentage: ['', [Validators.required, Validators.pattern(/^(0(\.\d+)?|1(\.0+)?)$/), Validators.min(0), Validators.max(1)]],
     reason: ['', Validators.required],
   });
 

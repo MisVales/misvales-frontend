@@ -31,6 +31,37 @@ describe('ConciliacionApiService', () => {
   it('consulta movimientos conciliados paginados', () => {
     service.movements().subscribe((items) => expect(items[0].classification).toBe('SETTLEMENT'));
     const req = http.expectOne((request) => request.url.endsWith('/bank-movements'));
-    req.flush({ data: { data: [{ id: 'm1', classification: 'SETTLEMENT' }] } });
+    req.flush({ data: [{ id: 'm1', classification: 'SETTLEMENT' }] });
+  });
+
+  it('envía los filtros de resultado y estado al backend', () => {
+    service
+      .movements({ result: 'UNRECONCILED', status: 'MANUAL_REQUESTED', search: 'folio' })
+      .subscribe();
+    const req = http.expectOne((request) => request.url.endsWith('/bank-movements'));
+    expect(req.request.params.get('result')).toBe('UNRECONCILED');
+    expect(req.request.params.get('status')).toBe('MANUAL_REQUESTED');
+    expect(req.request.params.get('search')).toBe('folio');
+    req.flush({ data: [] });
+  });
+
+  it('solicita y ejecuta la conciliación manual en endpoints separados', () => {
+    service.requestManual('m1', 'r1', 'c1', 'Comprobante validado').subscribe();
+    const request = http.expectOne((value) =>
+      value.url.endsWith('/bank-movements/m1/manual-reconciliation-requests'),
+    );
+    expect(request.request.body).toEqual({
+      relation_id: 'r1',
+      clarification_id: 'c1',
+      reason: 'Comprobante validado',
+    });
+    request.flush({ data: { id: 's1', status: 'REQUESTED' } });
+
+    service.executeManual('s1').subscribe();
+    const execute = http.expectOne((value) =>
+      value.url.endsWith('/manual-reconciliation-requests/s1/execute'),
+    );
+    expect(execute.request.method).toBe('POST');
+    execute.flush({ data: { id: 's1', status: 'EXECUTED' } });
   });
 });

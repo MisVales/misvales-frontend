@@ -22,7 +22,7 @@ describe('RelacionesApiService', () => {
     TestBed.resetTestingModule();
   });
   it('lee la página de relaciones del backend', () => {
-    service.list().subscribe((v) => expect(v[0].payment_reference).toBe('REL-1'));
+    service.list().subscribe((v) => expect(v.data[0].payment_reference).toBe('REL-1'));
     const req = http.expectOne((r) => r.url.endsWith('/relations'));
     req.flush({ data: { data: [{ payment_reference: 'REL-1' }] } });
   });

@@ -115,12 +115,6 @@ import { MisvalesDateTimePipe } from '@shared/pipes/misvales-date-time.pipe';
               </p>
             </div>
             
-            <div>
-              <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Versión de Registro</p>
-              <p class="text-sm font-medium text-gray-500 mt-1">
-                v{{ branch()!.lock_version }}
-              </p>
-            </div>
           </div>
         </div>
       </div>
