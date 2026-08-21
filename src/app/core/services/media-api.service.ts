@@ -39,4 +39,10 @@ export class MediaApiService {
       headers: new HttpHeaders().set('Idempotency-Key', crypto.randomUUID()),
     });
   }
+
+  download(mediaId: string): Observable<Blob> {
+    return this.http.get(`${this.apiConfig.baseUrl}/media/${mediaId}/download`, {
+      responseType: 'blob',
+    });
+  }
 }

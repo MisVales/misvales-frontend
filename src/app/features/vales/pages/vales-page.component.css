@@ -571,7 +571,7 @@
 }
 .history-row {
   display: grid;
-  grid-template-columns: minmax(12rem, 1.5fr) auto minmax(7rem, 0.7fr) minmax(11rem, 1fr);
+  grid-template-columns: minmax(12rem, 1.5fr) auto minmax(7rem, 0.7fr) minmax(11rem, 1fr) auto;
   align-items: center;
   gap: 1rem;
   padding: 0.9rem 1.4rem;
@@ -595,6 +595,20 @@
 .history-amount {
   text-align: right;
 }
+.installments-button {
+  min-height: 2.25rem;
+  border: 1px solid var(--mv-primary-300, #9abf9f);
+  border-radius: var(--mv-radius-sm);
+  padding: 0.35rem 0.65rem;
+  background: #fff;
+  color: var(--mv-primary-800);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+.installments-button:hover { background: var(--mv-primary-100); }
+.installments-placeholder { margin: 0; color: var(--mv-text-muted); }
 .history-skeleton {
   display: grid;
   gap: 0.7rem;
@@ -661,7 +675,7 @@
     border-left: 0;
   }
   .history-row {
-    grid-template-columns: minmax(0, 1.4fr) auto minmax(7rem, 0.7fr);
+    grid-template-columns: minmax(0, 1.4fr) auto minmax(7rem, 0.7fr) auto;
   }
   .history-status {
     grid-column: 1/-1;
@@ -735,6 +749,7 @@
   .history-status {
     grid-column: 1/-1;
   }
+  .installments-button { grid-column: 2; grid-row: 1 / span 2; }
   .credit-summary {
     grid-template-columns: 1fr;
   }

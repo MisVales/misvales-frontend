@@ -181,19 +181,6 @@ export const NAV_GROUPS: NavGroupData[] = [
     ],
   },
   {
-    heading: 'Clientes',
-    icon: 'users-round',
-    items: [
-      {
-        id: 'clients',
-        title: 'Clientes finales',
-        icon: 'user-round',
-        route: '/clientes',
-        roles: ['distributor'],
-      },
-    ],
-  },
-  {
     heading: 'Vales',
     icon: 'ticket',
     items: [
