@@ -214,10 +214,10 @@ export class PagosPageComponent {
     this.error.set('');
     this.api.list({ per_page: 50 }).subscribe({
       next: (items) => {
-        this.relations.set(items);
+        this.relations.set(items.data);
         this.loading.set(false);
-        if (items.length > 0 && !this.selectedRelationId()) {
-          this.selectRelation(items[0].id);
+        if (items.data.length > 0 && !this.selectedRelationId()) {
+          this.selectRelation(items.data[0].id);
         }
       },
       error: () => {

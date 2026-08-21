@@ -232,6 +232,16 @@ export class ValesPageComponent implements OnInit {
     if (!this.creatingClient()) this.clientDialogOpen.set(false);
   }
 
+  protected installmentStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      PENDING: 'Pendiente',
+      OVERDUE: 'Atrasado',
+      SETTLED: 'Pagado',
+      PARTIALLY_PAID: 'Abono parcial',
+    };
+    return labels[status] ?? status;
+  }
+
   protected createClient(): void {
     if (this.clientForm.invalid || this.creatingClient()) {
       this.clientForm.markAllAsTouched();

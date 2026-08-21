@@ -93,23 +93,31 @@ export interface RelationFilterParams {
   status?: string;
   cutoff?: string;
   per_page?: number;
+  page?: number;
+}
+
+export interface PaginatedRelations {
+  data: RelationView[];
+  current_page: number;
+  last_page: number;
+  total: number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class RelacionesApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
-
-  list(filters?: RelationFilterParams): Observable<RelationView[]> {
+  list(filters?: RelationFilterParams): Observable<PaginatedRelations> {
     let params: Record<string, string> = {};
     if (filters?.search) params['search'] = filters.search;
     if (filters?.status) params['status'] = filters.status;
     if (filters?.cutoff) params['cutoff'] = filters.cutoff;
     if (filters?.per_page) params['per_page'] = String(filters.per_page);
+    if (filters?.page) params['page'] = String(filters.page);
 
     return this.http
-      .get<{ data: { data: RelationView[] } }>(`${this.config.baseUrl}/relations`, { params })
-      .pipe(map((r) => r.data.data));
+      .get<{ data: PaginatedRelations }>(`${this.config.baseUrl}/relations`, { params })
+      .pipe(map((r) => r.data));
   }
 
   detail(id: string): Observable<RelationView> {
