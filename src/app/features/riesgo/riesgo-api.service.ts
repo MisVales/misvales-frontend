@@ -19,18 +19,57 @@ export interface RiskAlert {
   distributor_id: string;
   branch_id: string;
   type: string;
-  status: string;
+  status: 'OPEN' | 'REVIEWED' | 'RESOLVED';
   consecutive_defaults: number;
   relation_ids: string[];
   relation_details?: RelationDetail[];
   overdue_balance: string;
+  created_at?: string;
+  distribuidora?: {
+    id: string;
+    distributor_number?: string;
+    usuario?: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    sucursal?: {
+      id: string;
+      name: string;
+    };
+  };
 }
 
 export interface Removal {
   id: string;
   distributor_id: string;
-  status: string;
+  branch_id?: string;
+  status: 'REQUESTED' | 'AUTHORIZED' | 'REJECTED';
   reason: string;
+  decision_reason?: string | null;
+  decided_at?: string | null;
+  created_at?: string;
+  distribuidora?: {
+    id: string;
+    distributor_number?: string;
+    usuario?: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    sucursal?: {
+      id: string;
+      name: string;
+    };
+  };
+  solicitante?: {
+    id: string;
+    name: string;
+  };
+  decididoPor?: {
+    id: string;
+    name: string;
+  };
 }
 
 export interface DelinquencyStatus {
