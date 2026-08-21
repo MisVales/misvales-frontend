@@ -23,6 +23,10 @@ export interface RelationView {
   reconciled_total: string;
   surcharge_total: string;
   balance: string;
+  distribuidora?: {
+    id: string;
+    distributor_number: string;
+  };
   header_snapshot: {
     number?: string | null;
     name?: string | null;
@@ -55,14 +59,21 @@ export interface RelationView {
   }>;
 }
 
+export interface PaginatedRelations {
+  data: RelationView[];
+  current_page: number;
+  last_page: number;
+  total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class RelacionesApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
-  list(): Observable<RelationView[]> {
+  list(page: number = 1): Observable<PaginatedRelations> {
     return this.http
-      .get<{ data: { data: RelationView[] } }>(`${this.config.baseUrl}/relations`)
-      .pipe(map((r) => r.data.data));
+      .get<{ data: PaginatedRelations }>(`${this.config.baseUrl}/relations?page=${page}`)
+      .pipe(map((r) => r.data));
   }
   detail(id: string): Observable<RelationView> {
     return this.http

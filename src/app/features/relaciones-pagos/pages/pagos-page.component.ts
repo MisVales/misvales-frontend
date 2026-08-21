@@ -61,7 +61,7 @@ export class PagosPageComponent {
 
   constructor() {
     this.api.list().subscribe({
-      next: (items) => this.relations.set(items),
+      next: (items) => this.relations.set(items.data),
       error: () => this.error.set('No fue posible consultar los pagos.'),
     });
   }
