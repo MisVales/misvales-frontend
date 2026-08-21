@@ -1,13 +1,21 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { SessionStore } from '../../../core/session/session.store';
-import { PaginatedRelations, RelacionesApiService, RelationView } from '../data-access/relaciones-api.service';
+import { MediaApiService } from '../../../core/services/media-api.service';
+import { ConciliacionApiService } from '../data-access/conciliacion-api.service';
+import {
+  PaginatedRelations,
+  RelacionesApiService,
+  RelationView,
+} from '../data-access/relaciones-api.service';
 import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-relaciones-page',
   standalone: true,
-  imports: [CommonModule, StatusLabelPipe],
+  imports: [CommonModule, FormsModule, StatusLabelPipe],
   template: ` <section class="space-y-6 p-6">
     <header class="flex items-center gap-4">
       @if (selected()) {
@@ -24,7 +32,11 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
             stroke="currentColor"
             class="h-5 w-5"
           >
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+            />
           </svg>
         </button>
       }
@@ -65,15 +77,23 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
               }
               @for (item of relations(); track item.id) {
                 <tr class="hover:bg-gray-50">
-                  <td class="p-4">{{ item.header_snapshot['name'] || item.distribuidora?.distributor_number || '—' }}</td>
+                  <td class="p-4">
+                    {{
+                      item.header_snapshot['name'] || item.distribuidora?.distributor_number || '—'
+                    }}
+                  </td>
                   <td class="p-4">{{ item.cutoff_at | date: 'mediumDate' }}</td>
                   <td class="p-4">{{ item.payment_deadline_at | date: 'mediumDate' }}</td>
                   <td class="p-4 font-mono">{{ item.payment_reference }}</td>
                   <td class="p-4 text-gray-600">{{ extractPartialities(item) }}</td>
-                  <td class="p-4 text-right font-semibold">{{ item.misvales_total | currency: 'MXN' }}</td>
+                  <td class="p-4 text-right font-semibold">
+                    {{ item.misvales_total | currency: 'MXN' }}
+                  </td>
                   <td class="p-4 text-right font-semibold">{{ item.balance | currency: 'MXN' }}</td>
                   <td class="p-4">
-                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                    <span
+                      class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800"
+                    >
                       {{ item.financial_status | statusLabel }}
                     </span>
                   </td>
@@ -90,11 +110,9 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
             </tbody>
           </table>
         </div>
-        
+
         <div class="flex items-center justify-between border-t p-4 text-sm text-gray-600">
-          <div>
-            Página {{ currentPage() }} de {{ lastPage() }} ({{ total() }} relaciones)
-          </div>
+          <div>Página {{ currentPage() }} de {{ lastPage() }} ({{ total() }} relaciones)</div>
           <div class="flex gap-2">
             <button
               [disabled]="currentPage() <= 1 || loading()"
@@ -119,7 +137,10 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
           <div class="flex flex-wrap justify-between gap-4">
             <div>
               <h2 class="text-2xl font-bold">{{ item.payment_reference }}</h2>
-              <p class="text-gray-600">Fecha límite: {{ item.payment_deadline_at | date: 'longDate' }} a las {{ item.payment_deadline_at | date: 'shortTime' }}</p>
+              <p class="text-gray-600">
+                Fecha límite: {{ item.payment_deadline_at | date: 'longDate' }} a las
+                {{ item.payment_deadline_at | date: 'shortTime' }}
+              </p>
             </div>
             <div class="text-right">
               <span class="text-sm text-gray-500 uppercase tracking-wide">Saldo pendiente</span>
@@ -134,7 +155,9 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
             </div>
             <div class="rounded-lg border bg-blue-50 p-4">
               <span class="text-sm text-blue-700 font-medium">Exigible MisVales</span>
-              <strong class="block text-xl text-blue-900">{{ item.misvales_total | currency: 'MXN' }}</strong>
+              <strong class="block text-xl text-blue-900">{{
+                item.misvales_total | currency: 'MXN'
+              }}</strong>
             </div>
             <div class="rounded-lg border bg-gray-50 p-4">
               <span class="text-sm text-gray-600">Pagos conciliados</span>
@@ -143,31 +166,81 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
           </div>
 
           <section class="grid gap-4 rounded-xl bg-gray-50 p-5 sm:grid-cols-2 lg:grid-cols-4">
-            <div><span class="text-sm text-gray-500 block">Número</span><strong class="block">{{ item.header_snapshot['number'] || '—' }}</strong></div>
-            <div><span class="text-sm text-gray-500 block">Distribuidora</span><strong class="block">{{ item.header_snapshot['name'] || '—' }}</strong></div>
-            <div><span class="text-sm text-gray-500 block">Sucursal</span><strong class="block">{{ item.header_snapshot['branch'] || '—' }}</strong></div>
-            <div><span class="text-sm text-gray-500 block">Coordinador</span><strong class="block">{{ item.header_snapshot['coordinator'] || '—' }}</strong></div>
-            <div><span class="text-sm text-gray-500 block">Línea autorizada</span><strong class="block">{{ item.header_snapshot['credit_line_total'] | currency: 'MXN' }}</strong></div>
-            <div><span class="text-sm text-gray-500 block">Saldo disponible</span><strong class="block">{{ item.header_snapshot['credit_available'] | currency: 'MXN' }}</strong></div>
-            <div class="col-span-2"><span class="text-sm text-gray-500 block">Domicilio</span><strong class="block">{{ item.header_snapshot['address'] || '—' }}</strong></div>
+            <div>
+              <span class="text-sm text-gray-500 block">Número</span
+              ><strong class="block">{{ item.header_snapshot['number'] || '—' }}</strong>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500 block">Distribuidora</span
+              ><strong class="block">{{ item.header_snapshot['name'] || '—' }}</strong>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500 block">Sucursal</span
+              ><strong class="block">{{ item.header_snapshot['branch'] || '—' }}</strong>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500 block">Coordinador</span
+              ><strong class="block">{{ item.header_snapshot['coordinator'] || '—' }}</strong>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500 block">Línea autorizada</span
+              ><strong class="block">{{
+                item.header_snapshot['credit_line_total'] | currency: 'MXN'
+              }}</strong>
+            </div>
+            <div>
+              <span class="text-sm text-gray-500 block">Saldo disponible</span
+              ><strong class="block">{{
+                item.header_snapshot['credit_available'] | currency: 'MXN'
+              }}</strong>
+            </div>
+            <div class="col-span-2">
+              <span class="text-sm text-gray-500 block">Domicilio</span
+              ><strong class="block">{{ item.header_snapshot['address'] || '—' }}</strong>
+            </div>
           </section>
 
           <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <div class="rounded-xl border p-5">
               <h3 class="font-bold text-gray-800 mb-2">Periodo de pago anticipado</h3>
-              <p class="text-sm">{{ item.advance_period_start | date: 'medium' }}<br/>—<br/>{{ item.advance_period_end | date: 'medium' }}</p>
+              <p class="text-sm">
+                {{ item.advance_period_start | date: 'medium' }}<br />—<br />{{
+                  item.advance_period_end | date: 'medium'
+                }}
+              </p>
             </div>
             <div class="rounded-xl border p-5">
               <h3 class="font-bold text-gray-800 mb-2">Datos bancarios publicados</h3>
-              <p class="text-sm">{{ item.bank_snapshot['name'] }} · {{ item.bank_snapshot['beneficiary'] }}</p>
+              <p class="text-sm">
+                {{ item.bank_snapshot['name'] }} · {{ item.bank_snapshot['beneficiary'] }}
+              </p>
               <p class="text-sm mt-1">Convenio {{ item.bank_snapshot['agreement'] }}</p>
-              <p class="text-sm font-mono mt-1">CLABE {{ maskedClabe(item.bank_snapshot['clabe']) }}</p>
+              <p class="text-sm font-mono mt-1">
+                CLABE {{ maskedClabe(item.bank_snapshot['clabe']) }}
+              </p>
             </div>
             <div class="rounded-xl border p-5 flex flex-col justify-center items-start">
               <h3 class="font-bold text-gray-800 mb-2">Referencia de pago</h3>
-              <button class="flex items-center gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 px-4 py-2 font-mono transition-colors" (click)="copy(item.payment_reference)">
+              <button
+                class="flex items-center gap-2 rounded-lg bg-gray-100 hover:bg-gray-200 px-4 py-2 font-mono transition-colors"
+                (click)="copy(item.payment_reference)"
+              >
                 {{ item.payment_reference }}
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-copy"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-copy"
+                >
+                  <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                  <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </svg>
               </button>
             </div>
           </section>
@@ -178,10 +251,21 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
               <table class="w-full text-sm text-left">
                 <thead class="bg-gray-50 text-gray-600">
                   <tr>
-                    <th class="p-3">Producto</th><th class="p-3">Folio</th><th class="p-3">Cliente</th><th class="p-3 text-center">Parcialidad</th>
-                    <th class="p-3 text-right">Capital</th><th class="p-3 text-right">Comisión</th><th class="p-3 text-right">Interés</th><th class="p-3 text-right">Seguro</th>
-                    <th class="p-3 text-right">Ganancia</th><th class="p-3 text-right">Recargo</th><th class="p-3 text-right">Pago cte.</th>
-                    <th class="p-3 text-right font-medium text-blue-800">Exigible MisVales</th><th class="p-3 text-right">Conciliado</th><th class="p-3 text-right">Saldo</th><th class="p-3 text-center">Estado</th>
+                    <th class="p-3">Producto</th>
+                    <th class="p-3">Folio</th>
+                    <th class="p-3">Cliente</th>
+                    <th class="p-3 text-center">Parcialidad</th>
+                    <th class="p-3 text-right">Capital</th>
+                    <th class="p-3 text-right">Comisión</th>
+                    <th class="p-3 text-right">Interés</th>
+                    <th class="p-3 text-right">Seguro</th>
+                    <th class="p-3 text-right">Ganancia</th>
+                    <th class="p-3 text-right">Recargo</th>
+                    <th class="p-3 text-right">Pago cte.</th>
+                    <th class="p-3 text-right font-medium text-blue-800">Exigible MisVales</th>
+                    <th class="p-3 text-right">Conciliado</th>
+                    <th class="p-3 text-right">Saldo</th>
+                    <th class="p-3 text-center">Estado</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y">
@@ -191,27 +275,56 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
                       <td class="p-3 font-mono">{{ row.snapshot['folio'] }}</td>
                       <td class="p-3 min-w-[200px]">{{ row.snapshot['client'] }}</td>
                       <td class="p-3 text-center whitespace-nowrap">
-                        <span class="rounded bg-gray-100 px-2 py-1">{{ row.snapshot['installment'] }} / {{ row.snapshot['total_installments'] }}</span>
+                        <span class="rounded bg-gray-100 px-2 py-1"
+                          >{{ row.snapshot['installment'] }} /
+                          {{ row.snapshot['total_installments'] }}</span
+                        >
                       </td>
-                      <td class="p-3 text-right">{{ row.snapshot['capital'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['loan_commission'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['interest'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['insurance'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['distributor_profit'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['surcharge'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['client_payment'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right font-medium text-blue-800">{{ row.snapshot['misvales_payment'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['reconciled_payments'] | currency: 'MXN' }}</td>
-                      <td class="p-3 text-right">{{ row.snapshot['balance'] | currency: 'MXN' }}</td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['capital'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['loan_commission'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['interest'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['insurance'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['distributor_profit'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['surcharge'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['client_payment'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right font-medium text-blue-800">
+                        {{ row.snapshot['misvales_payment'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['reconciled_payments'] | currency: 'MXN' }}
+                      </td>
+                      <td class="p-3 text-right">
+                        {{ row.snapshot['balance'] | currency: 'MXN' }}
+                      </td>
                       <td class="p-3 text-center">
-                        <span class="inline-flex rounded-full bg-gray-100 px-2 text-[10px] uppercase font-semibold text-gray-600">
+                        <span
+                          class="inline-flex rounded-full bg-gray-100 px-2 text-[10px] uppercase font-semibold text-gray-600"
+                        >
                           {{ $any(row.snapshot['financial_status']) | statusLabel }}
                         </span>
                       </td>
                     </tr>
                   }
                   @if (!item.partidas?.length) {
-                    <tr><td colspan="15" class="p-4 text-center text-gray-500">No hay partidas en esta relación.</td></tr>
+                    <tr>
+                      <td colspan="15" class="p-4 text-center text-gray-500">
+                        No hay partidas en esta relación.
+                      </td>
+                    </tr>
                   }
                 </tbody>
               </table>
@@ -223,15 +336,29 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
             @for (payment of item.pagos ?? []; track payment.id) {
               <div class="mt-2 rounded-lg border bg-gray-50 p-4">
                 <div class="flex justify-between items-center mb-2">
-                  <strong class="text-lg text-green-700">+ {{ payment.amount | currency: 'MXN' }}</strong>
-                  <span class="text-sm text-gray-500">{{ payment.applied_at | date: 'medium' }}</span>
+                  <strong class="text-lg text-green-700"
+                    >+ {{ payment.amount | currency: 'MXN' }}</strong
+                  >
+                  <span class="text-sm text-gray-500">{{
+                    payment.applied_at | date: 'medium'
+                  }}</span>
                 </div>
                 <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-xs text-gray-600">
-                  <div>Recargo: <strong>{{ payment.surcharge_applied | currency: 'MXN' }}</strong></div>
-                  <div>Interés: <strong>{{ payment.interest_applied | currency: 'MXN' }}</strong></div>
-                  <div>Seguro: <strong>{{ payment.insurance_applied | currency: 'MXN' }}</strong></div>
-                  <div>Comisión: <strong>{{ payment.commission_applied | currency: 'MXN' }}</strong></div>
-                  <div>Capital: <strong>{{ payment.capital_applied | currency: 'MXN' }}</strong></div>
+                  <div>
+                    Recargo: <strong>{{ payment.surcharge_applied | currency: 'MXN' }}</strong>
+                  </div>
+                  <div>
+                    Interés: <strong>{{ payment.interest_applied | currency: 'MXN' }}</strong>
+                  </div>
+                  <div>
+                    Seguro: <strong>{{ payment.insurance_applied | currency: 'MXN' }}</strong>
+                  </div>
+                  <div>
+                    Comisión: <strong>{{ payment.commission_applied | currency: 'MXN' }}</strong>
+                  </div>
+                  <div>
+                    Capital: <strong>{{ payment.capital_applied | currency: 'MXN' }}</strong>
+                  </div>
                 </div>
                 <div class="mt-3 text-sm font-semibold text-blue-700">
                   Línea recuperada: {{ payment.line_recovered | currency: 'MXN' }}
@@ -239,7 +366,7 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
               </div>
             }
             @if (!item.pagos?.length) {
-               <p class="text-gray-500 text-sm">No hay pagos aplicados en esta relación.</p>
+              <p class="text-gray-500 text-sm">No hay pagos aplicados en esta relación.</p>
             }
 
             @if (item.temporal_classification) {
@@ -250,10 +377,74 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
             }
           </section>
 
+          @if (canClarify()) {
+            <section
+              class="rounded-xl border border-amber-200 bg-amber-50 p-5"
+              aria-labelledby="clarification-title"
+            >
+              <h3 id="clarification-title" class="font-bold text-amber-950">
+                Presentar aclaración de pago
+              </h3>
+              <p class="mt-1 text-sm text-amber-800">
+                Adjunta el comprobante que respalda que el movimiento corresponde a esta relación.
+                La cajera revisará la aclaración; no se aplicará dinero automáticamente.
+              </p>
+              @if (clarificationSuccess()) {
+                <p role="status" class="mt-3 rounded-lg bg-green-100 p-3 text-sm text-green-800">
+                  {{ clarificationSuccess() }}
+                </p>
+              }
+              <div class="mt-4 grid gap-4 md:grid-cols-2">
+                <label class="text-sm font-semibold text-amber-950"
+                  >Comprobante<input
+                    class="mt-1 block min-h-11 w-full rounded-lg border bg-white p-2 font-normal text-gray-900"
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    (change)="selectClarificationFile($event)"
+                /></label>
+                <label class="text-sm font-semibold text-amber-950"
+                  >Motivo<textarea
+                    class="mt-1 min-h-24 w-full rounded-lg border bg-white p-3 font-normal text-gray-900"
+                    maxlength="1000"
+                    [ngModel]="clarificationReason()"
+                    (ngModelChange)="clarificationReason.set($event)"
+                  ></textarea>
+                </label>
+              </div>
+              <button
+                class="mt-4 min-h-11 rounded-lg bg-amber-700 px-5 text-sm font-semibold text-white disabled:opacity-50"
+                [disabled]="
+                  clarificationBusy() || !clarificationFile() || !clarificationReason().trim()
+                "
+                (click)="submitClarification(item)"
+              >
+                {{ clarificationBusy() ? 'Enviando…' : 'Enviar aclaración' }}
+              </button>
+            </section>
+          }
+
           @if (canDownload()) {
             <div class="pt-4 border-t">
-              <button class="inline-flex items-center gap-2 rounded-lg bg-blue-700 hover:bg-blue-800 px-5 py-2.5 font-medium text-white transition-colors" (click)="download(item)">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+              <button
+                class="inline-flex items-center gap-2 rounded-lg bg-blue-700 hover:bg-blue-800 px-5 py-2.5 font-medium text-white transition-colors"
+                (click)="download(item)"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-download"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" x2="12" y1="15" y2="3" />
+                </svg>
                 Descargar relación
               </button>
             </div>
@@ -266,15 +457,21 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
 export class RelacionesPageComponent {
   private readonly api = inject(RelacionesApiService);
   private readonly session = inject(SessionStore);
-  
+  private readonly mediaApi = inject(MediaApiService);
+  private readonly reconciliationApi = inject(ConciliacionApiService);
+
   readonly relations = signal<RelationView[]>([]);
   readonly selected = signal<RelationView | null>(null);
   readonly error = signal('');
-  
+
   readonly currentPage = signal(1);
   readonly lastPage = signal(1);
   readonly total = signal(0);
   readonly loading = signal(false);
+  readonly clarificationFile = signal<File | null>(null);
+  readonly clarificationReason = signal('');
+  readonly clarificationBusy = signal(false);
+  readonly clarificationSuccess = signal('');
 
   constructor() {
     this.loadPage(1);
@@ -307,16 +504,20 @@ export class RelacionesPageComponent {
 
   extractPartialities(item: RelationView): string {
     if (!item.partidas || item.partidas.length === 0) return 'Ninguna';
-    
+
     // Map items to "X/Y" format and get unique values
-    const uniqueFormatted = Array.from(new Set(
-      item.partidas.map(p => `${p.snapshot['installment']}/${p.snapshot['total_installments']}`)
-    ));
+    const uniqueFormatted = Array.from(
+      new Set(
+        item.partidas.map(
+          (p) => `${p.snapshot['installment']}/${p.snapshot['total_installments']}`,
+        ),
+      ),
+    );
 
     if (uniqueFormatted.length <= 4) {
       return uniqueFormatted.join(', ');
     }
-    
+
     // If more than 4, take first 3 and add a suffix
     return `${uniqueFormatted.slice(0, 3).join(', ')} (+${uniqueFormatted.length - 3} más)`;
   }
@@ -331,6 +532,54 @@ export class RelacionesPageComponent {
           'relations.download_global',
         ].includes(p),
       );
+  }
+
+  canClarify(): boolean {
+    return this.session.permissions().includes('payment_clarifications.create_own');
+  }
+
+  selectClarificationFile(event: Event): void {
+    this.clarificationFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+  }
+
+  submitClarification(relation: RelationView): void {
+    const file = this.clarificationFile();
+    const reason = this.clarificationReason().trim();
+    if (!file || !reason) return;
+    this.clarificationBusy.set(true);
+    this.error.set('');
+    this.clarificationSuccess.set('');
+    this.mediaApi
+      .upload({
+        file,
+        owner_type: 'distributor_relation',
+        owner_id: relation.id,
+        purpose: 'CLARIFICATION',
+      })
+      .subscribe({
+        next: (media) =>
+          this.reconciliationApi.createClarification(relation.id, media.data.id, reason).subscribe({
+            next: () => {
+              this.clarificationBusy.set(false);
+              this.clarificationFile.set(null);
+              this.clarificationReason.set('');
+              this.clarificationSuccess.set(
+                'La aclaración quedó disponible para revisión de Caja.',
+              );
+              this.open(relation.id);
+            },
+            error: (response: HttpErrorResponse) => {
+              this.clarificationBusy.set(false);
+              this.error.set(
+                response.error?.error?.message ?? 'No fue posible registrar la aclaración.',
+              );
+            },
+          }),
+        error: (response: HttpErrorResponse) => {
+          this.clarificationBusy.set(false);
+          this.error.set(response.error?.error?.message ?? 'No fue posible cargar el comprobante.');
+        },
+      });
   }
 
   copy(value: string): void {
