@@ -27,12 +27,12 @@
 }
 
 .rule-banner {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  color: #ffffff;
+  background: #ffffff;
+  color: #18211b;
   border-radius: 1rem;
   padding: 1.5rem;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(56, 102, 65, 0.06);
+  border: 1px solid #dcecdf;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -45,11 +45,11 @@
 }
 
 .badge-order {
-  background: #3b82f6;
+  background: #386641;
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.75rem;
   border-radius: 9999px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -57,8 +57,8 @@
 
 .rule-banner-title {
   font-size: 1.1rem;
-  font-weight: 700;
-  color: #f8fafc;
+  font-weight: 800;
+  color: #18211b;
 }
 
 .waterfall-flow {
@@ -66,7 +66,8 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.06);
+  background: #f1f7f2;
+  border: 1px solid #dcecdf;
   padding: 0.875rem 1.25rem;
   border-radius: 0.75rem;
 }
@@ -77,46 +78,50 @@
   gap: 0.35rem;
   font-size: 0.85rem;
   font-weight: 600;
-  padding: 0.3rem 0.6rem;
+  padding: 0.35rem 0.7rem;
   border-radius: 0.5rem;
 }
 
 .step-charge {
-  background: rgba(245, 158, 11, 0.2);
-  color: #fde68a;
-  border: 1px solid rgba(245, 158, 11, 0.3);
+  background: #fffbeb;
+  color: #92400e;
+  border: 1px solid #fde68a;
 }
 
 .step-capital {
-  background: rgba(16, 185, 129, 0.25);
-  color: #6ee7b7;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  background: #dcecdf;
+  color: #24442b;
+  border: 1px solid #a3c9ab;
   font-weight: 700;
 }
 
 .step-recovery {
-  background: #10b981;
+  background: #386641;
   color: #ffffff;
   font-weight: 800;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(56, 102, 65, 0.25);
 }
 
 .flow-arrow {
-  color: #94a3b8;
+  color: #5f6d64;
   font-size: 0.9rem;
   font-weight: bold;
 }
 
 .rule-highlight {
-  font-size: 0.85rem;
-  color: #cbd5e1;
+  font-size: 0.875rem;
+  color: #24442b;
+  background: #f1f7f2;
+  border-left: 4px solid #386641;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .rule-highlight strong {
-  color: #38bdf8;
+  color: #1b3520;
 }
 
 /* Metrics row */
