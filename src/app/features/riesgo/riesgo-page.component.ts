@@ -2,7 +2,14 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SessionStore } from '../../core/session/session.store';
-import { DelinquencyStatus, RelationDetail, Removal, RiesgoApiService, RiskAlert } from './riesgo-api.service';
+import {
+  DelinquencyBlockItem,
+  DelinquencyStatus,
+  RelationDetail,
+  Removal,
+  RiesgoApiService,
+  RiskAlert,
+} from './riesgo-api.service';
 import { RelationDetailsDialogComponent } from './relation-details-dialog.component';
 
 @Component({
@@ -16,15 +23,17 @@ export class RiesgoPageComponent {
   private readonly session = inject(SessionStore);
 
   readonly alerts = signal<RiskAlert[]>([]);
+  readonly blocks = signal<DelinquencyBlockItem[]>([]);
   readonly removals = signal<Removal[]>([]);
   readonly status = signal<DelinquencyStatus | null>(null);
 
-  // Tabs: 'alerts' | 'removals'
-  readonly activeTab = signal<'alerts' | 'removals'>('alerts');
+  // Tabs: 'alerts' | 'blocks' | 'removals'
+  readonly activeTab = signal<'alerts' | 'blocks' | 'removals'>('alerts');
 
   // Search and filter
   readonly searchTerm = signal<string>('');
   readonly alertStatusFilter = signal<string>('');
+  readonly blockSearchTerm = signal<string>('');
 
   // Modals state
   readonly dialogOpen = signal<boolean>(false);
@@ -33,7 +42,7 @@ export class RiesgoPageComponent {
   readonly decisionModalOpen = signal<RiskAlert | null>(null);
   readonly selectedDecision = signal<'APPLY' | 'DO_NOT_APPLY'>('APPLY');
 
-  readonly requestRemovalModalOpen = signal<RiskAlert | null>(null);
+  readonly requestRemovalModalOpen = signal<RiskAlert | DelinquencyBlockItem | null>(null);
 
   readonly removalDecisionModalOpen = signal<Removal | null>(null);
   readonly selectedRemovalDecision = signal<'AUTHORIZE' | 'REJECT'>('AUTHORIZE');
@@ -62,6 +71,20 @@ export class RiesgoPageComponent {
     });
   });
 
+  readonly filteredBlocks = computed(() => {
+    const list = this.blocks();
+    const search = this.blockSearchTerm().toLowerCase().trim();
+
+    return list.filter((block) => {
+      return (
+        !search ||
+        (block.distribuidora?.usuario?.name && block.distribuidora.usuario.name.toLowerCase().includes(search)) ||
+        (block.distribuidora?.distributor_number && block.distribuidora.distributor_number.toLowerCase().includes(search)) ||
+        (block.distribuidora?.sucursal?.name && block.distribuidora.sucursal.name.toLowerCase().includes(search))
+      );
+    });
+  });
+
   constructor() {
     this.load();
   }
@@ -73,6 +96,10 @@ export class RiesgoPageComponent {
     const allowedPerms = ['risk.view_assigned', 'risk.view_branch', 'risk.view_global', 'all'];
 
     return allowedRoles.some((r) => roles.includes(r)) || allowedPerms.some((p) => perms.includes(p));
+  }
+
+  canViewBlocks(): boolean {
+    return this.canViewAlerts();
   }
 
   canViewRemovals(): boolean {
@@ -96,7 +123,8 @@ export class RiesgoPageComponent {
   canRequestRemoval(): boolean {
     const roles = this.session.roles();
     const perms = this.session.permissions();
-    return roles.includes('coordinator') || perms.includes('delinquency_removal.request_assigned') || perms.includes('all');
+    const allowedRoles = ['general_manager', 'admin', 'branch_manager', 'coordinator'];
+    return allowedRoles.some((r) => roles.includes(r)) || perms.includes('delinquency_removal.request_assigned') || perms.includes('all');
   }
 
   canDecideRemoval(): boolean {
@@ -119,6 +147,13 @@ export class RiesgoPageComponent {
     if (this.canViewAlerts()) {
       this.api.alerts().subscribe({
         next: (alerts) => this.alerts.set(alerts),
+        error: () => {},
+      });
+    }
+
+    if (this.canViewBlocks()) {
+      this.api.delinquencyBlocks().subscribe({
+        next: (blocks) => this.blocks.set(blocks),
         error: () => {},
       });
     }
@@ -158,20 +193,25 @@ export class RiesgoPageComponent {
     });
   }
 
-  openRequestRemovalModal(alert: RiskAlert): void {
+  openRequestRemovalModal(target: RiskAlert | DelinquencyBlockItem): void {
     this.decisionReason.set('');
-    this.requestRemovalModalOpen.set(alert);
+    this.requestRemovalModalOpen.set(target);
+  }
+
+  openRequestRemovalModalFromBlock(block: DelinquencyBlockItem): void {
+    this.decisionReason.set('');
+    this.requestRemovalModalOpen.set(block);
   }
 
   confirmRequestRemoval(): void {
-    const alert = this.requestRemovalModalOpen();
+    const target = this.requestRemovalModalOpen();
     const reason = this.decisionReason().trim();
-    if (!alert || !reason) {
+    if (!target || !reason) {
       return;
     }
 
     this.isSubmitting.set(true);
-    this.api.requestRemoval(alert.distributor_id, reason).subscribe({
+    this.api.requestRemoval(target.distributor_id, reason).subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.closeModals();

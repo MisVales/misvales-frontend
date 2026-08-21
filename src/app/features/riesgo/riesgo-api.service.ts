@@ -40,6 +40,37 @@ export interface RiskAlert {
   };
 }
 
+export interface DelinquencyBlockItem {
+  id: string;
+  distributor_id: string;
+  type: string;
+  status: string;
+  reason: string;
+  starts_at?: string;
+  overdue_balance: string;
+  overdue_count: number;
+  is_regularized: boolean;
+  has_pending_request: boolean;
+  pending_request_id?: string;
+  distribuidora?: {
+    id: string;
+    distributor_number?: string;
+    usuario?: {
+      id: string;
+      name: string;
+      email: string;
+    };
+    sucursal?: {
+      id: string;
+      name: string;
+    };
+  };
+  creado_por?: {
+    id: string;
+    name: string;
+  };
+}
+
 export interface Removal {
   id: string;
   distributor_id: string;
@@ -87,6 +118,12 @@ export class RiesgoApiService {
   alerts(): Observable<RiskAlert[]> {
     return this.http
       .get<{ data: RiskAlert[] }>(`${this.config.baseUrl}/risk-alerts`)
+      .pipe(map((response) => response.data));
+  }
+
+  delinquencyBlocks(): Observable<DelinquencyBlockItem[]> {
+    return this.http
+      .get<{ data: DelinquencyBlockItem[] }>(`${this.config.baseUrl}/delinquency-blocks`)
       .pipe(map((response) => response.data));
   }
 

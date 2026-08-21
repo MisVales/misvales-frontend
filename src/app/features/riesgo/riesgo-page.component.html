@@ -34,13 +34,25 @@
         [class.active]="activeTab() === 'alerts'"
         (click)="activeTab.set('alerts')"
       >
-        <span>Alertas de Riesgo</span>
+        <span>🔔 Alertas de Riesgo</span>
         <span
           class="tab-badge"
           [class.badge-alert]="openAlertsCount() > 0"
         >
           {{ openAlertsCount() }}
         </span>
+      </button>
+    }
+
+    @if (canViewBlocks()) {
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'blocks'"
+        (click)="activeTab.set('blocks')"
+      >
+        <span>🛡️ Distribuidoras Bloqueadas / Regularización</span>
+        <span class="tab-badge">{{ blocks().length }}</span>
       </button>
     }
 
@@ -51,7 +63,7 @@
         [class.active]="activeTab() === 'removals'"
         (click)="activeTab.set('removals')"
       >
-        <span>Retiros Solicitados</span>
+        <span>📋 Retiros Solicitados</span>
         <span class="tab-badge">{{ pendingRemovalsCount() }}</span>
       </button>
     }
@@ -146,15 +158,6 @@
                     Aplicar morosidad
                   </button>
                 }
-                @if (canRequestRemoval()) {
-                  <button
-                    type="button"
-                    class="btn-action btn-request-removal"
-                    (click)="openRequestRemovalModal(alert)"
-                  >
-                    Solicitar retiro tras regularización
-                  </button>
-                }
               </div>
             </div>
           </article>
@@ -167,7 +170,117 @@
     </div>
   }
 
-  <!-- TAB 2: Retiros Solicitados -->
+  <!-- TAB 2: Distribuidoras Bloqueadas / Regularización -->
+  @if (activeTab() === 'blocks' && canViewBlocks()) {
+    <div class="tab-content">
+      <div class="filter-row">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar distribuidora bloqueada..."
+          [ngModel]="blockSearchTerm()"
+          (ngModelChange)="blockSearchTerm.set($event)"
+        />
+      </div>
+
+      <div class="cards-grid">
+        @for (block of filteredBlocks(); track block.id) {
+          <article class="risk-card">
+            <div class="card-top">
+              <div class="distributor-info">
+                <span class="distributor-name">
+                  {{ block.distribuidora?.usuario?.name || 'Distribuidora #' + (block.distribuidora?.distributor_number || block.distributor_id) }}
+                </span>
+                <span class="distributor-meta">
+                  @if (block.distribuidora?.distributor_number) {
+                    <span>No. {{ block.distribuidora?.distributor_number }} · </span>
+                  }
+                  @if (block.distribuidora?.sucursal?.name) {
+                    <span>Sucursal: {{ block.distribuidora?.sucursal?.name }}</span>
+                  }
+                  @if (block.starts_at) {
+                    <span> · Bloqueada desde: {{ block.starts_at | date: 'dd/MM/yyyy HH:mm' }}</span>
+                  }
+                </span>
+              </div>
+              <span
+                class="badge-status"
+                [class.badge-regularized]="block.is_regularized"
+                [class.badge-not-regularized]="!block.is_regularized"
+              >
+                {{ block.is_regularized ? '✅ Regularizada (Saldo $0)' : '⚠️ Deuda Vencida Pendiente' }}
+              </span>
+            </div>
+
+            <div class="rounded-md bg-red-50/60 p-3 text-sm text-gray-700">
+              <strong>Motivo del bloqueo:</strong> {{ block.reason }}
+            </div>
+
+            <div class="metrics-row">
+              <div class="metric-col">
+                <span class="metric-label">Saldo Vencido Actual</span>
+                <span
+                  class="metric-val"
+                  [class.text-success]="block.is_regularized"
+                  [class.text-danger]="!block.is_regularized"
+                >
+                  {{ block.overdue_balance | currency: 'MXN':'symbol-narrow':'1.2-2' }}
+                </span>
+              </div>
+              <div class="metric-col">
+                <span class="metric-label">Cortes Pendientes</span>
+                <span class="metric-val">{{ block.overdue_count }} cortes con adeudo</span>
+              </div>
+              <div class="metric-col">
+                <span class="metric-label">Estatus de Retiro</span>
+                <span class="metric-val text-sm font-semibold">
+                  @if (block.has_pending_request) {
+                    <span class="text-amber-600">⏳ Solicitud en revisión</span>
+                  } @else if (block.is_regularized) {
+                    <span class="text-emerald-700">Listo para solicitar retiro</span>
+                  } @else {
+                    <span class="text-gray-500">Debe liquidar adeudos primero</span>
+                  }
+                </span>
+              </div>
+            </div>
+
+            <div class="card-actions justify-end">
+              <div class="actions-group">
+                @if (block.has_pending_request) {
+                  <button
+                    type="button"
+                    class="btn-action bg-amber-100 text-amber-900 border border-amber-300 cursor-default"
+                  >
+                    ⏳ Solicitud de retiro ya en trámite
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="btn-action btn-request-removal"
+                    [disabled]="!block.is_regularized"
+                    (click)="openRequestRemovalModalFromBlock(block)"
+                  >
+                    @if (block.is_regularized) {
+                      <span>Solicitar retiro de morosidad</span>
+                    } @else {
+                      <span>Requiere regularización ($0 vencido)</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 bg-white">
+            No hay distribuidoras bloqueadas por morosidad actualmente.
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- TAB 3: Retiros Solicitados -->
   @if (activeTab() === 'removals' && canViewRemovals()) {
     <div class="tab-content">
       <div class="cards-grid">
@@ -201,7 +314,7 @@
             </div>
 
             <div class="rounded-md bg-gray-50 p-3 text-sm text-gray-700">
-              <strong>Motivo de la solicitud:</strong> {{ removal.reason }}
+              <strong>Justificación de regularización:</strong> {{ removal.reason }}
             </div>
 
             @if (removal.decision_reason) {
@@ -231,7 +344,7 @@
                     class="btn-action btn-authorize"
                     (click)="openRemovalDecisionModal(removal, 'AUTHORIZE')"
                   >
-                    Autorizar retiro de morosidad
+                    Autorizar retiro de morosidad (Reactivar Distribuidora)
                   </button>
                 </div>
               </div>
@@ -299,11 +412,11 @@
       <div class="modal-card" (click)="$event.stopPropagation()">
         <h3 class="text-base font-bold text-slate-900">Solicitar Retiro de Morosidad</h3>
         <p class="text-xs text-gray-600">
-          Envía la solicitud a Gerencia para levantar el bloqueo operativo tras haber regularizado todos los pagos vencidos.
+          Envía la solicitud a Gerencia para levantar el bloqueo operativo tras haber regularizado todos los pagos vencidos ($0.00 de adeudo).
         </p>
 
         <div class="form-group">
-          <label class="form-label" for="removal-reason">Justificación y comprobación de pago</label>
+          <label class="form-label" for="removal-reason">Justificación y comprobación de regularización</label>
           <textarea
             id="removal-reason"
             rows="3"
@@ -341,7 +454,7 @@
         </h3>
         <p class="text-xs text-gray-600">
           @if (selectedRemovalDecision() === 'AUTHORIZE') {
-            Se liberará el bloqueo operativo de morosidad y la distribuidora podrá volver a emitir vales.
+            Se liberará el bloqueo operativo de morosidad y la distribuidora podrá volver a emitir vales de inmediato.
           } @else {
             La solicitud será rechazada y el bloqueo operativo se mantendrá activo.
           }

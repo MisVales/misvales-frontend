@@ -66,6 +66,7 @@
   gap: 0.5rem;
   border-bottom: 2px solid #e2e8f0;
   padding-bottom: 0;
+  overflow-x: auto;
 }
 
 .tab-btn {
@@ -81,6 +82,7 @@
   align-items: center;
   gap: 0.5rem;
   margin-bottom: -2px;
+  white-space: nowrap;
   transition: all 0.15s ease;
 }
 
@@ -207,6 +209,9 @@
 .badge-authorized { background: #dcfce7; color: #166534; }
 .badge-rejected { background: #fee2e2; color: #991b1b; }
 
+.badge-regularized { background: #dcfce7; color: #166534; }
+.badge-not-regularized { background: #fee2e2; color: #991b1b; }
+
 /* Metrics in card */
 .metrics-row {
   display: grid;
@@ -238,6 +243,10 @@
 
 .metric-val.text-danger {
   color: #dc2626;
+}
+
+.metric-val.text-success {
+  color: #16a34a;
 }
 
 /* Actions in Card */
@@ -297,7 +306,8 @@
 .btn-reject:hover { background: #fecaca; }
 
 .btn-request-removal { background: #386641; color: #ffffff; }
-.btn-request-removal:hover { background: #2f5737; }
+.btn-request-removal:hover:not(:disabled) { background: #2f5737; }
+.btn-request-removal:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* Modals */
 .modal-backdrop {
