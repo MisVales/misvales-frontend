@@ -158,7 +158,6 @@ export class PagosPageComponent {
         capitalPending += parseFloat((item.snapshot['capital'] ?? 0).toString());
       }
     } else {
-      // Fallback based on remaining balance
       const remainingForRest = Math.max(0, parseFloat(rel.balance || '0') - surchargePending);
       capitalPending = remainingForRest * 0.7;
       interestPending = remainingForRest * 0.15;

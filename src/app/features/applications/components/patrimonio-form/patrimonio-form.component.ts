@@ -202,9 +202,7 @@ export class PatrimonioFormComponent implements OnInit {
         this.configurarDescripcionOtro(form);
         this.patrimonioArray.push(form);
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -268,9 +266,7 @@ export class PatrimonioFormComponent implements OnInit {
       await this.api.eliminarPatrimonio(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerRegistroVisual(formGroup);
       await this.store.cargarDetalle(idSolicitud);
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cdr.markForCheck();
     }
   }

@@ -77,7 +77,7 @@ describe('sidebar permission filtering', () => {
     expect(collectIds(filteredItems)).not.toContain('verifications');
   });
 
-  it('muestra verificaciones solo con una capacidad efectiva de M05', () => {
+  it('muestra verificaciones solo con una capacidad efectiva', () => {
     const sinCapacidad = filterNavigationItems(allItems, [], ['verifier']);
     const conCapacidad = filterNavigationItems(
       allItems,

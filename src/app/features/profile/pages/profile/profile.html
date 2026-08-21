@@ -31,8 +31,7 @@
         @for (scope of sessionStore.scopes(); track scope.branchId) {
           <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
             <div>
-              <p class="font-medium text-gray-800">{{ scope.branchId || 'Alcance global' }}</p>
-              <p class="text-sm text-gray-500 font-mono text-[10px]">ID: {{ scope.branchId }}</p>
+              <p class="font-medium text-gray-800">{{ scope.branchId ? 'Sucursal asignada' : 'Alcance global' }}</p>
             </div>
             <div class="px-2 py-1 bg-[#e9ecef] text-gray-700 text-xs font-semibold rounded uppercase tracking-wide">
               {{ scope.role.replace('_', ' ') }}

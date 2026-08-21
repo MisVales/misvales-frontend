@@ -131,9 +131,7 @@ export class FamiliaresFormComponent implements OnInit {
         this.configurarParentescoOtro(form);
         this.familiaresArray.push(form);
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -186,9 +184,7 @@ export class FamiliaresFormComponent implements OnInit {
       await this.api.eliminarFamiliar(idSolicitud, idFamiliar, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerFamiliarVisual(index);
       await this.store.cargarDetalle(idSolicitud);
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cdr.markForCheck();
     }
   }

@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { SecurityEventRes, SecurityService } from '../../data-access/security.service';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { apiErrorMessage } from '../../../../core/api/api-error';
+import { securityEventLabel, securityOutcomeLabel } from '../../utils/security-event-labels';
 
 @Component({
   selector: 'app-history',
@@ -14,6 +15,8 @@ import { apiErrorMessage } from '../../../../core/api/api-error';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HistoryComponent implements OnInit {
+  readonly eventLabel = securityEventLabel;
+  readonly outcomeLabel = securityOutcomeLabel;
   private securityService = inject(SecurityService);
   private fb = inject(FormBuilder);
 

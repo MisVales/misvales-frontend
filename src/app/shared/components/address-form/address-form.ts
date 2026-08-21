@@ -279,9 +279,7 @@ export class AddressFormComponent implements OnInit, OnDestroy {
         const coords = res.features[0].geometry.coordinates; // [lon, lat]
         return { lat: coords[1], lng: coords[0] };
       }
-    } catch (e) {
-      console.error('Error al geocodificar:', e);
-    }
+    } catch {}
     
     return null;
   }

@@ -36,7 +36,7 @@
               [class.bg-green-100]="u.state === 'ACTIVE'" [class.text-green-800]="u.state === 'ACTIVE'" [class.border-green-200]="u.state === 'ACTIVE'"
               [class.bg-yellow-100]="u.state === 'INVITED' || u.state === 'PENDING_ACTIVATION'" [class.text-yellow-800]="u.state === 'INVITED' || u.state === 'PENDING_ACTIVATION'" [class.border-yellow-200]="u.state === 'INVITED' || u.state === 'PENDING_ACTIVATION'"
               [class.bg-red-100]="u.state === 'BLOCKED' || u.state === 'DISABLED'" [class.text-red-800]="u.state === 'BLOCKED' || u.state === 'DISABLED'" [class.border-red-200]="u.state === 'BLOCKED' || u.state === 'DISABLED'">
-          {{ u.state }}
+          {{ u.state | statusLabel }}
         </span>
       </div>
       <div class="p-5 grid grid-cols-2 gap-4">

@@ -76,9 +76,7 @@ export class OfflineSyncService {
         }));
         
         await db.delete('requests', req.id!);
-      } catch (error) {
-        console.error('Failed to sync request:', req, error);
-      }
+      } catch {}
     }
     
     this.alertService.showAlert('Sincronización completada exitosamente.', 'success', 3000);

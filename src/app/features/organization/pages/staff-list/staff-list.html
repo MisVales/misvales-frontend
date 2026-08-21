@@ -55,7 +55,7 @@
             <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.user?.name || 'Desconocido' }}</td>
               <td class="px-6 py-4">{{ user.user?.email || 'N/A' }}</td>
-              <td class="px-6 py-4">{{ user.branch_id || 'Global' }}</td>
+              <td class="px-6 py-4">{{ user.scope === 'GLOBAL' ? 'Global' : 'Sucursal asignada' }}</td>
               <td class="px-6 py-4">
                 <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ user.role?.name || 'Sin Rol' }}</span>
               </td>

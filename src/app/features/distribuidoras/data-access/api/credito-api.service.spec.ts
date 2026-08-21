@@ -25,7 +25,7 @@ describe('CreditoApiService', () => {
     expect(result.map(line => line.id)).toEqual(['l1']);
   });
 
-  it('envía paginación canónica para incrementos existentes de M08', () => {
+  it('envía paginación canónica para incrementos existentes', () => {
     service.listarIncrementos(2).subscribe();
     const request = http.expectOne('/api/v1/credit-increase-requests?page=2&per_page=100');
     expect(request.request.method).toBe('GET');

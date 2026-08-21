@@ -148,9 +148,7 @@ export class CreditosComercialesFormComponent implements OnInit {
         });
         this.creditosArray.push(form);
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -178,9 +176,7 @@ export class CreditosComercialesFormComponent implements OnInit {
       await this.api.eliminarCreditoComercial(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerCreditoVisual(index);
       await this.store.cargarDetalle(idSolicitud);
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cdr.markForCheck();
     }
   }

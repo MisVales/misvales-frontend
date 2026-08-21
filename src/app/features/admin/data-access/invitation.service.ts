@@ -45,7 +45,6 @@ export class InvitationService {
   }
 
   sendInvitation(data: UserCreateReq): Observable<UserCreateRes> {
-    // Note: Creating a user with send_invitation: true is how we send invitations according to backend docs
     return this.http.post<UserCreateRes>(this.usersUrl, data);
   }
 

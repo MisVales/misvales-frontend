@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/cor
 import { Router } from '@angular/router';
 import { SessionStore } from '../../../../core/session/session.store';
 
-export function rutaInicialM05(permisos: readonly string[]): string[] {
+export function rutaInicialVerificaciones(permisos: readonly string[]): string[] {
   const expediente = [
     'verification.verifiers.assign',
     'verification.corrections.manage',
@@ -32,7 +32,7 @@ export class InicioVerificacionesComponent implements OnInit {
   private readonly sessionStore = inject(SessionStore);
 
   ngOnInit(): void {
-    void this.router.navigate(rutaInicialM05(this.sessionStore.permissions()), {
+    void this.router.navigate(rutaInicialVerificaciones(this.sessionStore.permissions()), {
       replaceUrl: true,
     });
   }

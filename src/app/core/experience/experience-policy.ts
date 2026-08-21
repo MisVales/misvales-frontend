@@ -11,7 +11,5 @@ export function evaluateExperiencePolicy(
     return { kind: 'denied', reason: roleResolution.reason, device };
   }
 
-  // La presentación la determina el rol. Temporalmente no bloqueamos el
-  // acceso por dispositivo ni por viewport para permitir pruebas cruzadas.
   return { kind: 'allowed', requiredExperience: roleResolution.experience, device };
 }

@@ -27,9 +27,7 @@ export class HistorialCategoriasComponent implements OnInit {
     this.cargando = true;
     try {
       this.historial = await firstValueFrom(this.api.obtenerHistorialCategorias(this.distribuidoraId));
-    } catch (e) {
-      console.error('Error al cargar historial', e);
-    } finally {
+    } catch {} finally {
       this.cargando = false;
     }
   }
