@@ -46,7 +46,6 @@ export class StatusLabelPipe implements PipeTransform {
   transform(value: string | null | undefined): string {
     if (!value) return 'Sin estado';
 
-    return STATUS_LABELS[value.trim().toUpperCase()]
-      ?? value.replaceAll('_', ' ').toLocaleLowerCase('es-MX').replace(/^./, (letter) => letter.toLocaleUpperCase('es-MX'));
+    return STATUS_LABELS[value.trim().toUpperCase()] ?? 'Estado no disponible';
   }
 }

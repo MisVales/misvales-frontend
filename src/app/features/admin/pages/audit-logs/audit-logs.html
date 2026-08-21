@@ -48,7 +48,6 @@
               <th class="px-6 py-4">Fecha</th>
               <th class="px-6 py-4">Evento</th>
               <th class="px-6 py-4">Usuario</th>
-              <th class="px-6 py-4">IP</th>
               <th class="px-6 py-4">Descripción</th>
             </tr>
           </thead>
@@ -58,19 +57,18 @@
                 <td class="px-6 py-4 text-gray-500 font-mono text-xs">{{ evt.occurred_at | date:'dd/MM/yyyy HH:mm:ss' }}</td>
                 <td class="px-6 py-4">
                   <span class="inline-flex px-2 py-1 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs font-bold uppercase tracking-wider">
-                    {{ evt.event_type }}
+                    {{ eventLabel(evt.event_type) }}
                   </span>
                 </td>
                 <td class="px-6 py-4">
-                  <div class="font-mono text-xs text-gray-900">{{ evt.user_id || 'Sistema' }}</div>
-                  @if (evt.actor_user_id) { <div class="text-xs text-gray-500">Actor: {{ evt.actor_user_id }}</div> }
+                  <div class="text-xs text-gray-900">{{ evt.user_id ? 'Usuario registrado' : 'Sistema' }}</div>
+                  @if (evt.actor_user_id) { <div class="text-xs text-gray-500">Acción administrativa</div> }
                 </td>
-                <td class="px-6 py-4 font-mono text-xs">{{ evt.ip_address }}</td>
-                <td class="px-6 py-4 text-gray-600 max-w-xs truncate" [title]="evt.outcome">{{ evt.outcome }}</td>
+                <td class="px-6 py-4 text-gray-600 max-w-xs truncate">{{ outcomeLabel(evt.outcome) }}</td>
               </tr>
             } @empty {
               <tr>
-                <td colspan="5" class="px-6 py-12 text-center text-gray-500 italic">No hay eventos registrados con estos filtros.</td>
+                <td colspan="4" class="px-6 py-12 text-center text-gray-500 italic">No hay eventos registrados con estos filtros.</td>
               </tr>
             }
           </tbody>

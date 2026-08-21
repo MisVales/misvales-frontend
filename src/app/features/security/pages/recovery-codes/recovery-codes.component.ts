@@ -43,7 +43,6 @@ export class RecoveryCodesComponent {
     this.error.set('');
 
     try {
-      // Si el backend requiere MFA, devolverá 403 y el interceptor abrirá el modal y agregará el totp_code
       const response = await firstValueFrom(
         this.securityService.regenerateRecoveryCodes({
           current_password: this.currentPassword()

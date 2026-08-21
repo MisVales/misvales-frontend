@@ -114,9 +114,7 @@ export class EmpleosFormComponent implements OnInit {
         form.patchValue(item);
         this.empleosArray.push(form);
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -144,9 +142,7 @@ export class EmpleosFormComponent implements OnInit {
       await this.api.eliminarEmpleo(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerEmpleoVisual(index);
       await this.store.cargarDetalle(idSolicitud);
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cdr.markForCheck();
     }
   }

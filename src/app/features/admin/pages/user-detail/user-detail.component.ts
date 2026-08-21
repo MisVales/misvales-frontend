@@ -11,11 +11,12 @@ import { RoleRes, UserAssignmentRes, UserRes } from '../../data-access/admin.dto
 import { RoleService } from '../../data-access/role.service';
 import { UserService } from '../../data-access/user.service';
 import { ConfirmDialogComponent } from '../../../../shared/ui/confirm-dialog/confirm-dialog.component';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 @Component({
   selector: 'app-user-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent],
+  imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent, StatusLabelPipe],
   templateUrl: './user-detail.component.html',
   styleUrl: './user-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

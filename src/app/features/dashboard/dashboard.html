@@ -23,7 +23,7 @@
         @for (scope of sessionStore.scopes(); track $index) {
           <div class="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-2 text-sm">
             <span>{{ scope.roleName }}</span>
-            <span class="font-mono text-xs text-gray-500">{{ scope.branchId || 'GLOBAL' }}</span>
+            <span class="text-xs text-gray-500">{{ scope.branchId ? 'Sucursal asignada' : 'Alcance global' }}</span>
           </div>
         } @empty {
           <span class="text-sm text-gray-500">Sin alcances activos informados.</span>

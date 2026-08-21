@@ -69,7 +69,6 @@ export class PasswordChange {
     this.success.set(false);
 
     try {
-      // Si el backend requiere MFA, devolverá 403 y el interceptor abrirá el modal, agregando el totp_code
       await firstValueFrom(
         this.securityService.changePassword({
           current_password: this.currentPassword(),
@@ -82,9 +81,6 @@ export class PasswordChange {
       this.newPassword.set('');
       this.confirmPassword.set('');
       
-      // El backend invalida las sesiones al confirmar el cambio. No intentamos
-      // llamar a logout con un bearer que puede quedar revocado: cerramos el
-      // estado local y llevamos al usuario a iniciar sesión inmediatamente.
       this.tokenStore.clear();
       this.sessionStore.clearSession();
       await this.router.navigate(['/auth/login'], { replaceUrl: true });

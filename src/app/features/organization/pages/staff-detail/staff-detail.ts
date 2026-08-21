@@ -22,13 +22,6 @@ export class StaffDetail implements OnInit {
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      // this.api.getStaffById(id).subscribe({
-      //   next: (res: any) => {
-      //     this.staff.set(res);
-      //     this.isLoading.set(false);
-      //   },
-      //   error: () => this.isLoading.set(false)
-      // });
       this.isLoading.set(false);
     }
   }

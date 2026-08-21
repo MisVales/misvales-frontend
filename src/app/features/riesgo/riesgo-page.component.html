@@ -100,7 +100,7 @@
             <div class="card-top">
               <div class="distributor-info">
                 <span class="distributor-name">
-                  {{ alert.distribuidora?.usuario?.name || 'Distribuidora #' + (alert.distribuidora?.distributor_number || alert.distributor_id) }}
+                  {{ alert.distribuidora?.usuario?.name || (alert.distribuidora?.distributor_number ? 'Distribuidora #' + alert.distribuidora.distributor_number : 'Distribuidora no disponible') }}
                 </span>
                 <span class="distributor-meta">
                   @if (alert.distribuidora?.distributor_number) {
@@ -289,7 +289,7 @@
             <div class="card-top">
               <div class="distributor-info">
                 <span class="distributor-name">
-                  {{ removal.distribuidora?.usuario?.name || 'Distribuidora #' + (removal.distribuidora?.distributor_number || removal.distributor_id) }}
+                  {{ removal.distribuidora?.usuario?.name || (removal.distribuidora?.distributor_number ? 'Distribuidora #' + removal.distribuidora.distributor_number : 'Distribuidora no disponible') }}
                 </span>
                 <span class="distributor-meta">
                   @if (removal.distribuidora?.distributor_number) {

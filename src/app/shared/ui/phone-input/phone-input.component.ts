@@ -124,7 +124,6 @@ export class PhoneInputComponent implements ControlValueAccessor, OnInit, OnDest
         digits: phoneNumber.nationalNumber 
       }, { emitEvent: false });
     } else {
-      // Fallback
       const str = String(value);
       const match = str.match(/^(\+\d{1,4})(\d+)$/);
       if (match) {

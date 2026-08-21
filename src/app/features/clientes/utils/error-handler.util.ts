@@ -19,7 +19,6 @@ export function handleClientError(error: unknown): string {
       return 'Demasiadas solicitudes. Espere un momento e intente de nuevo.';
     }
     
-    // Custom backend error codes mapped to user-friendly messages
     const errorCode = error.error?.code || '';
     
     switch (errorCode) {

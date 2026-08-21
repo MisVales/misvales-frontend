@@ -16,7 +16,6 @@ export interface CatalogoVehiculos {
 function unwrapArray(res: any): any[] {
   if (Array.isArray(res)) return res;
   if (res && Array.isArray(res.data)) return res.data;
-  console.warn('unwrapArray: unexpected response shape', res);
   return [];
 }
 

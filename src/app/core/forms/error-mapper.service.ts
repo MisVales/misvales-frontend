@@ -7,7 +7,6 @@ import { AbstractControl, FormArray, FormGroup } from '@angular/forms';
 export class ErrorMapperService {
 
   /**
-   * Recibe el objeto `fields` del backend (ej. { "address.street": ["El campo es requerido"] })
    * y mapea los errores al formulario correspondiente.
    */
   public applyServerErrors(form: FormGroup | FormArray, errors: Record<string, string[]> | null | undefined): void {
@@ -26,7 +25,6 @@ export class ErrorMapperService {
   }
 
   /**
-   * Limpia recursivamente todos los errores de tipo "server" en el formulario.
    * Esto se debe invocar antes de un submit o autosave para limpiar errores resueltos.
    */
   public clearServerErrors(form: FormGroup | FormArray): void {

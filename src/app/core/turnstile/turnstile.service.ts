@@ -96,9 +96,7 @@ export class TurnstileService {
     if (windowObj?.turnstile) {
       try {
         windowObj.turnstile.reset(widgetId);
-      } catch (err) {
-        console.warn('Turnstile reset warning:', err);
-      }
+      } catch {}
     }
   }
 
@@ -107,9 +105,7 @@ export class TurnstileService {
     if (windowObj?.turnstile && widgetId) {
       try {
         windowObj.turnstile.remove(widgetId);
-      } catch (err) {
-        console.warn('Turnstile remove warning:', err);
-      }
+      } catch {}
     }
   }
 

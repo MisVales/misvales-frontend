@@ -1,7 +1,7 @@
 import { CLIENTES_ROUTES } from './clientes.routes';
 
 describe('CLIENTES_ROUTES', () => {
-  it('protege todas las vistas de M07 con permisos efectivos', () => {
+  it('protege todas las vistas de clientes con permisos efectivos', () => {
     expect(CLIENTES_ROUTES.every(route => (route.canActivate?.length ?? 0) > 0)).toBe(true);
   });
 

@@ -5,6 +5,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/api/api-error';
 import { SecurityEventRes, SecurityService } from '../../../security/data-access/security.service';
+import { securityEventLabel, securityOutcomeLabel } from '../../../security/utils/security-event-labels';
 
 @Component({
   selector: 'app-audit-logs',
@@ -14,6 +15,8 @@ import { SecurityEventRes, SecurityService } from '../../../security/data-access
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuditLogs implements OnInit {
+  readonly eventLabel = securityEventLabel;
+  readonly outcomeLabel = securityOutcomeLabel;
   private readonly securityService = inject(SecurityService);
 
   readonly events = signal<SecurityEventRes[]>([]);

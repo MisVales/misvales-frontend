@@ -55,7 +55,6 @@ export class ConfiguracionFormularioComponent implements OnInit {
     let dt = DateTime.fromISO(val.inicioVigencia, { zone: 'America/Monterrey' });
     
     if (!dt.isValid) {
-      console.error('Fecha inválida');
       return;
     }
 

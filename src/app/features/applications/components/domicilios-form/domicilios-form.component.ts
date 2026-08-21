@@ -112,9 +112,7 @@ export class DomiciliosFormComponent implements OnInit {
         form.patchValue(domicilio);
         this.domiciliosArray.push(form);
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -242,9 +240,7 @@ export class DomiciliosFormComponent implements OnInit {
       await firstValueFrom(this.api.eliminarDomicilio(idSolicitud, idDomicilio, this.store.detalle()!.versionBloqueo));
       await this.store.cargarDetalle(idSolicitud);
       await this.cargarDomicilios();
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cdr.markForCheck();
     }
   }

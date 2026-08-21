@@ -11,6 +11,6 @@ describe('StatusLabelPipe', () => {
   });
 
   it('keeps unknown states readable without exposing underscores', () => {
-    expect(pipe.transform('CUSTOM_STATUS')).toBe('Custom status');
+    expect(pipe.transform('CUSTOM_STATUS')).toBe('Estado no disponible');
   });
 });

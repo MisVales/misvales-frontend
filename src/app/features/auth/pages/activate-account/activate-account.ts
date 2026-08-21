@@ -66,7 +66,7 @@ export class ActivateAccount implements OnInit, OnDestroy {
       if (qr.startsWith('otpauth://')) {
         QRCode.toDataURL(qr, { margin: 1, width: 256 })
           .then(url => this.generatedQrCodeUrl.set(url))
-          .catch(console.error);
+          .catch(() => this.generatedQrCodeUrl.set(null));
       }
     });
 
