@@ -265,7 +265,7 @@
                             'bg-emerald-100 text-emerald-800': inst.status === 'SETTLED',
                             'bg-blue-100 text-blue-800': inst.status === 'PARTIALLY_PAID'
                           }">
-                      {{ inst.status }}
+                      {{ installmentStatusLabel(inst.status) }}
                     </span>
                   </td>
                 </tr>
