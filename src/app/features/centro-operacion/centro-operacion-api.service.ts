@@ -75,4 +75,24 @@ export class CentroOperacionApiService {
       })
       .pipe(map((response) => response.data));
   }
+
+  exportPuntosBalance(cutoffAt: string): Observable<Blob> {
+    const params: Record<string, string> = {};
+    if (cutoffAt) params['cutoff_at'] = cutoffAt;
+    return this.http.get(`${this.config.baseUrl}/reports/points-balance/export`, {
+      params,
+      responseType: 'blob',
+    });
+  }
+
+  exportPreRequests(status: string, dateFrom: string, dateTo: string): Observable<Blob> {
+    const params: Record<string, string> = {};
+    if (status) params['status'] = status;
+    if (dateFrom) params['date_from'] = dateFrom;
+    if (dateTo) params['date_to'] = dateTo;
+    return this.http.get(`${this.config.baseUrl}/reports/pre-requests/export`, {
+      params,
+      responseType: 'blob',
+    });
+  }
 }
