@@ -22,6 +22,13 @@ const fechaVigenciaNoPasada = (control: AbstractControl): ValidationErrors | nul
     : null;
 };
 
+const zonaHorariaValida = (control: AbstractControl): ValidationErrors | null => {
+  const value = String(control.value ?? '').trim();
+  if (!value) return null;
+
+  return DateTime.now().setZone(value).isValid ? null : { timezone: true };
+};
+
 @Component({
   selector: 'app-configuracion-detalle',
   imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
@@ -71,6 +78,10 @@ export class ConfiguracionDetalleComponent implements OnInit {
     }
     if (this.esPorcentaje()) {
       this.versionForm.controls.scalar.addValidators([Validators.min(0), Validators.max(100)]);
+      this.versionForm.controls.scalar.updateValueAndValidity();
+    }
+    if (this.clave === 'BUSINESS_TIMEZONE') {
+      this.versionForm.controls.scalar.addValidators(zonaHorariaValida);
       this.versionForm.controls.scalar.updateValueAndValidity();
     }
     void this.cargarConfiguracion();
@@ -188,14 +199,18 @@ export class ConfiguracionDetalleComponent implements OnInit {
   }
 
   protected actualizarPeriodo(control: 'periodStart' | 'periodEnd', value: string): void {
-    // -1 conserva el campo inválido si se vacía, en lugar de aceptar un 0 implícito.
-    this.versionForm.controls[control].setValue(value === '' ? -1 : Number(value));
+    // Mantener el campo vacío para que Validators.required muestre el error,
+    // sin reemplazarlo por un valor negativo que el usuario no puede borrar.
+    this.versionForm.controls[control].setValue(value === '' ? null as never : Number(value));
     this.store.limpiarError();
   }
 
   protected actualizarDiaGlobalDeCorte(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.versionForm.controls.scalar.setValue(input.value);
+    const parsed = Number.parseInt(input.value, 10);
+    const value = Number.isFinite(parsed) ? String(Math.min(parsed, 31)) : input.value;
+    input.value = value;
+    this.versionForm.controls.scalar.setValue(value);
     this.marcarControlVersionAlEnfocar('scalar');
     this.store.limpiarError();
   }
@@ -237,6 +252,8 @@ export class ConfiguracionDetalleComponent implements OnInit {
   protected periodoInvalido(): boolean {
     const controls = this.versionForm.controls;
     return (controls.periodStart.touched || controls.periodEnd.touched)
+      && controls.periodStart.value !== null
+      && controls.periodEnd.value !== null
       && controls.periodEnd.value <= controls.periodStart.value;
   }
 
@@ -292,7 +309,8 @@ export class ConfiguracionDetalleComponent implements OnInit {
     return definition.clave === 'RELATION_PAYMENT_BANK';
   }
 
-  protected tipoEntrada(definition: ConfiguracionDefinicion): 'number' | 'text' {
+  protected tipoEntrada(definition: ConfiguracionDefinicion): 'number' | 'text' | 'time' {
+    if (definition.tipoValor === 'TIME') return 'time';
     return ['INTEGER', 'DECIMAL', 'PERCENTAGE', 'DURATION'].includes(definition.tipoValor) ? 'number' : 'text';
   }
 
@@ -353,7 +371,11 @@ export class ConfiguracionDetalleComponent implements OnInit {
   private valorValido(definition: ConfiguracionDefinicion): boolean {
     const controls = this.versionForm.controls;
     if (this.esPeriodo(definition)) {
-      return controls.periodStart.valid && controls.periodEnd.valid && controls.periodEnd.value > controls.periodStart.value;
+      return controls.periodStart.valid
+        && controls.periodEnd.valid
+        && controls.periodStart.value !== null
+        && controls.periodEnd.value !== null
+        && controls.periodEnd.value > controls.periodStart.value;
     }
     if (this.esBanco(definition)) {
       return controls.bankName.valid && controls.bankBeneficiary.valid && controls.bankAgreement.valid && controls.bankClabe.valid;

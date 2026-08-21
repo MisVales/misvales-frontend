@@ -1,0 +1,388 @@
+<section class="riesgo-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <h1 class="page-title">Riesgo y Morosidad</h1>
+    <p class="page-subtitle">
+      La morosidad aplica únicamente a la distribuidora. Tres incumplimientos consecutivos generan alerta de riesgo, no bloqueo automático.
+    </p>
+  </header>
+
+  <!-- Own status banner for distributor -->
+  @if (status(); as ownStatus) {
+    <aside
+      class="distributor-status-card"
+      [class.is-blocked]="ownStatus.blocked"
+    >
+      <div class="status-title">
+        <span>{{ ownStatus.blocked ? '⚠️ Generación de vales bloqueada por morosidad' : '✅ Sin bloqueo vigente por morosidad' }}</span>
+      </div>
+      @if (ownStatus.reason) {
+        <p class="status-desc"><strong>Motivo del bloqueo:</strong> {{ ownStatus.reason }}</p>
+      }
+      <p class="text-xs text-gray-600">
+        Nota: Los pagos de relaciones y las aclaraciones permanecen 100% disponibles durante cualquier bloqueo operativo.
+      </p>
+    </aside>
+  }
+
+  <!-- Tabs Navigation -->
+  <nav class="tabs-header" aria-label="Secciones de riesgo">
+    @if (canViewAlerts()) {
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'alerts'"
+        (click)="activeTab.set('alerts')"
+      >
+        <span>Alertas de Riesgo</span>
+        <span
+          class="tab-badge"
+          [class.badge-alert]="openAlertsCount() > 0"
+        >
+          {{ openAlertsCount() }}
+        </span>
+      </button>
+    }
+
+    @if (canViewRemovals()) {
+      <button
+        type="button"
+        class="tab-btn"
+        [class.active]="activeTab() === 'removals'"
+        (click)="activeTab.set('removals')"
+      >
+        <span>Retiros Solicitados</span>
+        <span class="tab-badge">{{ pendingRemovalsCount() }}</span>
+      </button>
+    }
+  </nav>
+
+  <!-- TAB 1: Alertas de Riesgo -->
+  @if (activeTab() === 'alerts' && canViewAlerts()) {
+    <div class="tab-content">
+      <!-- Search & Filters -->
+      <div class="filter-row">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por distribuidora o sucursal..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+        <select
+          class="select-status"
+          [ngModel]="alertStatusFilter()"
+          (ngModelChange)="alertStatusFilter.set($event)"
+        >
+          <option value="">Todos los estados</option>
+          <option value="OPEN">Abiertas (Pendientes)</option>
+          <option value="REVIEWED">Revisadas</option>
+          <option value="RESOLVED">Resueltas</option>
+        </select>
+      </div>
+
+      <!-- Alerts List -->
+      <div class="cards-grid">
+        @for (alert of filteredAlerts(); track alert.id) {
+          <article class="risk-card">
+            <div class="card-top">
+              <div class="distributor-info">
+                <span class="distributor-name">
+                  {{ alert.distribuidora?.usuario?.name || 'Distribuidora #' + (alert.distribuidora?.distributor_number || alert.distributor_id) }}
+                </span>
+                <span class="distributor-meta">
+                  @if (alert.distribuidora?.distributor_number) {
+                    <span>No. {{ alert.distribuidora?.distributor_number }} · </span>
+                  }
+                  @if (alert.distribuidora?.sucursal?.name) {
+                    <span>Sucursal: {{ alert.distribuidora?.sucursal?.name }}</span>
+                  }
+                </span>
+              </div>
+              <span
+                class="badge-status"
+                [class.badge-open]="alert.status === 'OPEN'"
+                [class.badge-reviewed]="alert.status === 'REVIEWED'"
+                [class.badge-resolved]="alert.status === 'RESOLVED'"
+              >
+                {{ getAlertStatusLabel(alert.status) }}
+              </span>
+            </div>
+
+            <div class="metrics-row">
+              <div class="metric-col">
+                <span class="metric-label">Cortes Consecutivos</span>
+                <span class="metric-val text-danger">{{ alert.consecutive_defaults }} incumplimientos</span>
+              </div>
+              <div class="metric-col">
+                <span class="metric-label">Saldo Vencido Acumulado</span>
+                <span class="metric-val text-danger">{{ alert.overdue_balance | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+              </div>
+            </div>
+
+            <div class="card-actions">
+              <button
+                type="button"
+                class="btn-link"
+                (click)="viewDetails(alert)"
+              >
+                🔍 Ver detalle de los cortes vencidos ({{ alert.relation_details?.length || alert.relation_ids.length }})
+              </button>
+
+              <div class="actions-group">
+                @if (canDecide() && alert.status === 'OPEN') {
+                  <button
+                    type="button"
+                    class="btn-action btn-do-not-apply"
+                    (click)="openDecisionModal(alert, 'DO_NOT_APPLY')"
+                  >
+                    No aplicar morosidad
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-action btn-apply"
+                    (click)="openDecisionModal(alert, 'APPLY')"
+                  >
+                    Aplicar morosidad
+                  </button>
+                }
+                @if (canRequestRemoval()) {
+                  <button
+                    type="button"
+                    class="btn-action btn-request-removal"
+                    (click)="openRequestRemovalModal(alert)"
+                  >
+                    Solicitar retiro tras regularización
+                  </button>
+                }
+              </div>
+            </div>
+          </article>
+        } @empty {
+          <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 bg-white">
+            No se encontraron alertas de riesgo de morosidad registradas.
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- TAB 2: Retiros Solicitados -->
+  @if (activeTab() === 'removals' && canViewRemovals()) {
+    <div class="tab-content">
+      <div class="cards-grid">
+        @for (removal of removals(); track removal.id) {
+          <article class="risk-card">
+            <div class="card-top">
+              <div class="distributor-info">
+                <span class="distributor-name">
+                  {{ removal.distribuidora?.usuario?.name || 'Distribuidora #' + (removal.distribuidora?.distributor_number || removal.distributor_id) }}
+                </span>
+                <span class="distributor-meta">
+                  @if (removal.distribuidora?.distributor_number) {
+                    <span>No. {{ removal.distribuidora?.distributor_number }} · </span>
+                  }
+                  @if (removal.distribuidora?.sucursal?.name) {
+                    <span>Sucursal: {{ removal.distribuidora?.sucursal?.name }} · </span>
+                  }
+                  @if (removal.solicitante?.name) {
+                    <span>Solicitado por: {{ removal.solicitante?.name }}</span>
+                  }
+                </span>
+              </div>
+              <span
+                class="badge-status"
+                [class.badge-requested]="removal.status === 'REQUESTED'"
+                [class.badge-authorized]="removal.status === 'AUTHORIZED'"
+                [class.badge-rejected]="removal.status === 'REJECTED'"
+              >
+                {{ getRemovalStatusLabel(removal.status) }}
+              </span>
+            </div>
+
+            <div class="rounded-md bg-gray-50 p-3 text-sm text-gray-700">
+              <strong>Motivo de la solicitud:</strong> {{ removal.reason }}
+            </div>
+
+            @if (removal.decision_reason) {
+              <div
+                class="rounded-md p-3 text-sm"
+                [class.bg-emerald-50]="removal.status === 'AUTHORIZED'"
+                [class.text-emerald-800]="removal.status === 'AUTHORIZED'"
+                [class.bg-red-50]="removal.status === 'REJECTED'"
+                [class.text-red-800]="removal.status === 'REJECTED'"
+              >
+                <strong>Respuesta de Gerencia ({{ removal.decididoPor?.name || 'Gerente' }}):</strong> {{ removal.decision_reason }}
+              </div>
+            }
+
+            @if (canDecideRemoval() && removal.status === 'REQUESTED') {
+              <div class="card-actions justify-end">
+                <div class="actions-group">
+                  <button
+                    type="button"
+                    class="btn-action btn-reject"
+                    (click)="openRemovalDecisionModal(removal, 'REJECT')"
+                  >
+                    Rechazar solicitud
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-action btn-authorize"
+                    (click)="openRemovalDecisionModal(removal, 'AUTHORIZE')"
+                  >
+                    Autorizar retiro de morosidad
+                  </button>
+                </div>
+              </div>
+            }
+          </article>
+        } @empty {
+          <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 bg-white">
+            No hay solicitudes de retiro de morosidad registradas.
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Decisión de Alerta (Aplicar / No Aplicar) -->
+  @if (decisionModalOpen(); as target) {
+    <div class="modal-backdrop" (click)="closeModals()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <h3 class="text-base font-bold text-slate-900">
+          {{ selectedDecision() === 'APPLY' ? 'Aplicar Bloqueo de Morosidad' : 'Descartar Morosidad' }}
+        </h3>
+        <p class="text-xs text-gray-600">
+          @if (selectedDecision() === 'APPLY') {
+            Se aplicará un bloqueo operativo de emisión de vales a la distribuidora. Los pagos y aclaraciones permanecerán activos.
+          } @else {
+            La alerta se marcará como revisada sin aplicar bloqueo operativo a la distribuidora.
+          }
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="decision-reason">Motivo y justificación (obligatorio)</label>
+          <textarea
+            id="decision-reason"
+            rows="3"
+            class="form-textarea"
+            [ngModel]="decisionReason()"
+            (ngModelChange)="decisionReason.set($event)"
+            placeholder="Escribe la justificación de la decisión..."
+            required
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn-action btn-do-not-apply" (click)="closeModals()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn-action"
+            [class.btn-apply]="selectedDecision() === 'APPLY'"
+            [class.btn-authorize]="selectedDecision() === 'DO_NOT_APPLY'"
+            [disabled]="!decisionReason().trim() || isSubmitting()"
+            (click)="confirmAlertDecision()"
+          >
+            Confirmar Decisión
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Solicitar Retiro de Morosidad -->
+  @if (requestRemovalModalOpen(); as target) {
+    <div class="modal-backdrop" (click)="closeModals()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <h3 class="text-base font-bold text-slate-900">Solicitar Retiro de Morosidad</h3>
+        <p class="text-xs text-gray-600">
+          Envía la solicitud a Gerencia para levantar el bloqueo operativo tras haber regularizado todos los pagos vencidos.
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="removal-reason">Justificación y comprobación de pago</label>
+          <textarea
+            id="removal-reason"
+            rows="3"
+            class="form-textarea"
+            [ngModel]="decisionReason()"
+            (ngModelChange)="decisionReason.set($event)"
+            placeholder="Describe la regularización de la distribuidora..."
+            required
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn-action btn-do-not-apply" (click)="closeModals()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn-action btn-request-removal"
+            [disabled]="!decisionReason().trim() || isSubmitting()"
+            (click)="confirmRequestRemoval()"
+          >
+            Enviar Solicitud
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal: Decisión sobre Solicitud de Retiro -->
+  @if (removalDecisionModalOpen(); as target) {
+    <div class="modal-backdrop" (click)="closeModals()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <h3 class="text-base font-bold text-slate-900">
+          {{ selectedRemovalDecision() === 'AUTHORIZE' ? 'Autorizar Levantamiento de Bloqueo' : 'Rechazar Solicitud de Retiro' }}
+        </h3>
+        <p class="text-xs text-gray-600">
+          @if (selectedRemovalDecision() === 'AUTHORIZE') {
+            Se liberará el bloqueo operativo de morosidad y la distribuidora podrá volver a emitir vales.
+          } @else {
+            La solicitud será rechazada y el bloqueo operativo se mantendrá activo.
+          }
+        </p>
+
+        <div class="form-group">
+          <label class="form-label" for="removal-decision-reason">Motivo de la resolución</label>
+          <textarea
+            id="removal-decision-reason"
+            rows="3"
+            class="form-textarea"
+            [ngModel]="decisionReason()"
+            (ngModelChange)="decisionReason.set($event)"
+            placeholder="Escribe el motivo o notas de la resolución..."
+            required
+          ></textarea>
+        </div>
+
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn-action btn-do-not-apply" (click)="closeModals()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn-action"
+            [class.btn-authorize]="selectedRemovalDecision() === 'AUTHORIZE'"
+            [class.btn-reject]="selectedRemovalDecision() === 'REJECT'"
+            [disabled]="!decisionReason().trim() || isSubmitting()"
+            (click)="confirmRemovalDecision()"
+          >
+            Confirmar Resolución
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Relation Details Dialog -->
+  <app-relation-details-dialog
+    [open]="dialogOpen()"
+    [relations]="selectedRelations()"
+    (close)="closeDialog()"
+  ></app-relation-details-dialog>
+</section>

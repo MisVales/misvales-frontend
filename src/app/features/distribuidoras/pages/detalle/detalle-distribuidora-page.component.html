@@ -75,8 +75,8 @@
   <app-asignar-categoria-dialog 
     *ngIf="mostrarModalCategoria" 
     [categoriaActualId]="store.detalle()?.categoria?.id || undefined"
-    (cerrar)="cerrarModalCategoria()" 
-    (guardar)="guardarCategoria($event)">
+    (cancelar)="cerrarModalCategoria()"
+    (confirmar)="guardarCategoria($event)">
   </app-asignar-categoria-dialog>
 
   <app-reenviar-invitacion-dialog

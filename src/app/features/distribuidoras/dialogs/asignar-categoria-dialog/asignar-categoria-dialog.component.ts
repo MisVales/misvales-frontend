@@ -27,7 +27,6 @@ export class AsignarCategoriaDialogComponent implements OnInit {
   constructor(private fb: FormBuilder) {
     this.form = this.fb.group({
       category_version_id: ['', Validators.required],
-      starts_at: ['', Validators.required],
       reason: ['', Validators.required]
     });
   }

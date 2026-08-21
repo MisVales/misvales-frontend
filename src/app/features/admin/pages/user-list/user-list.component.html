@@ -25,9 +25,7 @@
     <select aria-label="Filtrar por estado" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-44">
       <option value="">Todos los estados</option>
       <option value="ACTIVE">Activo</option>
-      <option value="INVITED">Invitado</option>
       <option value="PENDING_ACTIVATION">Pendiente Activación</option>
-      <option value="BLOCKED">Bloqueado</option>
       <option value="DISABLED">Deshabilitado</option>
     </select>
     
@@ -99,17 +97,6 @@
                 <lucide-icon name="eye" class="h-4 w-4"></lucide-icon>
                 Ver
               </a>
-              @if (canManageUserState() && user.state !== 'DISABLED') {
-                <button class="text-[#386641] hover:text-[#6A994E] font-medium text-sm transition-colors disabled:opacity-50" 
-                        [disabled]="isActionLoading() === 'block-' + user.id"
-                        (click)="openBlockModal(user)">
-                  @if (isActionLoading() === 'block-' + user.id) {
-                    Procesando...
-                  } @else {
-                    {{ user.state === 'BLOCKED' ? 'Desbloquear' : 'Bloquear' }}
-                  }
-                </button>
-              }
               </div>
             </td>
           </tr>
