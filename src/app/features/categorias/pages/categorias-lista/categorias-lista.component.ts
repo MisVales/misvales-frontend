@@ -35,6 +35,10 @@ export class CategoriasListaComponent implements OnInit {
     return permissions.includes('catalogs.manage') || permissions.includes('all');
   }
 
+  isGeneralManager(): boolean {
+    return this.session.roles().includes('general_manager');
+  }
+
   requestPublication(versionId: string, lockVersion: number): void {
     this.publicationReason.set('');
     this.actionError.set('');
