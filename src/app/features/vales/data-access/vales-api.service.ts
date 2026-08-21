@@ -3,7 +3,7 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
 
-export interface VoucherProduct { id: string; product_id: string; code: string; name: string; nominal_amount: string; }
+export interface VoucherProduct { id: string; product_id: string; code: string; name: string; nominal_amount: string; fortnights_count?: number; }
 export interface VoucherClient { id: string; client_number: string; full_name: string; }
 export interface VoucherCalculation {
   capital: string; loan_commission_percentage: string; loan_commission_amount: string;
@@ -23,7 +23,8 @@ export interface VoucherFinancialContext {
 }
 export interface VoucherCreditLine { total_authorized: string; used_balance: string; available_balance: string; }
 export interface VoucherPreview { voucher_type: 'PREVALE' | 'VALE_DIGITAL'; client: { id: string; client_number: string; full_name: string }; product: { id: string; version_id: string; code: string; name: string }; credit: { total_authorized: string; used_balance: string; available_balance: string; has_active_restriction: boolean; lower_limit: string | null; upper_limit: string | null }; financial_conditions: VoucherFinancialConditions; calculation: VoucherCalculation; }
-export interface VoucherView extends VoucherCalculation { id: string; folio: string; type: 'PREVALE' | 'VALE_DIGITAL'; status: string; generated_at: string; client?: { id: string; client_number: string; full_name: string }; product?: { id: string; version_id: string; name: string }; }
+export interface VoucherInstallment { number: number; client_payment: string; status: 'PENDING' | 'OVERDUE' | 'SETTLED' | 'PARTIALLY_PAID'; }
+export interface VoucherView extends VoucherCalculation { id: string; folio: string; type: 'PREVALE' | 'VALE_DIGITAL'; status: string; generated_at: string; client?: { id: string; client_number: string; full_name: string }; product?: { id: string; version_id: string; name: string }; installments?: VoucherInstallment[]; }
 
 @Injectable({ providedIn: 'root' })
 export class ValesApiService {
