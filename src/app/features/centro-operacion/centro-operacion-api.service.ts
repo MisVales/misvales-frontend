@@ -22,6 +22,17 @@ export interface ReadinessStatus {
   queued_jobs: number | null;
   checked_at: string;
 }
+export interface CurrentCutoffSummary {
+  has_open_cutoff: boolean;
+  period: { start: string | null; projected_end: string };
+  projected_status: string;
+  summary: { distributors: number; operations: number; total: number };
+}
+export interface ForceCutoffResponse {
+  success: boolean;
+  process_run_id: string;
+  projected_status: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class CentroOperacionApiService {
@@ -94,5 +105,21 @@ export class CentroOperacionApiService {
       params,
       responseType: 'blob',
     });
+  }
+
+  getCurrentCutoffSummary(): Observable<CurrentCutoffSummary> {
+    return this.http
+      .get<{ data: CurrentCutoffSummary }>(`${this.config.baseUrl}/operations/current-cutoff`)
+      .pipe(map((response) => response.data));
+  }
+
+  forceCutoff(motivo: string, idempotencyKey: string): Observable<ForceCutoffResponse> {
+    return this.http
+      .post<{ data: ForceCutoffResponse }>(
+        `${this.config.baseUrl}/operations/force-cutoff`, 
+        { motivo }, 
+        { headers: { 'Idempotency-Key': idempotencyKey } }
+      )
+      .pipe(map((response) => response.data));
   }
 }
