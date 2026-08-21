@@ -32,14 +32,14 @@
           <div>
             <label class="text-sm font-medium">Inicio (días después del corte)
               <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="0" placeholder="Ej. 0" formControlName="periodStart" (focus)="marcarControlVersionAlEnfocar('periodStart')" (input)="actualizarPeriodo('periodStart', $any($event.target).value)" />
+              <input appStrictNumber class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="0" placeholder="Ej. 0" formControlName="periodStart" (focus)="marcarControlVersionAlEnfocar('periodStart')" (input)="actualizarPeriodo('periodStart', $any($event.target).value)" />
             </label>
             <app-input-error [control]="versionForm.controls.periodStart" label="El inicio del periodo" [forceShow]="mostrarErrorVersion('periodStart')"></app-input-error>
           </div>
           <div>
             <label class="text-sm font-medium">Fin (días después del corte)
               <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>
-              <input class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="1" placeholder="Ej. 7" formControlName="periodEnd" (focus)="marcarControlVersionAlEnfocar('periodEnd')" (input)="actualizarPeriodo('periodEnd', $any($event.target).value)" />
+              <input appStrictNumber class="mt-1 w-full rounded-lg border px-3 py-2" type="number" min="1" placeholder="Ej. 7" formControlName="periodEnd" (focus)="marcarControlVersionAlEnfocar('periodEnd')" (input)="actualizarPeriodo('periodEnd', $any($event.target).value)" />
             </label>
             <app-input-error [control]="versionForm.controls.periodEnd" label="El fin del periodo" [forceShow]="mostrarErrorVersion('periodEnd')"></app-input-error>
             @if (periodoInvalido()) { <p class="mt-1 text-xs text-red-600">El fin del periodo debe ser mayor que el inicio.</p> }
@@ -74,7 +74,7 @@
         </div>
       } @else {
         <label class="block text-sm font-medium">{{ esPorcentaje(item) ? 'Porcentaje' : 'Valor' }}
-          <input class="mt-1 w-full rounded-lg border px-3 py-2" [type]="tipoEntrada(item)" [attr.step]="pasoEntrada(item)" [attr.min]="esDiaGlobalDeCorte(item) ? 1 : tipoEntrada(item) === 'number' ? 0 : null" [attr.max]="maximoEntrada(item)" [attr.maxlength]="esDiaGlobalDeCorte(item) ? 2 : null" [placeholder]="placeholderValor(item)" formControlName="scalar" (focus)="marcarControlVersionAlEnfocar('scalar')" (input)="esDiaGlobalDeCorte(item) ? actualizarDiaGlobalDeCorte($event) : actualizarControlVersion('scalar', $any($event.target).value)" />
+          <input appStrictNumber class="mt-1 w-full rounded-lg border px-3 py-2" [type]="tipoEntrada(item)" [attr.step]="pasoEntrada(item)" [attr.min]="esDiaGlobalDeCorte(item) ? 1 : tipoEntrada(item) === 'number' ? 0 : null" [attr.max]="maximoEntrada(item)" [attr.maxlength]="esDiaGlobalDeCorte(item) ? 2 : null" [placeholder]="placeholderValor(item)" formControlName="scalar" (focus)="marcarControlVersionAlEnfocar('scalar')" (input)="esDiaGlobalDeCorte(item) ? actualizarDiaGlobalDeCorte($event) : actualizarControlVersion('scalar', $any($event.target).value)" />
         </label>
         <app-input-error [control]="versionForm.controls.scalar" label="El valor" [forceShow]="mostrarErrorVersion('scalar')" [customMessages]="{ timezone: 'Ingrese una zona horaria IANA válida, por ejemplo America/Monterrey.' }"></app-input-error>
         <p class="mt-2 text-xs leading-5 text-gray-600">{{ ayudaValor(item) }}</p>

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { StrictNumberInputDirective } from '../../../shared/directives/strict-number-input.directive';
 import { PaymentItem, RelacionesApiService, RelationView } from '../data-access/relaciones-api.service';
 
 interface PaymentPercentages {
@@ -24,7 +25,7 @@ interface SimulationOutput {
 
 @Component({
   selector: 'app-pagos-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StrictNumberInputDirective],
   templateUrl: './pagos-page.component.html',
   styleUrl: './pagos-page.component.css',
 })

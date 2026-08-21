@@ -63,7 +63,7 @@
           <label for="points-input" class="form-label">Puntos a Canjear</label>
           <input
             id="points-input"
-            type="number"
+            appStrictNumber type="number"
             min="1"
             [max]="balance()?.available_points ?? 0"
             step="1"

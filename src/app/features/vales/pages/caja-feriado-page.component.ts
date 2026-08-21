@@ -6,6 +6,7 @@ import { finalize } from 'rxjs';
 import { SessionStore } from '../../../core/session/session.store';
 import { MediaApiService } from '../../../core/services/media-api.service';
 import { AttachmentPreviewComponent } from '../../../shared/ui/attachment-preview/attachment-preview.component';
+import { StrictNumberInputDirective } from '../../../shared/directives/strict-number-input.directive';
 import {
   CajaValesApiService,
   CashVoucher,
@@ -21,7 +22,7 @@ interface DocumentPreview {
 @Component({
   selector: 'app-caja-feriado-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, AttachmentPreviewComponent],
+  imports: [CommonModule, FormsModule, AttachmentPreviewComponent, StrictNumberInputDirective],
   template: `<section class="space-y-6 p-6">
     <header>
       <h1 class="text-2xl font-bold">Caja y feriado</h1>
@@ -268,7 +269,7 @@ interface DocumentPreview {
                   placeholder='Cambios JSON, por ejemplo {"curp":"..."}'
                 ></textarea
                 ><input
-                  type="number"
+                  appStrictNumber type="number"
                   class="w-full rounded-lg border p-2"
                   [(ngModel)]="modificationVersion"
                   name="version"

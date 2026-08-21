@@ -2,10 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PointRedemptionRequestItem, PointsBalanceSummary, PuntosApiService } from '../../data-access/puntos-api.service';
+import { StrictNumberInputDirective } from '../../../../shared/directives/strict-number-input.directive';
 
 @Component({
   selector: 'app-canje-puntos-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StrictNumberInputDirective],
   templateUrl: './canje-puntos-page.component.html',
   styleUrl: './canje-puntos-page.component.css',
 })

@@ -30,7 +30,7 @@
 
     <div>
       <label class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-1">Porcentaje de ganancia (0 a 1) <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-      <input formControlName="profit_percentage" type="number" min="0" max="1" step="0.0001" class="w-full rounded-lg border border-gray-300 p-2 text-sm font-mono focus:outline-none focus:border-[#386641]" placeholder="Ej. 0.1500" (focus)="marcarCampoAlEnfocar('profit_percentage')">
+      <input appStrictNumber formControlName="profit_percentage" type="number" min="0" max="1" step="0.0001" class="w-full rounded-lg border border-gray-300 p-2 text-sm font-mono focus:outline-none focus:border-[#386641]" placeholder="Ej. 0.1500" (focus)="marcarCampoAlEnfocar('profit_percentage')">
       <app-input-error [control]="form.controls.profit_percentage" label="El porcentaje de ganancia" [forceShow]="mostrarError('profit_percentage')" [customMessages]="{ pattern: 'Debe ser un número decimal entre 0 y 1 (ejemplo: 0.1500).', max: 'El porcentaje de ganancia no puede ser mayor a 1.' }"></app-input-error>
     </div>
 

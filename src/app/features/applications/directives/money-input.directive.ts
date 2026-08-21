@@ -62,15 +62,15 @@ export class MoneyInputDirective implements ControlValueAccessor {
 }
 
 export function normalizeMoneyValue(value: unknown): string {
-  let normalized = String(value ?? '').replaceAll(',', '').trim();
+  const rawValue = String(value ?? '').replaceAll(',', '').trim();
+  const isNegative = rawValue.startsWith('-');
+  const digitsAndDecimal = rawValue.replace(/[^\d.]/g, '');
+  const [integerPart = '', ...decimalParts] = digitsAndDecimal.split('.');
+  const hasDecimal = decimalParts.length > 0;
+  let normalized = `${isNegative ? '-' : ''}${integerPart}${hasDecimal ? `.${decimalParts.join('')}` : ''}`;
 
-  if (normalized.startsWith('.')) {
-    normalized = `0${normalized}`;
-  }
-
-  if (normalized.startsWith('-.')) {
-    normalized = `-0${normalized.slice(1)}`;
-  }
+  if (normalized.startsWith('.')) normalized = `0${normalized}`;
+  if (normalized.startsWith('-.')) normalized = `-0${normalized.slice(1)}`;
 
   return normalized;
 }
