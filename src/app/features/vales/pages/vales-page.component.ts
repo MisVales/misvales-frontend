@@ -7,11 +7,12 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 import { SessionStore } from '../../../core/session/session.store';
 import { ValesApiService, VoucherClient, VoucherCreditLine, VoucherFinancialContext, VoucherPreview, VoucherProduct, VoucherView } from '../data-access/vales-api.service';
+import { StrictNumberInputDirective } from '../../../shared/directives/strict-number-input.directive';
 
 @Component({
   selector: 'app-vales-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, StrictNumberInputDirective],
   templateUrl: './vales-page.component.html',
   styleUrl: './vales-page.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

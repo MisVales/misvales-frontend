@@ -11,11 +11,12 @@ import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distr
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { StrictNumberInputDirective } from '../../../../shared/directives/strict-number-input.directive';
 
 @Component({
   selector: 'app-autorizacion-gerencial',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, StrictNumberInputDirective],
   templateUrl: './autorizacion-gerencial.component.html',
   styleUrl: './autorizacion-gerencial.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

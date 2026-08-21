@@ -143,7 +143,7 @@
         @if (form.get('entry_type')?.value !== 'NOTE' && form.get('entry_type')?.value !== 'STATUS_UPDATE') {
         <div>
           <label class="block text-[11px] font-bold text-[#1a2f20] mb-1">Importe ($) *</label>
-          <input type="number" formControlName="amount" min="1" step="0.01" placeholder="Ej. 1500.00" class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-lg font-bold text-gray-900">
+          <input appMoneyInput type="text" inputmode="decimal" formControlName="amount" placeholder="Ej. 1,500.00" class="w-full px-4 py-3 border border-[#d2d2d2] rounded-xl focus:border-[#386641] focus:ring-1 focus:ring-[#386641] text-lg font-bold text-gray-900">
           <app-input-error [control]="form.controls['amount']" label="El importe" [customMessages]="{ required: 'El importe es obligatorio.', min: 'El importe debe ser mayor a 0.' }"></app-input-error>
         </div>
         }

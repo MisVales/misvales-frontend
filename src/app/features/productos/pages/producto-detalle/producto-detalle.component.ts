@@ -7,11 +7,12 @@ import { ProductosService } from '../../data-access/productos.service';
 import { SessionStore } from '../../../../core/session/session.store';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { AlertService } from '../../../../shared/services/alert.service';
+import { MoneyInputDirective } from '../../../applications/directives/money-input.directive';
 
 @Component({
   selector: 'app-producto-detalle',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, InputErrorComponent, MoneyInputDirective],
   templateUrl: './producto-detalle.component.html',
   styleUrls: ['./producto-detalle.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

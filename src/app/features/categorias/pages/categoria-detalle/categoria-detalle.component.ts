@@ -6,11 +6,12 @@ import { firstValueFrom } from 'rxjs';
 import { CategoriasService } from '../../data-access/categorias.service';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { AlertService } from '../../../../shared/services/alert.service';
+import { StrictNumberInputDirective } from '../../../../shared/directives/strict-number-input.directive';
 
 @Component({
   selector: 'app-categoria-detalle',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, InputErrorComponent, StrictNumberInputDirective],
   templateUrl: './categoria-detalle.component.html',
   styleUrls: ['./categoria-detalle.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

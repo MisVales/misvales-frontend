@@ -14,11 +14,12 @@ import { ApplicationFormErrorStateDirective } from '../../directives/application
 import { MediaApiService } from '../../../../core/services/media-api.service';
 import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 import { AttachmentPreviewComponent } from '../../../../shared/ui/attachment-preview/attachment-preview.component';
+import { StrictNumberInputDirective } from '../../../../shared/directives/strict-number-input.directive';
 
 @Component({
   selector: 'app-vehiculos-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgSelectModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, AttachmentPreviewComponent],
+  imports: [CommonModule, ReactiveFormsModule, NgSelectModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, AttachmentPreviewComponent, StrictNumberInputDirective],
   templateUrl: './vehiculos-form.component.html',
   styleUrls: ['./vehiculos-form.component.css']
 })

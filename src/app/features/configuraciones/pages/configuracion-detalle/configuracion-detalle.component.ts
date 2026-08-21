@@ -12,6 +12,7 @@ import { ConfiguracionesStore } from '../../estado/configuraciones.store';
 import { esConfiguracionEditable, esConfiguracionVisible } from '../../data-access/configuraciones-visibilidad';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { AlertService } from '../../../../shared/services/alert.service';
+import { StrictNumberInputDirective } from '../../../../shared/directives/strict-number-input.directive';
 
 const fechaVigenciaNoPasada = (control: AbstractControl): ValidationErrors | null => {
   if (!control.value) return null;
@@ -31,7 +32,7 @@ const zonaHorariaValida = (control: AbstractControl): ValidationErrors | null =>
 
 @Component({
   selector: 'app-configuracion-detalle',
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, StrictNumberInputDirective],
   templateUrl: './configuracion-detalle.component.html',
   styleUrls: ['./configuracion-detalle.component.css'],
 })

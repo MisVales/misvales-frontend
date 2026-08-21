@@ -8,11 +8,12 @@ import { MovimientoCartera } from '../../models/movimiento-cartera.model';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
 import { AlertService } from '../../../../shared/services/alert.service';
+import { MoneyInputDirective } from '../../../applications/directives/money-input.directive';
 
 @Component({
   selector: 'app-cartera-cliente-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, MoneyInputDirective],
   templateUrl: './cartera-cliente-page.component.html',
   styleUrls: ['./cartera-cliente-page.component.css']
 })

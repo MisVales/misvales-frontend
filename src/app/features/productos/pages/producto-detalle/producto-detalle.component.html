@@ -30,7 +30,7 @@
 
     <div class="md:col-span-2 rounded-xl border border-[var(--mv-primary-100)] bg-[var(--mv-primary-50)] p-4">
       <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Importe nominal a entregar <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-      <input class="w-full max-w-sm rounded-lg border border-[var(--mv-border-strong)] bg-white px-3 py-2.5 text-lg font-semibold tabular-nums" type="number" min="100" step="100" inputmode="decimal" formControlName="nominal_amount" placeholder="Ej. 5000" (focus)="marcarCampoAlEnfocar('nominal_amount')">
+      <input appMoneyInput class="w-full max-w-sm rounded-lg border border-[var(--mv-border-strong)] bg-white px-3 py-2.5 text-lg font-semibold tabular-nums" type="text" inputmode="decimal" formControlName="nominal_amount" placeholder="Ej. 5,000" (focus)="marcarCampoAlEnfocar('nominal_amount')">
       <p class="mt-2 text-xs leading-5 text-[var(--mv-text-muted)]">Debe ser múltiplo de $100. Este es el capital del vale, no el total que pagará la persona.</p>
       <app-input-error [control]="form.controls.nominal_amount" label="El importe nominal" [forceShow]="mostrarError('nominal_amount')" [customMessages]="{ min: 'El importe mínimo es de $100.00.' }"></app-input-error>
     </div>
