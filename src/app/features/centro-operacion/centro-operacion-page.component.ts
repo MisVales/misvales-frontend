@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { SessionStore } from '../../core/session/session.store';
@@ -62,6 +62,46 @@ import {
       </section>
     }
     @if (canReports()) {
+      <section class="space-y-4 mb-8">
+        <h2 class="font-bold">Reportes Excel Especiales</h2>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div class="rounded-xl border bg-white p-4">
+          <h3 class="mb-3 font-bold text-gray-700">Saldo de puntos por distribuidora al corte</h3>
+          <div class="flex flex-col gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="text-sm text-gray-600 font-semibold">Día del corte:</label>
+              <input class="rounded border p-2 text-sm" type="date" [(ngModel)]="puntosCorteAt" aria-label="Fecha del Corte" />
+            </div>
+            <button class="w-fit mt-2 rounded bg-green-700 px-4 py-2 text-white disabled:opacity-50" (click)="descargarPuntos()" [disabled]="isExportingPuntos">
+              {{ isExportingPuntos ? 'Exportando...' : 'Exportar Excel' }}
+            </button>
+          </div>
+        </div>
+        <div class="rounded-xl border bg-white p-4">
+          <h3 class="mb-3 font-bold text-gray-700">Presolicitudes pendientes y validadas</h3>
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="text-sm text-gray-600 font-semibold">Estado:</label>
+              <select class="rounded border p-2 text-sm" [(ngModel)]="presolStatus">
+                <option value="TODOS">Todos</option>
+                <option value="PENDIENTES">Pendientes</option>
+                <option value="VALIDADAS">Validadas</option>
+              </select>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <label class="text-sm text-gray-600 font-semibold">Desde:</label>
+              <input class="rounded border p-2 text-sm" type="date" [(ngModel)]="presolFrom" aria-label="Desde" />
+              <label class="text-sm text-gray-600 font-semibold">Hasta:</label>
+              <input class="rounded border p-2 text-sm" type="date" [(ngModel)]="presolTo" aria-label="Hasta" />
+            </div>
+            <button class="w-fit mt-1 rounded bg-green-700 px-4 py-2 text-white disabled:opacity-50" (click)="descargarPresolicitudes()" [disabled]="isExportingPresol">
+              {{ isExportingPresol ? 'Exportando...' : 'Exportar Excel' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      </section>
+
       <section class="space-y-3">
         <h2 class="font-bold">Reportes funcionales</h2>
         <div class="grid gap-2 md:grid-cols-5">
@@ -203,5 +243,61 @@ export class CentroOperacionPageComponent {
   }
   private any(permissions: string[]): boolean {
     return permissions.some((permission) => this.has(permission));
+  }
+
+  puntosCorteAt = '';
+  isExportingPuntos = false;
+
+  presolStatus = 'TODOS';
+  presolFrom = '';
+  presolTo = '';
+  isExportingPresol = false;
+
+  private cdr = inject(ChangeDetectorRef);
+
+  descargarPuntos(): void {
+    this.isExportingPuntos = true;
+    this.api.exportPuntosBalance(this.puntosCorteAt).subscribe({
+      next: (blob) => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        const dateStr = this.puntosCorteAt ? `_corte_${this.puntosCorteAt}` : `_reporte_${timestamp}`;
+        this.downloadBlob(blob, `saldo_puntos${dateStr}.xlsx`);
+        this.isExportingPuntos = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isExportingPuntos = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  descargarPresolicitudes(): void {
+    this.isExportingPresol = true;
+    this.api.exportPreRequests(this.presolStatus, this.presolFrom, this.presolTo).subscribe({
+      next: (blob) => {
+        const timestamp = new Date().toISOString().split('T')[0];
+        let name = `presolicitudes_${this.presolStatus.toLowerCase()}`;
+        if (this.presolFrom) name += `_desde_${this.presolFrom}`;
+        if (this.presolTo) name += `_hasta_${this.presolTo}`;
+        if (!this.presolFrom && !this.presolTo) name += `_${timestamp}`;
+        this.downloadBlob(blob, `${name}.xlsx`);
+        this.isExportingPresol = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.isExportingPresol = false;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private downloadBlob(blob: Blob, filename: string): void {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
   }
 }

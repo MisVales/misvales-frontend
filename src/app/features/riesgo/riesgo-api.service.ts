@@ -3,13 +3,26 @@ import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../core/api/api.config';
 
+export interface RelationDetail {
+  id: string;
+  payment_reference: string;
+  cutoff_at: string;
+  payment_deadline_at: string;
+  misvales_total: string;
+  balance: string;
+  financial_status: string;
+  settled_at: string | null;
+}
+
 export interface RiskAlert {
   id: string;
   distributor_id: string;
   branch_id: string;
+  type: string;
   status: string;
   consecutive_defaults: number;
   relation_ids: string[];
+  relation_details?: RelationDetail[];
   overdue_balance: string;
 }
 
