@@ -17,7 +17,8 @@
       <ol class="steps">
         <li [class.is-current]="currentStep() === 1" [class.is-complete]="currentStep() > 1"><span>1</span><div><strong>Persona</strong><small>Busca y selecciona</small></div></li>
         <li [class.is-current]="currentStep() === 2" [class.is-complete]="currentStep() > 2"><span>2</span><div><strong>Importe</strong><small>Elige el producto</small></div></li>
-        <li [class.is-current]="currentStep() === 3"><span>3</span><div><strong>Confirmación</strong><small>Revisa y crea</small></div></li>
+        <li [class.is-current]="currentStep() === 3" [class.is-complete]="currentStep() > 3"><span>3</span><div><strong>Condiciones</strong><small>Consulta las vigentes</small></div></li>
+        <li [class.is-current]="currentStep() === 4"><span>4</span><div><strong>Confirmación</strong><small>Revisa y crea</small></div></li>
       </ol>
 
       <div class="grant-grid">
@@ -25,7 +26,7 @@
           <section class="form-section" aria-labelledby="person-heading">
             <div class="section-heading">
               <div><p class="section-number">Paso 1</p><h2 id="person-heading">¿A quién se le otorgará?</h2></div>
-              <a routerLink="/clientes/nuevo" class="secondary-link">Registrar persona nueva</a>
+              <button type="button" class="secondary-link secondary-button" (click)="openClientDialog()">Registrar persona nueva</button>
             </div>
             <label class="field-label" for="voucher-client-search">Busca por nombre, apellidos o número de cliente</label>
             <input id="voucher-client-search" class="search-input" type="search" formControlName="search" autocomplete="off" placeholder="Escribe al menos 2 caracteres" />
@@ -34,7 +35,13 @@
             @if (searchingClients()) {
               <p class="search-state" aria-live="polite">Buscando personas…</p>
             } @else if (searchedClients() && !clients().length) {
-              <div class="empty-search"><strong>No encontramos coincidencias.</strong><span>Revisa la búsqueda o registra a la persona antes de crear su primer Prevale.</span></div>
+              <div class="empty-search">
+                <strong>No encontramos coincidencias.</strong>
+                <span>Registra una persona nueva aquí mismo; captura sus datos antes de continuar.</span>
+                <button type="button" class="primary-button primary-button-compact" (click)="openClientDialog()">
+                  Crear nuevo cliente
+                </button>
+              </div>
             } @else if (clients().length) {
               <div class="client-results" role="listbox" aria-label="Resultados de personas">
                 @for (client of clients(); track client.id) {
@@ -56,10 +63,19 @@
               <div><p class="section-number">Paso 2</p><h2 id="product-heading">Elige el importe</h2></div>
               <span class="section-aside">Las condiciones se aplican al otorgar el vale.</span>
             </div>
+            @if (creditLine(); as credit) {
+              <div class="credit-availability" aria-live="polite">
+                <div><span>Crédito disponible de tu distribuidora</span><strong>{{ credit.available_balance | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong></div>
+                <dl><div><dt>Línea autorizada</dt><dd>{{ credit.total_authorized | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div><div><dt>Crédito utilizado</dt><dd>{{ credit.used_balance | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div></dl>
+                @if (selectedProduct(); as selected) {
+                  <p [class.is-insufficient]="isCreditInsufficient(selected.nominal_amount, credit.available_balance)">Importe seleccionado: <strong>{{ selected.nominal_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong>@if (isCreditInsufficient(selected.nominal_amount, credit.available_balance)) { · Supera tu crédito disponible }</p>
+                }
+              </div>
+            }
             @if (loadingProducts()) {
               <p class="search-state">Cargando importes disponibles…</p>
             } @else if (!products().length) {
-              <div class="empty-search"><strong>No hay productos disponibles para otorgar vales.</strong><span>Pide a gerencia publicar una versión vigente con importe, comisión, interés, seguro y número de quincenas.</span></div>
+              <div class="empty-search"><strong>No hay productos disponibles para otorgar vales.</strong><span>Pide a gerencia publicar una versión vigente con importe.</span></div>
             } @else {
               <div class="product-options" role="radiogroup" aria-label="Importes disponibles">
                 @for (product of products(); track product.id) {
@@ -72,33 +88,94 @@
             }
           </section>
 
-          <div class="form-action">
-            <div><strong>El cálculo siempre se confirma en el servidor.</strong><span>Se usarán las condiciones publicadas con el producto elegido y quedarán guardadas en este vale.</span></div>
-            <button type="submit" class="primary-button" [disabled]="!canPreview()">{{ busy() ? 'Calculando…' : 'Revisar cálculo' }}</button>
-          </div>
-        </form>
+          <section class="form-section product-section" aria-labelledby="financial-heading">
+            <div class="section-heading">
+              <div><p class="section-number">Paso 3</p><h2 id="financial-heading">Condiciones financieras</h2></div>
+              <span class="section-aside">Gerencia define las condiciones; tú eliges solamente el plazo.</span>
+            </div>
+            @if (selectedClient() && selectedProduct()) {
+            @if (financialContext(); as context) {
+            <div class="financial-fields">
+              <div>
+                <label for="voucher-commission">Comisión</label>
+                <input id="voucher-commission" class="locked-field" type="text" disabled [value]="percentage(context.conditions.commission_rate)" />
+              </div>
+              <div>
+                <label for="voucher-interest">Interés por quincena</label>
+                <input id="voucher-interest" class="locked-field" type="text" disabled [value]="percentage(context.conditions.interest_rate)" />
+              </div>
+              <div>
+                <label for="voucher-insurance">Seguro ($)</label>
+                <input id="voucher-insurance" class="locked-field" type="text" disabled [value]="context.conditions.insurance_amount | currency:'MXN':'symbol-narrow':'1.2-2'" />
+              </div>
+              <div>
+                <label for="voucher-fortnights">Número de quincenas</label>
+                <input id="voucher-fortnights" type="number" step="1" min="1" formControlName="installmentCount" placeholder="Ej. 8" />
+              </div>
+              <div>
+                <label for="voucher-category">% Categoría de la distribuidora</label>
+                <input id="voucher-category" class="locked-field" type="text" disabled [value]="categoryLabel()" />
+              </div>
+              <div>
+                <label for="voucher-late-fee">Multa por falta de pago ($)</label>
+                <input id="voucher-late-fee" class="locked-field" type="text" disabled [value]="context.conditions.late_fee_amount | currency:'MXN':'symbol-narrow':'1.2-2'" />
+              </div>
+            </div>
+            } @else {
+              <p class="field-help">Cargando condiciones globales…</p>
+            }
+            } @else {
+              <p class="field-help">Selecciona una persona y un importe para consultar las condiciones vigentes.</p>
+            }
+          </section>
+
+          </form>
 
         <aside class="review-panel" aria-live="polite">
           @if (previewData(); as data) {
-            <div class="review-heading"><div><p class="eyebrow">Paso 3</p><h2>Resumen antes de crear</h2></div><span class="type-badge">{{ typeLabel(data.voucher_type) }}</span></div>
+            <div class="review-heading"><div><p class="eyebrow">Paso 4</p><h2>Resumen antes de crear</h2></div><span class="type-badge">{{ typeLabel(data.voucher_type) }}</span></div>
             <p class="review-person"><strong>{{ data.client.full_name }}</strong><span>Cliente {{ data.client.client_number }}</span></p>
             <p class="review-product">{{ data.product.name }} · {{ data.calculation.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</p>
 
             <div class="calculation-block">
-              <p class="calculation-title">Deuda base de MisVales</p>
-              <dl>
-                <div><dt>Capital</dt><dd>{{ data.calculation.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
-                <div><dt>Comisión del préstamo</dt><dd>{{ data.calculation.loan_commission_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
-                <div><dt>Interés total</dt><dd>{{ data.calculation.interest_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
-                <div><dt>Seguro</dt><dd>{{ data.calculation.insurance_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
-                <div class="total-row"><dt>Total base</dt><dd>{{ data.calculation.misvales_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
-              </dl>
+              <p class="calculation-title">Detalle del cálculo</p>
+              <div class="calculation-group">
+                <p>Costo del vale</p>
+                <dl class="calculation-table">
+                  <div><dt>Cantidad del vale</dt><dd>{{ data.calculation.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Comisión {{ percentage(data.calculation.loan_commission_percentage) }}</dt><dd>{{ data.calculation.loan_commission_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Seguro</dt><dd>{{ data.calculation.insurance_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                </dl>
+              </div>
+              <div class="calculation-group">
+                <p>Plazo e interés</p>
+                <dl class="calculation-table">
+                  <div><dt>Interés por quincena {{ percentage(data.calculation.simple_interest_percentage) }}</dt><dd>{{ data.calculation.interest_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>{{ data.calculation.fortnights_count }} quincenas</dt><dd>Interés total {{ data.calculation.interest_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Capital por quincena</dt><dd>{{ data.calculation.capital_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                </dl>
+              </div>
+              <div class="calculation-group">
+                <p>Participación de la distribuidora</p>
+                <dl class="calculation-table">
+                  <div><dt>Categoría {{ percentage(data.calculation.distributor_profit_percentage) }}</dt><dd>Ganancia total {{ data.calculation.distributor_profit_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Ganancia por quincena</dt><dd>{{ data.calculation.distributor_profit_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Neto para la distribuidora</dt><dd>{{ data.calculation.net_payment_after_distributor_profit_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                </dl>
+              </div>
+              <div class="calculation-group payment-group">
+                <p>Pago de la persona</p>
+                <dl class="calculation-table">
+                  <div class="total-row"><dt>Total base</dt><dd>{{ data.calculation.misvales_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div class="total-row"><dt>Pago base por quincena</dt><dd>{{ data.calculation.misvales_payment_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                  <div><dt>Multa por falta de pago</dt><dd>{{ data.financial_conditions.late_fee_amount | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div>
+                </dl>
+              </div>
             </div>
 
             <div class="payment-summary">
-              <div><span>Pago base por quincena</span><strong>{{ data.calculation.misvales_payment_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong></div>
-              <div><span>Ganancia de distribuidora por quincena</span><strong>{{ data.calculation.distributor_profit_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong></div>
-              <div class="client-payment"><span>Cliente paga por quincena</span><strong>{{ data.calculation.client_payment_per_fortnight | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong><small>{{ data.calculation.fortnights_count }} quincenas · Total {{ data.calculation.client_total | currency:'MXN':'symbol-narrow':'1.2-2' }}</small></div>
+              <div class="late-payment"><span>Si no abona una quincena</span><strong>{{ data.calculation.payment_with_late_fee | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong><small>Pago base más multa.</small></div>
+              <div class="late-payment"><span>Si deja pasar dos quincenas</span><strong>{{ data.calculation.two_payments_with_late_fee | currency:'MXN':'symbol-narrow':'1.2-2' }}</strong><small>Dos pagos con multa.</small></div>
             </div>
 
             <dl class="credit-summary"><div><dt>Crédito disponible</dt><dd>{{ data.credit.available_balance | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div><div><dt>Importe solicitado</dt><dd>{{ data.calculation.capital | currency:'MXN':'symbol-narrow':'1.2-2' }}</dd></div></dl>
@@ -135,3 +212,22 @@
     }
   </section>
 </main>
+
+@if (clientDialogOpen()) {
+  <div class="dialog-backdrop" (click)="closeClientDialog()">
+    <section class="client-dialog" role="dialog" aria-modal="true" aria-labelledby="client-dialog-title" (click)="$event.stopPropagation()">
+      <div class="dialog-heading"><div><p class="eyebrow">Nueva persona</p><h2 id="client-dialog-title">Registra los datos básicos</h2></div><button type="button" class="dialog-close" aria-label="Cerrar" (click)="closeClientDialog()">×</button></div>
+      <form [formGroup]="clientForm" (ngSubmit)="createClient()">
+        <label for="client-first-name">Nombre</label>
+        <input id="client-first-name" type="text" formControlName="firstName" autocomplete="given-name" />
+        @if (clientForm.controls.firstName.touched && clientForm.controls.firstName.invalid) { <small class="field-error">Captura el nombre.</small> }
+        <label for="client-first-last-name">Apellido paterno</label>
+        <input id="client-first-last-name" type="text" formControlName="firstLastName" autocomplete="family-name" />
+        @if (clientForm.controls.firstLastName.touched && clientForm.controls.firstLastName.invalid) { <small class="field-error">Captura el apellido paterno.</small> }
+        <label for="client-second-last-name">Apellido materno</label>
+        <input id="client-second-last-name" type="text" formControlName="secondLastName" />
+        <div class="dialog-actions"><button type="button" class="secondary-button" (click)="closeClientDialog()" [disabled]="creatingClient()">Cancelar</button><button type="submit" class="primary-button" [disabled]="creatingClient()">{{ creatingClient() ? 'Creando…' : 'Crear y seleccionar' }}</button></div>
+      </form>
+    </section>
+  </div>
+}

@@ -82,6 +82,7 @@
         <p *ngIf="uploadingEvidence" class="mt-1 text-xs text-gray-500">Subiendo evidencia...</p>
         <p *ngIf="evidenceUploaded" class="mt-1 text-xs text-green-600">Evidencia cargada correctamente.</p>
         <p *ngIf="evidenceError" class="mt-1 text-xs text-red-600">{{ evidenceError }}</p>
+        <app-attachment-preview [file]="currentEvidenceFile"></app-attachment-preview>
       </div>
       
     </div>

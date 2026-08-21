@@ -6,13 +6,6 @@
     </div>
   }
 
-  @if (facade.error()) {
-    <div class="alert alert-danger">
-      {{ facade.error() }}
-      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">Cerrar</button>
-    </div>
-  }
-
   @if (facade.visitaSeleccionada(); as visita) {
     <div class="wizard-header">
       <div class="wizard-title-area">
@@ -20,9 +13,7 @@
         <p class="page-desc">Solicitud: {{ visita.solicitudId }}</p>
       </div>
       
-      @if (visita.estado === 'ASSIGNED') {
-        <button class="btn btn-primary" (click)="iniciarVisita()">Iniciar Visita</button>
-      } @else if (visita.estado === 'IN_PROGRESS' || visita.estado === 'COMPLETED') {
+      @if (visita.estado === 'IN_PROGRESS' || visita.estado === 'COMPLETED') {
         <span class="badge" [class.badge-warning]="visita.estado === 'IN_PROGRESS'" [class.badge-success]="visita.estado === 'COMPLETED'">
           {{ visita.estado === 'IN_PROGRESS' ? 'EN PROGRESO' : 'FINALIZADA' }}
         </span>

@@ -27,6 +27,7 @@ export interface EvidenciaVerificacion {
   id: string;
   tipo: string;
   nombreOriginal: string;
+  mimeType: string;
   urlDescarga?: string; // Solo temporal
   fechaCarga: string;
   cargadoPor: string;

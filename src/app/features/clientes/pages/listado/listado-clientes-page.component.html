@@ -69,17 +69,14 @@
             }
           </div>
           
-          <div class="flex items-center gap-1.5 text-gray-500 bg-gray-50 px-2 py-1.5 rounded-lg w-fit">
-            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            <p class="text-xs font-mono">{{ cliente.curpEnmascarada }}</p>
-          </div>
+
           
           <div class="flex justify-between items-center border-t border-gray-100 pt-3 mt-1">
             <div>
               <p class="text-[10px] font-bold text-gray-500 uppercase">Saldo</p>
               <p class="text-sm font-bold text-gray-900" [class.text-red-600]="cliente.resumenCartera.saldoActual !== '0.00' && cliente.estado === 'PENDING'">${{ cliente.resumenCartera.saldoActual }}</p>
             </div>
-            <a [routerLink]="['/clientes', cliente.id]" class="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors">
+            <a [routerLink]="['/clientes', cliente.id, 'cartera']" class="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
             </a>
           </div>
@@ -94,7 +91,6 @@
             <tr class="bg-gray-50/50 border-b border-gray-200 text-gray-500">
               <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider">Número Cliente</th>
               <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider">Nombre</th>
-              <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider">CURP</th>
               <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider">Saldo Info</th>
               <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider text-center">Estado</th>
               <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider text-right">Acciones</th>
@@ -103,17 +99,11 @@
           <tbody class="divide-y divide-gray-100">
             @for (cliente of store.listado(); track cliente.id) {
             <tr class="hover:bg-gray-50/50 transition-colors">
-              <td class="px-6 py-4 font-bold text-gray-900">
-                {{ cliente.nombreCompleto }}
-              </td>
               <td class="px-6 py-4 font-mono text-xs text-gray-500">
                 {{ cliente.numero }}
               </td>
-              <td class="px-6 py-4">
-                <div class="flex items-center gap-1.5 text-gray-500">
-                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                  <span class="font-mono text-xs">{{ cliente.curpEnmascarada }}</span>
-                </div>
+              <td class="px-6 py-4 font-bold text-gray-900">
+                {{ cliente.nombreCompleto }}
               </td>
               <td class="px-6 py-4 font-bold text-gray-900" [class.text-red-600]="cliente.resumenCartera.saldoActual !== '0.00' && cliente.estado === 'PENDING'">
                 ${{ cliente.resumenCartera.saldoActual }}
@@ -135,7 +125,7 @@
                 }
               </td>
               <td class="px-6 py-4 text-right">
-                <a [routerLink]="['/clientes', cliente.id]" class="text-sm font-semibold text-[#386641] hover:underline">Ver detalle</a>
+                <a [routerLink]="['/clientes', cliente.id, 'cartera']" class="text-sm font-semibold text-[#386641] hover:underline">Ver detalle</a>
               </td>
             </tr>
             }

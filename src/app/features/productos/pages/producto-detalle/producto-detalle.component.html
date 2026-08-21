@@ -6,7 +6,7 @@
   <header class="mt-5 border-b border-[var(--mv-border)] pb-5">
     <p class="text-xs font-bold uppercase tracking-[.12em] text-[var(--mv-primary-700)]">Catálogo de importes</p>
     <h1 class="mt-2 text-2xl font-bold tracking-tight text-[var(--mv-text)]">{{ isNew() ? 'Crear producto' : 'Crear nueva edición del producto' }}</h1>
-    <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Define el importe y las condiciones financieras que se usarán en cada vale de esta versión. No podrás publicar mientras falte algún dato.</p>
+    <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Define únicamente el importe disponible. Las condiciones financieras se capturan al otorgar cada vale.</p>
   </header>
 
   <form [formGroup]="form" (ngSubmit)="guardar()" class="mt-6 grid gap-5 rounded-2xl border border-[var(--mv-border)] bg-white p-5 shadow-sm md:grid-cols-2 md:p-7">
@@ -34,33 +34,6 @@
       <p class="mt-2 text-xs leading-5 text-[var(--mv-text-muted)]">Debe ser múltiplo de $100. Este es el capital del vale, no el total que pagará la persona.</p>
       <app-input-error [control]="form.controls.nominal_amount" label="El importe nominal" [forceShow]="mostrarError('nominal_amount')" [customMessages]="{ min: 'El importe mínimo es de $100.00.' }"></app-input-error>
     </div>
-
-    <fieldset class="md:col-span-2 rounded-xl border border-[var(--mv-border)] p-4">
-      <legend class="px-1 text-sm font-bold text-[var(--mv-text)]">Condiciones financieras del producto</legend>
-      <p class="mb-4 text-xs leading-5 text-[var(--mv-text-muted)]">Captura porcentajes en decimal: 0.10 equivale a 10 %. Quedarán guardados con cada vale generado.</p>
-      <div class="grid gap-4 md:grid-cols-2">
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Comisión del préstamo <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-          <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5" type="number" min="0" max="1" step="0.000001" inputmode="decimal" formControlName="loan_commission_percentage" placeholder="Ej. 0.10" (focus)="marcarCampoAlEnfocar('loan_commission_percentage')">
-          <app-input-error [control]="form.controls.loan_commission_percentage" label="La comisión" [forceShow]="mostrarError('loan_commission_percentage')" [customMessages]="{ max: 'La comisión no puede ser mayor a 1 (100 %).' }"></app-input-error>
-        </div>
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Interés por quincena <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-          <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5" type="number" min="0" max="1" step="0.000001" inputmode="decimal" formControlName="simple_interest_percentage" placeholder="Ej. 0.02" (focus)="marcarCampoAlEnfocar('simple_interest_percentage')">
-          <app-input-error [control]="form.controls.simple_interest_percentage" label="El interés por quincena" [forceShow]="mostrarError('simple_interest_percentage')" [customMessages]="{ max: 'El interés no puede ser mayor a 1 (100 %).' }"></app-input-error>
-        </div>
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Seguro del vale <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-          <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5" type="number" min="0" step="0.01" inputmode="decimal" formControlName="insurance_amount" placeholder="Ej. 100.00" (focus)="marcarCampoAlEnfocar('insurance_amount')">
-          <app-input-error [control]="form.controls.insurance_amount" label="El seguro" [forceShow]="mostrarError('insurance_amount')"></app-input-error>
-        </div>
-        <div>
-          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Número de quincenas <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-          <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5" type="number" min="1" step="1" inputmode="numeric" formControlName="fortnights_count" placeholder="Ej. 4" (focus)="marcarCampoAlEnfocar('fortnights_count')">
-          <app-input-error [control]="form.controls.fortnights_count" label="El número de quincenas" [forceShow]="mostrarError('fortnights_count')"></app-input-error>
-        </div>
-      </div>
-    </fieldset>
 
     <div class="md:col-span-2">
       <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Motivo del alta o cambio <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>

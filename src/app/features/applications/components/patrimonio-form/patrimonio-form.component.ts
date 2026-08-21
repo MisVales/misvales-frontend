@@ -14,6 +14,7 @@ import { ApplicationFormErrorStateDirective } from '../../directives/application
 import { MediaApiService } from '../../../../core/services/media-api.service';
 import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 import { MoneyInputDirective } from '../../directives/money-input.directive';
+import { AttachmentPreviewComponent } from '../../../../shared/ui/attachment-preview/attachment-preview.component';
 
 type TipoPatrimonio = 'ASSET' | 'LIABILITY' | 'ACTIVE_COMMITMENT';
 
@@ -41,7 +42,7 @@ const OPCIONES_PATRIMONIO: Record<TipoPatrimonio, OpcionPatrimonio[]> = {
 @Component({
   selector: 'app-patrimonio-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgSelectModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, MoneyInputDirective],
+  imports: [CommonModule, ReactiveFormsModule, NgSelectModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, MoneyInputDirective, AttachmentPreviewComponent],
   templateUrl: './patrimonio-form.component.html',
   styleUrls: ['./patrimonio-form.component.css']
 })
@@ -63,6 +64,7 @@ export class PatrimonioFormComponent implements OnInit {
   uploadingEvidence = false;
   evidenceUploaded = false;
   evidenceError?: string;
+  currentEvidenceFile?: File;
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;
@@ -159,6 +161,7 @@ export class PatrimonioFormComponent implements OnInit {
     const file = (event.target as HTMLInputElement).files?.[0];
     const applicationId = this.store.detalle()?.id;
     if (!file || !applicationId) return;
+    this.currentEvidenceFile = file;
     this.uploadingEvidence = true;
     this.evidenceError = undefined;
     this.mediaApi.upload({ file, owner_type: 'distributor_application', owner_id: applicationId, purpose: 'ASSET_EVIDENCE' }).subscribe({

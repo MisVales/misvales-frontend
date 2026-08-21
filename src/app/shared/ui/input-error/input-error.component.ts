@@ -1,6 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AbstractControl } from '@angular/forms';
+import { Subscription, merge } from 'rxjs';
 
 @Component({
   selector: 'app-input-error',
@@ -19,12 +20,27 @@ import { AbstractControl } from '@angular/forms';
     }
   `
 })
-export class InputErrorComponent {
+export class InputErrorComponent implements OnInit, OnDestroy {
   @Input() control: AbstractControl | null = null;
   @Input() label: string = 'Este campo';
   @Input() customMessages?: Record<string, string>;
   @Input() serverError?: string | string[] | null;
   @Input() forceShow: boolean = false;
+
+  private cdr = inject(ChangeDetectorRef);
+  private sub?: Subscription;
+
+  ngOnInit() {
+    if (this.control) {
+      this.sub = merge(this.control.statusChanges, this.control.valueChanges).subscribe(() => {
+        this.cdr.markForCheck();
+      });
+    }
+  }
+
+  ngOnDestroy() {
+    this.sub?.unsubscribe();
+  }
 
   shouldShowErrors(): boolean {
     if (this.serverError) {

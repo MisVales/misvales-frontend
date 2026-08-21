@@ -7,6 +7,8 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { AttachmentPreviewComponent } from '../../../../shared/ui/attachment-preview/attachment-preview.component';
+import { CommonModule } from '@angular/common';
 
 export interface EvidenciaPayload {
   tipo: string;
@@ -16,6 +18,7 @@ export interface EvidenciaPayload {
 @Component({
   selector: 'app-captura-evidencia',
   standalone: true,
+  imports: [CommonModule, AttachmentPreviewComponent],
   templateUrl: './captura-evidencia.component.html',
   styleUrl: './captura-evidencia.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,7 +39,6 @@ export class CapturaEvidenciaComponent {
   // State
   tipoSeleccionado = signal<string>('');
   archivoSeleccionado = signal<File | null>(null);
-  previewUrl = signal<string | null>(null);
   errorMsg = signal<string | null>(null);
 
   onTipoChange(event: Event) {
@@ -65,19 +67,13 @@ export class CapturaEvidenciaComponent {
     }
 
     // Validate mime
-    if (!['image/jpeg', 'image/png', 'application/pdf'].includes(file.type)) {
-      this.errorMsg.set('Solo se permiten archivos JPG, PNG o PDF.');
+    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type)) {
+      this.errorMsg.set('Solo se permiten archivos JPG, PNG, WebP o PDF.');
       this.limpiarArchivo();
       return;
     }
 
     this.archivoSeleccionado.set(file);
-
-    // Create preview
-    if (this.previewUrl()) {
-      URL.revokeObjectURL(this.previewUrl()!);
-    }
-    this.previewUrl.set(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
   }
 
   subirEvidencia() {
@@ -97,10 +93,6 @@ export class CapturaEvidenciaComponent {
 
   limpiarArchivo() {
     this.archivoSeleccionado.set(null);
-    if (this.previewUrl()) {
-      URL.revokeObjectURL(this.previewUrl()!);
-      this.previewUrl.set(null);
-    }
     const input = this.fileInput();
     if (input) {
       input.nativeElement.value = '';
@@ -111,12 +103,5 @@ export class CapturaEvidenciaComponent {
     this.limpiarArchivo();
     this.tipoSeleccionado.set('');
     this.errorMsg.set(null);
-  }
-
-  // Cleanup object urls on destroy
-  ngOnDestroy() {
-    if (this.previewUrl()) {
-      URL.revokeObjectURL(this.previewUrl()!);
-    }
   }
 }

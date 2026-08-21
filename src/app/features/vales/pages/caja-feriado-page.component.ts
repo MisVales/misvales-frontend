@@ -4,6 +4,7 @@ import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize } from 'rxjs';
 import { SessionStore } from '../../../core/session/session.store';
+import { API_CONFIG } from '../../../core/api/api.config';
 import {
   CajaValesApiService,
   CashVoucher,
@@ -29,16 +30,18 @@ import {
     @if (canCash()) {
       <div class="grid gap-5 xl:grid-cols-[.7fr_1.3fr]">
         <div class="space-y-4">
-          <form class="rounded-xl border bg-white p-4" (ngSubmit)="searchVouchers()">
-            <label class="block text-sm"
-              >Folio o nombre<input
-                class="mt-1 w-full rounded-lg border p-2"
-                [(ngModel)]="search"
-                name="search"
-                minlength="2"
-                required /></label
-            ><button class="mt-3 rounded-lg bg-blue-700 px-4 py-2 text-white">Buscar</button>
-          </form>
+            <form class="rounded-xl border bg-white p-4" (submit)="$event.preventDefault()">
+              <label class="block text-sm"
+                >Folio o nombre<input
+                  class="mt-1 w-full rounded-lg border p-2"
+                  [(ngModel)]="search"
+                  (ngModelChange)="searchVouchers()"
+                  name="search"
+                  minlength="2"
+                  autocomplete="off"
+                  placeholder="Escribe para buscar..."
+                  required /></label>
+            </form>
           @for (voucher of results(); track voucher.id) {
             <button
               class="block w-full rounded-xl border bg-white p-4 text-left hover:bg-blue-50"
@@ -50,57 +53,144 @@ import {
           }
         </div>
         @if (selected(); as voucher) {
-          <article class="space-y-5 rounded-xl border bg-white p-5">
-            <div class="flex justify-between">
-              <div>
-                <h2 class="text-xl font-bold">{{ voucher.folio }}</h2>
-                <p>{{ voucher.type }} · {{ voucher.status }}</p>
+          <article class="rounded-xl border bg-white overflow-hidden shadow-sm">
+              <header class="bg-blue-50 border-b border-blue-100 p-5 flex flex-wrap justify-between items-center gap-4">
+                <div>
+                  <h2 class="text-2xl font-bold text-gray-900">{{ voucher.folio }}</h2>
+                  <p class="text-sm font-medium text-gray-600">{{ voucher.client?.full_name }} &middot; {{ voucher.type }} &middot; <span class="text-blue-700">{{ voucher.status }}</span></p>
+                </div>
+                <div class="text-right">
+                  <p class="text-2xl font-bold text-gray-900">{{ voucher.capital | currency: 'MXN' }}</p>
+                  <p class="text-sm text-gray-600">Vale {{ voucher.product?.name }}</p>
+                </div>
+              </header>
+              
+              <div class="p-5 grid gap-6 md:grid-cols-2">
+                <!-- Identidad -->
+                <section class="space-y-2">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500">Identidad oficial</h3>
+                  <div class="rounded-lg bg-gray-50 p-4 border border-gray-100 h-full flex flex-col gap-3">
+                    <p class="font-medium text-lg">{{ voucher.client?.full_name }}</p>
+                    @if (voucher.identity?.official_id_type) {
+                      <p class="text-sm text-gray-700">
+                        Id: {{ voucher.identity?.official_id_type }} 
+                        @if (voucher.identity?.official_id_number) { &middot; <span class="font-mono bg-white px-2 py-1 border rounded">{{ voucher.identity?.official_id_number }}</span> }
+                      </p>
+                    }
+                    @if (voucher.identity?.official_id_media_id) {
+                      <a [href]="config.baseUrl + '/media/' + voucher.identity?.official_id_media_id + '/download'" target="_blank" class="block mt-auto pt-2">
+                        <img [src]="config.baseUrl + '/media/' + voucher.identity?.official_id_media_id + '/download'" 
+                             class="w-full h-48 rounded object-cover border shadow-sm hover:opacity-90 transition-opacity" 
+                             alt="Identidad oficial" />
+                      </a>
+                    } @else {
+                      <p class="text-sm text-amber-700">No hay una identificación adjunta para este cliente.</p>
+                    }
+                  </div>
+                </section>
+                
+                <!-- Domicilio -->
+                <section class="space-y-2">
+                  <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500">Comprobante de domicilio</h3>
+                  <div class="rounded-lg bg-gray-50 p-4 border border-gray-100 h-full flex flex-col gap-3">
+                    @if (voucher.address?.['street']) {
+                      <p class="text-sm text-gray-800">
+                        {{ voucher.address?.['street'] }} {{ voucher.address?.['exterior_number'] }}
+                        @if (voucher.address?.['interior_number']) { Int {{ voucher.address?.['interior_number'] }} }
+                      </p>
+                      <p class="text-sm text-gray-600">
+                        {{ voucher.address?.['neighborhood'] }}, {{ voucher.address?.['postal_code'] }}
+                      </p>
+                    }
+                    @if (voucher.address?.['address_proof_media_id']) {
+                      <a [href]="config.baseUrl + '/media/' + voucher.address?.['address_proof_media_id'] + '/download'" target="_blank" class="block mt-auto pt-2">
+                        <img [src]="config.baseUrl + '/media/' + voucher.address?.['address_proof_media_id'] + '/download'" 
+                             class="w-full h-48 rounded object-cover border shadow-sm hover:opacity-90 transition-opacity" 
+                             alt="Comprobante Domicilio" />
+                      </a>
+                    } @else {
+                      <p class="text-sm text-amber-700">Debes adjuntar un comprobante de domicilio antes de liberar el vale.</p>
+                    }
+                  </div>
+                </section>
+                
+                <!-- Finanzas -->
+                <section class="space-y-2 md:col-span-2">
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 rounded-lg bg-blue-50 p-4 border border-blue-100">
+                    <div>
+                      <p class="text-xs text-blue-800 font-semibold mb-1">Total a pagar</p>
+                      <p class="font-mono text-lg">{{ voucher.client_total | currency: 'MXN' }}</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-blue-800 font-semibold mb-1">Pagos quincenales</p>
+                      <p class="font-mono text-lg">{{ voucher.client_payment_per_fortnight | currency: 'MXN' }} <span class="text-sm font-sans text-blue-600">x{{ voucher.fortnights_count }}</span></p>
+                    </div>
+                    <div class="col-span-2">
+                      <p class="text-xs text-blue-800 font-semibold mb-1">Cuenta Bancaria para dep&oacute;sito</p>
+                      @if (voucher.bank_account && voucher.bank_account.bank_name !== 'N/A') {
+                        <div class="flex items-center gap-3">
+                          <p class="text-sm font-medium">{{ voucher.bank_account.bank_name }}</p>
+                          <p class="font-mono text-sm bg-white px-2 py-1 rounded border border-blue-200">{{ voucher.bank_account.clabe_masked }}</p>
+                        </div>
+                      } @else {
+                        <p class="text-sm text-blue-600/70 italic">Se registrar&aacute; al liberar el vale.</p>
+                      }
+                    </div>
+                  </div>
+                </section>
               </div>
-              <strong>{{ voucher.capital | currency: 'MXN' }}</strong>
-            </div>
-            <div class="grid gap-4 md:grid-cols-2">
-              <section>
-                <h3 class="font-bold">Identidad</h3>
-                <p>{{ voucher.client?.full_name }}</p>
-                <p>
-                  {{ voucher.identity?.official_id_type }} ·
-                  {{ voucher.identity?.official_id_number }}
-                </p>
-              </section>
-              <section>
-                <h3 class="font-bold">Domicilio</h3>
-                <p>
-                  {{ voucher.address?.['street'] }} {{ voucher.address?.['exterior_number'] }},
-                  {{ voucher.address?.['neighborhood'] }}, {{ voucher.address?.['postal_code'] }}
-                </p>
-              </section>
-              <section>
-                <h3 class="font-bold">Cuenta</h3>
-                <p>
-                  {{ voucher.bank_account?.bank_name }} · {{ voucher.bank_account?.clabe_masked }}
-                </p>
-              </section>
-              <section>
-                <h3 class="font-bold">Producto</h3>
-                <p>
-                  {{ voucher.product?.name }} ·
-                  {{ voucher.client_payment_per_fortnight | currency: 'MXN' }}/quincena
-                </p>
-              </section>
-            </div>
-            @if (voucher.status === 'GENERATED') {
-              <div class="flex flex-wrap gap-2">
-                <button
-                  class="rounded-lg bg-emerald-700 px-4 py-2 text-white"
-                  [disabled]="busy()"
-                  (click)="release(voucher)"
-                >
-                  Identidad coincide: liberar</button
-                ><button class="rounded-lg border px-4 py-2" (click)="showCorrection.set(true)">
-                  Solicitar corrección
-                </button>
-              </div>
-            }
+
+              <!-- Actions Area -->
+              <div class="bg-gray-50 border-t p-5 space-y-4">
+@if (voucher.status === 'GENERATED') {
+                @if (voucher.bank_account?.bank_name === 'N/A' || !voucher.bank_account) {
+                  <div class="space-y-3 rounded-lg bg-emerald-50 p-4 mb-4 border border-emerald-100">
+                    <p class="font-semibold text-emerald-800">Primera vez: Alta de Cuenta Bancaria</p>
+                    <p class="text-sm text-emerald-700">El cliente no tiene una cuenta bancaria válida registrada.</p>
+                    
+                    <div class="space-y-2">
+                      <select [(ngModel)]="bankName" class="w-full rounded-lg border p-2" required>
+                        <option value="">Selecciona un banco</option>
+                        <option value="BBVA">BBVA</option>
+                        <option value="Banamex">Banamex</option>
+                        <option value="Banorte">Banorte</option>
+                        <option value="Santander">Santander</option>
+                        <option value="HSBC">HSBC</option>
+                        <option value="Scotiabank">Scotiabank</option>
+                        <option value="Inbursa">Inbursa</option>
+                        <option value="Banco Azteca">Banco Azteca</option>
+                        <option value="BanCoppel">BanCoppel</option>
+                      </select>
+                      
+                      <input type="text" [(ngModel)]="clabe" class="w-full rounded-lg border p-2" placeholder="CLABE (18 dígitos)" maxlength="18" required />
+                      
+                      <input type="text" [(ngModel)]="clabeConfirm" class="w-full rounded-lg border p-2" placeholder="Confirmar CLABE (18 dígitos)" maxlength="18" required />
+                      @if (clabeConfirm && clabe !== clabeConfirm) {
+                        <p class="text-sm font-medium text-red-700" role="alert">Las CLABE no coinciden.</p>
+                      }
+                    </div>
+                  </div>
+                }
+                @if (!hasAddressProof(voucher)) {
+                  <div class="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-4">
+                    <p class="font-semibold text-amber-900">Comprobante de domicilio requerido</p>
+                    <p class="text-sm text-amber-800">Adjunta una imagen o PDF antes de liberar el vale.</p>
+                    <input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" class="block w-full text-sm" [disabled]="uploadingAddressProof()" (change)="uploadAddressProof(voucher, $event)" />
+                    @if (uploadingAddressProof()) { <p class="text-sm text-amber-800">Cargando comprobante…</p> }
+                  </div>
+                }
+                <div class="flex flex-wrap gap-2">
+                  <button
+                    class="rounded-lg bg-emerald-700 px-4 py-2 text-white disabled:opacity-50"
+                    [disabled]="busy() || uploadingAddressProof() || !hasAddressProof(voucher) || ((voucher.bank_account?.bank_name === 'N/A' || !voucher.bank_account) && (!bankName || clabe !== clabeConfirm || clabe.length !== 18))"
+                    (click)="release(voucher)"
+                  >
+                    Identidad coincide: liberar</button
+                  ><button class="rounded-lg border px-4 py-2" (click)="showCorrection.set(true)">
+                    Solicitar corrección
+                  </button>
+                </div>
+              }
             @if (showCorrection()) {
               <form
                 class="space-y-3 rounded-lg bg-gray-50 p-4"
@@ -182,7 +272,8 @@ import {
                 </button>
               </form>
             }
-          </article>
+          </div>
+            </article>
         }
       </div>
     }
@@ -237,10 +328,12 @@ import {
 export class CajaFeriadoPageComponent {
   private readonly api = inject(CajaValesApiService);
   private readonly session = inject(SessionStore);
+  readonly config = inject(API_CONFIG);
   readonly results = signal<CashVoucher[]>([]);
   readonly selected = signal<CashVoucher | null>(null);
   readonly modifications = signal<ModificationRequest[]>([]);
   readonly busy = signal(false);
+  readonly uploadingAddressProof = signal(false);
   readonly error = signal('');
   readonly errorCode = signal('');
   readonly showCorrection = signal(false);
@@ -258,6 +351,9 @@ export class CajaFeriadoPageComponent {
   confirmed = false;
   correctCurp = false;
   correctAddress = false;
+  bankName = '';
+  clabe = '';
+  clabeConfirm = '';
   constructor() {
     if (this.canAuthorize()) this.loadModifications();
   }
@@ -281,12 +377,40 @@ export class CajaFeriadoPageComponent {
       .subscribe({ next: (v) => this.results.set(v), error: (e) => this.handle(e) });
   }
   open(id: string): void {
+    this.bankName = '';
+    this.clabe = '';
+    this.clabeConfirm = '';
     this.api
       .detail(id)
       .subscribe({ next: (v) => this.selected.set(v), error: (e) => this.handle(e) });
   }
+  hasAddressProof(voucher: CashVoucher): boolean {
+    return !!voucher.address?.['address_proof_media_id'];
+  }
+  uploadAddressProof(voucher: CashVoucher, event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    const clientId = voucher.client?.id;
+    if (!file || !clientId || this.uploadingAddressProof()) return;
+
+    this.clear();
+    this.uploadingAddressProof.set(true);
+    this.api.uploadAddressProof(clientId, file)
+      .pipe(finalize(() => this.uploadingAddressProof.set(false)))
+      .subscribe({
+        next: () => this.api.detail(voucher.id).subscribe({ next: (updated) => this.selected.set(updated), error: (error) => this.handle(error) }),
+        error: (error) => this.handle(error),
+      });
+  }
   release(v: CashVoucher): void {
-    this.run(this.api.release(v.id, v.lock_version));
+    if (!v.bank_account || v.bank_account.bank_name === 'N/A') {
+      if (!this.bankName || this.clabe !== this.clabeConfirm || this.clabe.length !== 18) {
+        this.error.set('Por favor, ingresa un banco válido y asegúrate de que la CLABE tenga 18 dígitos y coincida.');
+        return;
+      }
+      this.run(this.api.release(v.id, v.lock_version, this.bankName, this.clabe));
+    } else {
+      this.run(this.api.release(v.id, v.lock_version));
+    }
   }
   cash(v: CashVoucher): void {
     if (!this.confirmed || !this.transaction) return;

@@ -45,3 +45,9 @@ Thumbs.db
 
 
 /misvales-back
+
+# Scripts temporales de depuración y apoyo local
+/*.py
+/debug_*.php
+/fix_*.php
+/test*.php

@@ -1,6 +1,6 @@
 import { FormControl } from '@angular/forms';
 import { describe, expect, it } from 'vitest';
-import { adultBirthDateValidator } from './adult-birth-date.validator';
+import { adultBirthDateValidator, maxAdultBirthDate } from './adult-birth-date.validator';
 import { positiveDecimalStringValidator } from './decimal-string.validator';
 import { notFutureDateValidator } from './not-future-date.validator';
 
@@ -9,6 +9,10 @@ describe('application date validators', () => {
     const control = new FormControl('0800-01-01', { validators: [adultBirthDateValidator] });
 
     expect(control.errors).toEqual({ birthDateTooEarly: true });
+  });
+
+  it('uses the local calendar date for the adult date limit', () => {
+    expect(maxAdultBirthDate(new Date(2026, 7, 20, 23, 30))).toBe('2008-08-20');
   });
 
   it('rejects an employment start date after today and clears it when corrected', () => {

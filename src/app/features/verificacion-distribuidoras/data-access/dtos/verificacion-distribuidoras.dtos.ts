@@ -69,6 +69,7 @@ export interface AutorizarSolicitudRequestDto {
 export interface EvidenciaVerificacionResponseDto {
   id: string;
   file_type: string;
+  mime_type: string;
   original_name: string;
   created_at: string;
   uploaded_by: string;

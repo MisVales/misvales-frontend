@@ -6,8 +6,8 @@ export function curpValidator(): ValidatorFn {
       return null; // Required validation is handled separately
     }
 
-    // Basic regex for Mexican CURP (18 alphanumeric characters)
-    const curpRegex = /^[A-Z]{4}\d{6}[HM][A-Z]{5}[0-9A-Z]\d$/i;
+    // Basic regex for Mexican CURP (18 alphanumeric characters as requested)
+    const curpRegex = /^[A-Z\d]{18}$/i;
     
     // Masked curp check
     if (control.value.includes('*')) {

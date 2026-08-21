@@ -7,6 +7,7 @@ import {
   ConfiguracionDefinicion, 
   ConfiguracionVersion, 
   CreateConfigurationVersionRequestDto, 
+  UpdateCurrentConfigurationRequestDto,
   UpdateConfigurationVersionRequestDto 
 } from '../data-access/configuraciones.dtos';
 
@@ -108,6 +109,27 @@ export const ConfiguracionesStore = signalStore(
           patchState(store, { estadoCarga: false, operacionEnProceso: 'crearVersionSuccess' });
         } catch (err: any) {
           patchState(store, { estadoCarga: false, error: mensajeErrorConfiguracion(err, 'Error al crear versión'), operacionEnProceso: null });
+        }
+      },
+
+      async actualizarActual(clave: string, datos: UpdateCurrentConfigurationRequestDto) {
+        patchState(store, { estadoCarga: true, error: null, operacionEnProceso: 'actualizarActual' });
+        try {
+          await firstValueFrom(service.actualizarActual(clave, datos));
+          const [definicion, versiones, definiciones] = await Promise.all([
+            firstValueFrom(service.consultarDefinicion(clave)),
+            firstValueFrom(service.consultarVersiones(clave)),
+            firstValueFrom(service.listar()),
+          ]);
+          patchState(store, {
+            definicionSeleccionada: ConfiguracionesMapper.fromDefinitionDto(definicion),
+            versiones: versiones.map(ConfiguracionesMapper.fromVersionDto),
+            definiciones: definiciones.map(ConfiguracionesMapper.fromDefinitionDto),
+            estadoCarga: false,
+            operacionEnProceso: 'actualizarActualSuccess',
+          });
+        } catch (err: any) {
+          patchState(store, { estadoCarga: false, error: mensajeErrorConfiguracion(err, 'No se pudieron guardar los cambios.'), operacionEnProceso: null });
         }
       },
 

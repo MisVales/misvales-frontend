@@ -13,11 +13,12 @@ import { ApplicationFormErrorStateDirective } from '../../directives/application
 import { MoneyInputDirective } from '../../directives/money-input.directive';
 import { MediaApiService } from '../../../../core/services/media-api.service';
 import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
+import { AttachmentPreviewComponent } from '../../../../shared/ui/attachment-preview/attachment-preview.component';
 
 @Component({
   selector: 'app-creditos-comerciales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, MoneyInputDirective],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, MoneyInputDirective, AttachmentPreviewComponent],
   templateUrl: './creditos-comerciales-form.component.html',
   styleUrls: ['./creditos-comerciales-form.component.css']
 })
@@ -38,6 +39,7 @@ export class CreditosComercialesFormComponent implements OnInit {
   uploadingEvidence = false;
   evidenceUploaded = false;
   evidenceError?: string;
+  currentEvidenceFile?: File;
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;
@@ -107,6 +109,7 @@ export class CreditosComercialesFormComponent implements OnInit {
     const file = (event.target as HTMLInputElement).files?.[0];
     const applicationId = this.store.detalle()?.id;
     if (!file || !applicationId) return;
+    this.currentEvidenceFile = file;
     this.uploadingEvidence = true;
     this.evidenceError = undefined;
     this.mediaApi.upload({ file, owner_type: 'distributor_application', owner_id: applicationId, purpose: 'COMMERCIAL_EVIDENCE' }).subscribe({

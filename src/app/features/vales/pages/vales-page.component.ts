@@ -1,12 +1,12 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 import { SessionStore } from '../../../core/session/session.store';
-import { ValesApiService, VoucherClient, VoucherPreview, VoucherProduct, VoucherView } from '../data-access/vales-api.service';
+import { ValesApiService, VoucherClient, VoucherCreditLine, VoucherFinancialContext, VoucherPreview, VoucherProduct, VoucherView } from '../data-access/vales-api.service';
 
 @Component({
   selector: 'app-vales-page',
@@ -22,10 +22,16 @@ export class ValesPageComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly form = this.formBuilder.nonNullable.group({
+  protected readonly form = this.formBuilder.group({
     search: this.formBuilder.nonNullable.control(''),
     clientId: this.formBuilder.nonNullable.control(''),
     productVersionId: this.formBuilder.nonNullable.control(''),
+    installmentCount: this.formBuilder.control<number | null>(null),
+  });
+  protected readonly clientForm = this.formBuilder.nonNullable.group({
+    firstName: ['', [Validators.required, Validators.maxLength(120)]],
+    firstLastName: ['', [Validators.required, Validators.maxLength(120)]],
+    secondLastName: ['', [Validators.maxLength(120)]],
   });
   private readonly formValue = toSignal(this.form.valueChanges, { initialValue: this.form.getRawValue() });
   protected readonly products = signal<VoucherProduct[]>([]);
@@ -38,12 +44,24 @@ export class ValesPageComponent implements OnInit {
   protected readonly searchingClients = signal(false);
   protected readonly searchedClients = signal(false);
   protected readonly busy = signal(false);
+  protected readonly creatingClient = signal(false);
+  protected readonly clientDialogOpen = signal(false);
+  protected readonly financialContext = signal<VoucherFinancialContext | null>(null);
+  protected readonly creditLine = signal<VoucherCreditLine | null>(null);
   protected readonly error = signal('');
 
   protected readonly selectedClient = computed(() => this.clients().find((client) => client.id === this.formValue().clientId) ?? null);
   protected readonly selectedProduct = computed(() => this.products().find((product) => product.id === this.formValue().productVersionId) ?? null);
-  protected readonly currentStep = computed(() => this.previewData() || this.selectedProduct() ? 3 : this.selectedClient() ? 2 : 1);
-  protected readonly canPreview = computed(() => !!this.selectedClient() && !!this.selectedProduct() && !this.busy());
+  protected readonly currentStep = computed(() => this.previewData() ? 4 : this.selectedProduct() ? 3 : this.selectedClient() ? 2 : 1);
+  protected readonly categoryLabel = computed(() => {
+    const category = this.financialContext()?.category;
+    return category ? `${Number(category.percentage) * 100}% · ${category.name}` : 'Sin categoría vigente';
+  });
+  protected readonly canPreview = computed(() => {
+    const value = this.formValue();
+    return !!this.selectedClient() && !!this.selectedProduct() && !this.busy()
+      && value.installmentCount !== null;
+  });
 
   ngOnInit(): void {
     this.reloadHistory();
@@ -53,6 +71,28 @@ export class ValesPageComponent implements OnInit {
       next: (products) => this.products.set(products),
       error: (error) => this.handle(error),
     });
+    this.api.obtenerContextoFinanciero().subscribe({
+      next: (context) => this.financialContext.set(context),
+      error: (error) => this.handle(error),
+    });
+    this.api.obtenerLineaCreditoPropia().subscribe({
+      next: (creditLine) => this.creditLine.set(creditLine),
+      error: (error) => this.handle(error),
+    });
+
+    this.form.valueChanges.pipe(
+      debounceTime(500),
+      distinctUntilChanged((prev, curr) => prev.productVersionId === curr.productVersionId
+        && prev.clientId === curr.clientId && prev.installmentCount === curr.installmentCount),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      if (this.canPreview()) {
+        this.preview();
+      } else {
+        this.previewData.set(null);
+      }
+    });
+
     this.form.controls.search.valueChanges.pipe(
       map((value) => value.trim()),
       debounceTime(250),
@@ -101,23 +141,23 @@ export class ValesPageComponent implements OnInit {
   }
 
   protected preview(): void {
-    const { clientId, productVersionId } = this.form.getRawValue();
-    if (this.busy() || !clientId || !productVersionId) return;
+    const { clientId, productVersionId, installmentCount } = this.form.getRawValue();
+    if (this.busy() || !clientId || !productVersionId || installmentCount === null) return;
     this.busy.set(true);
     this.clearError();
     this.generated.set(null);
-    this.api.previsualizar(clientId, productVersionId).pipe(finalize(() => this.busy.set(false))).subscribe({
+    this.api.previsualizar(clientId, productVersionId, installmentCount).pipe(finalize(() => this.busy.set(false))).subscribe({
       next: (data) => this.previewData.set(data),
       error: (error) => this.handle(error),
     });
   }
 
   protected generate(): void {
-    const { clientId, productVersionId } = this.form.getRawValue();
-    if (this.busy() || !clientId || !productVersionId || !this.previewData()) return;
+    const { clientId, productVersionId, installmentCount } = this.form.getRawValue();
+    if (this.busy() || !clientId || !productVersionId || installmentCount === null || !this.previewData()) return;
     this.busy.set(true);
     this.clearError();
-    this.api.generar(clientId, productVersionId).pipe(finalize(() => this.busy.set(false))).subscribe({
+    this.api.generar(clientId, productVersionId, installmentCount).pipe(finalize(() => this.busy.set(false))).subscribe({
       next: (voucher) => {
         this.generated.set(voucher);
         this.previewData.set(null);
@@ -172,5 +212,43 @@ export class ValesPageComponent implements OnInit {
 
   private formatCurrency(value: string | number): string {
     return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(Number(value));
+  }
+
+  protected openClientDialog(): void {
+    this.clientForm.reset({ firstName: '', firstLastName: '', secondLastName: '' });
+    this.clientDialogOpen.set(true);
+  }
+
+  protected percentage(value: string): string {
+    return `${new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 }).format(Number(value) * 100)} %`;
+  }
+
+  protected isCreditInsufficient(amount: string, available: string): boolean {
+    return Number(amount) > Number(available);
+  }
+
+  protected closeClientDialog(): void {
+    if (!this.creatingClient()) this.clientDialogOpen.set(false);
+  }
+
+  protected createClient(): void {
+    if (this.clientForm.invalid || this.creatingClient()) {
+      this.clientForm.markAllAsTouched();
+      return;
+    }
+    const { firstName, firstLastName, secondLastName } = this.clientForm.getRawValue();
+    this.creatingClient.set(true);
+    this.clearError();
+    this.api.crearClienteRápido(firstName.trim(), firstLastName.trim(), secondLastName.trim())
+      .pipe(finalize(() => this.creatingClient.set(false)))
+      .subscribe({
+        next: (client) => {
+          this.clients.set([client]);
+          this.form.controls.search.setValue(client.full_name, { emitEvent: false });
+          this.selectClient(client);
+          this.clientDialogOpen.set(false);
+        },
+        error: (error) => this.handle(error),
+      });
   }
 }

@@ -10,7 +10,7 @@ import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
 import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
-import { MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
+import { maxAdultBirthDate, MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
 
 @Component({
   selector: 'app-familiares-form',
@@ -33,7 +33,7 @@ export class FamiliaresFormComponent implements OnInit {
   autosaveStatuses: Record<number, AutosaveStatus> = {};
   mensajeBloqueoCambio?: string;
   readonly minBirthDate = MIN_BIRTH_DATE;
-  readonly maxAdultDate = maxAdultDate();
+  readonly maxAdultDate = maxAdultBirthDate();
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;
@@ -192,10 +192,4 @@ export class FamiliaresFormComponent implements OnInit {
       this.cdr.markForCheck();
     }
   }
-}
-
-function maxAdultDate(): string {
-  const date = new Date();
-  date.setFullYear(date.getFullYear() - 18);
-  return date.toISOString().slice(0, 10);
 }

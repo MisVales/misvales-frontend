@@ -189,7 +189,7 @@ export const NAV_GROUPS: NavGroupData[] = [
         title: 'Clientes finales',
         icon: 'user-round',
         route: '/clientes',
-        roles: GG_AD_GS_CO_DI,
+        roles: ['distributor'],
       },
     ],
   },

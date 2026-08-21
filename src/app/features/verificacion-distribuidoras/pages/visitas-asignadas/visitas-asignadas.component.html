@@ -37,9 +37,9 @@
             <p class="detail"><strong>Avance:</strong> {{ visita.evidencias.length }} evidencias, {{ visita.diferencias.length }} diferencias</p>
           </div>
           <div class="card-footer">
-            <a [routerLink]="['/verificacion-distribuidoras/verificaciones', visita.id, 'visita']" class="btn btn-primary btn-block">
+            <button type="button" class="btn btn-primary btn-block" (click)="abrirVisita(visita)">
               {{ visita.estado === 'ASSIGNED' ? 'Iniciar Visita' : (visita.estado === 'IN_PROGRESS' ? 'Continuar Visita' : 'Ver Detalles') }}
-            </a>
+            </button>
           </div>
         </div>
       }

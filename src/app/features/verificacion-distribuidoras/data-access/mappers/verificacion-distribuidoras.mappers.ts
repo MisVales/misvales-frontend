@@ -23,6 +23,7 @@ export function mapEvidenciaToModel(dto: EvidenciaVerificacionResponseDto): Evid
     id: dto.id,
     tipo: dto.file_type,
     nombreOriginal: dto.original_name,
+    mimeType: dto.mime_type,
     fechaCarga: dto.created_at,
     cargadoPor: dto.uploaded_by,
     urlDescarga: dto.download_url,

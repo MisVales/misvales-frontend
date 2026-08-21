@@ -12,7 +12,7 @@ import { AlertService } from '../../../../shared/services/alert.service';
 @Component({
   selector: 'app-cartera-cliente-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './cartera-cliente-page.component.html',
   styleUrls: ['./cartera-cliente-page.component.css']
 })

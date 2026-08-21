@@ -1,3 +1,25 @@
 :host {
   display: block;
 }
+
+.audit-list {
+  border-left: 2px solid #d1fae5;
+  margin-left: 0.4rem;
+  padding-left: 1.25rem;
+}
+
+.audit-item {
+  position: relative;
+}
+
+.audit-item::before {
+  background: #047857;
+  border: 3px solid #ecfdf5;
+  border-radius: 9999px;
+  content: '';
+  height: 0.75rem;
+  left: -1.68rem;
+  position: absolute;
+  top: 1.15rem;
+  width: 0.75rem;
+}
