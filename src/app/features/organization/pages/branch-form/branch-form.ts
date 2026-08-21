@@ -71,9 +71,9 @@ import { AlertService } from '../../../../shared/services/alert.service';
                     class="rounded-xl border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50">
               Cancelar
             </button>
-            <button type="submit" [disabled]="form.invalid || facade.isLoading()"
+            <button type="submit" [disabled]="form.invalid || facade.isLoading() || isSubmitting"
                     class="rounded-xl bg-[#386641] px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-[#6A994E] disabled:cursor-not-allowed disabled:opacity-60">
-              {{ facade.isLoading() ? 'Validando dirección...' : (isEditMode ? 'Guardar cambios' : 'Crear sucursal') }}
+              {{ (facade.isLoading() || isSubmitting) ? 'Guardando...' : (isEditMode ? 'Guardar cambios' : 'Crear sucursal') }}
             </button>
           </div>
         </form>
@@ -91,6 +91,7 @@ export class BranchForm implements OnInit {
   isEditMode = false;
   branchId: string | null = null;
   nameErrorVisible = false;
+  isSubmitting = false;
 
   @ViewChild('addressForm') addressForm!: AddressFormComponent;
 
@@ -133,28 +134,33 @@ export class BranchForm implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.isSubmitting) {
       this.form.markAllAsTouched();
       this.addressForm?.validarAntesDeSalir();
       return;
     }
 
-    // Geocode at submission time to get coordinates
-    const coords = await this.addressForm.geocode();
-    if (coords) {
-      this.form.patchValue({ lat: coords.lat, lng: coords.lng });
-    }
-
-    const { name, address, lat, lng } = this.form.getRawValue();
-    const success = this.isEditMode && this.branchId
-      ? await this.facade.updateBranch(this.branchId, name.trim(), address.trim(), lat, lng)
-      : await this.facade.createBranch({ name: name.trim(), address: address.trim(), lat, lng });
-
-    if (success) {
-      if (!this.isEditMode) {
-        this.alerts.success('La sucursal se creó correctamente.');
+    this.isSubmitting = true;
+    try {
+      // Geocode at submission time to get coordinates
+      const coords = await this.addressForm.geocode();
+      if (coords) {
+        this.form.patchValue({ lat: coords.lat, lng: coords.lng });
       }
-      this.goBack();
+
+      const { name, address, lat, lng } = this.form.getRawValue();
+      const success = this.isEditMode && this.branchId
+        ? await this.facade.updateBranch(this.branchId, name.trim(), address.trim(), lat, lng)
+        : await this.facade.createBranch({ name: name.trim(), address: address.trim(), lat, lng });
+
+      if (success) {
+        if (!this.isEditMode) {
+          this.alerts.success('La sucursal se creó correctamente.');
+        }
+        this.goBack();
+      }
+    } finally {
+      this.isSubmitting = false;
     }
   }
 

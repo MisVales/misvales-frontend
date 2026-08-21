@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { EstadoSolicitudComponent } from '../../components/estado-solicitud/estado-solicitud.component';
 import { LineaTiempoSolicitudComponent } from '../../components/linea-tiempo-solicitud/linea-tiempo-solicitud.component';
+import { GaleriaEvidenciasComponent } from '../../components/galeria-evidencias/galeria-evidencias.component';
 import { SessionStore } from '../../../../core/session/session.store';
 import { AlertService } from '../../../../shared/services/alert.service';
 import { ConfirmationService } from '../../../../shared/services/confirmation.service';
@@ -14,7 +15,7 @@ import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 @Component({
   selector: 'app-detalle-solicitud',
   standalone: true,
-  imports: [DatePipe, KeyValuePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, FormsModule, StatusLabelPipe],
+  imports: [DatePipe, KeyValuePipe, RouterLink, EstadoSolicitudComponent, LineaTiempoSolicitudComponent, GaleriaEvidenciasComponent, FormsModule, StatusLabelPipe],
   templateUrl: './detalle-solicitud.component.html',
   styleUrl: './detalle-solicitud.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -82,6 +83,18 @@ export class DetalleSolicitudComponent implements OnInit, OnDestroy {
 
   registrosSeccion(valor: unknown) {
     return presentarRegistrosDeclarados(valor);
+  }
+
+  async descargarEvidencia(visitaId: string, evidenciaId: string) {
+    const blob = await this.facade.descargarEvidenciaBlob(visitaId, evidenciaId);
+    if (!blob) return;
+
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `evidencia-${evidenciaId}`;
+    enlace.click();
+    URL.revokeObjectURL(url);
   }
 
   toggleSeccionDevolucion(valor: string) {

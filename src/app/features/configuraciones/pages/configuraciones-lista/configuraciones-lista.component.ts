@@ -2,7 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ConfiguracionDefinicion, ConfigurationValue } from '../../data-access/configuraciones.dtos';
-import { esConfiguracionVisible } from '../../data-access/configuraciones-visibilidad';
+import {
+  esCondicionFinancieraVale,
+  esConfiguracionDePago,
+  esConfiguracionEditable,
+  esConfiguracionVisible,
+} from '../../data-access/configuraciones-visibilidad';
 import { ConfiguracionesStore } from '../../estado/configuraciones.store';
 
 @Component({
@@ -22,12 +27,19 @@ export class ConfiguracionesListaComponent implements OnInit {
     return definitions
       .filter((item) => `${item.clave} ${item.nombre}`.toLocaleLowerCase('es-MX').includes(term));
   });
+  protected readonly condicionesVale = computed(() => this.definicionesFiltradas()
+    .filter((item) => esCondicionFinancieraVale(item.clave)));
+  protected readonly configuracionesDePago = computed(() => this.definicionesFiltradas()
+    .filter((item) => esConfiguracionDePago(item.clave)));
+  protected readonly configuracionesOperativas = computed(() => this.definicionesFiltradas()
+    .filter((item) => !esCondicionFinancieraVale(item.clave) && !esConfiguracionDePago(item.clave)));
 
   ngOnInit(): void {
     void this.store.listar();
   }
 
   protected abrir(definition: ConfiguracionDefinicion): void {
+    if (!esConfiguracionEditable(definition.clave)) return;
     void this.router.navigate(['/configuraciones', definition.clave]);
   }
 

@@ -282,7 +282,7 @@ export class RelacionesPageComponent {
 
   loadPage(page: number): void {
     this.loading.set(true);
-    this.api.list(page).subscribe({
+    this.api.list({ page }).subscribe({
       next: (v) => {
         this.relations.set(v.data);
         this.currentPage.set(v.current_page);

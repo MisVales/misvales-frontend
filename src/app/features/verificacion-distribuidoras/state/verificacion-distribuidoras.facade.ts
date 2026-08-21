@@ -5,6 +5,7 @@ import { VerificacionDistribuidorasApiService } from '../data-access/api/verific
 import { initialVerificacionDistribuidorasState } from './verificacion-distribuidoras.store';
 import { mapSolicitudToModel, mapVisitaToModel } from '../data-access/mappers/verificacion-distribuidoras.mappers';
 import { HttpErrorResponse } from '@angular/common/http';
+import { AlertService } from '../../../shared/services/alert.service';
 import { 
   ActualizarVisitaRequestDto, 
   AplicarCorreccionRequestDto, 
@@ -22,6 +23,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
   withState(initialVerificacionDistribuidorasState),
   withMethods((store) => {
     const apiService = inject(VerificacionDistribuidorasApiService);
+    const alerts = inject(AlertService);
 
     const handleError = (err: any) => {
       let errorMsg = 'Ha ocurrido un error inesperado.';
@@ -29,8 +31,11 @@ export const VerificacionDistribuidorasFacade = signalStore(
       let isDenied = false;
 
       if (err instanceof HttpErrorResponse) {
-        if (err.status === 409) {
-          errorMsg = 'Conflicto de versión: Los datos han sido modificados por otro usuario. Por favor, recarga la página.';
+        const errorCode = err.error?.error?.code;
+        if (errorCode === 'VERIFICATION_EVIDENCE_DUPLICATE') {
+          errorMsg = 'Esta evidencia ya se cargó.';
+        } else if (err.status === 409) {
+          errorMsg = 'La visita cambió. Recarga para continuar.';
           isConflict = true;
         } else if (err.status === 403) {
           errorMsg = 'Acceso denegado a esta operación.';
@@ -49,6 +54,7 @@ export const VerificacionDistribuidorasFacade = signalStore(
         conflictoVersion: isConflict,
         accesoDenegado: isDenied
       });
+      alerts.showAlert(errorMsg, 'error', 0);
       return false;
     };
 

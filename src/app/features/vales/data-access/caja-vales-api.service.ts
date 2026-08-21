@@ -28,6 +28,7 @@ export interface ModificationRequest {
   lock_version: number;
   vale?: CashVoucher;
 }
+export interface PrivateMediaFile { id: string; }
 
 @Injectable({ providedIn: 'root' })
 export class CajaValesApiService {
@@ -45,10 +46,13 @@ export class CajaValesApiService {
       .get<{ data: CashVoucher }>(`${this.config.baseUrl}/cashier/vouchers/${id}`)
       .pipe(map((response) => response.data));
   }
-  release(id: string, lockVersion: number): Observable<CashVoucher> {
-    return this.post<CashVoucher>(`${this.config.baseUrl}/cashier/vouchers/${id}/release`, {
-      lock_version: lockVersion,
-    });
+  release(id: string, lock_version: number, bank_name?: string, clabe?: string): Observable<CashVoucher> {
+    const payload: any = { lock_version };
+    if (bank_name && clabe) {
+      payload.bank_name = bank_name;
+      payload.clabe = clabe;
+    }
+    return this.post<CashVoucher>(`${this.config.baseUrl}/cashier/vouchers/${id}/release`, payload);
   }
   cash(id: string, transaction: string, lockVersion: number): Observable<CashVoucher> {
     return this.post<CashVoucher>(`${this.config.baseUrl}/cashier/vouchers/${id}/cash`, {
@@ -94,6 +98,17 @@ export class CajaValesApiService {
       changes,
       lock_version: lockVersion,
     });
+  }
+  uploadAddressProof(clientId: string, file: File): Observable<PrivateMediaFile> {
+    const body = new FormData();
+    body.append('file', file);
+    body.append('owner_type', 'client');
+    body.append('owner_id', clientId);
+    body.append('purpose', 'ADDRESS_PROOF');
+
+    return this.http.post<{ data: PrivateMediaFile }>(`${this.config.baseUrl}/media`, body, {
+      headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }),
+    }).pipe(map((response) => response.data));
   }
   private post<T>(url: string, body: object): Observable<T> {
     return this.http

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect, ChangeDetectorRef, QueryList, ViewChildren } from '@angular/core';
+import { Component, inject, OnInit, effect, ChangeDetectorRef, QueryList, ViewChildren, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -12,12 +12,24 @@ import { MediaApiService } from '../../../../core/services/media-api.service';
 import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 import { ISO_COUNTRIES } from '../../../../shared/data/iso-countries';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
-import { MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
+import { maxAdultBirthDate, MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
+import { ValidationTooltipComponent, ValidationRule } from '../../../../shared/ui/validation-tooltip/validation-tooltip.component';
+import { PhoneInputComponent } from '../../../../shared/ui/phone-input/phone-input.component';
+import { AttachmentPreviewComponent } from '../../../../shared/ui/attachment-preview/attachment-preview.component';
 
 @Component({
   selector: 'app-datos-personales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
+  imports: [
+    CommonModule, 
+    ReactiveFormsModule, 
+    InputErrorComponent, 
+    AutosaveDirective, 
+    ApplicationFormErrorStateDirective,
+    ValidationTooltipComponent,
+    PhoneInputComponent,
+    AttachmentPreviewComponent
+  ],
   templateUrl: './datos-personales-form.component.html',
   styleUrls: ['./datos-personales-form.component.css']
 })
@@ -31,22 +43,32 @@ export class DatosPersonalesFormComponent implements OnInit {
   form: FormGroup = DatosPersonalesFormFactory.create(this.fb);
   
   // View states
-  isCurpMasked = false;
-  isRfcMasked = false;
+  autosaveStatus: AutosaveStatus = 'idle';
   uploadingEvidence = false;
   evidenceError: string | null = null;
+  isCurpMasked = false;
+  isRfcMasked = false;
   private datosInicialesCargados = false;
   
-  autosaveStatus: AutosaveStatus = 'idle';
   mensajeBloqueoCambio?: string;
   mostrarErroresDeValidacion = false;
   readonly countries = ISO_COUNTRIES;
   readonly minBirthDate = MIN_BIRTH_DATE;
-  readonly maxAdultDate: string = (() => {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() - 18);
-    return d.toISOString().split('T')[0];
-  })();
+  readonly maxAdultDate = maxAdultBirthDate();
+
+  // Archivo local actual
+  currentEvidenceFile?: File;
+
+  curpRules: ValidationRule[] = [
+    { label: 'Tener exactamente 18 caracteres', test: v => v?.length === 18 },
+    { label: 'Sólo letras y números permitidos', test: v => /^[A-Z0-9]+$/i.test(v) }
+  ];
+
+  rfcRules: ValidationRule[] = [
+    { label: '3 o 4 letras iniciales', test: v => /^([A-ZÑ&]{3,4})/i.test(v) },
+    { label: '6 dígitos de fecha (AAMMDD)', test: v => /^([A-ZÑ&]{3,4}) ?(?:- ?)?(\d{6})/i.test(v) },
+    { label: '3 caracteres de homoclave final', test: v => /^([A-ZÑ&]{3,4}) ?(?:- ?)?(\d{6}) ?(?:- ?)?([A-Z\d]{2})([A\d])$/i.test(v) }
+  ];
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;
@@ -191,6 +213,7 @@ export class DatosPersonalesFormComponent implements OnInit {
       const applicationId = this.store.detalle()?.id;
       if (!applicationId) return;
 
+      this.currentEvidenceFile = file;
       this.uploadingEvidence = true;
       this.evidenceError = null;
       this.cdr.markForCheck();

@@ -112,6 +112,17 @@
                   <p><strong>Diferencias reportadas:</strong> {{ visita.diferencias.length }}</p>
                   <p><strong>Evidencias adjuntas:</strong> {{ visita.evidencias.length }}</p>
                 </div>
+                @if (visita.evidencias.length > 0) {
+                  <div class="visita-evidencias">
+                    <h3 class="visita-evidencias-title">Imágenes de la verificación</h3>
+                    <app-galeria-evidencias
+                      [evidencias]="visita.evidencias"
+                      [permitirEliminar]="false"
+                      [permitirDescargar]="true"
+                      (download)="descargarEvidencia(visita.id, $event)">
+                    </app-galeria-evidencias>
+                  </div>
+                }
               </div>
             }
           </section>

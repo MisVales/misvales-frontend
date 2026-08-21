@@ -35,7 +35,12 @@ export const relacionesPagosRoutes: Routes = [
     loadComponent: () =>
       import('./pages/pagos-page.component').then((m) => m.PagosPageComponent),
     canActivate: [
-      anyPermissionGuard(['relations.view_own', 'relations.view_assigned', 'relations.view_branch', 'relations.view_global']),
+      anyPermissionGuard([
+        'relations.view_own',
+        'relations.view_assigned',
+        'relations.view_branch',
+        'relations.view_global',
+      ]),
     ],
   },
   {

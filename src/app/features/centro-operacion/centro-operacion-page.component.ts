@@ -146,6 +146,78 @@ import {
         </div>
       </section>
     }
+    @if (isGerenteGeneral()) {
+      <section class="space-y-3">
+        <h2 class="font-bold">Corte actual</h2>
+        <div class="rounded-xl border bg-white p-4">
+          @if (cutoffSummary(); as summary) {
+            <div class="mb-4 text-sm space-y-2">
+              <p><span class="font-semibold">Estado:</span> 
+                <span class="rounded px-2 py-1 text-xs font-bold"
+                      [class.bg-green-100]="cutoffState() === 'CLOSED'"
+                      [class.text-green-800]="cutoffState() === 'CLOSED'"
+                      [class.bg-blue-100]="cutoffState() === 'OPEN'"
+                      [class.text-blue-800]="cutoffState() === 'OPEN'"
+                      [class.bg-yellow-100]="cutoffState() === 'PROCESANDO'"
+                      [class.text-yellow-800]="cutoffState() === 'PROCESANDO'"
+                >
+                  {{ cutoffState() === 'PROCESANDO' ? 'PROCESANDO CIERRE' : cutoffState() }}
+                </span>
+              </p>
+              @if (cutoffState() === 'CLOSED' && closedProcessId()) {
+                <p class="text-green-700 font-semibold">Corte cerrado correctamente.</p>
+                <p>El corte fue forzado y cerrado exitosamente. Ref: {{ closedProcessId() }}</p>
+              } @else {
+                <p><span class="font-semibold">Último cierre:</span> {{ summary.period.start ? (summary.period.start | date:'medium') : 'N/A' }}</p>
+                <p><span class="font-semibold">Fecha/hora proyectada:</span> {{ summary.period.projected_end | date:'medium' }}</p>
+                <p><span class="font-semibold">Operaciones pendientes:</span> {{ summary.summary.operations }} ({{ summary.summary.distributors }} distribuidoras)</p>
+                <p><span class="font-semibold">Total proyectado:</span> {{ summary.summary.total | currency }}</p>
+              }
+              @if (cutoffError()) {
+                <p class="text-red-600 font-semibold">No fue posible cerrar el corte: {{ cutoffError() }}</p>
+              }
+            </div>
+            @if (cutoffState() === 'OPEN' && summary.has_open_cutoff) {
+              <button 
+                class="rounded bg-red-600 px-4 py-2 font-bold text-white shadow hover:bg-red-700" 
+                (click)="openForceCutoffModal()"
+              >
+                Forzar corte
+              </button>
+            } @else if (cutoffState() === 'OPEN') {
+              <p class="text-gray-500 italic">No existe actualmente un periodo disponible para cierre manual.</p>
+            }
+          } @else {
+            <p class="text-gray-500 text-sm">Cargando información del corte...</p>
+          }
+        </div>
+      </section>
+
+      @if (showForceCutoffModal()) {
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div class="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h3 class="text-lg font-bold text-red-600 flex items-center gap-2">
+              ⚠️ Forzar cierre del corte
+            </h3>
+            <div class="mt-4 text-sm text-gray-700 space-y-3">
+              <p>Estás a punto de cerrar manualmente el corte actual.</p>
+              <p>Esta acción cerrará el periodo utilizando la información registrada hasta este momento exacto.</p>
+              <p>Una vez cerrado, la información correspondiente al corte será consolidada para generar saldos y referencias.</p>
+              <div>
+                <label class="block font-semibold mb-1">Motivo del cierre manual (opcional)</label>
+                <input class="w-full rounded border p-2 text-sm" [(ngModel)]="cutoffMotivo" placeholder="Ej. Cierre solicitado por Gerencia" />
+              </div>
+            </div>
+            <div class="mt-6 flex justify-end gap-3">
+              <button class="rounded px-4 py-2 text-gray-600 hover:bg-gray-100" (click)="closeForceCutoffModal()" [disabled]="cutoffState() === 'PROCESANDO'">Cancelar</button>
+              <button class="rounded bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50" (click)="executeForceCutoff()" [disabled]="cutoffState() === 'PROCESANDO'">
+                {{ cutoffState() === 'PROCESANDO' ? 'Procesando...' : 'Confirmar y forzar corte' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+    }
     @if (canAudit()) {
       <section class="space-y-3">
         <h2 class="font-bold">Auditoría inmutable</h2>
@@ -194,6 +266,7 @@ export class CentroOperacionPageComponent {
       this.api.unreadCount().subscribe((count) => this.unreadCount.set(count));
     }
     if (this.canReports()) this.api.reports().subscribe((reports) => this.reports.set(reports));
+    if (this.isGerenteGeneral()) this.loadCurrentCutoff();
   }
   canNotify(): boolean {
     return this.has('notifications.view_own');
@@ -201,6 +274,52 @@ export class CentroOperacionPageComponent {
   canReports(): boolean {
     return this.any(['reports.view_branch', 'reports.view_global']);
   }
+  isGerenteGeneral(): boolean {
+    return this.has('reports.view_global'); // Using the same permission as reports global for Gerente General scope
+  }
+
+  readonly cutoffSummary = signal<import('./centro-operacion-api.service').CurrentCutoffSummary | null>(null);
+  readonly cutoffState = signal<'OPEN' | 'PROCESANDO' | 'CLOSED'>('OPEN');
+  readonly showForceCutoffModal = signal(false);
+  readonly closedProcessId = signal<string | null>(null);
+  readonly cutoffError = signal<string | null>(null);
+  cutoffMotivo = '';
+
+  loadCurrentCutoff(): void {
+    this.api.getCurrentCutoffSummary().subscribe({
+      next: (summary) => this.cutoffSummary.set(summary),
+      error: () => this.cutoffError.set('Error cargando el resumen del corte.')
+    });
+  }
+
+  openForceCutoffModal(): void {
+    this.showForceCutoffModal.set(true);
+    this.cutoffMotivo = '';
+    this.cutoffError.set(null);
+  }
+
+  closeForceCutoffModal(): void {
+    this.showForceCutoffModal.set(false);
+  }
+
+  executeForceCutoff(): void {
+    this.cutoffState.set('PROCESANDO');
+    this.cutoffError.set(null);
+    const idempotencyKey = crypto.randomUUID();
+
+    this.api.forceCutoff(this.cutoffMotivo, idempotencyKey).subscribe({
+      next: (response) => {
+        this.cutoffState.set('CLOSED');
+        this.closedProcessId.set(response.process_run_id);
+        this.showForceCutoffModal.set(false);
+      },
+      error: (err) => {
+        this.cutoffState.set('OPEN');
+        this.cutoffError.set(err.error?.message || 'Error desconocido al procesar el cierre.');
+      }
+    });
+  }
+
   canAudit(): boolean {
     return this.any(['audit.view_branch', 'audit.view_global']);
   }

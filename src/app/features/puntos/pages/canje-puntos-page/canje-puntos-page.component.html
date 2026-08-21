@@ -1,0 +1,338 @@
+<section class="puntos-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <h1 class="page-title">Puntos y Canje por Dinero</h1>
+    <p class="page-subtitle">
+      Consulta tu saldo acumulado de puntos, conoce su equivalencia monetaria vigente y solicita el canje por dinero en efectivo.
+    </p>
+  </header>
+
+  <!-- Hero Metrics Grid: Balance & Value -->
+  <div class="balance-hero-grid">
+    <div class="hero-card accent-available">
+      <span class="hero-label">Puntos Disponibles</span>
+      <span class="hero-val">{{ balance()?.available_points ?? 0 | number }}</span>
+      <span class="hero-sub">Listos para solicitar canje</span>
+    </div>
+
+    <div class="hero-card">
+      <span class="hero-label">Puntos Comprometidos</span>
+      <span class="hero-val text-amber-600">{{ balance()?.reserved ?? 0 | number }}</span>
+      <span class="hero-sub">En solicitudes de canje en proceso</span>
+    </div>
+
+    <div class="hero-card">
+      <span class="hero-label">Valor Vigente por Punto</span>
+      <span class="hero-val">{{ balance()?.point_value ?? '2.0000' | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+      <span class="hero-sub">1 punto = {{ balance()?.point_value ?? '2.0000' | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+    </div>
+
+    <div class="hero-card accent-cash">
+      <span class="hero-label">Equivalente en Dinero</span>
+      <span class="hero-val">{{ balance()?.money_equivalent ?? '0.0000' | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+      <span class="hero-sub">Total acumulado: {{ balance()?.total_money_equivalent ?? '0.0000' | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <!-- Messages and Feedback -->
+  @if (successMessage()) {
+    <div role="status" class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-800">
+      {{ successMessage() }}
+    </div>
+  }
+
+  @if (errorMessage()) {
+    <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-semibold text-red-700">
+      {{ errorMessage() }}
+    </div>
+  }
+
+  <!-- Main Content Grid -->
+  <div class="content-grid">
+    <!-- Left Column: Request Redemption Form -->
+    <section class="section-card">
+      <div>
+        <h2 class="section-card-title">Solicitar Canje por Dinero</h2>
+        <p class="text-xs text-gray-500 mt-0.5">
+          Ingresa la cantidad de puntos que deseas convertir en efectivo.
+        </p>
+      </div>
+
+      <form (ngSubmit)="submitRedemption()" class="flex flex-col gap-4">
+        <div class="form-group">
+          <label for="points-input" class="form-label">Puntos a Canjear</label>
+          <input
+            id="points-input"
+            type="number"
+            min="1"
+            [max]="balance()?.available_points ?? 0"
+            step="1"
+            class="form-input"
+            [ngModel]="requestedPoints()"
+            (ngModelChange)="requestedPoints.set($event)"
+            name="requestedPoints"
+            placeholder="Ej. 200"
+            required
+          />
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span>Mínimo: 1 punto</span>
+            <span>Máximo disponible: {{ balance()?.available_points ?? 0 | number }} pts</span>
+          </div>
+        </div>
+
+        <!-- Conversion Live Preview Box -->
+        <div class="conversion-preview">
+          <div class="preview-row">
+            <dt>Puntos a canjear:</dt>
+            <dd>{{ requestedPoints() > 0 ? (requestedPoints() | number) : 0 }} pts</dd>
+          </div>
+          <div class="preview-row">
+            <dt>Valor unitario vigente:</dt>
+            <dd>{{ balance()?.point_value ?? '2.0000' | currency: 'MXN':'symbol-narrow':'1.2-2' }} / pt</dd>
+          </div>
+          <div class="preview-row">
+            <dt>Puntos restantes tras canje:</dt>
+            <dd>{{ Math.max(0, (balance()?.available_points ?? 0) - (requestedPoints() || 0)) | number }} pts</dd>
+          </div>
+          <div class="preview-row preview-total">
+            <dt>Importe en efectivo a recibir:</dt>
+            <dd>{{ projectedCashAmount() | currency: 'MXN':'symbol-narrow':'1.2-2' }}</dd>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          class="btn-submit"
+          [disabled]="isSubmitting() || (requestedPoints() <= 0) || ((requestedPoints()) > (balance()?.available_points ?? 0))"
+        >
+          @if (isSubmitting()) {
+            <span>Procesando solicitud...</span>
+          } @else {
+            <span>Solicitar Canje por {{ projectedCashAmount() | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+          }
+        </button>
+      </form>
+    </section>
+
+    <!-- Right Column: Redemptions History & Management -->
+    <section class="section-card history-panel">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 class="section-card-title">Historial y Gestión de Canjes</h2>
+          <p class="text-xs text-gray-500">
+            Seguimiento de solicitudes de canje, autorizaciones y entregas de efectivo.
+          </p>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <input
+          type="text"
+          class="search-field"
+          placeholder="Buscar por distribuidora..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+        <select
+          class="select-filter"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event)"
+        >
+          <option value="">Todos los estados</option>
+          <option value="REQUESTED">Solicitados</option>
+          <option value="AUTHORIZED">Autorizados</option>
+          <option value="DELIVERED">Entregados</option>
+          <option value="REJECTED">Rechazados</option>
+        </select>
+      </div>
+
+      <div class="redemptions-list">
+        @for (item of filteredRedemptions(); track item.id) {
+          <article class="redemption-card">
+            <div class="redemption-top">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-800 text-sm">
+                  {{ item.points | number }} Puntos
+                </span>
+                <span class="text-xs text-gray-500">→</span>
+                <span class="font-extrabold text-emerald-700 text-base">
+                  {{ item.total_amount | currency: 'MXN':'symbol-narrow':'1.2-2' }}
+                </span>
+              </div>
+              <span
+                class="badge-status"
+                [class.badge-requested]="item.status === 'REQUESTED'"
+                [class.badge-authorized]="item.status === 'AUTHORIZED'"
+                [class.badge-delivered]="item.status === 'DELIVERED'"
+                [class.badge-rejected]="item.status === 'REJECTED'"
+              >
+                {{ getStatusLabel(item.status) }}
+              </span>
+            </div>
+
+            <!-- Distributor information if visible -->
+            @if (item.distribuidora?.usuario?.name) {
+              <div class="text-xs text-gray-600 font-medium">
+                👤 Distribuidora: <strong>{{ item.distribuidora?.usuario?.name }}</strong>
+                @if (item.distribuidora?.distributor_number) {
+                  <span>({{ item.distribuidora?.distributor_number }})</span>
+                }
+                @if (item.distribuidora?.sucursal?.name) {
+                  <span> · {{ item.distribuidora?.sucursal?.name }}</span>
+                }
+              </div>
+            }
+
+            <div class="redemption-details-grid">
+              <div class="detail-col">
+                <span class="detail-label">Valor por Punto</span>
+                <span class="detail-val">{{ item.point_value_snapshot | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+              </div>
+              <div class="detail-col">
+                <span class="detail-label">Fecha Solicitud</span>
+                <span class="detail-val">{{ item.requested_at | date: 'dd/MM/yy HH:mm' }}</span>
+              </div>
+              @if (item.autorizador?.name) {
+                <div class="detail-col">
+                  <span class="detail-label">Autorizado Por</span>
+                  <span class="detail-val">{{ item.autorizador?.name }}</span>
+                </div>
+              }
+              @if (item.entregador?.name) {
+                <div class="detail-col">
+                  <span class="detail-label">Entregado Por</span>
+                  <span class="detail-val">{{ item.entregador?.name }}</span>
+                </div>
+              }
+              @if (item.balance_before != null && item.balance_after != null) {
+                <div class="detail-col">
+                  <span class="detail-label">Saldo Anterior / Final</span>
+                  <span class="detail-val">{{ item.balance_before | number }} → {{ item.balance_after | number }} pts</span>
+                </div>
+              }
+            </div>
+
+            @if (item.rejection_reason) {
+              <div class="rounded-md bg-red-50 p-2.5 text-xs text-red-700">
+                <strong>Motivo de rechazo:</strong> {{ item.rejection_reason }}
+              </div>
+            }
+
+            @if (item.delivery_notes) {
+              <div class="rounded-md bg-emerald-50 p-2.5 text-xs text-emerald-800">
+                <strong>Notas de entrega:</strong> {{ item.delivery_notes }}
+              </div>
+            }
+
+            <!-- Action buttons for Managers and Cashiers -->
+            @if (item.status === 'REQUESTED' || item.status === 'AUTHORIZED') {
+              <div class="action-row">
+                @if (item.status === 'REQUESTED') {
+                  <button
+                    type="button"
+                    class="btn-action btn-reject"
+                    (click)="openRejectModal(item)"
+                  >
+                    Rechazar
+                  </button>
+                  <button
+                    type="button"
+                    class="btn-action btn-authorize"
+                    (click)="authorize(item.id)"
+                  >
+                    Autorizar Canje
+                  </button>
+                }
+                @if (item.status === 'AUTHORIZED') {
+                  <button
+                    type="button"
+                    class="btn-action btn-deliver"
+                    (click)="openDeliverModal(item)"
+                  >
+                    Registrar Entrega de Efectivo ({{ item.total_amount | currency: 'MXN':'symbol-narrow':'1.2-2' }})
+                  </button>
+                }
+              </div>
+            }
+          </article>
+        } @empty {
+          <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+            No se han registrado solicitudes de canje de puntos.
+          </div>
+        }
+      </div>
+    </section>
+  </div>
+
+  <!-- Rejection Modal -->
+  @if (rejectModalOpen(); as target) {
+    <div class="modal-backdrop" (click)="closeModals()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <h3 class="text-base font-bold text-slate-900">Rechazar Solicitud de Canje</h3>
+        <p class="text-xs text-gray-600">
+          Indica el motivo del rechazo para la solicitud de <strong>{{ target.points | number }} puntos</strong> ({{ target.total_amount | currency: 'MXN' }}).
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="rejection-reason">Motivo</label>
+          <textarea
+            id="rejection-reason"
+            rows="3"
+            class="form-input text-sm font-normal"
+            [ngModel]="rejectionReason()"
+            (ngModelChange)="rejectionReason.set($event)"
+            placeholder="Escribe el motivo del rechazo..."
+            required
+          ></textarea>
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn-action bg-gray-200 text-gray-800" (click)="closeModals()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn-action btn-reject"
+            [disabled]="!rejectionReason().trim()"
+            (click)="confirmReject()"
+          >
+            Confirmar Rechazo
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Delivery Modal -->
+  @if (deliverModalOpen(); as target) {
+    <div class="modal-backdrop" (click)="closeModals()">
+      <div class="modal-card" (click)="$event.stopPropagation()">
+        <h3 class="text-base font-bold text-slate-900">Registrar Entrega de Efectivo</h3>
+        <p class="text-xs text-gray-600">
+          Confirmas la entrega de <strong>{{ target.total_amount | currency: 'MXN' }}</strong> en efectivo a la distribuidora. Se descontarán definitivamente <strong>{{ target.points | number }} puntos</strong>.
+        </p>
+        <div class="form-group">
+          <label class="form-label" for="delivery-notes">Notas / Folio de comprobante (opcional)</label>
+          <input
+            id="delivery-notes"
+            type="text"
+            class="form-input text-sm font-normal"
+            [ngModel]="deliveryNotes()"
+            (ngModelChange)="deliveryNotes.set($event)"
+            placeholder="Ej. Entregado en ventanilla folio #1029"
+          />
+        </div>
+        <div class="flex justify-end gap-2">
+          <button type="button" class="btn-action bg-gray-200 text-gray-800" (click)="closeModals()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn-action btn-deliver"
+            (click)="confirmDeliver()"
+          >
+            Confirmar Entrega y Completar Canje
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

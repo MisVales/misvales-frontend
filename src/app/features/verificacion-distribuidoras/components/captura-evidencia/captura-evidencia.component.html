@@ -21,7 +21,7 @@
       <input
         #fileInput
         type="file"
-        accept="image/jpeg,image/png,application/pdf"
+        accept="image/jpeg,image/png,image/webp,application/pdf"
         (change)="onFileChange($event)"
         [disabled]="!tipoSeleccionado() || isUploading()"
         style="display: none"
@@ -38,12 +38,9 @@
 
   @if (archivoSeleccionado()) {
     <div class="preview-container">
-      @if (previewUrl()) {
-        <img [src]="previewUrl()" alt="Vista previa de evidencia" class="preview-image" />
-      } @else {
-        <p>{{ archivoSeleccionado()?.name }}</p>
-      }
-      <div class="preview-actions">
+      <app-attachment-preview [file]="archivoSeleccionado()!"></app-attachment-preview>
+      
+      <div class="preview-actions mt-4">
         <button
           type="button"
           class="btn btn-secondary"

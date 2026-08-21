@@ -56,6 +56,11 @@ export interface CreateConfigurationVersionRequestDto {
   reason: string;
 }
 
+export interface UpdateCurrentConfigurationRequestDto {
+  value: ConfigurationValue;
+  reason: string;
+}
+
 export interface UpdateConfigurationVersionRequestDto
   extends CreateConfigurationVersionRequestDto {
   lock_version: number;

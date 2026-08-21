@@ -1,9 +1,32 @@
-/**
- * Configuraciones usadas internamente por servicios de negocio. No forman
- * parte de la administración operativa y por eso no se exponen en esta UI.
- */
-const CLAVES_OCULTAS = new Set(['PAYMENT_DAYS_AFTER_CUT']);
+const CLAVES_RETIRADAS = new Set([
+  'VOUCHER_FORTNIGHTS_COUNT',
+  'MODIFICATION_TOKEN_TTL',
+]);
+
+const CONFIGURACIONES_DE_PAGO = new Set([
+  'EARLY_PAYMENT_PERIOD',
+  'RELATION_PAYMENT_BANK',
+]);
+
+const CONDICIONES_FINANCIERAS_VALE = new Set([
+  'LOAN_COMMISSION_PERCENTAGE',
+  'INTEREST_RATE_PER_FORTNIGHT',
+  'VOUCHER_INSURANCE_AMOUNT',
+  'LATE_FEE_AMOUNT',
+]);
 
 export function esConfiguracionVisible(clave: string): boolean {
-  return !CLAVES_OCULTAS.has(clave);
+  return !CLAVES_RETIRADAS.has(clave);
+}
+
+export function esConfiguracionEditable(clave: string): boolean {
+  return esConfiguracionVisible(clave);
+}
+
+export function esCondicionFinancieraVale(clave: string): boolean {
+  return CONDICIONES_FINANCIERAS_VALE.has(clave);
+}
+
+export function esConfiguracionDePago(clave: string): boolean {
+  return CONFIGURACIONES_DE_PAGO.has(clave);
 }

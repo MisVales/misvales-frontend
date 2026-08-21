@@ -43,10 +43,6 @@ export class ProductosService {
           description: version.description ?? null,
           status: row.status,
           nominal_amount: version.nominal_amount ?? '0',
-          loan_commission_percentage: version.loan_commission_percentage ?? '0',
-          simple_interest_percentage: version.simple_interest_percentage ?? '0',
-          insurance_amount: version.insurance_amount ?? '0',
-          fortnights_count: version.fortnights_count ?? 0,
           version_status: version.status ?? 'DRAFT',
           effective_from: version.effective_from ?? '',
           reason: version.reason ?? '',
@@ -98,7 +94,6 @@ export class ProductosService {
     return { id: row.id, version_id: version.id ?? '', code: row.code, name: version.name ?? row.code, description: version.description ?? null,
       status: row.status, nominal_amount: version.nominal_amount ?? '0', version_status: version.status ?? 'DRAFT', effective_from: version.effective_from ?? '',
       reason: version.reason ?? '', created_at: row.created_at, lock_version: version.lock_version ?? row.lock_version ?? 0,
-      loan_commission_percentage: version.loan_commission_percentage ?? '0', simple_interest_percentage: version.simple_interest_percentage ?? '0',
-      insurance_amount: version.insurance_amount ?? '0', fortnights_count: version.fortnights_count ?? 0 };
+    };
   }
 }

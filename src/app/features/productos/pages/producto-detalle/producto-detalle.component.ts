@@ -36,10 +36,6 @@ export class ProductoDetalleComponent implements OnInit {
     name: ['', Validators.required],
     description: [''],
     nominal_amount: ['', [Validators.required, Validators.min(100)]],
-    loan_commission_percentage: ['', [Validators.required, Validators.min(0), Validators.max(1)]],
-    simple_interest_percentage: ['', [Validators.required, Validators.min(0), Validators.max(1)]],
-    insurance_amount: ['', [Validators.required, Validators.min(0)]],
-    fortnights_count: ['', [Validators.required, Validators.min(1)]],
     reason: ['', Validators.required],
   });
 
@@ -61,8 +57,7 @@ export class ProductoDetalleComponent implements OnInit {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.controlesConErrorVisible.set(new Set([
-        'code', 'name', 'nominal_amount', 'loan_commission_percentage',
-        'simple_interest_percentage', 'insurance_amount', 'fortnights_count', 'reason',
+        'code', 'name', 'nominal_amount', 'reason',
       ]));
       return;
     }
@@ -75,10 +70,6 @@ export class ProductoDetalleComponent implements OnInit {
       name: v.name!,
       description: v.description || null,
       nominal_amount: String(v.nominal_amount),
-      loan_commission_percentage: String(v.loan_commission_percentage),
-      simple_interest_percentage: String(v.simple_interest_percentage),
-      insurance_amount: String(v.insurance_amount),
-      fortnights_count: Number(v.fortnights_count),
       reason: v.reason!,
     };
 

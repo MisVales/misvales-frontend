@@ -9,8 +9,7 @@ import {
   ConfigurationValue,
 } from '../../data-access/configuraciones.dtos';
 import { ConfiguracionesStore } from '../../estado/configuraciones.store';
-import { esConfiguracionVisible } from '../../data-access/configuraciones-visibilidad';
-import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
+import { esConfiguracionEditable, esConfiguracionVisible } from '../../data-access/configuraciones-visibilidad';
 import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
 import { AlertService } from '../../../../shared/services/alert.service';
 
@@ -25,7 +24,7 @@ const fechaVigenciaNoPasada = (control: AbstractControl): ValidationErrors | nul
 
 @Component({
   selector: 'app-configuracion-detalle',
-  imports: [CommonModule, ReactiveFormsModule, StatusLabelPipe, InputErrorComponent],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent],
   templateUrl: './configuracion-detalle.component.html',
   styleUrls: ['./configuracion-detalle.component.css'],
 })
@@ -58,7 +57,7 @@ export class ConfiguracionDetalleComponent implements OnInit {
 
   ngOnInit(): void {
     this.clave = this.route.snapshot.paramMap.get('clave') ?? '';
-    if (!this.clave || !esConfiguracionVisible(this.clave)) {
+    if (!this.clave || !esConfiguracionVisible(this.clave) || !esConfiguracionEditable(this.clave)) {
       void this.router.navigate(['/configuraciones']);
       return;
     }
@@ -70,8 +69,11 @@ export class ConfiguracionDetalleComponent implements OnInit {
       ]);
       this.versionForm.controls.scalar.updateValueAndValidity();
     }
-    void this.store.consultarDefinicion(this.clave);
-    void this.store.consultarVersiones(this.clave);
+    if (this.esPorcentaje()) {
+      this.versionForm.controls.scalar.addValidators([Validators.min(0), Validators.max(100)]);
+      this.versionForm.controls.scalar.updateValueAndValidity();
+    }
+    void this.cargarConfiguracion();
   }
 
   protected volver(): void {
@@ -101,6 +103,27 @@ export class ConfiguracionDetalleComponent implements OnInit {
     this.creando.set(false);
     this.versionForm.reset({ periodStart: 0, periodEnd: 1 });
     this.alerts.success('El borrador de configuración se guardó correctamente.');
+  }
+
+  protected async guardarCambios(): Promise<void> {
+    const definition = this.definicion();
+    if (!definition || !this.valorValido(definition) || this.versionForm.controls.reason.invalid) {
+      this.mostrarErroresDeVersion();
+      return;
+    }
+
+    await this.store.actualizarActual(definition.clave, {
+      value: this.valorFormulario(definition),
+      reason: this.versionForm.controls.reason.value,
+    });
+    if (this.store.error()) {
+      this.alerts.showAlert(this.store.error()!, 'error');
+      return;
+    }
+
+    this.cargarValorActual(this.definicion());
+    this.controlesVersionConErrorVisible.set(new Set());
+    this.alerts.success('La configuración se actualizó correctamente.');
   }
 
   protected async publicar(version: ConfiguracionVersion): Promise<void> {
@@ -188,7 +211,7 @@ export class ConfiguracionDetalleComponent implements OnInit {
 
   protected placeholderValor(definition: ConfiguracionDefinicion): string {
     if (definition.clave === 'CUT_DAY_OF_MONTH') return 'Ej. 25';
-    if (definition.tipoValor === 'PERCENTAGE') return 'Ej. 0.05';
+    if (definition.tipoValor === 'PERCENTAGE') return 'Ej. 5';
     if (definition.tipoValor === 'TIME') return 'Ej. 00:05';
     if (definition.tipoValor === 'TIMEZONE') return 'Ej. America/Monterrey';
     if (definition.unidad === 'MXN') return 'Ej. 500.00';
@@ -275,13 +298,13 @@ export class ConfiguracionDetalleComponent implements OnInit {
 
   protected pasoEntrada(definition: ConfiguracionDefinicion): string | null {
     if (definition.tipoValor === 'INTEGER' || definition.tipoValor === 'DURATION') return '1';
-    if (definition.tipoValor === 'PERCENTAGE') return '0.0001';
+    if (definition.tipoValor === 'PERCENTAGE') return '0.01';
     if (definition.tipoValor === 'DECIMAL') return '0.01';
     return null;
   }
 
   protected ayudaValor(definition: ConfiguracionDefinicion): string {
-    if (definition.unidad === 'percentage') return 'Captura el valor decimal. Por ejemplo, 0.05 representa 5 %.';
+    if (definition.unidad === 'percentage') return 'Captura el porcentaje completo. Por ejemplo, 5 equivale a 5 %.';
     if (definition.unidad === 'MXN') return 'Captura el importe en pesos mexicanos.';
     if (definition.unidad === 'fortnights') return 'Indica cuántas quincenas tendrá cada vale nuevo.';
     return 'Este valor aplicará únicamente a operaciones futuras después de publicarse.';
@@ -318,7 +341,10 @@ export class ConfiguracionDetalleComponent implements OnInit {
     if (definition.tipoValor === 'INTEGER' || definition.tipoValor === 'DURATION') {
       return Number.parseInt(controls.scalar.value, 10);
     }
-    if (definition.tipoValor === 'DECIMAL' || definition.tipoValor === 'PERCENTAGE') {
+    if (definition.tipoValor === 'PERCENTAGE') {
+      return Number(controls.scalar.value) / 100;
+    }
+    if (definition.tipoValor === 'DECIMAL') {
       return Number(controls.scalar.value);
     }
     return controls.scalar.value;
@@ -342,7 +368,52 @@ export class ConfiguracionDetalleComponent implements OnInit {
       && controls.reason.valid;
   }
 
+  private async cargarConfiguracion(): Promise<void> {
+    await Promise.all([
+      this.store.consultarDefinicion(this.clave),
+      this.store.consultarVersiones(this.clave),
+    ]);
+    this.cargarValorActual(this.definicion());
+  }
+
+  private cargarValorActual(definition: ConfiguracionDefinicion | null): void {
+    if (!definition || definition.valorActual === null) return;
+
+    const value = definition.valorActual;
+    if (this.esPeriodo(definition) && this.isObject(value)) {
+      this.versionForm.patchValue({
+        periodStart: Number(value['start'] ?? 0),
+        periodEnd: Number(value['end'] ?? 1),
+      });
+      return;
+    }
+    if (this.esBanco(definition) && this.isObject(value)) {
+      this.versionForm.patchValue({
+        bankName: String(value['name'] ?? ''),
+        bankBeneficiary: String(value['beneficiary'] ?? ''),
+        bankAgreement: String(value['agreement'] ?? ''),
+        bankClabe: String(value['clabe'] ?? ''),
+      });
+      return;
+    }
+
+    const scalar = definition.tipoValor === 'PERCENTAGE'
+      ? String(Number(value) * 100)
+      : String(value);
+    this.versionForm.controls.scalar.setValue(scalar);
+  }
+
   private isObject(value: ConfigurationValue): value is { [key: string]: ConfigurationValue } {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  protected esPorcentaje(definition = this.definicion()): boolean {
+    return definition?.tipoValor === 'PERCENTAGE'
+      || ['LOAN_COMMISSION_PERCENTAGE', 'INTEREST_RATE_PER_FORTNIGHT'].includes(this.clave);
+  }
+
+  protected maximoEntrada(definition: ConfiguracionDefinicion): number | null {
+    if (this.esDiaGlobalDeCorte(definition)) return 31;
+    return this.esPorcentaje(definition) ? 100 : null;
   }
 }

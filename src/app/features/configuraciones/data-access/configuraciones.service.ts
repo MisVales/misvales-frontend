@@ -7,6 +7,7 @@ import {
   ApiResource,
   ConfigurationVersionDto, 
   CreateConfigurationVersionRequestDto, 
+  UpdateCurrentConfigurationRequestDto,
   UpdateConfigurationVersionRequestDto 
 } from './configuraciones.dtos';
 import { esConfiguracionVisible } from './configuraciones-visibilidad';
@@ -59,6 +60,16 @@ export class ConfiguracionesService {
       
     return this.http
       .post<ApiResource<ConfigurationVersionDto>>(`${this.baseUrl}/${clave}/versions`, datos, { headers })
+      .pipe(map((response) => response.data));
+  }
+
+  actualizarActual(clave: string, datos: UpdateCurrentConfigurationRequestDto): Observable<ConfigurationVersionDto> {
+    const headers = new HttpHeaders()
+      .set('X-Request-Id', this.generateRequestId())
+      .set('Idempotency-Key', this.generateIdempotencyKey());
+
+    return this.http
+      .put<ApiResource<ConfigurationVersionDto>>(`${this.baseUrl}/${clave}/current`, datos, { headers })
       .pipe(map((response) => response.data));
   }
 
