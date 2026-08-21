@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule } from 'lucide-angular';
 import { SessionStore } from '../../core/session/session.store';
 import {
   DelinquencyBlockItem,
@@ -14,7 +15,7 @@ import { RelationDetailsDialogComponent } from './relation-details-dialog.compon
 
 @Component({
   selector: 'app-riesgo-page',
-  imports: [CommonModule, FormsModule, RelationDetailsDialogComponent],
+  imports: [CommonModule, FormsModule, LucideAngularModule, RelationDetailsDialogComponent],
   templateUrl: './riesgo-page.component.html',
   styleUrl: './riesgo-page.component.css',
 })

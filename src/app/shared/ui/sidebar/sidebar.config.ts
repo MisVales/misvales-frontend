@@ -338,6 +338,19 @@ export const NAV_GROUPS: NavGroupData[] = [
     icon: 'shield',
     items: [
       {
+        id: 'system-audit',
+        title: 'Auditoría del sistema',
+        icon: 'file-text',
+        route: '/auditoria',
+        roles: ALL,
+        permissions: [
+          'audit.view_branch',
+          'audit.view_global',
+          'audit.view',
+        ],
+        permissionMode: 'any',
+      },
+      {
         id: 'operations-center',
         title: 'Centro de operación',
         icon: 'bell-ring',

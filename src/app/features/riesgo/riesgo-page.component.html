@@ -14,7 +14,13 @@
       [class.is-blocked]="ownStatus.blocked"
     >
       <div class="status-title">
-        <span>{{ ownStatus.blocked ? '⚠️ Generación de vales bloqueada por morosidad' : '✅ Sin bloqueo vigente por morosidad' }}</span>
+        @if (ownStatus.blocked) {
+          <lucide-icon name="shield-alert" class="w-5 h-5 text-red-600"></lucide-icon>
+          <span>Generación de vales bloqueada por morosidad</span>
+        } @else {
+          <lucide-icon name="shield-check" class="w-5 h-5 text-emerald-600"></lucide-icon>
+          <span>Sin bloqueo vigente por morosidad</span>
+        }
       </div>
       @if (ownStatus.reason) {
         <p class="status-desc"><strong>Motivo del bloqueo:</strong> {{ ownStatus.reason }}</p>
@@ -34,7 +40,8 @@
         [class.active]="activeTab() === 'alerts'"
         (click)="activeTab.set('alerts')"
       >
-        <span>🔔 Alertas de Riesgo</span>
+        <lucide-icon name="bell" class="w-4 h-4"></lucide-icon>
+        <span>Alertas de Riesgo</span>
         <span
           class="tab-badge"
           [class.badge-alert]="openAlertsCount() > 0"
@@ -51,7 +58,8 @@
         [class.active]="activeTab() === 'blocks'"
         (click)="activeTab.set('blocks')"
       >
-        <span>🛡️ Distribuidoras Bloqueadas / Regularización</span>
+        <lucide-icon name="shield" class="w-4 h-4"></lucide-icon>
+        <span>Distribuidoras Bloqueadas / Regularización</span>
         <span class="tab-badge">{{ blocks().length }}</span>
       </button>
     }
@@ -63,7 +71,8 @@
         [class.active]="activeTab() === 'removals'"
         (click)="activeTab.set('removals')"
       >
-        <span>📋 Retiros Solicitados</span>
+        <lucide-icon name="file-text" class="w-4 h-4"></lucide-icon>
+        <span>Retiros Solicitados</span>
         <span class="tab-badge">{{ pendingRemovalsCount() }}</span>
       </button>
     }
@@ -138,7 +147,8 @@
                 class="btn-link"
                 (click)="viewDetails(alert)"
               >
-                🔍 Ver detalle de los cortes vencidos ({{ alert.relation_details?.length || alert.relation_ids.length }})
+                <lucide-icon name="eye" class="w-4 h-4 inline-block"></lucide-icon>
+                <span>Ver detalle de los cortes vencidos ({{ alert.relation_details?.length || alert.relation_ids.length }})</span>
               </button>
 
               <div class="actions-group">
@@ -208,7 +218,13 @@
                 [class.badge-regularized]="block.is_regularized"
                 [class.badge-not-regularized]="!block.is_regularized"
               >
-                {{ block.is_regularized ? '✅ Regularizada (Saldo $0)' : '⚠️ Deuda Vencida Pendiente' }}
+                @if (block.is_regularized) {
+                  <lucide-icon name="check-circle-2" class="w-3.5 h-3.5 inline-block mr-1"></lucide-icon>
+                  <span>Regularizada (Saldo $0)</span>
+                } @else {
+                  <lucide-icon name="alert-triangle" class="w-3.5 h-3.5 inline-block mr-1"></lucide-icon>
+                  <span>Deuda Vencida Pendiente</span>
+                }
               </span>
             </div>
 
@@ -235,9 +251,15 @@
                 <span class="metric-label">Estatus de Retiro</span>
                 <span class="metric-val text-sm font-semibold">
                   @if (block.has_pending_request) {
-                    <span class="text-amber-600">⏳ Solicitud en revisión</span>
+                    <span class="text-amber-600 flex items-center gap-1">
+                      <lucide-icon name="clock" class="w-3.5 h-3.5"></lucide-icon>
+                      <span>Solicitud en revisión</span>
+                    </span>
                   } @else if (block.is_regularized) {
-                    <span class="text-emerald-700">Listo para solicitar retiro</span>
+                    <span class="text-emerald-700 flex items-center gap-1">
+                      <lucide-icon name="check-circle-2" class="w-3.5 h-3.5"></lucide-icon>
+                      <span>Listo para solicitar retiro</span>
+                    </span>
                   } @else {
                     <span class="text-gray-500">Debe liquidar adeudos primero</span>
                   }
@@ -250,20 +272,23 @@
                 @if (block.has_pending_request) {
                   <button
                     type="button"
-                    class="btn-action bg-amber-100 text-amber-900 border border-amber-300 cursor-default"
+                    class="btn-action bg-amber-100 text-amber-900 border border-amber-300 cursor-default flex items-center gap-1.5"
                   >
-                    ⏳ Solicitud de retiro ya en trámite
+                    <lucide-icon name="clock" class="w-4 h-4"></lucide-icon>
+                    <span>Solicitud de retiro ya en trámite</span>
                   </button>
                 } @else {
                   <button
                     type="button"
-                    class="btn-action btn-request-removal"
+                    class="btn-action btn-request-removal flex items-center gap-1.5"
                     [disabled]="!block.is_regularized"
                     (click)="openRequestRemovalModalFromBlock(block)"
                   >
                     @if (block.is_regularized) {
+                      <lucide-icon name="unlock" class="w-4 h-4"></lucide-icon>
                       <span>Solicitar retiro de morosidad</span>
                     } @else {
+                      <lucide-icon name="lock" class="w-4 h-4"></lucide-icon>
                       <span>Requiere regularización ($0 vencido)</span>
                     }
                   </button>
@@ -334,17 +359,19 @@
                 <div class="actions-group">
                   <button
                     type="button"
-                    class="btn-action btn-reject"
+                    class="btn-action btn-reject flex items-center gap-1"
                     (click)="openRemovalDecisionModal(removal, 'REJECT')"
                   >
-                    Rechazar solicitud
+                    <lucide-icon name="x-circle" class="w-4 h-4"></lucide-icon>
+                    <span>Rechazar solicitud</span>
                   </button>
                   <button
                     type="button"
-                    class="btn-action btn-authorize"
+                    class="btn-action btn-authorize flex items-center gap-1"
                     (click)="openRemovalDecisionModal(removal, 'AUTHORIZE')"
                   >
-                    Autorizar retiro de morosidad (Reactivar Distribuidora)
+                    <lucide-icon name="check-circle-2" class="w-4 h-4"></lucide-icon>
+                    <span>Autorizar retiro de morosidad</span>
                   </button>
                 </div>
               </div>

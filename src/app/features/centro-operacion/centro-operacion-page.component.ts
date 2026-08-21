@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, signal, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { SessionStore } from '../../core/session/session.store';
 import {
   CentroOperacionApiService,
@@ -11,7 +11,7 @@ import {
 @Component({
   selector: 'app-centro-operacion-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: ` <section class="space-y-6 p-4 md:p-6">
     <header class="flex flex-wrap items-center justify-between gap-3">
       <div>
@@ -219,27 +219,17 @@ import {
       }
     }
     @if (canAudit()) {
-      <section class="space-y-3">
-        <h2 class="font-bold">Auditoría inmutable</h2>
-        <button class="rounded border px-3 py-2" (click)="loadAudits()">Consultar auditoría</button>
-        @for (row of audits(); track $index) {
-          <pre class="overflow-x-auto rounded border bg-white p-3 text-xs">{{ row | json }}</pre>
-        }
-      </section>
-    }
-    @if (canLogs()) {
-      <section class="space-y-3">
-        <h2 class="font-bold">Logs estructurados</h2>
-        <div class="flex gap-2">
-          <input
-            class="rounded border p-2"
-            [(ngModel)]="correlationId"
-            placeholder="Correlation ID"
-          /><button class="rounded border px-3 py-2" (click)="loadLogs()">Buscar</button>
+      <section class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-emerald-950">Auditoría Inmutable del Sistema</h2>
+          <p class="text-sm text-emerald-800">
+            Consulta el registro completo de quién, cuándo, dónde y qué acciones se ejecutaron en el sistema con comparador de cambios en tiempo real.
+          </p>
         </div>
-        @for (row of logs(); track $index) {
-          <pre class="overflow-x-auto rounded border bg-white p-3 text-xs">{{ row | json }}</pre>
-        }
+        <a routerLink="/auditoria" class="inline-flex items-center gap-2 rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-800 transition">
+          <span>Abrir Módulo de Auditoría</span>
+          <span>→</span>
+        </a>
       </section>
     }
   </section>`,

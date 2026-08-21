@@ -1,0 +1,522 @@
+<section class="auditoria-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Auditoría Inmutable del Sistema</h1>
+      <p class="page-subtitle">
+        Bitácora central de seguridad y trazabilidad. Registra quién, cuándo, dónde y qué operaciones se ejecutaron en la plataforma.
+      </p>
+    </div>
+    <div>
+      <button type="button" class="btn-filter btn-search" (click)="loadAudits(1)">
+        <lucide-icon name="refresh-cw" class="w-4 h-4"></lucide-icon>
+        <span>Actualizar Registro</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- KPI Summary Cards -->
+  <section class="kpi-grid" aria-label="Resumen de auditoría">
+    <article class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-blue">
+        <lucide-icon name="activity" class="w-6 h-6"></lucide-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Total de Eventos</span>
+        <span class="kpi-value">{{ totalItems() }}</span>
+      </div>
+    </article>
+
+    <article class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-green">
+        <lucide-icon name="check-circle-2" class="w-6 h-6"></lucide-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Operaciones Exitosas</span>
+        <span class="kpi-value">{{ successCount() }}</span>
+      </div>
+    </article>
+
+    <article class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-amber">
+        <lucide-icon name="alert-triangle" class="w-6 h-6"></lucide-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Operaciones Fallidas</span>
+        <span class="kpi-value">{{ failureCount() }}</span>
+      </div>
+    </article>
+
+    <article class="kpi-card">
+      <div class="kpi-icon-wrap kpi-icon-purple">
+        <lucide-icon name="file-text" class="w-6 h-6"></lucide-icon>
+      </div>
+      <div class="kpi-content">
+        <span class="kpi-label">Páginas de Registro</span>
+        <span class="kpi-value">{{ lastPage() }}</span>
+      </div>
+    </article>
+  </section>
+
+  <!-- Filter Card -->
+  <section class="filter-card">
+    <div class="filter-grid">
+      <!-- Search -->
+      <div class="filter-group" style="grid-column: span 2;">
+        <label class="filter-label" for="search-term">Buscar libremente</label>
+        <input
+          id="search-term"
+          type="text"
+          class="form-control"
+          placeholder="Nombre, correo, motivo, IP, Folio, Request ID..."
+          [(ngModel)]="searchTerm"
+          (keyup.enter)="loadAudits(1)"
+        />
+      </div>
+
+      <!-- Event Category / Name -->
+      <div class="filter-group">
+        <label class="filter-label" for="event-filter">Tipo de Acción / Evento</label>
+        <select
+          id="event-filter"
+          class="form-control"
+          [(ngModel)]="eventNameFilter"
+          (change)="loadAudits(1)"
+        >
+          <option value="">Todas las acciones</option>
+          <option value="LOGIN_SUCCESSFUL">Inicio de Sesión</option>
+          <option value="LOGOUT">Cierre de Sesión</option>
+          <option value="VOUCHER_GENERATED">Generación de Vale</option>
+          <option value="CLIENT_CREATED">Alta de Cliente</option>
+          <option value="CLIENT_UPDATED">Actualización de Cliente</option>
+          <option value="PRIVATE_MEDIA_DOWNLOADED">Descarga de Expediente</option>
+          <option value="EV-READ-MOVEMENTS">Consulta de Movimientos</option>
+          <option value="PAYMENT_APPLIED">Aplicación de Pago</option>
+          <option value="POINTS_REDEMPTION_REQUESTED">Solicitud Canje Puntos</option>
+          <option value="POINTS_REDEMPTION_DELIVERED">Entrega de Efectivo Puntos</option>
+          <option value="DISTRIBUTOR_BLOCKED">Bloqueo de Distribuidora</option>
+          <option value="DELINQUENCY_REMOVAL_AUTHORIZED">Retiro de Morosidad</option>
+        </select>
+      </div>
+
+      <!-- Actor Role -->
+      <div class="filter-group">
+        <label class="filter-label" for="role-filter">Rol del Usuario</label>
+        <select
+          id="role-filter"
+          class="form-control"
+          [(ngModel)]="roleFilter"
+          (change)="loadAudits(1)"
+        >
+          <option value="">Todos los roles</option>
+          <option value="general_manager">Gerente General</option>
+          <option value="branch_manager">Gerente de Sucursal</option>
+          <option value="cashier">Cajera / Mostrador</option>
+          <option value="coordinator">Coordinador</option>
+          <option value="distributor">Distribuidora</option>
+          <option value="admin">Administrador</option>
+          <option value="auditor">Auditor</option>
+        </select>
+      </div>
+
+      <!-- Result -->
+      <div class="filter-group">
+        <label class="filter-label" for="result-filter">Resultado</label>
+        <select
+          id="result-filter"
+          class="form-control"
+          [(ngModel)]="resultFilter"
+          (change)="loadAudits(1)"
+        >
+          <option value="">Todos los resultados</option>
+          <option value="SUCCESS">Exitoso</option>
+          <option value="FAILURE">Fallido</option>
+        </select>
+      </div>
+
+      <!-- Date From -->
+      <div class="filter-group">
+        <label class="filter-label" for="date-from">Desde</label>
+        <input
+          id="date-from"
+          type="date"
+          class="form-control"
+          [(ngModel)]="dateFrom"
+          (change)="loadAudits(1)"
+        />
+      </div>
+
+      <!-- Date To -->
+      <div class="filter-group">
+        <label class="filter-label" for="date-to">Hasta</label>
+        <input
+          id="date-to"
+          type="date"
+          class="form-control"
+          [(ngModel)]="dateTo"
+          (change)="loadAudits(1)"
+        />
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex gap-2" style="align-self: flex-end;">
+        <button type="button" class="btn-filter btn-search" (click)="loadAudits(1)">
+          <lucide-icon name="search" class="w-4 h-4"></lucide-icon>
+          <span>Buscar</span>
+        </button>
+        <button type="button" class="btn-filter btn-reset" (click)="resetFilters()">
+          <span>Limpiar</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Audit Table Card -->
+  <section class="table-card">
+    @if (isLoading()) {
+      <div class="p-12 text-center text-gray-500 font-semibold flex items-center justify-center gap-2">
+        <lucide-icon name="loader-2" class="w-5 h-5 animate-spin"></lucide-icon>
+        <span>Cargando registros de auditoría...</span>
+      </div>
+    } @else {
+      <div class="table-responsive">
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th>Quién (Usuario / Rol)</th>
+              <th>Qué Acción</th>
+              <th>Entidad / Folio</th>
+              <th>Cuándo (Fecha y Hora)</th>
+              <th>Dónde (Sucursal / IP)</th>
+              <th>Resultado</th>
+              <th>Motivo / Razón</th>
+              <th>Detalles</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (audit of audits(); track audit.id) {
+              @let eventInfo = api.getEventInfo(audit.event_name);
+              <tr>
+                <!-- Quién -->
+                <td>
+                  <div class="actor-cell">
+                    <span class="actor-name">
+                      {{ audit.actor?.name || ('Usuario #' + audit.actor_id.substring(0, 8)) }}
+                    </span>
+                    <span class="actor-email">{{ audit.actor?.email || audit.actor_role }}</span>
+                    <span class="actor-role-badge">
+                      {{ api.getRoleLabel(audit.actor_role) }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Qué Acción -->
+                <td>
+                  <span class="badge-event" [class]="eventInfo.badgeColor">
+                    <lucide-icon [name]="eventInfo.icon" class="w-3.5 h-3.5"></lucide-icon>
+                    <span>{{ eventInfo.label }}</span>
+                  </span>
+                </td>
+
+                <!-- Entidad / Folio -->
+                <td>
+                  <div class="flex flex-col">
+                    <span class="font-bold text-slate-800 text-xs">
+                      {{ api.getEntityLabel(audit.entity_type || 'Sistema') }}
+                    </span>
+                    @if (audit.entity_id) {
+                      <span class="text-xs text-gray-500 font-mono">
+                        {{ audit.entity_id.substring(0, 13) }}...
+                      </span>
+                    }
+                  </div>
+                </td>
+
+                <!-- Cuándo -->
+                <td>
+                  <div class="flex flex-col">
+                    <span class="font-bold text-slate-800 text-xs">
+                      {{ audit.created_at | date: 'dd/MM/yyyy' }}
+                    </span>
+                    <span class="text-xs text-gray-500 font-mono">
+                      {{ audit.created_at | date: 'HH:mm:ss' }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Dónde -->
+                <td>
+                  <div class="location-cell">
+                    <span class="location-branch">
+                      {{ audit.branch?.name || 'Oficina Central / Remoto' }}
+                    </span>
+                    <span class="location-ip">
+                      IP: {{ audit.ip_address || '127.0.0.1' }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Resultado -->
+                <td>
+                  <span
+                    class="badge-result"
+                    [class.result-success]="audit.result === 'SUCCESS'"
+                    [class.result-failure]="audit.result !== 'SUCCESS'"
+                  >
+                    @if (audit.result === 'SUCCESS') {
+                      <lucide-icon name="check-circle-2" class="w-3 h-3"></lucide-icon>
+                      <span>Éxito</span>
+                    } @else {
+                      <lucide-icon name="x-circle" class="w-3 h-3"></lucide-icon>
+                      <span>Fallido</span>
+                    }
+                  </span>
+                </td>
+
+                <!-- Motivo -->
+                <td>
+                  <span class="text-xs text-gray-600 line-clamp-2 max-w-xs">
+                    {{ audit.reason || 'Sin justificación adicional' }}
+                  </span>
+                </td>
+
+                <!-- Detalle -->
+                <td>
+                  <button
+                    type="button"
+                    class="btn-view-detail"
+                    (click)="openDetailModal(audit)"
+                  >
+                    <lucide-icon name="eye" class="w-3.5 h-3.5"></lucide-icon>
+                    <span>Ver Detalle</span>
+                  </button>
+                </td>
+              </tr>
+            } @empty {
+              <tr>
+                <td colspan="8" class="p-12 text-center text-gray-500">
+                  No se encontraron eventos de auditoría con los filtros seleccionados.
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <footer class="pagination-bar">
+        <span class="page-info">
+          Mostrando página <strong>{{ currentPage() }}</strong> de <strong>{{ lastPage() }}</strong> (Total: {{ totalItems() }} registros)
+        </span>
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="btn-page"
+            [disabled]="currentPage() <= 1"
+            (click)="loadAudits(currentPage() - 1)"
+          >
+            <lucide-icon name="chevron-left" class="w-4 h-4"></lucide-icon>
+          </button>
+          <button
+            type="button"
+            class="btn-page"
+            [disabled]="currentPage() >= lastPage()"
+            (click)="loadAudits(currentPage() + 1)"
+          >
+            <lucide-icon name="chevron-right" class="w-4 h-4"></lucide-icon>
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+
+  <!-- Inspector de Auditoría (Modal de Detalle) -->
+  @if (selectedAudit(); as target) {
+    @let targetEvent = api.getEventInfo(target.event_name);
+    <div class="modal-backdrop" (click)="closeDetailModal()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <header class="modal-header">
+          <div class="flex items-center gap-3">
+            <span class="badge-event" [class]="targetEvent.badgeColor">
+              <lucide-icon [name]="targetEvent.icon" class="w-4 h-4"></lucide-icon>
+              <span>{{ targetEvent.label }}</span>
+            </span>
+            <span class="modal-title">Detalle de Operación Auditada</span>
+          </div>
+          <button type="button" class="btn-close-modal" (click)="closeDetailModal()">
+            <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+          </button>
+        </header>
+
+        <!-- Modal Tabs -->
+        <div class="modal-body">
+          <nav class="modal-tabs">
+            <button
+              type="button"
+              class="modal-tab-btn"
+              [class.active]="detailTab() === 'summary'"
+              (click)="detailTab.set('summary')"
+            >
+              <lucide-icon name="info" class="w-4 h-4 inline-block mr-1"></lucide-icon>
+              <span>Resumen y Contexto</span>
+            </button>
+            <button
+              type="button"
+              class="modal-tab-btn"
+              [class.active]="detailTab() === 'changes'"
+              (click)="detailTab.set('changes')"
+            >
+              <lucide-icon name="sliders-horizontal" class="w-4 h-4 inline-block mr-1"></lucide-icon>
+              <span>Comparativa de Cambios (Valores)</span>
+            </button>
+            <button
+              type="button"
+              class="modal-tab-btn"
+              [class.active]="detailTab() === 'tech'"
+              (click)="detailTab.set('tech')"
+            >
+              <lucide-icon name="terminal" class="w-4 h-4 inline-block mr-1"></lucide-icon>
+              <span>Trazabilidad Técnica</span>
+            </button>
+          </nav>
+
+          <!-- TAB 1: Resumen y Contexto -->
+          @if (detailTab() === 'summary') {
+            <div class="kv-grid">
+              <div class="kv-item">
+                <span class="kv-label">Usuario Responsable</span>
+                <span class="kv-value">{{ target.actor?.name || 'ID: ' + target.actor_id }}</span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Correo Electrónico</span>
+                <span class="kv-value">{{ target.actor?.email || 'N/A' }}</span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Rol del Usuario</span>
+                <span class="kv-value">{{ api.getRoleLabel(target.actor_role) }}</span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Sucursal / Ubicación</span>
+                <span class="kv-value">{{ target.branch?.name || 'Oficina Central / Global' }}</span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Fecha y Hora Exacta</span>
+                <span class="kv-value">{{ target.created_at | date: 'dd/MM/yyyy HH:mm:ss' }}</span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Resultado</span>
+                <span class="kv-value" [class.text-emerald-700]="target.result === 'SUCCESS'" [class.text-red-700]="target.result !== 'SUCCESS'">
+                  {{ target.result === 'SUCCESS' ? 'Operación Exitosa' : 'Operación Fallida' }}
+                </span>
+              </div>
+              <div class="kv-item" style="grid-column: 1 / -1;">
+                <span class="kv-label">Motivo o Justificación Registrada</span>
+                <span class="kv-value text-slate-700 font-normal">
+                  {{ target.reason || 'Sin justificación explícita capturada en este evento.' }}
+                </span>
+              </div>
+            </div>
+          }
+
+          <!-- TAB 2: Comparativa de Cambios -->
+          @if (detailTab() === 'changes') {
+            <div class="diff-grid">
+              <!-- Valor Anterior -->
+              <div class="diff-panel">
+                <header class="diff-header diff-header-prev">
+                  <div class="flex items-center gap-1.5">
+                    <lucide-icon name="alert-triangle" class="w-3.5 h-3.5"></lucide-icon>
+                    <span>Valor Anterior (Previo)</span>
+                  </div>
+                  <span class="text-xs">Estado Original</span>
+                </header>
+                <div class="diff-content">
+                  @if (target.previous_value && hasKeys(target.previous_value)) {
+                    <pre>{{ target.previous_value | json }}</pre>
+                  } @else {
+                    <span class="text-gray-400 italic">No aplica (Registro nuevo o consulta de lectura).</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Valor Nuevo -->
+              <div class="diff-panel">
+                <header class="diff-header diff-header-new">
+                  <div class="flex items-center gap-1.5">
+                    <lucide-icon name="check-circle-2" class="w-3.5 h-3.5"></lucide-icon>
+                    <span>Valor Nuevo (Actualizado)</span>
+                  </div>
+                  <span class="text-xs">Estado Resultante</span>
+                </header>
+                <div class="diff-content">
+                  @if (target.new_value && hasKeys(target.new_value)) {
+                    <pre>{{ target.new_value | json }}</pre>
+                  } @else {
+                    <span class="text-gray-400 italic">Sin carga de datos modificados.</span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- TAB 3: Trazabilidad Técnica -->
+          @if (detailTab() === 'tech') {
+            <div class="flex flex-col gap-3">
+              <div class="kv-item">
+                <span class="kv-label">Dirección IP de Origen</span>
+                <div class="copyable-field">
+                  <span>{{ target.ip_address || '127.0.0.1' }}</span>
+                </div>
+              </div>
+
+              <div class="kv-item">
+                <span class="kv-label">Agente de Usuario (Navegador y Sistema)</span>
+                <div class="copyable-field text-xs">
+                  <span>{{ target.user_agent || 'N/A' }}</span>
+                </div>
+              </div>
+
+              <div class="kv-item">
+                <span class="kv-label">Correlation ID</span>
+                <div class="copyable-field">
+                  <span class="flex-1">{{ target.correlation_id || 'N/A' }}</span>
+                  @if (target.correlation_id) {
+                    <button type="button" class="btn-copy" (click)="copyToClipboard(target.correlation_id)">Copiar</button>
+                  }
+                </div>
+              </div>
+
+              <div class="kv-item">
+                <span class="kv-label">Trace ID</span>
+                <div class="copyable-field">
+                  <span class="flex-1">{{ target.trace_id || 'N/A' }}</span>
+                  @if (target.trace_id) {
+                    <button type="button" class="btn-copy" (click)="copyToClipboard(target.trace_id)">Copiar</button>
+                  }
+                </div>
+              </div>
+
+              <div class="kv-item">
+                <span class="kv-label">Request ID</span>
+                <div class="copyable-field">
+                  <span class="flex-1">{{ target.request_id || 'N/A' }}</span>
+                  @if (target.request_id) {
+                    <button type="button" class="btn-copy" (click)="copyToClipboard(target.request_id)">Copiar</button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Modal Footer -->
+        <footer class="modal-footer">
+          <button type="button" class="btn-filter btn-reset" (click)="closeDetailModal()">
+            Cerrar Inspector
+          </button>
+        </footer>
+      </div>
+    </div>
+  }
+</section>

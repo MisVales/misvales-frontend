@@ -119,9 +119,11 @@ import {
   UserRoundX,
   Users,
   UsersRound,
+  UserX,
   Wallet,
   Workflow,
   X,
+  XCircle,
 } from 'lucide-angular';
 
 @Injectable()
@@ -167,7 +169,7 @@ export const appConfig: ApplicationConfig = {
         Search, Settings, Shield, ShieldAlert, ShieldCheck, SlidersHorizontal,
         Smartphone, Split, Store, Tags, Target, Terminal, Ticket,
         TicketCheck, TrendingUp, Undo2, User, UserCheck, UserCog, UserRound,
-        UserRoundX, Users, UsersRound, Wallet, Workflow, X,
+        UserRoundX, Users, UsersRound, UserX, Wallet, Workflow, X, XCircle,
       }),
     ),
     { provide: API_CONFIG, useValue: defaultApiConfig },
