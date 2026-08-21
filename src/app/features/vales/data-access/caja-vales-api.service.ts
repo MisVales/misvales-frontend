@@ -5,12 +5,14 @@ import { API_CONFIG } from '../../../core/api/api.config';
 import { VoucherView } from './vales-api.service';
 
 export interface CashVoucher extends VoucherView {
+  distributor?: { id: string; distributor_number: string; full_name: string | null };
   identity?: {
-    official_id_type: string;
+    official_id_type: string | null;
     official_id_number: string | null;
     official_id_number_masked: string | null;
     official_id_media_id: string | null;
   };
+  document_owner?: { owner_type: 'distributor_application'; owner_id: string } | null;
   address?: Record<string, string | null>;
   bank_account?: { bank_name: string; account_holder_name: string; clabe_masked: string };
   released_at?: string;
@@ -99,11 +101,11 @@ export class CajaValesApiService {
       lock_version: lockVersion,
     });
   }
-  uploadAddressProof(clientId: string, file: File): Observable<PrivateMediaFile> {
+  uploadAddressProof(applicationId: string, file: File): Observable<PrivateMediaFile> {
     const body = new FormData();
     body.append('file', file);
-    body.append('owner_type', 'client');
-    body.append('owner_id', clientId);
+    body.append('owner_type', 'distributor_application');
+    body.append('owner_id', applicationId);
     body.append('purpose', 'ADDRESS_PROOF');
 
     return this.http.post<{ data: PrivateMediaFile }>(`${this.config.baseUrl}/media`, body, {

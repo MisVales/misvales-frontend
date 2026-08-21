@@ -3,35 +3,35 @@ import { CanActivateFn, Router, Routes } from '@angular/router';
 import { permissionGuard } from '../../core/guards/permission.guard';
 import { SessionStore } from '../../core/session/session.store';
 
-const responsibleDistributorGuard: CanActivateFn = () => {
+const hideFromDistributorGuard: CanActivateFn = () => {
   const session = inject(SessionStore);
-  return session.roles().includes('distributor') ? true : inject(Router).createUrlTree(['/clientes']);
+  return session.roles().includes('distributor') ? inject(Router).createUrlTree(['/vales']) : true;
 };
 
 export const CLIENTES_ROUTES: Routes = [
   {
     path: '',
-    canActivate: [permissionGuard('clients.view')],
+    canActivate: [hideFromDistributorGuard, permissionGuard('clients.view')],
     loadComponent: () => import('./pages/listado/listado-clientes-page.component').then(m => m.ListadoClientesPageComponent)
   },
   {
     path: 'nuevo',
-    canActivate: [permissionGuard('clients.create'), responsibleDistributorGuard],
+    canActivate: [hideFromDistributorGuard, permissionGuard('clients.create')],
     loadComponent: () => import('./pages/nuevo/nuevo-cliente-page.component').then(m => m.NuevoClientePageComponent)
   },
   {
     path: 'cartera',
-    canActivate: [permissionGuard('clients.view_portfolio')],
+    canActivate: [hideFromDistributorGuard, permissionGuard('clients.view_portfolio')],
     loadComponent: () => import('./pages/cartera/cartera-cliente-page.component').then(m => m.CarteraClientePageComponent)
   },
   {
     path: ':id',
-    canActivate: [permissionGuard('clients.view')],
+    canActivate: [hideFromDistributorGuard, permissionGuard('clients.view')],
     loadComponent: () => import('./pages/detalle/detalle-cliente-page.component').then(m => m.DetalleClientePageComponent)
   },
   {
     path: ':id/cartera',
-    canActivate: [permissionGuard('clients.view_portfolio')],
+    canActivate: [hideFromDistributorGuard, permissionGuard('clients.view_portfolio')],
     loadComponent: () => import('./pages/cartera/cartera-cliente-page.component').then(m => m.CarteraClientePageComponent)
   }
 ];
