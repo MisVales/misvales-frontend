@@ -68,6 +68,7 @@ export const routes: Routes = [
           { path: 'riesgo', loadChildren: () => import('./features/riesgo/riesgo.routes').then((m) => m.riesgoRoutes) },
           { path: 'transferencias', loadChildren: () => import('./features/transferencias/transferencias.routes').then((m) => m.transferenciasRoutes) },
           { path: 'centro-operacion', loadChildren: () => import('./features/centro-operacion/centro-operacion.routes').then((m) => m.centroOperacionRoutes) },
+          { path: 'puntos', loadChildren: () => import('./features/puntos/puntos.routes').then((m) => m.PUNTOS_ROUTES) },
           { path: '**', redirectTo: '/inicio' },
         ],
       },

@@ -288,6 +288,23 @@ export const NAV_GROUPS: NavGroupData[] = [
         permissions: ['surpluses.view_own', 'surpluses.view_branch', 'surpluses.view_global'],
         permissionMode: 'any',
       },
+      {
+        id: 'points-redemption',
+        title: 'Puntos y canje por dinero',
+        icon: 'coins',
+        route: '/puntos',
+        roles: GG_AD_GS_CO_DI_CA,
+        permissions: [
+          'points.view_own',
+          'points.view_branch',
+          'points.view_global',
+          'points.request_own',
+          'points.authorize_branch',
+          'points.authorize_global',
+          'points.deliver_branch',
+        ],
+        permissionMode: 'any',
+      },
     ],
   },
   {
