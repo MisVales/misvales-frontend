@@ -177,7 +177,7 @@ import {
                 <p class="text-red-600 font-semibold">No fue posible cerrar el corte: {{ cutoffError() }}</p>
               }
             </div>
-            @if (cutoffState() === 'OPEN' && summary.has_open_cutoff && summary.summary.operations > 0) {
+            @if (cutoffState() === 'OPEN' && summary.has_open_cutoff) {
               <button 
                 class="rounded bg-red-600 px-4 py-2 font-bold text-white shadow hover:bg-red-700" 
                 (click)="openForceCutoffModal()"
@@ -185,7 +185,7 @@ import {
                 Forzar corte
               </button>
             } @else if (cutoffState() === 'OPEN') {
-              <p class="text-gray-500 italic">No existe actualmente un periodo disponible con operaciones para cierre manual.</p>
+              <p class="text-gray-500 italic">No existe actualmente un periodo disponible para cierre manual.</p>
             }
           } @else {
             <p class="text-gray-500 text-sm">Cargando información del corte...</p>
