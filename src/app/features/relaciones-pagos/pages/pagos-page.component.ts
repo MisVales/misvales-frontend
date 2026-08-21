@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { LucideAngularModule } from 'lucide-angular';
 import { PaymentItem, RelacionesApiService, RelationView } from '../data-access/relaciones-api.service';
 
 interface PaymentPercentages {
@@ -11,20 +12,9 @@ interface PaymentPercentages {
   capital: number;
 }
 
-interface SimulationOutput {
-  surchargeApplied: number;
-  interestApplied: number;
-  insuranceApplied: number;
-  commissionApplied: number;
-  capitalApplied: number;
-  lineRecovered: number;
-  projectedUsedBalance: number;
-  projectedAvailable: number;
-}
-
 @Component({
   selector: 'app-pagos-page',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './pagos-page.component.html',
   styleUrl: './pagos-page.component.css',
 })
@@ -36,7 +26,6 @@ export class PagosPageComponent {
   readonly selectedRelation = signal<RelationView | null>(null);
   readonly searchTerm = signal<string>('');
   readonly statusFilter = signal<string>('');
-  readonly simulatedAmount = signal<number>(0);
   readonly loading = signal<boolean>(false);
   readonly error = signal<string>('');
 
@@ -121,89 +110,6 @@ export class PagosPageComponent {
     };
   });
 
-  readonly simulationResult = computed<SimulationOutput | null>(() => {
-    const rel = this.selectedRelation();
-    const amount = Number(this.simulatedAmount());
-    if (!rel || amount <= 0) {
-      return null;
-    }
-
-    let available = Math.min(amount, parseFloat(rel.balance || '0'));
-    const totalAuthorized = this.creditLine().totalAuthorized;
-    const usedBalance = this.creditLine().usedBalance;
-
-    // 1. Surcharge pending
-    const surchargeTotal = parseFloat(rel.surcharge_total || '0');
-    let surchargePaid = 0;
-    if (rel.pagos) {
-      for (const p of rel.pagos) {
-        surchargePaid += parseFloat(p.surcharge_applied || '0');
-      }
-    }
-    const surchargePending = Math.max(0, surchargeTotal - surchargePaid);
-    const surchargeApplied = Math.min(available, surchargePending);
-    available -= surchargeApplied;
-
-    // 2-5. Interest, Insurance, Commission, Capital across partidas
-    let interestPending = 0;
-    let insurancePending = 0;
-    let commissionPending = 0;
-    let capitalPending = 0;
-
-    if (rel.partidas && rel.partidas.length > 0) {
-      for (const item of rel.partidas) {
-        interestPending += parseFloat((item.snapshot['interest'] ?? 0).toString());
-        insurancePending += parseFloat((item.snapshot['insurance'] ?? 0).toString());
-        commissionPending += parseFloat((item.snapshot['loan_commission'] ?? 0).toString());
-        capitalPending += parseFloat((item.snapshot['capital'] ?? 0).toString());
-      }
-    } else {
-      const remainingForRest = Math.max(0, parseFloat(rel.balance || '0') - surchargePending);
-      capitalPending = remainingForRest * 0.7;
-      interestPending = remainingForRest * 0.15;
-      insurancePending = remainingForRest * 0.05;
-      commissionPending = remainingForRest * 0.1;
-    }
-
-    // Subtract already paid
-    if (rel.pagos) {
-      for (const p of rel.pagos) {
-        interestPending = Math.max(0, interestPending - parseFloat(p.interest_applied || '0'));
-        insurancePending = Math.max(0, insurancePending - parseFloat(p.insurance_applied || '0'));
-        commissionPending = Math.max(0, commissionPending - parseFloat(p.commission_applied || '0'));
-        capitalPending = Math.max(0, capitalPending - parseFloat(p.capital_applied || '0'));
-      }
-    }
-
-    const interestApplied = Math.min(available, interestPending);
-    available -= interestApplied;
-
-    const insuranceApplied = Math.min(available, insurancePending);
-    available -= insuranceApplied;
-
-    const commissionApplied = Math.min(available, commissionPending);
-    available -= commissionApplied;
-
-    const capitalApplied = Math.min(available, capitalPending);
-    available -= capitalApplied;
-
-    // Line recovered is strictly capital applied and cannot exceed used balance
-    const lineRecovered = Math.min(capitalApplied, usedBalance);
-    const projectedUsedBalance = Math.max(0, usedBalance - lineRecovered);
-    const projectedAvailable = Math.min(totalAuthorized, totalAuthorized - projectedUsedBalance);
-
-    return {
-      surchargeApplied,
-      interestApplied,
-      insuranceApplied,
-      commissionApplied,
-      capitalApplied,
-      lineRecovered,
-      projectedUsedBalance,
-      projectedAvailable,
-    };
-  });
-
   constructor() {
     this.loadRelations();
   }
@@ -231,7 +137,6 @@ export class PagosPageComponent {
     this.api.detail(id).subscribe({
       next: (detail) => {
         this.selectedRelation.set(detail);
-        this.simulatedAmount.set(parseFloat(detail.balance || '0'));
       },
       error: () => {
         this.error.set('No fue posible obtener el detalle de la relación.');

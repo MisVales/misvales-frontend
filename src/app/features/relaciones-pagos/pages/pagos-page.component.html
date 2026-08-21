@@ -7,7 +7,6 @@
     </p>
   </header>
 
-
   <!-- Global Metrics Grid -->
   <div class="metrics-grid">
     <div class="metric-card">
@@ -91,9 +90,10 @@
             </div>
 
             <div class="distributor-name">
-              👤 {{ rel.header_snapshot?.name || rel.distribuidora?.usuario?.name || 'Distribuidora' }}
+              <lucide-icon name="user" class="w-3.5 h-3.5 inline-block mr-1"></lucide-icon>
+              <span>{{ rel.header_snapshot?.name || rel.distribuidora?.usuario?.name || 'Distribuidora' }}</span>
               @if (rel.header_snapshot?.number || rel.distribuidora?.distributor_number) {
-                <span class="text-xs text-gray-500">({{ rel.header_snapshot?.number || rel.distribuidora?.distributor_number }})</span>
+                <span class="text-xs text-gray-500"> ({{ rel.header_snapshot?.number || rel.distribuidora?.distributor_number }})</span>
               }
             </div>
 
@@ -139,120 +139,64 @@
             </div>
           </div>
 
-          <div class="distributor-credit-grid">
-            <!-- Distributor Info -->
-            <div class="info-box">
-              <span class="info-box-title">Datos de la Distribuidora</span>
-              <dl class="flex flex-col gap-1.5">
-                <div class="info-row">
-                  <dt>Distribuidora</dt>
-                  <dd>{{ relation.header_snapshot?.name || relation.distribuidora?.usuario?.name || 'N/A' }}</dd>
-                </div>
-                <div class="info-row">
-                  <dt>Número de Distribuidora</dt>
-                  <dd>{{ relation.header_snapshot?.number || relation.distribuidora?.distributor_number || 'N/A' }}</dd>
-                </div>
-                <div class="info-row">
-                  <dt>Sucursal</dt>
-                  <dd>{{ relation.header_snapshot?.branch || relation.distribuidora?.sucursal?.name || 'N/A' }}</dd>
-                </div>
-                <div class="info-row">
-                  <dt>Fecha Límite</dt>
-                  <dd>{{ relation.payment_deadline_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
-                </div>
-              </dl>
+          <!-- Distributor details grid -->
+          <div class="distributor-meta-grid">
+            <div class="meta-item">
+              <span class="meta-label">Distribuidora</span>
+              <span class="meta-value">{{ relation.header_snapshot?.name || relation.distribuidora?.usuario?.name || '---' }}</span>
             </div>
-
-            <!-- Credit Line Status -->
-            <div class="info-box">
-              <span class="info-box-title">Línea de Crédito de la Distribuidora</span>
-              <dl class="flex flex-col gap-1.5">
-                <div class="info-row">
-                  <dt>Línea Total Autorizada</dt>
-                  <dd>{{ creditLine().totalAuthorized | currency: 'MXN':'symbol-narrow':'1.2-2' }}</dd>
-                </div>
-                <div class="info-row">
-                  <dt>Saldo Utilizado Actual</dt>
-                  <dd class="text-red-600 font-bold">{{ creditLine().usedBalance | currency: 'MXN':'symbol-narrow':'1.2-2' }}</dd>
-                </div>
-                <div class="info-row">
-                  <dt>Línea Disponible Actual</dt>
-                  <dd class="text-emerald-600 font-bold">{{ creditLine().available | currency: 'MXN':'symbol-narrow':'1.2-2' }}</dd>
-                </div>
-              </dl>
-
-              <!-- Progress bar of credit usage -->
-              <div class="credit-progress-container">
-                <div class="progress-track">
-                  <div class="progress-bar-used" [style.width.%]="creditLine().usedPercentage"></div>
-                  <div class="progress-bar-available" [style.width.%]="creditLine().availablePercentage"></div>
-                </div>
-                <div class="progress-legend">
-                  <span class="text-red-600">Utilizado: {{ creditLine().usedPercentage | number:'1.1-1' }}%</span>
-                  <span class="text-emerald-600">Disponible: {{ creditLine().availablePercentage | number:'1.1-1' }}%</span>
-                </div>
-              </div>
+            <div class="meta-item">
+              <span class="meta-label">Número de Distribuidora</span>
+              <span class="meta-value">{{ relation.header_snapshot?.number || relation.distribuidora?.distributor_number || '---' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Sucursal</span>
+              <span class="meta-value">{{ relation.distribuidora?.sucursal?.name || '---' }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Fecha Límite</span>
+              <span class="meta-value font-mono">{{ relation.payment_deadline_at | date: 'dd/MM/yyyy HH:mm' }}</span>
             </div>
           </div>
-        </section>
 
-        <!-- Interactive Waterfall Simulator for Selected Relation -->
-        <section class="card-section">
-          <div class="simulator-box">
-            <div class="simulator-header">
+          <!-- Credit Line Progress Visual -->
+          <div class="credit-line-box">
+            <div class="credit-line-header">
               <div>
-                <h3 class="text-base font-bold text-slate-900">⚡ Simulador de Aplicación y Recuperación</h3>
-                <p class="text-xs text-slate-600">
-                  Ingresa un monto de pago tentativo para proyectar la distribución exacta en cascada y la línea que se liberará.
-                </p>
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Línea de Crédito de la Distribuidora</span>
+                <div class="text-lg font-black text-slate-900">
+                  Línea Total Autorizada: {{ creditLine().totalAuthorized | currency: 'MXN':'symbol-narrow':'1.2-2' }}
+                </div>
               </div>
-              <div class="simulator-input-row">
-                <label for="sim-input" class="text-xs font-bold text-slate-700">Monto tentativo:</label>
-                <input
-                  id="sim-input"
-                  type="number"
-                  min="0"
-                  step="100"
-                  class="simulator-input"
-                  [ngModel]="simulatedAmount()"
-                  (ngModelChange)="simulatedAmount.set($event)"
-                  placeholder="$ 0.00"
-                />
+              <div class="flex items-center gap-4">
+                <div class="text-right">
+                  <span class="text-xs font-semibold text-slate-500">Saldo Utilizado Actual</span>
+                  <div class="text-sm font-bold text-amber-700">{{ creditLine().usedBalance | currency: 'MXN':'symbol-narrow':'1.2-2' }}</div>
+                </div>
+                <div class="text-right">
+                  <span class="text-xs font-semibold text-slate-500">Línea Disponible Actual</span>
+                  <div class="text-sm font-bold text-emerald-700">{{ creditLine().available | currency: 'MXN':'symbol-narrow':'1.2-2' }}</div>
+                </div>
               </div>
             </div>
 
-            @if (simulationResult(); as sim) {
-              <div class="sim-results-grid">
-                <div class="sim-card">
-                  <span class="sim-card-label">1. A Recargos</span>
-                  <span class="sim-card-val text-amber-600">{{ sim.surchargeApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
-                </div>
-                <div class="sim-card">
-                  <span class="sim-card-label">2. A Intereses</span>
-                  <span class="sim-card-val text-orange-600">{{ sim.interestApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
-                </div>
-                <div class="sim-card">
-                  <span class="sim-card-label">3. A Seguro</span>
-                  <span class="sim-card-val text-purple-600">{{ sim.insuranceApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
-                </div>
-                <div class="sim-card">
-                  <span class="sim-card-label">4. A Comisión</span>
-                  <span class="sim-card-val text-blue-600">{{ sim.commissionApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
-                </div>
-                <div class="sim-card">
-                  <span class="sim-card-label">5. A Capital</span>
-                  <span class="sim-card-val text-emerald-600">{{ sim.capitalApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
-                </div>
-                <div class="sim-card accent">
-                  <span class="sim-card-label">★ Línea a Recuperar</span>
-                  <span class="sim-card-val">{{ sim.lineRecovered | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
-                </div>
-                <div class="sim-card accent">
-                  <span class="sim-card-label">Línea Disponible Proyectada</span>
-                  <span class="sim-card-val">{{ sim.projectedAvailable | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
-                </div>
-              </div>
-            }
+            <!-- Progress Bar -->
+            <div class="credit-bar-track">
+              <div
+                class="credit-bar-used"
+                [style.width.%]="creditLine().usedPercentage"
+                title="Utilizado: {{ creditLine().usedPercentage | number:'1.1-1' }}%"
+              ></div>
+              <div
+                class="credit-bar-available"
+                [style.width.%]="creditLine().availablePercentage"
+                title="Disponible: {{ creditLine().availablePercentage | number:'1.1-1' }}%"
+              ></div>
+            </div>
+            <div class="credit-bar-legend">
+              <span class="text-amber-800">● Utilizado: {{ creditLine().usedPercentage | number:'1.1-1' }}%</span>
+              <span class="text-emerald-800">● Disponible: {{ creditLine().availablePercentage | number:'1.1-1' }}%</span>
+            </div>
           </div>
         </section>
 
@@ -281,7 +225,8 @@
                     </span>
                   </div>
                   <div class="payment-date">
-                    📅 Aplicado el {{ payment.applied_at | date: 'dd/MM/yyyy, HH:mm' }}
+                    <lucide-icon name="calendar" class="w-3.5 h-3.5 inline-block mr-1"></lucide-icon>
+                    <span>Aplicado el {{ payment.applied_at | date: 'dd/MM/yyyy, HH:mm' }}</span>
                   </div>
                 </div>
 
@@ -329,7 +274,7 @@
                     <span class="cascade-value">{{ payment.capital_applied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
                   </div>
                   <div class="cascade-item highlight-recovery">
-                    <span class="cascade-label">★ Línea Recuperada</span>
+                    <span class="cascade-label">Línea Recuperada</span>
                     <span class="cascade-value">{{ payment.line_recovered | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
                   </div>
                 </div>
@@ -343,7 +288,7 @@
         </section>
       } @else {
         <div class="empty-detail">
-          <div class="text-4xl mb-2">💳</div>
+          <lucide-icon name="credit-card" class="w-12 h-12 text-slate-300 mb-2"></lucide-icon>
           <h3 class="text-lg font-bold text-slate-800">Selecciona una relación</h3>
           <p class="text-sm">
             Elige una relación del listado izquierdo para inspeccionar sus pagos aplicados, desglose en cascada y recuperación de línea.
