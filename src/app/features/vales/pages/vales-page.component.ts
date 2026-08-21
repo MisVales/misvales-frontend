@@ -49,6 +49,7 @@ export class ValesPageComponent implements OnInit {
   protected readonly financialContext = signal<VoucherFinancialContext | null>(null);
   protected readonly creditLine = signal<VoucherCreditLine | null>(null);
   protected readonly error = signal('');
+  protected readonly selectedVoucherForInstallments = signal<VoucherView | null>(null);
 
   protected readonly selectedClient = computed(() => this.clients().find((client) => client.id === this.formValue().clientId) ?? null);
   protected readonly selectedProduct = computed(() => this.products().find((product) => product.id === this.formValue().productVersionId) ?? null);
@@ -251,4 +252,7 @@ export class ValesPageComponent implements OnInit {
         error: (error) => this.handle(error),
       });
   }
+
+  viewInstallments(voucher: VoucherView): void { this.selectedVoucherForInstallments.set(voucher); }
+  closeInstallments(): void { this.selectedVoucherForInstallments.set(null); }
 }
