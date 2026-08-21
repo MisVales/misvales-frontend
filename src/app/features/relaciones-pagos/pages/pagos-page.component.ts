@@ -1,75 +1,257 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
-import { RelacionesApiService, RelationView } from '../data-access/relaciones-api.service';
+import { Component, computed, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { PaymentItem, RelacionesApiService, RelationView } from '../data-access/relaciones-api.service';
+
+interface PaymentPercentages {
+  surcharge: number;
+  interest: number;
+  insurance: number;
+  commission: number;
+  capital: number;
+}
+
+interface SimulationOutput {
+  surchargeApplied: number;
+  interestApplied: number;
+  insuranceApplied: number;
+  commissionApplied: number;
+  capitalApplied: number;
+  lineRecovered: number;
+  projectedUsedBalance: number;
+  projectedAvailable: number;
+}
 
 @Component({
   selector: 'app-pagos-page',
-  standalone: true,
-  imports: [CommonModule],
-  template: `
-    <section class="space-y-6 p-6">
-      <header>
-        <h1 class="text-2xl font-bold">Pagos y recuperación de línea</h1>
-        <p class="text-sm text-gray-600">
-          Aplicación por componente y recuperación exclusiva del capital conciliado.
-        </p>
-      </header>
-      @if (error()) {
-        <div role="alert" class="rounded-lg bg-red-50 p-4 text-red-700">{{ error() }}</div>
-      }
-      <div class="grid gap-4 lg:grid-cols-[.7fr_1.3fr]">
-        <div class="space-y-2">
-          @for (relation of relations(); track relation.id) {
-            <button class="w-full rounded-xl border bg-white p-4 text-left" (click)="open(relation.id)">
-              <strong>{{ relation.payment_reference }}</strong>
-              <span class="block text-sm">{{ relation.financial_status }} · saldo {{ relation.balance | currency: 'MXN' }}</span>
-            </button>
-          } @empty {
-            <p class="rounded-xl border bg-white p-6 text-gray-500">No hay relaciones con pagos visibles.</p>
-          }
-        </div>
-        @if (selected(); as relation) {
-          <article class="rounded-xl border bg-white p-5">
-            <h2 class="text-lg font-bold">{{ relation.payment_reference }}</h2>
-            <p class="mb-4">Clasificación: <strong>{{ relation.temporal_classification ?? 'PENDIENTE' }}</strong></p>
-            @for (payment of relation.pagos ?? []; track payment.id) {
-              <section class="mb-3 rounded-lg bg-gray-50 p-4">
-                <div class="flex justify-between gap-3"><strong>{{ payment.amount | currency: 'MXN' }}</strong><span>{{ payment.applied_at | date: 'short' }}</span></div>
-                <dl class="mt-2 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
-                  <div><dt>Recargo</dt><dd>{{ payment.surcharge_applied | currency: 'MXN' }}</dd></div>
-                  <div><dt>Interés</dt><dd>{{ payment.interest_applied | currency: 'MXN' }}</dd></div>
-                  <div><dt>Seguro</dt><dd>{{ payment.insurance_applied | currency: 'MXN' }}</dd></div>
-                  <div><dt>Comisión</dt><dd>{{ payment.commission_applied | currency: 'MXN' }}</dd></div>
-                  <div><dt>Capital</dt><dd>{{ payment.capital_applied | currency: 'MXN' }}</dd></div>
-                  <div><dt>Línea recuperada</dt><dd class="font-bold">{{ payment.line_recovered | currency: 'MXN' }}</dd></div>
-                </dl>
-              </section>
-            } @empty {
-              <p class="text-gray-500">La relación todavía no tiene pagos aplicados.</p>
-            }
-          </article>
-        }
-      </div>
-    </section>
-  `,
+  imports: [CommonModule, FormsModule],
+  templateUrl: './pagos-page.component.html',
+  styleUrl: './pagos-page.component.css',
 })
 export class PagosPageComponent {
   private readonly api = inject(RelacionesApiService);
+
   readonly relations = signal<RelationView[]>([]);
-  readonly selected = signal<RelationView | null>(null);
-  readonly error = signal('');
+  readonly selectedRelationId = signal<string | null>(null);
+  readonly selectedRelation = signal<RelationView | null>(null);
+  readonly searchTerm = signal<string>('');
+  readonly statusFilter = signal<string>('');
+  readonly simulatedAmount = signal<number>(0);
+  readonly loading = signal<boolean>(false);
+  readonly error = signal<string>('');
+
+  readonly filteredRelations = computed(() => {
+    const list = this.relations();
+    const search = this.searchTerm().toLowerCase().trim();
+    const status = this.statusFilter();
+
+    return list.filter((item) => {
+      const matchSearch =
+        !search ||
+        item.payment_reference.toLowerCase().includes(search) ||
+        (item.header_snapshot?.name && item.header_snapshot.name.toLowerCase().includes(search)) ||
+        (item.distribuidora?.usuario?.name && item.distribuidora.usuario.name.toLowerCase().includes(search)) ||
+        (item.distribuidora?.distributor_number && item.distribuidora.distributor_number.toLowerCase().includes(search));
+
+      const matchStatus = !status || item.financial_status === status;
+
+      return matchSearch && matchStatus;
+    });
+  });
+
+  readonly metrics = computed(() => {
+    const all = this.relations();
+    let totalPaid = 0;
+    let totalSurcharge = 0;
+    let totalInterest = 0;
+    let totalInsurance = 0;
+    let totalCommission = 0;
+    let totalCapital = 0;
+    let totalLineRecovered = 0;
+    let totalPaymentsCount = 0;
+    let totalRelationsWithPayments = 0;
+
+    for (const rel of all) {
+      if (rel.pagos && rel.pagos.length > 0) {
+        totalRelationsWithPayments++;
+        for (const p of rel.pagos) {
+          totalPaymentsCount++;
+          totalPaid += parseFloat(p.amount || '0');
+          totalSurcharge += parseFloat(p.surcharge_applied || '0');
+          totalInterest += parseFloat(p.interest_applied || '0');
+          totalInsurance += parseFloat(p.insurance_applied || '0');
+          totalCommission += parseFloat(p.commission_applied || '0');
+          totalCapital += parseFloat(p.capital_applied || '0');
+          totalLineRecovered += parseFloat(p.line_recovered || '0');
+        }
+      }
+    }
+
+    const totalCharges = totalSurcharge + totalInterest + totalInsurance + totalCommission;
+
+    return {
+      totalPaid,
+      totalCharges,
+      totalCapital,
+      totalLineRecovered,
+      totalPaymentsCount,
+      totalRelationsWithPayments,
+    };
+  });
+
+  readonly creditLine = computed(() => {
+    const rel = this.selectedRelation();
+    const line = rel?.distribuidora?.linea_credito || rel?.distribuidora?.lineaCredito;
+
+    const totalAuthorized = parseFloat(
+      (line?.total_authorized ?? rel?.header_snapshot?.credit_line_total ?? 0).toString(),
+    );
+    const usedBalance = parseFloat((line?.used_balance ?? 0).toString());
+    const available = Math.max(0, totalAuthorized - usedBalance);
+
+    const usedPercentage = totalAuthorized > 0 ? Math.min(100, (usedBalance / totalAuthorized) * 100) : 0;
+    const availablePercentage = Math.max(0, 100 - usedPercentage);
+
+    return {
+      totalAuthorized,
+      usedBalance,
+      available,
+      usedPercentage,
+      availablePercentage,
+    };
+  });
+
+  readonly simulationResult = computed<SimulationOutput | null>(() => {
+    const rel = this.selectedRelation();
+    const amount = Number(this.simulatedAmount());
+    if (!rel || amount <= 0) {
+      return null;
+    }
+
+    let available = Math.min(amount, parseFloat(rel.balance || '0'));
+    const totalAuthorized = this.creditLine().totalAuthorized;
+    const usedBalance = this.creditLine().usedBalance;
+
+    // 1. Surcharge pending
+    const surchargeTotal = parseFloat(rel.surcharge_total || '0');
+    let surchargePaid = 0;
+    if (rel.pagos) {
+      for (const p of rel.pagos) {
+        surchargePaid += parseFloat(p.surcharge_applied || '0');
+      }
+    }
+    const surchargePending = Math.max(0, surchargeTotal - surchargePaid);
+    const surchargeApplied = Math.min(available, surchargePending);
+    available -= surchargeApplied;
+
+    // 2-5. Interest, Insurance, Commission, Capital across partidas
+    let interestPending = 0;
+    let insurancePending = 0;
+    let commissionPending = 0;
+    let capitalPending = 0;
+
+    if (rel.partidas && rel.partidas.length > 0) {
+      for (const item of rel.partidas) {
+        interestPending += parseFloat((item.snapshot['interest'] ?? 0).toString());
+        insurancePending += parseFloat((item.snapshot['insurance'] ?? 0).toString());
+        commissionPending += parseFloat((item.snapshot['loan_commission'] ?? 0).toString());
+        capitalPending += parseFloat((item.snapshot['capital'] ?? 0).toString());
+      }
+    } else {
+      // Fallback based on remaining balance
+      const remainingForRest = Math.max(0, parseFloat(rel.balance || '0') - surchargePending);
+      capitalPending = remainingForRest * 0.7;
+      interestPending = remainingForRest * 0.15;
+      insurancePending = remainingForRest * 0.05;
+      commissionPending = remainingForRest * 0.1;
+    }
+
+    // Subtract already paid
+    if (rel.pagos) {
+      for (const p of rel.pagos) {
+        interestPending = Math.max(0, interestPending - parseFloat(p.interest_applied || '0'));
+        insurancePending = Math.max(0, insurancePending - parseFloat(p.insurance_applied || '0'));
+        commissionPending = Math.max(0, commissionPending - parseFloat(p.commission_applied || '0'));
+        capitalPending = Math.max(0, capitalPending - parseFloat(p.capital_applied || '0'));
+      }
+    }
+
+    const interestApplied = Math.min(available, interestPending);
+    available -= interestApplied;
+
+    const insuranceApplied = Math.min(available, insurancePending);
+    available -= insuranceApplied;
+
+    const commissionApplied = Math.min(available, commissionPending);
+    available -= commissionApplied;
+
+    const capitalApplied = Math.min(available, capitalPending);
+    available -= capitalApplied;
+
+    // Line recovered is strictly capital applied and cannot exceed used balance
+    const lineRecovered = Math.min(capitalApplied, usedBalance);
+    const projectedUsedBalance = Math.max(0, usedBalance - lineRecovered);
+    const projectedAvailable = Math.min(totalAuthorized, totalAuthorized - projectedUsedBalance);
+
+    return {
+      surchargeApplied,
+      interestApplied,
+      insuranceApplied,
+      commissionApplied,
+      capitalApplied,
+      lineRecovered,
+      projectedUsedBalance,
+      projectedAvailable,
+    };
+  });
 
   constructor() {
-    this.api.list().subscribe({
-      next: (items) => this.relations.set(items),
-      error: () => this.error.set('No fue posible consultar los pagos.'),
+    this.loadRelations();
+  }
+
+  loadRelations(): void {
+    this.loading.set(true);
+    this.error.set('');
+    this.api.list({ per_page: 50 }).subscribe({
+      next: (items) => {
+        this.relations.set(items);
+        this.loading.set(false);
+        if (items.length > 0 && !this.selectedRelationId()) {
+          this.selectRelation(items[0].id);
+        }
+      },
+      error: () => {
+        this.error.set('No fue posible cargar las relaciones y pagos.');
+        this.loading.set(false);
+      },
     });
   }
 
-  open(id: string): void {
+  selectRelation(id: string): void {
+    this.selectedRelationId.set(id);
     this.api.detail(id).subscribe({
-      next: (item) => this.selected.set(item),
-      error: () => this.error.set('No fue posible abrir el detalle del pago.'),
+      next: (detail) => {
+        this.selectedRelation.set(detail);
+        this.simulatedAmount.set(parseFloat(detail.balance || '0'));
+      },
+      error: () => {
+        this.error.set('No fue posible obtener el detalle de la relación.');
+      },
     });
+  }
+
+  getPaymentPercentages(payment: PaymentItem): PaymentPercentages {
+    const total = parseFloat(payment.amount || '0');
+    if (total <= 0) {
+      return { surcharge: 0, interest: 0, insurance: 0, commission: 0, capital: 0 };
+    }
+
+    return {
+      surcharge: (parseFloat(payment.surcharge_applied || '0') / total) * 100,
+      interest: (parseFloat(payment.interest_applied || '0') / total) * 100,
+      insurance: (parseFloat(payment.insurance_applied || '0') / total) * 100,
+      commission: (parseFloat(payment.commission_applied || '0') / total) * 100,
+      capital: (parseFloat(payment.capital_applied || '0') / total) * 100,
+    };
   }
 }

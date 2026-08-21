@@ -34,6 +34,14 @@ export const relacionesPagosRoutes: Routes = [
     path: 'pagos',
     loadComponent: () =>
       import('./pages/pagos-page.component').then((m) => m.PagosPageComponent),
+    canActivate: [
+      anyPermissionGuard([
+        'relations.view_own',
+        'relations.view_assigned',
+        'relations.view_branch',
+        'relations.view_global',
+      ]),
+    ],
   },
   {
     path: 'excedentes',

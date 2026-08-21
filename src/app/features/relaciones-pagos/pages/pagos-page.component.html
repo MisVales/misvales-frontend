@@ -1,0 +1,386 @@
+<section class="pagos-container">
+  <!-- Page Header -->
+  <header class="page-header">
+    <h1 class="page-title">Pagos y Recuperación de Línea de Crédito</h1>
+    <p class="page-subtitle">
+      Monitoreo de pagos aplicados a relaciones, distribución en cascada de cargos y restitución exclusiva de capital a la línea de crédito.
+    </p>
+  </header>
+
+  <!-- Business Rule & Order Waterfall Banner -->
+  <div class="rule-banner">
+    <div class="rule-banner-header">
+      <span class="badge-order">Regla Financiera</span>
+      <h2 class="rule-banner-title">Orden de Prelación en Cascada y Recuperación de Línea</h2>
+    </div>
+
+    <div class="waterfall-flow">
+      <div class="flow-step step-charge">1. Recargos</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step step-charge">2. Intereses</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step step-charge">3. Seguro</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step step-charge">4. Comisión</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step step-capital">5. Capital</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-step step-recovery">★ Recupera Línea de Crédito</div>
+    </div>
+
+    <div class="rule-highlight">
+      <span>💡</span>
+      <span>
+        <strong>Importante:</strong> Únicamente el importe aplicado a <strong>Capital</strong> recupera línea disponible de crédito. Los cargos (recargos, intereses, seguro y comisión) cubren deuda pero no liberan disponibilidad de crédito.
+      </span>
+    </div>
+  </div>
+
+  <!-- Global Metrics Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <span class="metric-label">Total Pagado Acumulado</span>
+      <span class="metric-value">{{ metrics().totalPaid | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+      <span class="metric-desc">{{ metrics().totalPaymentsCount }} pagos en {{ metrics().totalRelationsWithPayments }} relaciones</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-label">Aplicado a Cargos</span>
+      <span class="metric-value text-amber-600">{{ metrics().totalCharges | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+      <span class="metric-desc">Recargos, intereses, seguro y comisiones</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-label">Aplicado a Capital</span>
+      <span class="metric-value text-emerald-600">{{ metrics().totalCapital | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+      <span class="metric-desc">Capital amortizado de vales</span>
+    </div>
+
+    <div class="metric-card accent-recovery">
+      <span class="metric-label">Línea Total Recuperada</span>
+      <span class="metric-value">{{ metrics().totalLineRecovered | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+      <span class="metric-desc">Crédito liberado y disponible nuevamente</span>
+    </div>
+  </div>
+
+  <!-- Error message if any -->
+  @if (error()) {
+    <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Main Content Layout -->
+  <div class="main-layout">
+    <!-- Left Panel: Relations List & Filters -->
+    <aside class="relations-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Relaciones</h2>
+      </div>
+
+      <div class="filters-box">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por referencia o distribuidora..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+        <select
+          class="select-input"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event)"
+        >
+          <option value="">Todos los estados</option>
+          <option value="SETTLED">Liquidadas</option>
+          <option value="PARTIALLY_PAID">Con abonos</option>
+          <option value="PENDING">Pendientes</option>
+        </select>
+      </div>
+
+      <div class="relations-scroll">
+        @for (rel of filteredRelations(); track rel.id) {
+          <button
+            type="button"
+            class="relation-item-card"
+            [class.is-active]="selectedRelation()?.id === rel.id"
+            (click)="selectRelation(rel.id)"
+          >
+            <div class="relation-card-header">
+              <span class="relation-ref">{{ rel.payment_reference }}</span>
+              <span
+                class="badge-status"
+                [class.status-settled]="rel.financial_status === 'SETTLED'"
+                [class.status-partial]="rel.financial_status === 'PARTIALLY_PAID'"
+                [class.status-pending]="rel.financial_status !== 'SETTLED' && rel.financial_status !== 'PARTIALLY_PAID'"
+              >
+                {{ rel.financial_status === 'SETTLED' ? 'Liquidada' : (rel.financial_status === 'PARTIALLY_PAID' ? 'Con abonos' : 'Pendiente') }}
+              </span>
+            </div>
+
+            <div class="distributor-name">
+              👤 {{ rel.header_snapshot?.name || rel.distribuidora?.usuario?.name || 'Distribuidora' }}
+              @if (rel.header_snapshot?.number || rel.distribuidora?.distributor_number) {
+                <span class="text-xs text-gray-500">({{ rel.header_snapshot?.number || rel.distribuidora?.distributor_number }})</span>
+              }
+            </div>
+
+            <div class="relation-card-footer">
+              <span class="text-gray-500">Saldo: <strong>{{ rel.balance | currency: 'MXN':'symbol-narrow':'1.2-2' }}</strong></span>
+              <span class="text-emerald-700 font-semibold">
+                {{ (rel.pagos?.length || 0) }} {{ (rel.pagos?.length === 1) ? 'pago' : 'pagos' }}
+              </span>
+            </div>
+          </button>
+        } @empty {
+          <div class="p-6 text-center text-sm text-gray-500">
+            No se encontraron relaciones con los criterios seleccionados.
+          </div>
+        }
+      </div>
+    </aside>
+
+    <!-- Right Panel: Relation Detail & Payments Breakdown -->
+    <main class="detail-area">
+      @if (selectedRelation(); as relation) {
+        <!-- Distributor & Credit Line Overview -->
+        <section class="card-section">
+          <div class="card-header-flex">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-600">Relación Seleccionada</span>
+              <h2 class="section-title">{{ relation.payment_reference }}</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <span
+                class="badge-status"
+                [class.status-settled]="relation.financial_status === 'SETTLED'"
+                [class.status-partial]="relation.financial_status === 'PARTIALLY_PAID'"
+                [class.status-pending]="relation.financial_status !== 'SETTLED' && relation.financial_status !== 'PARTIALLY_PAID'"
+              >
+                {{ relation.financial_status === 'SETTLED' ? 'Liquidada' : (relation.financial_status === 'PARTIALLY_PAID' ? 'Parcialmente Pagada' : 'Pendiente de Pago') }}
+              </span>
+              @if (relation.temporal_classification) {
+                <span class="badge-status bg-slate-100 text-slate-700">
+                  {{ relation.temporal_classification === 'EARLY' ? 'Pago Anticipado' : (relation.temporal_classification === 'ON_TIME' ? 'Pago Puntual' : 'Fuera de Tiempo') }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="distributor-credit-grid">
+            <!-- Distributor Info -->
+            <div class="info-box">
+              <span class="info-box-title">Datos de la Distribuidora</span>
+              <dl class="flex flex-col gap-1.5">
+                <div class="info-row">
+                  <dt>Distribuidora</dt>
+                  <dd>{{ relation.header_snapshot?.name || relation.distribuidora?.usuario?.name || 'N/A' }}</dd>
+                </div>
+                <div class="info-row">
+                  <dt>Número de Distribuidora</dt>
+                  <dd>{{ relation.header_snapshot?.number || relation.distribuidora?.distributor_number || 'N/A' }}</dd>
+                </div>
+                <div class="info-row">
+                  <dt>Sucursal</dt>
+                  <dd>{{ relation.header_snapshot?.branch || relation.distribuidora?.sucursal?.name || 'N/A' }}</dd>
+                </div>
+                <div class="info-row">
+                  <dt>Fecha Límite</dt>
+                  <dd>{{ relation.payment_deadline_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- Credit Line Status -->
+            <div class="info-box">
+              <span class="info-box-title">Línea de Crédito de la Distribuidora</span>
+              <dl class="flex flex-col gap-1.5">
+                <div class="info-row">
+                  <dt>Línea Total Autorizada</dt>
+                  <dd>{{ creditLine().totalAuthorized | currency: 'MXN':'symbol-narrow':'1.2-2' }}</dd>
+                </div>
+                <div class="info-row">
+                  <dt>Saldo Utilizado Actual</dt>
+                  <dd class="text-red-600 font-bold">{{ creditLine().usedBalance | currency: 'MXN':'symbol-narrow':'1.2-2' }}</dd>
+                </div>
+                <div class="info-row">
+                  <dt>Línea Disponible Actual</dt>
+                  <dd class="text-emerald-600 font-bold">{{ creditLine().available | currency: 'MXN':'symbol-narrow':'1.2-2' }}</dd>
+                </div>
+              </dl>
+
+              <!-- Progress bar of credit usage -->
+              <div class="credit-progress-container">
+                <div class="progress-track">
+                  <div class="progress-bar-used" [style.width.%]="creditLine().usedPercentage"></div>
+                  <div class="progress-bar-available" [style.width.%]="creditLine().availablePercentage"></div>
+                </div>
+                <div class="progress-legend">
+                  <span class="text-red-600">Utilizado: {{ creditLine().usedPercentage | number:'1.1-1' }}%</span>
+                  <span class="text-emerald-600">Disponible: {{ creditLine().availablePercentage | number:'1.1-1' }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Interactive Waterfall Simulator for Selected Relation -->
+        <section class="card-section">
+          <div class="simulator-box">
+            <div class="simulator-header">
+              <div>
+                <h3 class="text-base font-bold text-slate-900">⚡ Simulador de Aplicación y Recuperación</h3>
+                <p class="text-xs text-slate-600">
+                  Ingresa un monto de pago tentativo para proyectar la distribución exacta en cascada y la línea que se liberará.
+                </p>
+              </div>
+              <div class="simulator-input-row">
+                <label for="sim-input" class="text-xs font-bold text-slate-700">Monto tentativo:</label>
+                <input
+                  id="sim-input"
+                  type="number"
+                  min="0"
+                  step="100"
+                  class="simulator-input"
+                  [ngModel]="simulatedAmount()"
+                  (ngModelChange)="simulatedAmount.set($event)"
+                  placeholder="$ 0.00"
+                />
+              </div>
+            </div>
+
+            @if (simulationResult(); as sim) {
+              <div class="sim-results-grid">
+                <div class="sim-card">
+                  <span class="sim-card-label">1. A Recargos</span>
+                  <span class="sim-card-val text-amber-600">{{ sim.surchargeApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+                <div class="sim-card">
+                  <span class="sim-card-label">2. A Intereses</span>
+                  <span class="sim-card-val text-orange-600">{{ sim.interestApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+                <div class="sim-card">
+                  <span class="sim-card-label">3. A Seguro</span>
+                  <span class="sim-card-val text-purple-600">{{ sim.insuranceApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+                <div class="sim-card">
+                  <span class="sim-card-label">4. A Comisión</span>
+                  <span class="sim-card-val text-blue-600">{{ sim.commissionApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+                <div class="sim-card">
+                  <span class="sim-card-label">5. A Capital</span>
+                  <span class="sim-card-val text-emerald-600">{{ sim.capitalApplied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+                <div class="sim-card accent">
+                  <span class="sim-card-label">★ Línea a Recuperar</span>
+                  <span class="sim-card-val">{{ sim.lineRecovered | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+                <div class="sim-card accent">
+                  <span class="sim-card-label">Línea Disponible Proyectada</span>
+                  <span class="sim-card-val">{{ sim.projectedAvailable | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </section>
+
+        <!-- Payments History & Cascade Breakdown -->
+        <section class="card-section">
+          <div class="card-header-flex">
+            <div>
+              <h3 class="section-title">Historial de Pagos Aplicados</h3>
+              <p class="text-xs text-gray-500">
+                Desglose por componente financiero y recuperación efectiva de línea por cada abono.
+              </p>
+            </div>
+            <span class="text-xs font-semibold text-gray-500">
+              Total pagado en relación: <strong>{{ relation.reconciled_total | currency: 'MXN':'symbol-narrow':'1.2-2' }}</strong> de <strong>{{ relation.misvales_total | currency: 'MXN':'symbol-narrow':'1.2-2' }}</strong>
+            </span>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            @for (payment of relation.pagos ?? []; track payment.id) {
+              <article class="payment-card">
+                <!-- Payment Top Info -->
+                <div class="payment-card-top">
+                  <div class="flex items-center gap-3">
+                    <span class="payment-amount-badge">
+                      {{ payment.amount | currency: 'MXN':'symbol-narrow':'1.2-2' }}
+                    </span>
+                    <span class="text-xs text-gray-500">
+                      ID: <code class="rounded bg-slate-100 px-1 py-0.5">{{ payment.id.slice(0, 8) }}</code>
+                    </span>
+                  </div>
+                  <div class="payment-date">
+                    📅 Aplicado el {{ payment.applied_at | date: 'dd/MM/yyyy, HH:mm' }}
+                  </div>
+                </div>
+
+                <!-- Waterfall Visual Bar -->
+                <div class="flex flex-col gap-1.5">
+                  <div class="waterfall-bar">
+                    @if (getPaymentPercentages(payment); as p) {
+                      <div class="waterfall-segment seg-surcharge" [style.width.%]="p.surcharge" title="Recargos: {{ payment.surcharge_applied | currency:'MXN' }}"></div>
+                      <div class="waterfall-segment seg-interest" [style.width.%]="p.interest" title="Intereses: {{ payment.interest_applied | currency:'MXN' }}"></div>
+                      <div class="waterfall-segment seg-insurance" [style.width.%]="p.insurance" title="Seguro: {{ payment.insurance_applied | currency:'MXN' }}"></div>
+                      <div class="waterfall-segment seg-commission" [style.width.%]="p.commission" title="Comisión: {{ payment.commission_applied | currency:'MXN' }}"></div>
+                      <div class="waterfall-segment seg-capital" [style.width.%]="p.capital" title="Capital: {{ payment.capital_applied | currency:'MXN' }}"></div>
+                    }
+                  </div>
+
+                  <div class="waterfall-legend">
+                    <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Recargos</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> Intereses</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#8b5cf6"></span> Seguro</div>
+                    <div class="legend-item"><span class="legend-dot" style="background:#3b82f6"></span> Comisión</div>
+                    <div class="legend-item font-bold text-emerald-800"><span class="legend-dot" style="background:#10b981"></span> Capital (Recupera Línea)</div>
+                  </div>
+                </div>
+
+                <!-- Detailed Component Cascade Grid -->
+                <div class="cascade-grid">
+                  <div class="cascade-item">
+                    <span class="cascade-label">1. Recargos</span>
+                    <span class="cascade-value text-amber-600">{{ payment.surcharge_applied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                  </div>
+                  <div class="cascade-item">
+                    <span class="cascade-label">2. Intereses</span>
+                    <span class="cascade-value text-orange-600">{{ payment.interest_applied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                  </div>
+                  <div class="cascade-item">
+                    <span class="cascade-label">3. Seguro</span>
+                    <span class="cascade-value text-purple-600">{{ payment.insurance_applied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                  </div>
+                  <div class="cascade-item">
+                    <span class="cascade-label">4. Comisión</span>
+                    <span class="cascade-value text-blue-600">{{ payment.commission_applied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                  </div>
+                  <div class="cascade-item highlight-capital">
+                    <span class="cascade-label">5. Capital</span>
+                    <span class="cascade-value">{{ payment.capital_applied | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                  </div>
+                  <div class="cascade-item highlight-recovery">
+                    <span class="cascade-label">★ Línea Recuperada</span>
+                    <span class="cascade-value">{{ payment.line_recovered | currency: 'MXN':'symbol-narrow':'1.2-2' }}</span>
+                  </div>
+                </div>
+              </article>
+            } @empty {
+              <div class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+                Esta relación aún no cuenta con pagos registrados o conciliados.
+              </div>
+            }
+          </div>
+        </section>
+      } @else {
+        <div class="empty-detail">
+          <div class="text-4xl mb-2">💳</div>
+          <h3 class="text-lg font-bold text-slate-800">Selecciona una relación</h3>
+          <p class="text-sm">
+            Elige una relación del listado izquierdo para inspeccionar sus pagos aplicados, desglose en cascada y recuperación de línea.
+          </p>
+        </div>
+      }
+    </main>
+  </div>
+</section>
