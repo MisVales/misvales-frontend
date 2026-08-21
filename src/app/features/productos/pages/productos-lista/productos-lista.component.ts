@@ -33,6 +33,10 @@ export class ProductosListaComponent implements OnInit {
     return permissions.includes('catalogs.manage') || permissions.includes('all');
   }
 
+  isGeneralManager(): boolean {
+    return this.session.roles().includes('general_manager');
+  }
+
   protected estadoProducto(estado: 'ACTIVE' | 'INACTIVE'): string {
     return estado === 'ACTIVE' ? 'Disponible' : 'Desactivado';
   }
