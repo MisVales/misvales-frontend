@@ -52,10 +52,10 @@ import {
           <button
             type="button"
             (click)="selectLine(line)"
-            class="grid min-h-28 w-full gap-4 border-b border-slate-100 p-4 text-left transition last:border-b-0 hover:bg-emerald-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700 sm:grid-cols-[minmax(12rem,1fr)_repeat(3,minmax(0,.7fr))_minmax(9rem,.7fr)] sm:items-center"
+            class="grid min-h-28 w-full grid-cols-2 gap-4 border-b border-slate-100 p-4 text-left transition last:border-b-0 hover:bg-emerald-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700 sm:grid-cols-[minmax(12rem,1fr)_repeat(3,minmax(0,.7fr))_minmax(9rem,.7fr)] sm:items-center"
             [class.bg-emerald-50]="selectedLine()?.id === line.id"
           >
-            <div>
+            <div class="col-span-2 sm:col-span-1">
               <div>
                 <h2 class="mt-1 font-semibold text-slate-950">{{ line.distributor.full_name }}</h2>
               </div>
@@ -78,7 +78,7 @@ import {
                 {{ line.available_balance | currency: 'MXN' }}
               </p>
             </div>
-            <div class="sm:text-right">
+            <div class="col-span-2 sm:col-span-1 sm:text-right">
               <span
                 class="rounded-full px-2.5 py-1 text-xs font-bold"
                 [class]="restrictionClass(line)"

@@ -17,7 +17,22 @@ import { CreditoApiService, CreditIncreaseView } from '../../data-access/api/cre
       @if (loading()) { <p class="rounded-xl border bg-white p-6">Cargando solicitudes...</p> }
       @else if (!requests().length) { <div class="rounded-xl border border-dashed bg-white p-10 text-center text-gray-500">No existen solicitudes visibles.</div> }
       @else { <div class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.7fr)]">
-        <div class="overflow-x-auto rounded-xl border bg-white shadow-sm"><table class="min-w-full text-sm"><thead class="bg-gray-50 text-left"><tr><th class="p-3">Solicitud</th><th class="p-3">Distribuidora</th><th class="p-3">Importes</th><th class="p-3">Estado</th><th class="p-3 text-right">Acciones</th></tr></thead><tbody>
+        <div class="space-y-3 sm:hidden">
+          @for (request of requests(); track request.id) {
+            <button type="button" (click)="select(request.id)" class="block w-full rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-[#386641]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#386641]" [class.border-[#386641]]="selected()?.id === request.id" [class.bg-[#F3F8F4]]="selected()?.id === request.id">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0"><p class="text-xs font-semibold uppercase tracking-wider text-[#386641]">Solicitud</p><h2 class="mt-1 truncate text-base font-bold text-gray-900">{{ request.request_number }}</h2><p class="mt-1 text-xs text-gray-500">{{ request.requested_at | date:'mediumDate' }}</p></div>
+                <span class="shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold" [class]="statusClass(request.status)">{{ statusLabel(request.status) }}</span>
+              </div>
+              <div class="mt-4 grid grid-cols-2 gap-3 border-y border-gray-100 py-3 text-sm">
+                <div><p class="text-xs text-gray-500">Solicitado</p><p class="mt-1 font-bold text-gray-900">{{ request.requested_amount | currency:'MXN' }}</p></div>
+                <div><p class="text-xs text-gray-500">Recomendado</p><p class="mt-1 font-semibold text-gray-800">{{ request.recommended_amount ? (request.recommended_amount | currency:'MXN') : 'Pendiente' }}</p></div>
+              </div>
+              <div class="mt-3 flex items-center justify-between gap-3"><p class="min-w-0 truncate text-sm text-gray-600">{{ request.distributor?.full_name ?? 'Distribuidora sin nombre disponible' }}</p><span class="shrink-0 text-sm font-semibold text-[#386641]">Ver detalle →</span></div>
+            </button>
+          }
+        </div>
+        <div class="hidden overflow-x-auto rounded-xl border bg-white shadow-sm sm:block"><table class="min-w-full text-sm"><thead class="bg-gray-50 text-left"><tr><th class="p-3">Solicitud</th><th class="p-3">Distribuidora</th><th class="p-3">Importes</th><th class="p-3">Estado</th><th class="p-3 text-right">Acciones</th></tr></thead><tbody>
           @for (request of requests(); track request.id) {
             <tr class="border-t hover:bg-blue-50" [class.bg-blue-50]="selected()?.id === request.id">
               <td class="p-3 font-semibold">

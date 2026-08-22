@@ -16,7 +16,7 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
   selector: 'app-relaciones-page',
   standalone: true,
   imports: [CommonModule, FormsModule, StatusLabelPipe],
-  template: ` <section class="space-y-6 p-6">
+  template: ` <section class="space-y-6 p-4 sm:p-6">
     <header class="flex items-center gap-4">
       @if (selected()) {
         <button
@@ -52,7 +52,20 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
 
     @if (!selected()) {
       <div class="overflow-hidden rounded-xl border bg-white shadow-sm">
-        <div class="overflow-x-auto">
+        <div class="space-y-3 p-3 sm:hidden">
+          @if (!relations().length && !loading()) {
+            <div class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-sm text-gray-500">No hay relaciones disponibles.</div>
+          }
+          @for (item of relations(); track item.id) {
+            <button type="button" (click)="open(item.id)" class="block w-full rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm transition-colors hover:border-[#386641]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#386641]">
+              <div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="text-xs font-semibold uppercase tracking-wider text-[#386641]">Relación</p><h2 class="mt-1 truncate font-mono text-sm font-bold text-gray-900">{{ item.payment_reference }}</h2></div><span class="shrink-0 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-800">{{ item.financial_status | statusLabel }}</span></div>
+              <p class="mt-3 truncate text-sm font-medium text-gray-800">{{ item.header_snapshot['name'] || item.distribuidora?.distributor_number || 'Distribuidora' }}</p>
+              <div class="mt-3 grid grid-cols-2 gap-3 border-y border-gray-100 py-3"><div><p class="text-xs text-gray-500">Saldo pendiente</p><p class="mt-1 text-sm font-bold text-gray-900">{{ item.balance | currency: 'MXN' }}</p></div><div><p class="text-xs text-gray-500">Fecha límite</p><p class="mt-1 text-sm font-semibold text-gray-800">{{ item.payment_deadline_at | date: 'mediumDate' }}</p></div></div>
+              <div class="mt-3 flex items-center justify-between gap-3 text-sm"><span class="text-gray-500">{{ extractPartialities(item) }} parcialidades</span><span class="font-semibold text-[#386641]">Ver detalles →</span></div>
+            </button>
+          }
+        </div>
+        <div class="hidden overflow-x-auto sm:block">
           <table class="w-full text-left text-sm">
             <thead class="border-b bg-gray-50 text-gray-600">
               <tr>
@@ -111,7 +124,7 @@ import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
           </table>
         </div>
 
-        <div class="flex items-center justify-between border-t p-4 text-sm text-gray-600">
+        <div class="flex flex-col gap-3 border-t p-4 text-sm text-gray-600 sm:flex-row sm:items-center sm:justify-between">
           <div>Página {{ currentPage() }} de {{ lastPage() }} ({{ total() }} relaciones)</div>
           <div class="flex gap-2">
             <button

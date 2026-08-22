@@ -683,7 +683,7 @@
 }
 @media (max-width: 640px) {
   .voucher-page {
-    padding: 1rem;
+    padding: 0.25rem 0 1rem;
   }
   .page-heading,
   .form-action,
@@ -695,7 +695,7 @@
     max-width: none;
   }
   .steps {
-    padding: 0.85rem;
+    padding: 0.85rem 1rem;
   }
   .financial-fields { grid-template-columns: 1fr; }
   .credit-availability { grid-template-columns: 1fr; }
@@ -715,7 +715,7 @@
   .form-section,
   .form-action,
   .review-panel {
-    padding: 1rem;
+    padding: 1.1rem;
   }
   .section-heading {
     flex-direction: column;

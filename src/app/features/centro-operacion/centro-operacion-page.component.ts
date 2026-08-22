@@ -12,11 +12,12 @@ import {
   selector: 'app-centro-operacion-page',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterLink],
-  template: ` <section class="space-y-6 p-4 md:p-6">
-    <header class="flex flex-wrap items-center justify-between gap-3">
+  template: ` <section class="operation-center space-y-6 p-4 md:p-6">
+    <header class="operation-header flex flex-wrap items-center justify-between gap-3">
       <div>
+        <p class="operation-eyebrow">MisVales · administración</p>
         <h1 class="text-2xl font-bold">Centro de operación</h1>
-        <p class="text-sm text-gray-600">
+        <p class="mt-1 text-sm text-gray-600">
           Notificaciones, reportes, auditoría y logs correlacionados.
         </p>
       </div>
@@ -30,7 +31,7 @@ import {
       }
     </header>
     @if (canNotify()) {
-      <section>
+      <section class="operation-section">
         <div class="flex items-center gap-3">
           <h2 class="font-bold">Notificaciones</h2>
           <label class="text-sm"
@@ -38,7 +39,7 @@ import {
             no leídas</label
           >
         </div>
-        <div class="mt-3 grid gap-2">
+        <div class="mt-4 grid gap-3">
           @for (item of notifications(); track item.id) {
             <article class="rounded-xl border bg-white p-4" [class.opacity-60]="item.read_at">
               <div class="flex justify-between gap-2">
@@ -62,10 +63,10 @@ import {
       </section>
     }
     @if (canReports()) {
-      <section class="space-y-4 mb-8">
+      <section class="operation-section space-y-4 mb-8">
         <h2 class="font-bold">Reportes Excel Especiales</h2>
       <div class="grid gap-4 md:grid-cols-2">
-        <div class="rounded-xl border bg-white p-4">
+        <div class="operation-report-card rounded-xl border bg-white p-4">
           <h3 class="mb-3 font-bold text-gray-700">Saldo de puntos por distribuidora al corte</h3>
           <div class="flex flex-col gap-2">
             <div class="flex flex-wrap items-center gap-2">
@@ -77,7 +78,7 @@ import {
             </button>
           </div>
         </div>
-        <div class="rounded-xl border bg-white p-4">
+        <div class="operation-report-card rounded-xl border bg-white p-4">
           <h3 class="mb-3 font-bold text-gray-700">Presolicitudes pendientes y validadas</h3>
           <div class="flex flex-col gap-3">
             <div class="flex flex-wrap items-center gap-2">
@@ -102,7 +103,7 @@ import {
       </div>
       </section>
 
-      <section class="space-y-3">
+      <section class="operation-section space-y-3">
         <h2 class="font-bold">Reportes funcionales</h2>
         <div class="grid gap-2 md:grid-cols-5">
           <select class="rounded border p-2" [(ngModel)]="selectedReport">
@@ -147,7 +148,7 @@ import {
       </section>
     }
     @if (isGerenteGeneral()) {
-      <section class="space-y-3">
+      <section class="operation-section space-y-3">
         <h2 class="font-bold">Corte actual</h2>
         <div class="rounded-xl border bg-white p-4">
           @if (cutoffSummary(); as summary) {
@@ -219,7 +220,7 @@ import {
       }
     }
     @if (canAudit()) {
-      <section class="rounded-xl border border-emerald-200 bg-emerald-50/50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <section class="operation-audit rounded-xl border border-emerald-200 bg-emerald-50/50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 class="text-lg font-bold text-emerald-950">Auditoría Inmutable del Sistema</h2>
           <p class="text-sm text-emerald-800">
@@ -233,6 +234,32 @@ import {
       </section>
     }
   </section>`,
+  styles: [`
+    :host { display: block; }
+    .operation-center { max-width: 84rem; margin: 0 auto; }
+    .operation-eyebrow { margin: 0 0 .35rem; color: var(--mv-primary-700); font-size: .72rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+    .operation-header { padding: 1.25rem; border: 1px solid var(--mv-border); border-radius: 1rem; background: linear-gradient(135deg, #fff 0%, #f0f7f1 100%); }
+    .operation-section { padding: 1.25rem; border: 1px solid var(--mv-border); border-radius: 1rem; background: #fff; box-shadow: 0 1px 2px rgb(24 33 27 / .04); }
+    .operation-report-card { height: 100%; border-color: var(--mv-border); }
+    @media (max-width: 640px) {
+      .operation-center { padding: .25rem 0 1rem; gap: 1rem; }
+      .operation-header { padding: 1.15rem; align-items: flex-start; border-radius: .9rem; }
+      .operation-header h1 { font-size: 1.55rem; line-height: 1.15; }
+      .operation-header > div:last-child { width: 100%; }
+      .operation-header [aria-label='Notificaciones no leídas'] { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; }
+      .operation-section { padding: 1rem; border-radius: .9rem; }
+      .operation-section > div:first-child { flex-wrap: wrap; align-items: flex-start; }
+      .operation-section label { width: 100%; }
+      .operation-section :where(input, select, button) { width: 100%; min-height: 2.75rem; }
+      .operation-section .w-fit { width: 100%; }
+      .operation-report-card { padding: 1rem; border-radius: .75rem; }
+      .operation-report-card h3 { line-height: 1.35; }
+      .operation-section .grid.md\\:grid-cols-5 { gap: .75rem; }
+      .operation-section .overflow-x-auto { margin-inline: -.25rem; border-radius: .75rem; }
+      .operation-audit { padding: 1.1rem; border-radius: .9rem; }
+      .operation-audit a { width: 100%; justify-content: center; }
+    }
+  `],
 })
 export class CentroOperacionPageComponent {
   private readonly api = inject(CentroOperacionApiService);

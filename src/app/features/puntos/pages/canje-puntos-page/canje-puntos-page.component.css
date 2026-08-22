@@ -118,6 +118,22 @@
   }
 }
 
+@media (max-width: 640px) {
+  .puntos-container { gap: 1rem; padding: 0.25rem 0 1rem; }
+  .page-title { font-size: 1.55rem; line-height: 1.15; }
+  .page-subtitle { line-height: 1.5; }
+  .balance-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.7rem; }
+  .hero-card { min-height: 9rem; padding: 1rem; border-radius: 0.85rem; }
+  .hero-label { font-size: 0.68rem; line-height: 1.25; }
+  .hero-val { font-size: 1.35rem; overflow-wrap: anywhere; }
+  .hero-sub { font-size: 0.68rem; line-height: 1.35; }
+  .section-card { gap: 1rem; padding: 1rem; border-radius: 0.9rem; }
+  .section-card-title { font-size: 1.05rem; line-height: 1.25; }
+  .preview-row { align-items: start; gap: 0.75rem; }
+  .preview-row dd { text-align: right; }
+  .btn-submit { min-height: 3rem; padding-inline: 1rem; text-align: center; }
+}
+
 .section-card {
   background: #ffffff;
   border: 1px solid #e2e8f0;

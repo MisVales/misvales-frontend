@@ -93,6 +93,35 @@ tbody tr:hover { background: #f7faf8; }
 }
 .skip-link:focus { transform: translateY(0); }
 @media (max-width: 767px) {
+  app-mobile-layout.distributor-mobile main {
+    padding: 12px;
+    background: linear-gradient(180deg, #f8fbf8 0%, var(--mv-canvas) 12rem);
+  }
+  app-mobile-layout.distributor-mobile main > * {
+    max-width: 42rem;
+    margin-inline: auto;
+  }
+  app-mobile-layout.distributor-mobile :where(button, a, input, select, textarea) {
+    min-height: 44px;
+  }
+  app-mobile-layout.distributor-mobile :where(.rounded-3xl) {
+    border-radius: 1rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .page-heading { margin-bottom: 1.25rem; gap: 0.75rem; }
+  app-mobile-layout.distributor-mobile .voucher-page h1 { font-size: 1.8rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .page-intro,
+  app-mobile-layout.distributor-mobile .voucher-page .type-note { font-size: 0.86rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .type-note { padding: 0.7rem 0 0.7rem 0.8rem; border-radius: 0 .5rem .5rem 0; background: var(--mv-surface-muted); }
+  app-mobile-layout.distributor-mobile .voucher-page .flow,
+  app-mobile-layout.distributor-mobile .voucher-page .history-section { border-radius: 0.9rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .steps { display: flex; gap: 0.7rem; overflow-x: auto; scrollbar-width: none; }
+  app-mobile-layout.distributor-mobile .voucher-page .steps::-webkit-scrollbar { display: none; }
+  app-mobile-layout.distributor-mobile .voucher-page .steps li { min-width: 6.25rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .product-options { grid-template-columns: 1fr; }
+  app-mobile-layout.distributor-mobile .voucher-page .product-option { min-height: 4.5rem; padding: 1rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .credit-availability { gap: 0.8rem; padding: 0.9rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .credit-availability dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .credit-availability strong { font-size: 1.15rem; }
   :where(.content-wrapper) { padding: 16px !important; }
   :where(.flex.gap-4):has(> input[type='search'], > select) { flex-wrap: wrap; }
   :where(.flex.gap-4):has(> input[type='search'], > select) > * { min-width: min(100%, 220px); flex: 1 1 100%; }
