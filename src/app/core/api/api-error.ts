@@ -95,7 +95,12 @@ export function normalizeApiError(
   const fields = normalizeFields(nested['fields'] ?? body['fields'] ?? body['errors']);
   const detailsValue = nested['details'] ?? body['details'];
   const details = isRecord(detailsValue) ? detailsValue : {};
-  const requestId = stringValue(nested['request_id']) ?? stringValue(body['request_id']);
+  const requestId =
+    stringValue(nested['request_id']) ??
+    stringValue(body['request_id']) ??
+    (error instanceof HttpErrorResponse
+      ? stringValue(error.headers.get('X-Request-Id'))
+      : null);
 
   return { status, code, message, fields, details, requestId };
 }

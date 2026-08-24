@@ -1,0 +1,18 @@
+<a class="skip-link" href="#desktop-main">Saltar al contenido</a>
+<app-sidebar class="sidebar-wrapper"></app-sidebar>
+
+<main id="desktop-main" class="desktop-main" tabindex="-1">
+  <app-shell-header></app-shell-header>
+  <div class="desktop-content">
+    @if (isReadOnlyAdmin()) {
+      <aside class="readonly-notice" role="status" aria-label="Acceso administrativo de consulta">
+        <strong>Modo de consulta</strong>
+        <span
+          >Puedes revisar toda la operación. Las altas, cambios y autorizaciones están
+          deshabilitadas.</span
+        >
+      </aside>
+    }
+    <router-outlet></router-outlet>
+  </div>
+</main>

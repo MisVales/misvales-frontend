@@ -1,10 +1,10 @@
-﻿import 'fake-indexeddb/auto';
+import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
 import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { errorHandlingInterceptor, isConcurrencyConflict, sanitizeServerError } from './error-handling.interceptor';
 import { SessionStore } from '../session/session.store';
-import { AlertService } from '../../shared/services/alert.service';
+import { AlertService } from '../../shared/components/alerts/alert.service';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthTokenStore } from '../session/auth-token.store';
 import { SessionExpiredService } from '../session/session-expired.service';

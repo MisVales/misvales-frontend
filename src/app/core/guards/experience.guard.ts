@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanActivateChildFn, CanActivateFn, Router } from '@angular/router';
-import { ExperiencePolicyService } from '../experience/experience-policy.service';
+import { ExperiencePolicyService } from '@core/config/experience/experience-policy.service';
 
 function evaluate(url: string): boolean | ReturnType<Router['createUrlTree']> {
   const router = inject(Router);

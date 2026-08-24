@@ -12,7 +12,7 @@ export const permissionGuard = (requiredPermission: string): CanActivateFn => {
       return true;
     }
 
-    return router.createUrlTree(['/auth/login']);
+    return router.createUrlTree(['/acceso-denegado']);
   };
 };
 
@@ -22,8 +22,9 @@ export const anyPermissionGuard = (requiredPermissions: readonly string[]): CanA
     const router = inject(Router);
     const permissions = sessionStore.permissions();
 
-    return permissions.includes('all') || requiredPermissions.some((permission) => permissions.includes(permission))
+    return permissions.includes('all') ||
+      requiredPermissions.some((permission) => permissions.includes(permission))
       ? true
-      : router.createUrlTree(['/auth/login']);
+      : router.createUrlTree(['/acceso-denegado']);
   };
 };

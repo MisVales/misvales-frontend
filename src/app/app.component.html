@@ -1,0 +1,20 @@
+<div
+  class="activity-track"
+  [class.activity-track--visible]="requestActivity.visible()"
+  aria-hidden="true"
+  data-testid="global-loading-indicator"
+><span class="activity-bar"></span></div>
+@if (requestActivity.visible()) {
+  <p class="sr-only" role="status" aria-live="polite" aria-atomic="true">Actualizando información.</p>
+}
+<div
+  data-testid="application-surface"
+  [attr.inert]="sessionExpired.isOpen() ? '' : null"
+  [attr.aria-hidden]="sessionExpired.isOpen() ? 'true' : null"
+>
+  <router-outlet></router-outlet>
+  <app-mfa-reauth-modal></app-mfa-reauth-modal>
+  <app-confirmation-host></app-confirmation-host>
+</div>
+<app-alert></app-alert>
+<app-session-expired-dialog></app-session-expired-dialog>

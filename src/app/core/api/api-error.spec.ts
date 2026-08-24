@@ -1,4 +1,4 @@
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
 import {
   apiErrorCode,
@@ -56,6 +56,16 @@ describe('normalizeApiError', () => {
     expect(normalized.message).toBe('Mensaje seguro.');
     expect(normalized.fields).toEqual({});
     expect(normalized.requestId).toBeNull();
+  });
+
+  it('uses the trace header when a non-contract error body has no request id', () => {
+    const normalized = normalizeApiError(new HttpErrorResponse({
+      status: 503,
+      error: 'unavailable',
+      headers: new HttpHeaders({ 'X-Request-Id': 'request-from-header' }),
+    }));
+
+    expect(normalized.requestId).toBe('request-from-header');
   });
 
   it('does not expose local exception messages as API feedback', () => {

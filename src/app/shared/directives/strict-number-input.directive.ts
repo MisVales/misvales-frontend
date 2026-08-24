@@ -1,9 +1,9 @@
-import { Directive, ElementRef, HostListener } from '@angular/core';
+import { Directive, ElementRef, HostListener, inject } from '@angular/core';
 
 /** Blocks exponent and signed values in native numeric inputs. */
 @Directive({ selector: 'input[appStrictNumber]', standalone: true })
 export class StrictNumberInputDirective {
-  constructor(private readonly elementRef: ElementRef<HTMLInputElement>) {}
+  private readonly elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
 
   @HostListener('keydown', ['$event'])
   onKeydown(event: KeyboardEvent): void {

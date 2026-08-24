@@ -8,16 +8,16 @@ import { inject, isDevMode } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, from, Observable, switchMap, throwError } from 'rxjs';
 import { apiErrorCode, normalizeApiError } from '../api/api-error';
-import { AlertService } from '../../shared/services/alert.service';
-import { MfaReauthService } from '../services/mfa-reauth.service';
+import { AlertService } from '../../shared/components/alerts/alert.service';
+import { MfaReauthService } from '@core/auth/services/mfa-reauth.service';
 import { AuthTokenStore } from '../session/auth-token.store';
 import { SessionExpiredService } from '../session/session-expired.service';
 import { SessionRefreshService } from '../session/session-refresh.service';
 import { SessionStore } from '../session/session.store';
-import { OfflineSyncService } from '../services/offline-sync.service';
+import { OfflineSyncService } from '@core/api/offline/offline-sync.service';
 
 const PRODUCTION_SERVER_ERROR_MESSAGE = 'Ocurrió un error interno. Intenta nuevamente más tarde.';
-const SAFE_REQUEST_ID = /^[A-Za-z0-9-]{8,100}$/;
+const SAFE_REQUEST_ID = /^[A-Za-z0-9._:-]{8,128}$/;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -25,7 +25,10 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function requestReference(error: HttpErrorResponse): string {
   const requestId = normalizeApiError(error).requestId;
-  return requestId && SAFE_REQUEST_ID.test(requestId) ? ` Referencia: ${requestId}.` : '';
+  if (!requestId || !SAFE_REQUEST_ID.test(requestId)) return '';
+
+  const supportCode = requestId.replace(/[^A-Za-z0-9]/g, '').slice(0, 10).toUpperCase();
+  return supportCode.length >= 8 ? ` Folio de soporte: ${supportCode}.` : '';
 }
 
 export function isConcurrencyConflict(error: HttpErrorResponse): boolean {

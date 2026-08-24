@@ -1,0 +1,70 @@
+<nav
+  class="workspace-nav"
+  [class.workspace-nav--header]="variant === 'header'"
+  aria-label="Navegación de la distribuidora"
+>
+  <div class="workspace-nav__context">
+    <a [routerLink]="backRoute" aria-label="Volver a distribuidoras">
+      <lucide-icon name="arrow-left" [size]="18" aria-hidden="true" />
+    </a>
+    @if (variant !== 'header') {
+      <div>
+        <span>Distribuidora en seguimiento</span>
+        <strong>{{ distributorNumber || 'Cargando expediente…' }}</strong>
+      </div>
+    }
+  </div>
+
+  <div class="workspace-nav__links">
+    @if (distributorId) {
+      <a
+        [routerLink]="['/distribuidoras', distributorId]"
+        [class.is-active]="active === 'summary'"
+        [attr.aria-current]="active === 'summary' ? 'page' : null"
+      >
+        <lucide-icon name="layout-dashboard" [size]="19" aria-hidden="true" />
+        <span><strong>Resumen</strong><small>Situación actual</small></span>
+      </a>
+      <a
+        [routerLink]="['/distribuidoras', distributorId]"
+        [queryParams]="{ section: 'credito' }"
+        [class.is-active]="active === 'credit'"
+        [attr.aria-current]="active === 'credit' ? 'page' : null"
+      >
+        <lucide-icon name="credit-card" [size]="19" aria-hidden="true" />
+        <span><strong>Crédito</strong><small>Línea y movimientos</small></span>
+      </a>
+    } @else {
+      <span class="workspace-nav__pending" aria-label="Preparando acceso al resumen">
+        <lucide-icon name="layout-dashboard" [size]="19" aria-hidden="true" />
+        <span><strong>Resumen</strong><small>Preparando acceso…</small></span>
+      </span>
+      <span class="workspace-nav__pending" aria-label="Preparando acceso al crédito">
+        <lucide-icon name="credit-card" [size]="19" aria-hidden="true" />
+        <span><strong>Crédito</strong><small>Preparando acceso…</small></span>
+      </span>
+    }
+
+    <a
+      routerLink="/relaciones-pagos/pagos"
+      [queryParams]="{ distribuidora: distributorNumber, distributorId: distributorId }"
+      [class.is-active]="active === 'payments'"
+      [attr.aria-current]="active === 'payments' ? 'page' : null"
+    >
+      <lucide-icon name="banknote" [size]="19" aria-hidden="true" />
+      <span><strong>Pagos</strong><small>Relaciones y abonos</small></span>
+    </a>
+
+    @if (distributorId) {
+      <a
+        [routerLink]="['/distribuidoras', distributorId]"
+        [queryParams]="{ section: 'historial' }"
+        [class.is-active]="active === 'history'"
+        [attr.aria-current]="active === 'history' ? 'page' : null"
+      >
+        <lucide-icon name="history" [size]="19" aria-hidden="true" />
+        <span><strong>Historial</strong><small>Cambios y trazabilidad</small></span>
+      </a>
+    }
+  </div>
+</nav>

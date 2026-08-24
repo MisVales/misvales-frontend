@@ -1,0 +1,144 @@
+<div
+  class="input-field"
+  [class.input-field--focused]="focused()"
+  [class.input-field--invalid]="invalid"
+  [class.input-field--multiline]="multiline"
+  [class.input-field--effects]="effects"
+  [class.input-field--compact]="size === 'compact'"
+  [class.input-field--comfortable]="size === 'comfortable'"
+  [attr.data-tone]="tone"
+>
+  @if (label) {
+    <label class="input-label" [for]="controlId">
+      {{ label }}
+      @if (required) {
+        <span aria-hidden="true">*</span>
+      }
+    </label>
+  }
+  <div class="input-shell">
+    <span class="input-accent" aria-hidden="true"></span>
+    @if (leadingIcon) {
+      <span class="input-icon" aria-hidden="true">
+        <lucide-icon [name]="leadingIcon" [size]="18" [strokeWidth]="1.8" />
+      </span>
+    }
+    @if (prefix) {
+      <span class="input-affix input-prefix">{{ prefix }}</span>
+    }
+
+    @if (multiline) {
+      <textarea
+        class="input-control"
+        [id]="controlId"
+        [value]="value()"
+        [rows]="rows"
+        [style.max-height.px]="maxTextareaHeight"
+        [placeholder]="placeholder"
+        [required]="required"
+        [readOnly]="readonly"
+        [disabled]="isDisabled()"
+        [attr.maxlength]="maxLength"
+        [attr.aria-label]="!label ? ariaLabel || placeholder : null"
+        [attr.aria-describedby]="describedBy"
+        [attr.aria-invalid]="invalid"
+        (input)="update($event)"
+        (focus)="handleFocus()"
+        (blur)="handleBlur($event)"
+      ></textarea>
+    } @else {
+      <input
+        class="input-control"
+        [id]="controlId"
+        [type]="resolvedType"
+        [value]="value()"
+        [placeholder]="placeholder"
+        [required]="required"
+        [readOnly]="readonly"
+        [disabled]="isDisabled()"
+        [attr.maxlength]="maxLength"
+        [attr.min]="min"
+        [attr.max]="max"
+        [attr.step]="step"
+        [attr.autocomplete]="autocomplete || null"
+        [attr.inputmode]="inputmode || null"
+        [attr.aria-label]="!label ? ariaLabel || placeholder : null"
+        [attr.aria-describedby]="describedBy"
+        [attr.aria-invalid]="invalid"
+        (input)="update($event)"
+        (focus)="handleFocus()"
+        (blur)="handleBlur($event)"
+      />
+    }
+
+    @if (suffix) {
+      <span class="input-affix input-suffix">{{ suffix }}</span>
+    }
+    @if (clearable && value() && !isDisabled() && !readonly) {
+      <button class="input-action" type="button" aria-label="Limpiar campo" (click)="clear()">
+        <lucide-icon name="x" [size]="16" aria-hidden="true" />
+      </button>
+    }
+    @if (type === 'password' && revealPassword && !isDisabled()) {
+      <button
+        class="input-action"
+        type="button"
+        [attr.aria-label]="passwordVisible() ? 'Ocultar contraseña' : 'Mostrar contraseña'"
+        [attr.aria-pressed]="passwordVisible()"
+        (click)="togglePassword()"
+      >
+        <lucide-icon
+          [name]="passwordVisible() ? 'eye-off' : 'eye'"
+          [size]="17"
+          aria-hidden="true"
+        />
+      </button>
+    }
+    @if (maxLength !== null) {
+      <span class="input-counter" aria-live="polite">{{ value().length }}/{{ maxLength }}</span>
+    }
+    @if (validationRules.length) {
+      <span class="validation-wrap" [class.validation-wrap--open]="validationOpen()">
+        <button
+          class="input-action validation-trigger"
+          type="button"
+          [class.validation-trigger--complete]="allRulesMet"
+          [attr.aria-label]="
+            allRulesMet ? 'Todos los requisitos se cumplen' : 'Consultar requisitos del campo'
+          "
+          [attr.aria-expanded]="validationOpen()"
+          [attr.aria-controls]="controlId + '-requirements'"
+          (click)="validationOpen.update((open) => !open)"
+        >
+          <lucide-icon
+            [name]="allRulesMet ? 'circle-check' : 'info'"
+            [size]="17"
+            aria-hidden="true"
+          />
+        </button>
+        <span class="validation-tooltip" role="tooltip" [id]="controlId + '-requirements'">
+          <strong>{{ validationTitle }}</strong>
+          <span class="validation-rule-list">
+            @for (rule of validationRules; track rule.label) {
+              <span class="validation-rule" [class.validation-rule--met]="isRuleMet(rule)">
+                <lucide-icon
+                  [name]="isRuleMet(rule) ? 'circle-check' : 'x'"
+                  [size]="15"
+                  aria-hidden="true"
+                />
+                <span>{{ rule.label }}</span>
+              </span>
+            }
+          </span>
+        </span>
+      </span>
+    }
+  </div>
+  <div class="input-feedback" aria-live="polite">
+    @if (invalid && errorMessage) {
+      <p class="input-message input-error" [id]="controlId + '-error'">{{ errorMessage }}</p>
+    } @else if (hint) {
+      <p class="input-message" [id]="controlId + '-hint'">{{ hint }}</p>
+    }
+  </div>
+</div>

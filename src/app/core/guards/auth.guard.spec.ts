@@ -3,7 +3,7 @@ import { Router, RouterStateSnapshot, ActivatedRouteSnapshot } from '@angular/ro
 import { SessionStore } from '../session/session.store';
 import { authGuard } from './auth.guard';
 import { vi } from 'vitest';
-import { MeService } from '../services/me.service';
+import { MeService } from '@core/auth/data-access/me.service';
 import { throwError } from 'rxjs';
 import { AuthTokenStore } from '../session/auth-token.store';
 import { SessionRefreshService } from '../session/session-refresh.service';

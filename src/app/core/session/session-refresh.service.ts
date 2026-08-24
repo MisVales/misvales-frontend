@@ -1,8 +1,8 @@
 import { HttpBackend, HttpClient, HttpHeaders, HttpXsrfTokenExtractor } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { finalize, map, Observable, shareReplay, switchMap, tap } from 'rxjs';
-import { v4 as uuidv4 } from 'uuid';
 import { API_CONFIG } from '../api/api.config';
+import { RequestCorrelationService } from '../observability/request-correlation.service';
 import { AuthTokenStore } from './auth-token.store';
 
 interface RefreshResponse {
@@ -16,6 +16,7 @@ export class SessionRefreshService {
   private readonly apiConfig = inject(API_CONFIG);
   private readonly tokenStore = inject(AuthTokenStore);
   private readonly xsrfTokenExtractor = inject(HttpXsrfTokenExtractor);
+  private readonly correlation = inject(RequestCorrelationService);
   private inFlight?: Observable<void>;
 
   refresh(): Observable<void> {
@@ -25,7 +26,10 @@ export class SessionRefreshService {
       .get(this.csrfCookieUrl(), { withCredentials: true })
       .pipe(
         switchMap(() => {
-          let headers = new HttpHeaders({ 'X-Request-Id': uuidv4() });
+          let headers = new HttpHeaders({
+            'X-Request-Id': this.correlation.nextRequestId(),
+            'X-Correlation-Id': this.correlation.correlationId(),
+          });
           const csrfToken = this.xsrfTokenExtractor.getToken();
 
           if (csrfToken) {

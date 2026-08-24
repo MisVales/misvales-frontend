@@ -1,0 +1,125 @@
+<section class="calendar-shell" aria-labelledby="calendar-month-title">
+  <header class="calendar-toolbar">
+    <div class="today-card" aria-hidden="true">
+      <span>{{ todayMonth }}</span>
+      <strong>{{ todayNumber }}</strong>
+    </div>
+    <div class="calendar-heading">
+      <p class="calendar-eyebrow">Agenda de campo</p>
+      <h1>Calendario de visitas</h1>
+      <p>Consulta tus próximas visitas en orden de asignación.</p>
+    </div>
+    <div class="month-copy">
+      <h2 id="calendar-month-title">{{ monthTitle() }}</h2>
+      <p>{{ monthRange() }}</p>
+    </div>
+    <nav class="month-navigation" aria-label="Navegación del calendario">
+      <button type="button" class="icon-button" (click)="previousMonth()" aria-label="Mes anterior">
+        <lucide-icon name="chevron-left" aria-hidden="true" />
+      </button>
+      <button type="button" class="today-button" (click)="goToToday()">Mes</button>
+      <button type="button" class="icon-button" (click)="nextMonth()" aria-label="Mes siguiente">
+        <lucide-icon name="chevron-right" aria-hidden="true" />
+      </button>
+    </nav>
+  </header>
+
+  <div class="calendar-workspace">
+    <div class="calendar-main">
+      <div class="weekday-row" aria-hidden="true">
+        <span>Dom</span><span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span
+        ><span>Vie</span><span>Sáb</span>
+      </div>
+      <div class="calendar-grid" role="grid" [attr.aria-label]="monthTitle()">
+        @for (day of days(); track day.key) {
+          <button
+            type="button"
+            class="calendar-day"
+            [class.calendar-day--muted]="!day.inCurrentMonth"
+            [class.calendar-day--selected]="day.isSelected"
+            [class.calendar-day--today]="day.isToday"
+            (click)="selectDay(day)"
+            [attr.aria-label]="day.date.toLocaleDateString('es-MX', { dateStyle: 'full' })"
+          >
+            <span class="day-number">{{ day.dayNumber }}</span>
+            <span class="mobile-dots" aria-hidden="true">
+              @for (event of day.events.slice(0, 4); track event.id) {
+                <i [attr.data-tone]="event.tone ?? 'blue'"></i>
+              }
+            </span>
+            <span class="desktop-events">
+              @for (event of day.events.slice(0, 2); track event.id) {
+                <span
+                  class="calendar-event"
+                  [attr.data-tone]="event.tone ?? 'blue'"
+                  (click)="selectEvent(event, $event)"
+                >
+                  <strong>{{ event.title }}</strong>
+                  <small>{{ event.time }}</small>
+                </span>
+              }
+              @if (day.events.length > 2) {
+                <small class="more-events">+{{ day.events.length - 2 }} más</small>
+              }
+            </span>
+          </button>
+        }
+      </div>
+      <aside class="selected-agenda" aria-live="polite">
+        <div>
+          <p class="calendar-eyebrow">Día seleccionado</p>
+          <h3>{{ selectedDateLabel() }}</h3>
+        </div>
+        <div class="selected-events">
+          @for (event of selectedEvents(); track event.id) {
+            <button
+              type="button"
+              class="agenda-event"
+              [attr.data-tone]="event.tone ?? 'blue'"
+              (click)="eventSelected.emit(event)"
+            >
+              <span class="agenda-event__time">{{ event.time }}</span>
+              <span class="agenda-event__copy">
+                <strong>{{ event.title }}</strong>
+                @if (event.subtitle) {
+                  <small>{{ event.subtitle }}</small>
+                }
+              </span>
+              @if (event.status) {
+                <span class="agenda-event__status">{{ event.status }}</span>
+              }
+            </button>
+          } @empty {
+            <p class="selected-empty">{{ emptyMessage }}</p>
+          }
+        </div>
+      </aside>
+    </div>
+
+    <aside class="visit-summary" aria-labelledby="visit-summary-title">
+      <header>
+        <p class="calendar-eyebrow">Próximas fechas</p>
+        <h2 id="visit-summary-title">Resumen de visitas</h2>
+        <span>{{ upcomingEvents().length }} programadas</span>
+      </header>
+      <div class="visit-summary__list">
+        @for (event of upcomingEvents(); track event.id) {
+          <button
+            type="button"
+            class="summary-visit"
+            [class.summary-visit--selected]="isEventDaySelected(event)"
+            [attr.data-tone]="event.tone ?? 'blue'"
+            (click)="focusEventDay(event)"
+          >
+            <span class="summary-visit__date">{{ eventDateLabel(event) }}</span>
+            <strong>{{ event.title }}</strong>
+            <small>{{ event.time }} · {{ event.status ?? 'Programada' }}</small>
+          </button>
+        } @empty {
+          <p class="selected-empty">No tienes próximas visitas programadas.</p>
+        }
+      </div>
+      <p class="summary-help">Selecciona una fecha y después abre la visita desde el día.</p>
+    </aside>
+  </div>
+</section>

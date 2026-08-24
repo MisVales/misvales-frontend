@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { SessionStore } from '../session/session.store';
-import { MeService } from '../services/me.service';
+import { MeService } from '@core/auth/data-access/me.service';
 import { firstValueFrom } from 'rxjs';
 import { AuthTokenStore } from '../session/auth-token.store';
 import { SessionRefreshService } from '../session/session-refresh.service';
