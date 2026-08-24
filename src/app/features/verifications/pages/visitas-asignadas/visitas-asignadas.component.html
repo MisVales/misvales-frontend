@@ -30,7 +30,7 @@
                       <p class="detail"><strong>Avance</strong><span>{{ visita.evidencias.length }} evidencias · {{ visita.diferencias.length }} diferencias</span></p>
                       @if (visita.fechaInicio) { <p class="detail"><strong>Iniciada</strong><span>{{ visita.fechaInicio | date: 'dd/MM/yyyy, h:mm a' }}</span></p> }
                     </div>
-                    <div class="card-footer"><button type="button" class="btn btn-primary btn-block" (click)="abrirVisita(visita)" [disabled]="visita.estado === 'ASSIGNED' && !puedeIniciar(visita.fechaProgramada)">{{ visita.estado === 'ASSIGNED' ? (puedeIniciar(visita.fechaProgramada) ? 'Iniciar visita' : 'Pendiente de horario') : 'Continuar visita' }}</button></div>
+                    <div class="card-footer"><button type="button" class="btn btn-primary btn-block" (click)="abrirVisita(visita)" [disabled]="visita.estado === 'ASSIGNED' && !puedeIniciar(visita.fechaProgramada)"><span style="display: inline; color: #fff !important">{{ visita.estado === 'ASSIGNED' ? (puedeIniciar(visita.fechaProgramada) ? 'Iniciar visita' : 'Pendiente de horario') : 'Continuar visita' }}</span></button></div>
                   </article>
                 }
               </div>
