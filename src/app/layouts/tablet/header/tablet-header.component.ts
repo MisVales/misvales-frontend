@@ -237,8 +237,9 @@ import { DistributorWorkspaceContextService } from '@shared/components/navigatio
       color: var(--mv-danger);
     }
     .workspace {
+      width: 100%;
       min-width: 0;
-      margin-left: auto;
+      padding-right: 0.5rem;
       display: grid;
       justify-items: end;
       line-height: 1.2;
@@ -257,7 +258,7 @@ import { DistributorWorkspaceContextService } from '@shared/components/navigatio
     }
     @media (max-width: 1180px) {
       .tablet-header {
-        grid-template-columns: auto minmax(0, 1fr) auto auto;
+        grid-template-columns: auto minmax(7rem, 1fr) 2.75rem auto;
       }
       .header-workspace-nav {
         grid-column: 1 / -1;
