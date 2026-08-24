@@ -13,4 +13,9 @@ describe('StatusLabelPipe', () => {
   it('keeps unknown states readable without exposing underscores', () => {
     expect(pipe.transform('CUSTOM_STATUS')).toBe('Estado no disponible');
   });
+
+  it('translates an overdue relation as vencida', () => {
+    expect(pipe.transform('OVERDUE')).toBe('Vencida');
+    expect(pipe.transform('ROLLED_FORWARD')).toBe('Vencida');
+  });
 });

@@ -93,7 +93,15 @@
             </div>
             <div>
               <dt>Coordinador</dt>
-              <dd>{{ distributor.coordinador?.nombreCompleto || 'Sin asignar' }}</dd>
+              <dd class="coordinator-fact">
+                <span>{{ distributor.coordinador?.nombreCompleto || 'Sin asignar' }}</span>
+                @if (canTransfer() && !transferOpen()) {
+                  <button type="button" class="transfer-trigger" (click)="abrirTransferencia()">
+                    <lucide-icon name="arrow-right-left" [size]="16" aria-hidden="true" />
+                    Transferir
+                  </button>
+                }
+              </dd>
             </div>
             <div>
               <dt>Categoría</dt>
@@ -112,6 +120,61 @@
               </dd>
             </div>
           </dl>
+
+          @if (canTransfer() && transferOpen()) {
+            <section class="transfer-panel" aria-labelledby="transfer-title">
+              <div class="transfer-panel__copy">
+                <span class="transfer-panel__icon" aria-hidden="true">
+                  <lucide-icon name="arrow-right-left" [size]="20" />
+                </span>
+                <div>
+                  <h3 id="transfer-title">Transferir a otro coordinador</h3>
+                  <p>
+                    Selecciona quién continuará a cargo de {{ distributor.nombreCompleto }}. La
+                    autorización quedará registrada en el historial.
+                  </p>
+                </div>
+              </div>
+              <div class="transfer-panel__form">
+                <refactor-select
+                  label="Nuevo coordinador"
+                  placeholder="Selecciona un coordinador"
+                  [options]="coordinatorOptions()"
+                  [value]="selectedCoordinatorId()"
+                  [disabled]="transferLoading()"
+                  [invalid]="!!transferError()"
+                  [ariaLabel]="'Nuevo coordinador para ' + distributor.nombreCompleto"
+                  (valueChange)="seleccionarCoordinador($event)"
+                />
+                <div class="transfer-panel__actions">
+                  <button type="button" class="secondary-action" (click)="cerrarTransferencia()">
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    class="primary-action"
+                    [disabled]="!selectedCoordinatorId() || transferLoading()"
+                    (click)="transferirDistribuidora()"
+                  >
+                    @if (transferLoading()) {
+                      <lucide-icon name="loader-2" class="spin" [size]="16" aria-hidden="true" />
+                      Procesando…
+                    } @else {
+                      Transferir
+                    }
+                  </button>
+                </div>
+              </div>
+              @if (!transferLoading() && !coordinatorOptions().length && !transferError()) {
+                <p class="transfer-panel__notice" role="status">
+                  No hay otro coordinador activo disponible en esta sucursal.
+                </p>
+              }
+              @if (transferError()) {
+                <p class="transfer-panel__error" role="alert">{{ transferError() }}</p>
+              }
+            </section>
+          }
 
           <section class="relations-ledger">
             <header>

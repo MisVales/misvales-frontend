@@ -276,6 +276,112 @@
   gap: 1.25rem;
 }
 
+.installment-number,
+.allocation-installment {
+  border-radius: 999px;
+  background: #eef2ff;
+  padding: 0.4rem 0.7rem;
+  color: #3730a3;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.installment-list,
+.payment-selector {
+  display: grid;
+  gap: 0.65rem;
+}
+.installment-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+  padding: 0.9rem;
+}
+.installment-identity {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.installment-identity div,
+.installment-product,
+.installment-money,
+.allocation-table td:first-child {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
+.installment-identity div span,
+.installment-product span,
+.installment-money span,
+.allocation-table td:first-child span {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+.installment-money,
+.amount-column {
+  text-align: right;
+}
+.payment-selector {
+  grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+  margin-bottom: 1rem;
+}
+.payment-selector-button {
+  display: flex;
+  min-height: 5.5rem;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.8rem;
+  padding: 0.75rem;
+  background: #fff;
+  text-align: left;
+}
+.payment-selector-button.is-selected {
+  border-color: #059669;
+  background: #ecfdf5;
+  color: #065f46;
+}
+.payment-selector-button:focus-visible {
+  outline: 3px solid rgb(5 150 105 / 28%);
+}
+.allocation-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+.allocation-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.8rem;
+}
+.allocation-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.allocation-table th,
+.allocation-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem;
+  text-align: left;
+}
+.allocation-table .amount-column {
+  text-align: right;
+}
+@media (max-width: 760px) {
+  .installment-row,
+  .allocation-summary {
+    grid-template-columns: 1fr;
+  }
+  .installment-money {
+    text-align: left;
+  }
+}
+
 .card-header-flex {
   display: flex;
   justify-content: space-between;
@@ -405,6 +511,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 0.6rem;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .cascade-item {
@@ -415,6 +523,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
+  min-width: 0;
 }
 
 .cascade-item.highlight-capital {
@@ -433,6 +542,7 @@
   font-weight: 700;
   text-transform: uppercase;
   color: #64748b;
+  overflow-wrap: anywhere;
 }
 
 .cascade-item.highlight-recovery .cascade-label {
@@ -443,6 +553,7 @@
   font-size: 1rem;
   font-weight: 800;
   color: #1e293b;
+  overflow-wrap: anywhere;
 }
 
 .cascade-item.highlight-capital .cascade-value {
@@ -830,6 +941,12 @@
     padding: 0.8rem 0;
     border-right: 0;
     border-bottom: 1px solid var(--ledger-rule);
+  }
+}
+
+@media (max-width: 430px) {
+  .cascade-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

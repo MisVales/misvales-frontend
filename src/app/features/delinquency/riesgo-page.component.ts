@@ -51,6 +51,7 @@ export class RiesgoPageComponent {
   readonly selectedDecision = signal<'APPLY' | 'DO_NOT_APPLY'>('APPLY');
 
   readonly requestRemovalModalOpen = signal<RiskAlert | DelinquencyBlockItem | null>(null);
+  readonly directRemoval = signal(false);
 
   readonly removalDecisionModalOpen = signal<Removal | null>(null);
   readonly selectedRemovalDecision = signal<'AUTHORIZE' | 'REJECT'>('AUTHORIZE');
@@ -150,14 +151,7 @@ export class RiesgoPageComponent {
   }
 
   canRequestRemoval(): boolean {
-    const roles = this.session.roles();
-    const perms = this.session.permissions();
-    const allowedRoles = ['general_manager', 'admin', 'branch_manager', 'coordinator'];
-    return (
-      allowedRoles.some((r) => roles.includes(r)) ||
-      perms.includes('delinquency_removal.request_assigned') ||
-      perms.includes('all')
-    );
+    return this.session.roles().includes('distributor');
   }
 
   canDecideRemoval(): boolean {
@@ -242,6 +236,7 @@ export class RiesgoPageComponent {
 
   openRequestRemovalModalFromBlock(block: DelinquencyBlockItem): void {
     this.decisionReason.set('');
+    this.directRemoval.set(this.canDecideRemoval());
     this.requestRemovalModalOpen.set(block);
   }
 
@@ -253,7 +248,10 @@ export class RiesgoPageComponent {
     }
 
     this.isSubmitting.set(true);
-    this.api.requestRemoval(target.distributor_id, reason).subscribe({
+    const action = this.directRemoval()
+      ? this.api.removeDirectly(target.distributor_id, reason)
+      : this.api.requestRemoval(target.distributor_id, reason);
+    action.subscribe({
       next: () => {
         this.isSubmitting.set(false);
         this.closeModals();
@@ -295,6 +293,7 @@ export class RiesgoPageComponent {
   closeModals(): void {
     this.decisionModalOpen.set(null);
     this.requestRemovalModalOpen.set(null);
+    this.directRemoval.set(false);
     this.removalDecisionModalOpen.set(null);
     this.decisionReason.set('');
     this.dialogOpen.set(false);

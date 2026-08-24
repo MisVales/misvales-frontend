@@ -26,6 +26,7 @@ export class PaymentCyclePanelComponent {
   readonly loading = signal(true);
   readonly processing = signal(false);
   readonly error = signal('');
+  readonly notice = signal('');
   readonly result = signal<ForcePaymentDeadlineResponse | null>(null);
   readonly modalOpen = signal(false);
   motivo = '';
@@ -37,7 +38,8 @@ export class PaymentCyclePanelComponent {
   action(): CycleAction {
     const period = this.summary()?.payment_period;
     if (!period || period.status === 'COMPLETED') return 'CUTOFF';
-    if (period.status === 'DEADLINE_REACHED' || period.status === 'EXPIRED') return 'EXPIRE';
+    if (period.status === 'EXPIRED') return 'CUTOFF';
+    if (period.status === 'DEADLINE_REACHED') return 'EXPIRE';
     return 'DEADLINE';
   }
 
@@ -55,6 +57,7 @@ export class PaymentCyclePanelComponent {
   openConfirmation(): void {
     this.motivo = '';
     this.error.set('');
+    this.notice.set('');
     this.modalOpen.set(true);
   }
 
@@ -81,7 +84,15 @@ export class PaymentCyclePanelComponent {
 
     request.subscribe({
       next: (response) => {
-        if ('status' in response) this.result.set(response);
+        if ('status' in response) {
+          this.result.set(response);
+        } else {
+          this.notice.set(
+            response.relations_generated === 0
+              ? 'No hay relaciones pendientes para generar en este corte.'
+              : `Corte generado correctamente con ${response.relations_generated} ${response.relations_generated === 1 ? 'relación' : 'relaciones'}.`,
+          );
+        }
         this.modalOpen.set(false);
         this.processing.set(false);
         this.load();

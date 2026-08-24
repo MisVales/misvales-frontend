@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <section aria-labelledby="account-status-title">
+  <section *ngIf="isDistributor" aria-labelledby="account-status-title">
     <div class="flex items-center justify-between gap-3 mb-3">
       <div>
         <p class="text-xs font-bold uppercase tracking-wider text-[#386641]">Cuenta</p>

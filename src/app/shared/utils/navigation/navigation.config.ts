@@ -396,6 +396,7 @@ const managerialNavigationGroups = (
             generalManagerItem('reconciliation'),
             generalManagerItem('surpluses'),
             generalManagerItem('points-redemption'),
+            generalManagerItem('risk-delinquency'),
           ],
         },
         ...(role !== 'branch_manager'

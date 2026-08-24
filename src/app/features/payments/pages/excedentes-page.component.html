@@ -50,7 +50,7 @@
             </tr>
           </thead>
           <tbody class="divide-y divide-slate-100">
-            @if (!surpluses().length && !loading()) {
+            @if (!groupedSurpluses().length && !loading()) {
               <tr>
                 <td colspan="6" class="p-8 text-center text-gray-500">
                   <div class="flex min-h-64 flex-col items-center justify-center">
@@ -61,7 +61,7 @@
                 </td>
               </tr>
             }
-            @for (item of surpluses(); track item.id) {
+            @for (item of groupedSurpluses(); track item.id) {
               <tr class="hover:bg-gray-50">
                 <td class="p-4">
                   <strong>{{ floorMoney(item.original_amount) | currency: 'MXN' }}</strong
@@ -74,7 +74,7 @@
                     item.origin_relation_reference || 'Sin dato'
                   }}</span
                   ><span class="block text-xs text-gray-500"
-                    >Pago {{ item.bank_folio || 'Sin dato' }}</span
+                    >{{ item.movements.length }} {{ item.movements.length === 1 ? 'movimiento' : 'movimientos' }}</span
                   >
                 </td>
                 <td class="p-4">{{ item.created_at | date: 'medium' }}</td>
@@ -131,7 +131,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-              @if (!refunds().length && !loading()) {
+              @if (!groupedRefunds().length && !loading()) {
                 <tr>
                   <td colspan="7" class="p-8 text-center text-gray-500">
                     <div class="flex min-h-56 flex-col items-center justify-center">
@@ -142,7 +142,7 @@
                   </td>
                 </tr>
               }
-              @for (item of refunds(); track item.id) {
+              @for (item of groupedRefunds(); track item.id) {
                 <tr class="align-top hover:bg-gray-50">
                   <td class="p-4">{{ item.distributor_name || '—' }}</td>
                   <td class="p-4">{{ item.branch_name || 'Sin dato' }}</td>
@@ -151,7 +151,7 @@
                       item.origin_relation_reference || 'Sin dato'
                     }}</span
                     ><span class="block text-xs text-gray-500"
-                      >Pago {{ item.bank_folio || 'Sin dato' }}</span
+                      >{{ item.members.length }} {{ item.members.length === 1 ? 'movimiento' : 'movimientos' }}</span
                     >
                   </td>
                   <td class="p-4 text-right font-semibold">{{ item.amount | currency: 'MXN' }}</td>
@@ -212,7 +212,7 @@
       <div class="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p class="text-sm text-gray-500">
-            Excedente originado por {{ item.bank_folio || 'Sin dato' }}
+            Excedente acumulado de {{ item.movements?.length ?? 1 }} {{ (item.movements?.length ?? 1) === 1 ? 'movimiento' : 'movimientos' }}
           </p>
           <h2 class="text-2xl font-bold">{{ floorMoney(item.original_amount) | currency: 'MXN' }}</h2>
           <p class="text-sm text-gray-600">
@@ -238,6 +238,29 @@
           <dd class="font-semibold">{{ floorMoney(item.reserved_amount) | currency: 'MXN' }}</dd>
         </div>
       </dl>
+      <section aria-labelledby="movements-title">
+        <h3 id="movements-title" class="mb-3 font-bold">Movimientos que integran el excedente</h3>
+        <div class="overflow-x-auto rounded-xl border border-slate-200">
+          <table class="w-full text-left text-sm">
+            <thead class="border-b border-slate-200 bg-slate-50">
+              <tr>
+                <th class="p-3 font-medium">Folio de pago</th>
+                <th class="p-3 font-medium">Fecha</th>
+                <th class="p-3 text-right font-medium">Excedente generado</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              @for (movement of item.movements ?? []; track movement.surplus_id) {
+                <tr>
+                  <td class="p-3 font-mono">{{ movement.bank_folio || 'Sin dato' }}</td>
+                  <td class="p-3">{{ movement.created_at | date: 'medium' }}</td>
+                  <td class="p-3 text-right font-semibold">{{ movement.amount | currency: 'MXN' }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
       @if (item.status === 'PENDING_DECISION' && own()) {
         <div class="flex flex-wrap gap-3">
           <button

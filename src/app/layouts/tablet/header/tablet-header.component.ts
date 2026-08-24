@@ -267,15 +267,20 @@ import { DistributorWorkspaceContextService } from '@shared/components/navigatio
         display: none;
       }
     }
-    @media (max-width: 680px) {
+    @media (max-width: 900px) {
       .workspace {
         display: none;
       }
       .tablet-header {
+        grid-template-columns: minmax(0, 1fr) auto auto;
+      }
+    }
+    @media (max-width: 680px) {
+      .tablet-header {
         padding-inline: 0.75rem;
       }
       .tablet-header app-brand-lockup {
-        grid-column: 1 / 3;
+        grid-column: auto;
       }
       .profile-name {
         display: none;

@@ -1,6 +1,6 @@
 import { AbstractControl } from '@angular/forms';
 import { CatalogosMapper } from './catalogos.mapper';
-import { CategoriaRes, EstadoVersionApi } from '../api/models/catalogos.dtos';
+import { CategoriaRes, EstadoVersionApi } from '../models/catalogos.dtos';
 
 function multiploDeCienValidator(control: AbstractControl): { [key: string]: boolean } | null {
   const value = control.value;

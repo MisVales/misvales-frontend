@@ -50,6 +50,11 @@ describe('navigationGroupsForRoles', () => {
         route: '/centro-operacion',
       },
     );
+    expect(
+      areas?.find((item) => item.title === 'Pendientes')?.children?.find(
+        (item) => item.id === 'risk-delinquency',
+      ),
+    ).toMatchObject({ title: 'Morosidad', route: '/riesgo' });
   });
 
   it('da al gerente de sucursal la misma metodología gerencial con contexto local', () => {
@@ -74,6 +79,7 @@ describe('navigationGroupsForRoles', () => {
     expect(branchRoutes).not.toContain('/configuraciones');
     expect(branchRoutes).not.toContain('/centro-operacion');
     expect(branchRoutes).toContain('/organizacion/sucursales');
+    expect(branchRoutes).toContain('/riesgo');
   });
 
   it('da a Admin la estructura de gerencia general con destinos de solo consulta', () => {

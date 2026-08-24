@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, OnDestroy, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { MediaApiService } from '../../../core/api/media/media-api.service';
@@ -17,6 +17,7 @@ import {
   RefundRequest,
   Surplus,
 } from '../data-access/excedentes-api.service';
+import { groupRefunds, groupSurpluses, RefundGroup, SurplusGroup } from '../data-access/surplus-group';
 
 type ReasonAction = 'AUTHORIZE' | 'REJECT' | 'CANCEL';
 
@@ -33,16 +34,18 @@ export class ExcedentesPageComponent implements OnDestroy {
   private readonly confirmation = inject(ConfirmationService);
 
   readonly surpluses = signal<Surplus[]>([]);
+  readonly groupedSurpluses = computed(() => groupSurpluses(this.surpluses()));
   readonly refunds = signal<RefundRequest[]>([]);
-  readonly selected = signal<Surplus | null>(null);
+  readonly groupedRefunds = computed(() => groupRefunds(this.refunds()));
+  readonly selected = signal<SurplusGroup | null>(null);
   readonly loading = signal(true);
   readonly busy = signal(false);
   readonly error = signal('');
   readonly success = signal('');
-  readonly reasonTarget = signal<RefundRequest | null>(null);
+  readonly reasonTarget = signal<RefundGroup | null>(null);
   readonly reasonAction = signal<ReasonAction | null>(null);
   readonly evidenceFile = signal<File | null>(null);
-  readonly executionTarget = signal<RefundRequest | null>(null);
+  readonly executionTarget = signal<RefundGroup | null>(null);
   readonly evidencePreviews = signal<Record<string, { url: string; mime: string }>>({});
   reason = '';
   method = '';
@@ -76,7 +79,7 @@ export class ExcedentesPageComponent implements OnDestroy {
     return Math.floor(Number(value ?? 0));
   }
 
-  async credit(item: Surplus): Promise<void> {
+  async credit(item: SurplusGroup): Promise<void> {
     if (
       !(await this.confirmation.confirm({
         title: 'Conservar como saldo a favor',
@@ -87,12 +90,12 @@ export class ExcedentesPageComponent implements OnDestroy {
     )
       return;
     await this.run(
-      () => firstValueFrom(this.api.credit(item.id)),
+      () => firstValueFrom(this.api.creditMany(item.member_ids)),
       'El excedente quedó disponible como saldo a favor.',
     );
   }
 
-  async requestRefund(item: Surplus): Promise<void> {
+  async requestRefund(item: SurplusGroup): Promise<void> {
     if (
       !(await this.confirmation.confirm({
         title: 'Solicitar devolución',
@@ -103,20 +106,20 @@ export class ExcedentesPageComponent implements OnDestroy {
     )
       return;
     await this.run(
-      () => firstValueFrom(this.api.refund(item.id)),
+      () => firstValueFrom(this.api.refundMany(item.member_ids)),
       'La devolución quedó pendiente de autorización.',
     );
   }
 
-  open(item: Surplus): void {
+  open(item: SurplusGroup): void {
     this.selected.set(item);
   }
   close(): void {
     this.selected.set(null);
   }
 
-  openReason(item: RefundRequest, action: ReasonAction): void {
-    this.reasonTarget.set(item);
+  openReason(item: RefundRequest | RefundGroup, action: ReasonAction): void {
+    this.reasonTarget.set('member_ids' in item ? item : groupRefunds([item])[0]);
     this.reasonAction.set(action);
     this.reason = '';
   }
@@ -131,10 +134,11 @@ export class ExcedentesPageComponent implements OnDestroy {
     const item = this.reasonTarget();
     const action = this.reasonAction();
     if (!item || !action || !this.reason.trim()) return;
-    const operation =
+    const operation = () => Promise.all(item.member_ids.map((id) =>
       action === 'CANCEL'
-        ? () => firstValueFrom(this.api.cancel(item.id, this.reason.trim()))
-        : () => firstValueFrom(this.api.decide(item.id, action, this.reason.trim()));
+        ? firstValueFrom(this.api.cancel(id, this.reason.trim()))
+        : firstValueFrom(this.api.decide(id, action, this.reason.trim())),
+    ));
     const message =
       action === 'AUTHORIZE'
         ? 'La devolución quedó autorizada.'
@@ -150,7 +154,7 @@ export class ExcedentesPageComponent implements OnDestroy {
     this.evidenceFile.set(file);
   }
 
-  openExecution(item: RefundRequest): void {
+  openExecution(item: RefundGroup): void {
     this.resetExecution();
     this.executionTarget.set(item);
   }
@@ -159,7 +163,7 @@ export class ExcedentesPageComponent implements OnDestroy {
     this.resetExecution();
   }
 
-  async execute(item: RefundRequest): Promise<void> {
+  async execute(item: RefundGroup): Promise<void> {
     const file = this.evidenceFile();
     if (!this.method.trim() || !this.reference.trim() || !this.executedAt || !file) {
       this.error.set(
@@ -168,24 +172,22 @@ export class ExcedentesPageComponent implements OnDestroy {
       return;
     }
     await this.run(async () => {
-      const uploaded = await firstValueFrom(
-        this.media.upload({
+      return Promise.all(item.members.map(async (refund) => {
+        const uploaded = await firstValueFrom(this.media.upload({
           file,
           owner_type: 'surplus_refund_request',
-          owner_id: item.id,
+          owner_id: refund.id,
           purpose: 'REFUND_EVIDENCE',
-        }),
-      );
-      return firstValueFrom(
-        this.api.execute(item.id, {
-          amount: item.amount,
+        }));
+        return firstValueFrom(this.api.execute(refund.id, {
+          amount: refund.amount,
           executed_at: new Date(this.executedAt).toISOString(),
           method: this.method.trim(),
           reference: this.reference.trim(),
           evidence_media_id: uploaded.data.id,
           observations: this.observations.trim() || undefined,
-        }),
-      );
+        }));
+      }));
     }, 'La devolución externa quedó registrada como devuelta.');
   }
 
@@ -286,7 +288,9 @@ export class ExcedentesPageComponent implements OnDestroy {
         ...surpluses.flatMap((surplus) => surplus.refund_requests ?? []),
       ]);
       const current = this.selected();
-      if (current) this.selected.set(surpluses.find((item) => item.id === current.id) ?? null);
+      if (current) {
+        this.selected.set(groupSurpluses(surpluses).find((item) => item.id === current.id) ?? null);
+      }
     } catch (error) {
       this.showError(error, 'No fue posible cargar excedentes y devoluciones.');
     } finally {

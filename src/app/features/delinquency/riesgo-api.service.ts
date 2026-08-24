@@ -8,7 +8,10 @@ export interface RelationDetail {
   payment_reference: string;
   cutoff_at: string;
   payment_deadline_at: string;
+  portfolio_total: string;
+  distributor_profit_total: string;
   misvales_total: string;
+  reconciled_total: string;
   balance: string;
   financial_status: string;
   settled_at: string | null;
@@ -25,6 +28,7 @@ export interface RiskAlert {
   relation_details?: RelationDetail[];
   overdue_balance: string;
   created_at?: string;
+  pending_removal_request?: Removal | null;
   distribuidora?: {
     id: string;
     distributor_number?: string;
@@ -108,6 +112,9 @@ export interface DelinquencyStatus {
   reason: string | null;
   can_pay: true;
   can_clarify: true;
+  can_request_removal: boolean;
+  has_pending_removal_request: boolean;
+  regularized_relation_id?: string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -142,6 +149,12 @@ export class RiesgoApiService {
       `${this.config.baseUrl}/distributors/${distributor}/delinquency-removal-requests`,
       { reason },
     );
+  }
+
+  removeDirectly(distributor: string, reason: string): Observable<Removal> {
+    return this.post(`${this.config.baseUrl}/distributors/${distributor}/delinquency-removal`, {
+      reason,
+    });
   }
 
   removals(): Observable<Removal[]> {

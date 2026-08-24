@@ -23,13 +23,21 @@ import { BankReconciliationActionsComponent } from '../components/bank-reconcili
   imports: [CommonModule, FormsModule, RefactorSelectComponent, BankReconciliationActionsComponent],
   template: `<section class="mx-auto max-w-[1400px] space-y-6 p-4 sm:p-6">
     <header class="flex flex-wrap items-center justify-between gap-4">
-      <div><p class="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Pagos</p>
-      <h1 class="text-2xl font-bold text-gray-950">Conciliación bancaria</h1>
-      <p class="mt-1 text-sm text-gray-600">
-        Consulta cada movimiento, atiende no conciliados y ejecuta únicamente solicitudes
-        autorizadas.
-      </p></div>
-      <button type="button" class="min-h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-600 hover:text-emerald-700" (click)="loadMovements()">Actualizar</button>
+      <div>
+        <p class="mb-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Pagos</p>
+        <h1 class="text-2xl font-bold text-gray-950">Conciliación bancaria</h1>
+        <p class="mt-1 text-sm text-gray-600">
+          Consulta cada movimiento, atiende no conciliados y ejecuta únicamente solicitudes
+          autorizadas.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="min-h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm hover:border-emerald-600 hover:text-emerald-700"
+        (click)="loadMovements()"
+      >
+        Actualizar
+      </button>
     </header>
     @if (error()) {
       <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
@@ -156,11 +164,21 @@ import { BankReconciliationActionsComponent } from '../components/bank-reconcili
             } @empty {
               <tr>
                 <td colspan="11" class="p-8 text-center text-gray-500">
-                  @if (movementLoading()) { Cargando movimientos… } @else {
+                  @if (movementLoading()) {
+                    Cargando movimientos…
+                  } @else {
                     <div class="flex min-h-64 flex-col items-center justify-center">
-                      <img src="/no-found-2.png" alt="" class="h-40 w-full max-w-xs object-contain" />
-                      <strong class="text-base text-slate-950">No hay movimientos importados</strong>
-                      <span class="mt-1 text-sm text-slate-500">Cuando existan movimientos compatibles aparecerán en esta tabla.</span>
+                      <img
+                        src="/no-found-2.png"
+                        alt=""
+                        class="h-40 w-full max-w-xs object-contain"
+                      />
+                      <strong class="text-base text-slate-950"
+                        >No hay movimientos importados</strong
+                      >
+                      <span class="mt-1 text-sm text-slate-500"
+                        >Cuando existan movimientos compatibles aparecerán en esta tabla.</span
+                      >
                     </div>
                   }
                 </td>
@@ -228,6 +246,35 @@ import { BankReconciliationActionsComponent } from '../components/bank-reconcili
             ></textarea>
           </label>
         </div>
+        @if (selectedRelationForRequest(); as relation) {
+          <dl
+            class="mt-4 grid gap-3 rounded-lg border border-blue-200 bg-white p-4 text-sm sm:grid-cols-2 lg:grid-cols-4"
+            aria-label="Desglose financiero de la relación seleccionada"
+          >
+            <div>
+              <dt class="text-gray-500">Cobrado a clientes</dt>
+              <dd class="font-bold text-gray-900">
+                {{ relation.portfolio_total | currency: 'MXN' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-emerald-700">Ganancia de la distribuidora</dt>
+              <dd class="font-bold text-emerald-900">
+                {{ relationDistributorProfit(relation) | currency: 'MXN' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-blue-700">Neto a MisVales</dt>
+              <dd class="font-bold text-blue-950">
+                {{ relation.misvales_total | currency: 'MXN' }}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-gray-500">Saldo por conciliar</dt>
+              <dd class="font-bold text-gray-900">{{ relation.balance | currency: 'MXN' }}</dd>
+            </div>
+          </dl>
+        }
         <button
           class="mt-4 min-h-11 rounded-lg bg-blue-700 px-5 text-sm font-semibold text-white disabled:opacity-50"
           [disabled]="busy() || !canSubmitRequest()"
@@ -344,7 +391,9 @@ import { BankReconciliationActionsComponent } from '../components/bank-reconcili
                   <div class="flex min-h-56 flex-col items-center justify-center">
                     <img src="/no-found-1.png" alt="" class="h-36 w-full max-w-xs object-contain" />
                     <strong class="text-base text-slate-950">No hay solicitudes visibles</strong>
-                    <span class="mt-1 text-sm text-slate-500">Las conciliaciones manuales aparecerán aquí cuando existan.</span>
+                    <span class="mt-1 text-sm text-slate-500"
+                      >Las conciliaciones manuales aparecerán aquí cuando existan.</span
+                    >
                   </div>
                 </td>
               </tr>
@@ -413,6 +462,17 @@ export class ConciliacionPageComponent {
   selectRelation(id: string): void {
     this.selectedRelationId.set(id);
     this.selectedClarificationId.set('');
+  }
+
+  selectedRelationForRequest(): RelationView | null {
+    return this.relations().find((relation) => relation.id === this.selectedRelationId()) ?? null;
+  }
+
+  relationDistributorProfit(relation: RelationView): number {
+    return (relation.partidas ?? []).reduce(
+      (total, item) => total + Number(item.snapshot['distributor_profit'] ?? 0),
+      0,
+    );
   }
   availableClarifications(): PaymentClarification[] {
     return this.clarifications().filter(

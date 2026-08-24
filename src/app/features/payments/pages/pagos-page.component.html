@@ -32,17 +32,75 @@
     </div>
   </header>
 
+  @if (delinquencyStatus()?.blocked) {
+    <section
+      class="rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950"
+      aria-labelledby="delinquency-notice-title"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 id="delinquency-notice-title" class="font-bold">Tienes morosidad activa</h2>
+          @if (delinquencyStatus()?.has_pending_removal_request) {
+            <p class="mt-1 text-sm">Tu solicitud de retiro está pendiente de resolución.</p>
+          } @else if (delinquencyStatus()?.can_request_removal) {
+            <p class="mt-1 text-sm">
+              Ya liquidaste la deuda acumulada. Puedes solicitar a Gerencia el retiro del bloqueo.
+            </p>
+          } @else {
+            <p class="mt-1 text-sm">
+              Liquida la relación que acumula la deuda morosa para solicitar el retiro del bloqueo.
+            </p>
+          }
+        </div>
+        @if (delinquencyStatus()?.can_request_removal) {
+          <button
+            type="button"
+            class="min-h-11 rounded-lg bg-amber-800 px-4 font-bold text-white disabled:opacity-50"
+            [disabled]="removalBusy()"
+            (click)="requestDelinquencyRemoval()"
+          >
+            {{ removalBusy() ? 'Enviando…' : 'Solicitar retiro de morosidad' }}
+          </button>
+        }
+      </div>
+    </section>
+  }
+  @if (removalSuccess()) {
+    <div
+      role="status"
+      class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800"
+    >
+      {{ removalSuccess() }}
+    </div>
+  }
+
   <!-- Global Metrics Grid -->
   <div class="metrics-grid">
     <div class="metric-card">
-      <span class="metric-label">Total Pagado Acumulado</span>
+      <span class="metric-label">Total transferido</span>
       <span class="metric-value">{{
-        metrics().totalPaid | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+        metrics().totalTransferred | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
       }}</span>
       <span class="metric-desc"
         >{{ metrics().totalPaymentsCount }} pagos en
         {{ metrics().totalRelationsWithPayments }} relaciones</span
       >
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-label">Aplicado a relaciones</span>
+      <span class="metric-value">{{
+        metrics().totalPaid | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+      }}</span>
+      <span class="metric-desc">Importe que liquidó saldo pendiente</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-label">Excedente generado</span>
+      <span class="metric-value text-emerald-700">{{
+        metrics().totalSurplus | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+      }}</span>
+      <span class="metric-desc">Transferido después de cubrir las relaciones</span>
     </div>
 
     <div class="metric-card">
@@ -154,19 +212,24 @@
 
             <div class="relation-card-footer">
               <span class="text-gray-500"
-                >Saldo:
+                >{{ rel.financial_status === 'ROLLED_FORWARD' ? 'Trasladado:' : 'Saldo:' }}
                 <strong>{{
-                  rel.balance | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                  (rel.financial_status === 'ROLLED_FORWARD'
+                    ? rel.rolled_forward_amount || 0
+                    : rel.balance
+                  ) | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
                 }}</strong></span
               >
               <span class="text-emerald-700 font-semibold">
-                {{ rel.pagos?.length || 0 }} {{ rel.pagos?.length === 1 ? 'pago' : 'pagos' }}
+                {{ paymentsForRelation(rel).length }}
+                {{ paymentsForRelation(rel).length === 1 ? 'pago' : 'pagos' }}
               </span>
             </div>
-            @if (surplusForRelation(rel.id); as surplus) {
+            @if (surplusGroupForRelation(rel.id); as surplus) {
               <div class="surplus-chip">
-                <lucide-icon name="circle-dollar-sign" [size]="15" aria-hidden="true" /> Relación
-                con excedente · {{ surplus.available_amount | currency: 'MXN' }}
+                <lucide-icon name="circle-dollar-sign" [size]="15" aria-hidden="true" />
+                Excedente · {{ surplusDecisionLabel(surplus.status) }} ·
+                {{ originalSurplusForRelation(rel.id) | currency: 'MXN' }}
               </div>
             }
           </button>
@@ -190,24 +253,39 @@
     <!-- Right Panel: Relation Detail & Payments Breakdown -->
     <main class="detail-area">
       @if (selectedRelation(); as relation) {
-        @if (surplusForRelation(relation.id); as surplus) {
-          <section class="surplus-action-card">
-            <div>
-              <span>Excedente disponible</span
-              ><strong>{{
-                surplus.available_amount | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
-              }}</strong>
-              <p>Este excedente pertenece al pago de esta relación.</p>
-            </div>
-            <button
-              type="button"
-              class="btn-surplus"
-              (click)="openSurplusActions(surplus)"
-              [disabled]="surplusBusy()"
-            >
-              Elegir qué hacer
-            </button>
-          </section>
+        @if (surplusGroupForRelation(relation.id); as surplus) {
+          @if (surplus.status === 'PENDING_DECISION' && +surplus.available_amount > 0) {
+            <section class="surplus-action-card">
+              <div>
+                <span>Excedente disponible acumulado</span
+                ><strong>{{
+                  totalSurplusForRelation(relation.id) | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                }}</strong>
+                <p>{{ surplus.movements.length }} movimientos integran este único excedente.</p>
+              </div>
+              <div class="flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  class="btn-surplus"
+                  (click)="openSurplusActions(surplus)"
+                  [disabled]="surplusBusy()"
+                >
+                  Excedente total · {{ surplus.available_amount | currency: 'MXN' }}
+                </button>
+              </div>
+            </section>
+          } @else {
+            <section class="surplus-decision-card" aria-label="Decisión del excedente">
+              <div>
+                <span>Decisión del excedente acumulado</span>
+                <strong>{{ originalSurplusForRelation(relation.id) | currency: 'MXN' }}</strong>
+                <p>
+                  {{ surplusDecisionLabel(surplus.status) }} ·
+                  {{ surplus.movements.length }} movimientos.
+                </p>
+              </div>
+            </section>
+          }
         }
         <!-- Distributor & Credit Line Overview -->
         <section class="card-section">
@@ -244,6 +322,96 @@
               }
             </div>
           </div>
+
+          @if (relationMoneyRoute(relation); as route) {
+            <section class="money-route" aria-label="Ruta del dinero de esta relación">
+              <article class="money-route__step" [class.has-overdue]="route.inherited > 0">
+                <span class="money-route__index">1</span>
+                <div>
+                  <small>Saldo que venía de relaciones anteriores</small>
+                  <strong>{{ route.inherited | currency: 'MXN' }}</strong>
+                  <p>
+                    {{
+                      route.inherited > 0
+                        ? 'Deuda acumulada antes de este corte.'
+                        : 'Esta relación comenzó sin deuda anterior.'
+                    }}
+                  </p>
+                </div>
+              </article>
+              <article class="money-route__step">
+                <span class="money-route__index">2</span>
+                <div>
+                  <small>Parcialidades agregadas en este corte</small>
+                  <strong>{{ route.current | currency: 'MXN' }}</strong>
+                  <p>{{ relation.partidas?.length || 0 }} parcialidades nuevas.</p>
+                </div>
+              </article>
+              <article class="money-route__step is-payment">
+                <span class="money-route__index">3</span>
+                <div>
+                  <small>Cómo se aplicaron tus pagos</small>
+                  <strong>{{ relation.reconciled_total | currency: 'MXN' }}</strong>
+                  <p>
+                    {{ route.inheritedPaid | currency: 'MXN' }} a deuda anterior ·
+                    {{ route.currentPaid | currency: 'MXN' }} a este corte.
+                  </p>
+                </div>
+              </article>
+              <article class="money-route__step is-result">
+                <span class="money-route__index">4</span>
+                <div>
+                  <small>Resultado</small>
+                  <strong>{{ route.outstanding | currency: 'MXN' }} pendiente</strong>
+                  <p>
+                    @if (route.points > 0) {
+                      {{ route.points }} puntos generados por pago anticipado.
+                    } @else if (relation.temporal_classification === 'EARLY') {
+                      Pago anticipado sin un bloque completo de capital para puntos.
+                    } @else {
+                      {{ relationStatusLabel(relation.financial_status) }}.
+                    }
+                  </p>
+                </div>
+              </article>
+            </section>
+          }
+
+          <details class="accounting-details">
+            <summary>Ver desglose contable de la relación</summary>
+            <div
+              class="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+              aria-label="Desglose financiero de la relación"
+            >
+              <div class="flex flex-col rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <span class="text-xs text-slate-500">Cobrado a clientes</span>
+                <strong class="text-base text-slate-950">{{
+                  relation.portfolio_total | currency: 'MXN'
+                }}</strong>
+              </div>
+              <div class="flex flex-col rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                <span class="text-xs text-emerald-700">Ganancia de la distribuidora</span>
+                <strong class="text-base text-emerald-900">{{
+                  distributorProfit(relation) | currency: 'MXN'
+                }}</strong>
+                <small class="text-xs text-emerald-700"
+                  >Se conserva; no forma parte del pago a MisVales.</small
+                >
+              </div>
+              <div class="flex flex-col rounded-xl border border-blue-200 bg-blue-50 p-3">
+                <span class="text-xs text-blue-700">Neto a pagar a MisVales</span>
+                <strong class="text-base text-blue-950">{{
+                  relation.misvales_total | currency: 'MXN'
+                }}</strong>
+              </div>
+              <div class="flex flex-col rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <span class="text-xs text-slate-500">Saldo pendiente</span>
+                <strong class="text-base text-slate-950">{{
+                  relation.balance | currency: 'MXN'
+                }}</strong>
+              </div>
+            </div>
+          </details>
 
           <div class="distributor-credit-grid">
             <!-- Distributor Info -->
@@ -336,7 +504,233 @@
           </div>
         </section>
 
-        @if (canRegisterPayment()) {
+        <section class="card-section" aria-labelledby="relation-installments-title">
+          <div class="card-header-flex">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-indigo-700"
+                >Qué estás pagando</span
+              >
+              <h3 id="relation-installments-title" class="section-title">
+                Vales y parcialidades de esta relación
+              </h3>
+              <p class="text-sm text-gray-600">
+                Cada renglón identifica el vale, el cliente y la parcialidad incluida en este corte.
+              </p>
+            </div>
+            <span class="relation-count"
+              >{{ groupedInstallments(relation).length }} vales agrupados</span
+            >
+          </div>
+
+          <div class="voucher-ledger-list">
+            @for (voucher of groupedInstallments(relation); track voucher.folio) {
+              <article class="voucher-ledger">
+                <header class="voucher-ledger__header">
+                  <div>
+                    <span class="voucher-ledger__eyebrow">Vale · {{ voucher.product }}</span>
+                    <h4>
+                      {{ voucher.client }} · {{ voucher.folio }} ·
+                      {{ voucher.totalInstallments }} quincenas
+                    </h4>
+                  </div>
+                  <div class="voucher-ledger__totals">
+                    <strong>{{ voucher.paidTotal | currency: 'MXN' }}</strong>
+                    <span>pagado de {{ voucher.clientTotal | currency: 'MXN' }}</span>
+                  </div>
+                </header>
+
+                <div class="voucher-progress" role="list" aria-label="Avance de parcialidades">
+                  @for (installment of voucher.installments; track installment.id) {
+                    <div
+                      class="voucher-progress__segment status-{{
+                        installment.status.toLowerCase()
+                      }}"
+                      role="listitem"
+                      [attr.title]="
+                        'Quincena ' +
+                        installment.number +
+                        ': ' +
+                        installmentDisplayLabel(installment.status)
+                      "
+                    >
+                      <span>{{ installment.number }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="voucher-ledger__summary">
+                  <span
+                    ><strong>{{ voucher.paidCount }}</strong> pagadas</span
+                  >
+                  @if (voucher.overdueTotal > 0) {
+                    <span class="is-overdue"
+                      ><strong>{{ voucher.overdueTotal | currency: 'MXN' }}</strong> vencido</span
+                    >
+                  }
+                  <span
+                    ><strong>{{ voucher.installments.length }}</strong> incluidas hasta este
+                    corte</span
+                  >
+                </div>
+
+                <details class="voucher-installment-details">
+                  <summary>
+                    Ver detalle de las {{ voucher.installments.length }} parcialidades
+                  </summary>
+                  <div class="voucher-installment-grid">
+                    @for (installment of voucher.installments; track installment.id) {
+                      <div
+                        class="voucher-installment-card status-{{
+                          installment.status.toLowerCase()
+                        }}"
+                      >
+                        <div>
+                          <strong>{{ installment.number }}/{{ installment.total }}</strong
+                          ><span>{{ installmentDisplayLabel(installment.status) }}</span>
+                        </div>
+                        <div>
+                          <small>Cobro</small
+                          ><strong>{{ installment.clientAmount | currency: 'MXN' }}</strong>
+                        </div>
+                        <div>
+                          <small>Pagado</small
+                          ><strong>{{ installment.paid | currency: 'MXN' }}</strong>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </details>
+              </article>
+            } @empty {
+              <p class="installment-empty">Esta relación no contiene parcialidades.</p>
+            }
+          </div>
+        </section>
+
+        @if (paymentsForRelation(relation).length > 0) {
+          <section class="card-section" aria-labelledby="paid-trace-title">
+            <div class="card-header-flex">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-700"
+                  >Lo ya pagado</span
+                >
+                <h3 id="paid-trace-title" class="section-title">
+                  Selecciona un abono para ver su aplicación
+                </h3>
+                <p class="text-sm text-gray-600">
+                  El detalle muestra a qué vale, parcialidad y componente financiero se aplicó.
+                </p>
+              </div>
+            </div>
+
+            <div class="payment-selector" role="list" aria-label="Pagos aplicados">
+              @for (
+                payment of paymentsForRelation(relation);
+                track payment.id;
+                let index = $index
+              ) {
+                <button
+                  type="button"
+                  role="listitem"
+                  class="payment-selector-button"
+                  [class.is-selected]="selectedPaymentId() === payment.id"
+                  [attr.aria-pressed]="selectedPaymentId() === payment.id"
+                  (click)="selectPayment(payment.id)"
+                >
+                  <span>Abono {{ index + 1 }}</span>
+                  <strong>{{
+                    paymentTransferred(payment) | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                  }}</strong>
+                  <small>
+                    Aplicado {{ payment.amount | currency: 'MXN' }} · Excedente
+                    {{ paymentSurplus(payment) | currency: 'MXN' }}<br />
+                    {{ payment.applied_at | date: 'dd/MM/yyyy, HH:mm' }}
+                  </small>
+                </button>
+              }
+            </div>
+
+            @if (selectedPayment(); as payment) {
+              <div class="allocation-summary">
+                <div>
+                  <span>Total transferido</span
+                  ><strong>{{ paymentTransferred(payment) | currency: 'MXN' }}</strong>
+                </div>
+                <div>
+                  <span>Aplicado a la relación</span
+                  ><strong>{{ payment.amount | currency: 'MXN' }}</strong>
+                </div>
+                <div>
+                  <span>Excedente generado</span
+                  ><strong>{{ paymentSurplus(payment) | currency: 'MXN' }}</strong>
+                </div>
+                <div>
+                  <span>Capital aplicado</span
+                  ><strong>{{ payment.capital_applied | currency: 'MXN' }}</strong>
+                </div>
+                <div>
+                  <span>Línea recuperada</span
+                  ><strong>{{ payment.line_recovered | currency: 'MXN' }}</strong>
+                </div>
+              </div>
+              <div class="allocation-table-wrap">
+                <table class="allocation-table">
+                  <thead>
+                    <tr>
+                      <th>Vale y cliente</th>
+                      <th>Parcialidad</th>
+                      <th>Aplicado a</th>
+                      <th class="amount-column">Importe</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (allocation of allocationsFor(payment); track allocation.id) {
+                      <tr>
+                        <td>
+                          <strong>{{
+                            allocation.partida_relacion?.snapshot?.['folio'] || 'Sin folio'
+                          }}</strong
+                          ><span>{{
+                            allocation.partida_relacion?.snapshot?.['client'] || 'Cliente sin dato'
+                          }}</span>
+                        </td>
+                        <td>
+                          <span class="allocation-installment"
+                            >{{ allocation.partida_relacion?.snapshot?.['installment'] || '—' }}/{{
+                              allocation.partida_relacion?.snapshot?.['total_installments'] || '—'
+                            }}</span
+                          >
+                        </td>
+                        <td>{{ allocationComponentLabel(allocation.component) }}</td>
+                        <td class="amount-column">
+                          <strong>{{
+                            allocation.amount | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                          }}</strong>
+                        </td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="4" class="allocation-empty">
+                          Este pago no tiene un desglose por parcialidad disponible.
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            }
+          </section>
+        }
+
+        @if (relation.financial_status === 'ROLLED_FORWARD') {
+          <section class="card-section border-slate-200 bg-slate-50" role="status">
+            <h3 class="section-title">Relación histórica</h3>
+            <p class="text-sm text-slate-700">
+              Su saldo pendiente se trasladó a la relación siguiente. Conserva aquí sus pagos y
+              desglose, pero ya no admite nuevos abonos.
+            </p>
+          </section>
+        } @else if (canRegisterPayment()) {
           <section class="card-section" aria-labelledby="register-payment-title">
             <div class="card-header-flex">
               <div>
@@ -592,7 +986,7 @@
           </div>
 
           <div class="flex flex-col gap-4">
-            @for (payment of relation.pagos ?? []; track payment.id) {
+            @for (payment of paymentsForRelation(relation); track payment.id) {
               <article class="payment-card">
                 <!-- Payment Top Info -->
                 <div class="payment-card-top">
@@ -629,7 +1023,9 @@
                       <div
                         class="waterfall-segment seg-commission"
                         [style.width.%]="p.commission"
-                        title="Comisión: {{ payment.commission_applied | currency: 'MXN' }}"
+                        title="Comisión MisVales: {{
+                          payment.commission_applied | currency: 'MXN'
+                        }}"
                       ></div>
                       <div
                         class="waterfall-segment seg-capital"
@@ -650,7 +1046,7 @@
                       <span class="legend-dot" style="background: #8b5cf6"></span> Seguro
                     </div>
                     <div class="legend-item">
-                      <span class="legend-dot" style="background: #3b82f6"></span> Comisión
+                      <span class="legend-dot" style="background: #3b82f6"></span> Comisión MisVales
                     </div>
                     <div class="legend-item font-bold text-emerald-800">
                       <span class="legend-dot" style="background: #10b981"></span> Capital (Recupera
@@ -680,7 +1076,7 @@
                     }}</span>
                   </div>
                   <div class="cascade-item">
-                    <span class="cascade-label">4. Comisión</span>
+                    <span class="cascade-label">4. Comisión MisVales</span>
                     <span class="cascade-value text-blue-600">{{
                       payment.commission_applied | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
                     }}</span>
@@ -743,19 +1139,29 @@
             surplus.available_amount | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
           }}</strong>
         </div>
+        <p class="text-sm text-slate-600">
+          Total integrado por {{ surplus.movements.length }} movimientos. La decisión se aplicará al
+          excedente completo.
+        </p>
         <div class="action-options">
-          <button type="button" (click)="applySurplusAsBalance()" [disabled]="surplusBusy()">
-            <lucide-icon name="wallet-cards" [size]="22" aria-hidden="true" /><span
-              ><strong>Usar como saldo a favor</strong
-              ><small>Se conservará para aplicarlo conforme a las reglas vigentes.</small></span
-            >
-          </button>
-          <button type="button" (click)="requestSurplusRefund()" [disabled]="surplusBusy()">
-            <lucide-icon name="undo-2" [size]="22" aria-hidden="true" /><span
-              ><strong>Solicitar devolución</strong
-              ><small>Se enviará a revisión antes de ejecutar cualquier devolución.</small></span
-            >
-          </button>
+          @if (surplus.status === 'PENDING_DECISION') {
+            <button type="button" (click)="applySurplusAsBalance()" [disabled]="surplusBusy()">
+              <lucide-icon name="wallet-cards" [size]="22" aria-hidden="true" /><span
+                ><strong>Usar como saldo a favor</strong
+                ><small>Se conservará para aplicarlo conforme a las reglas vigentes.</small></span
+              >
+            </button>
+            <button type="button" (click)="requestSurplusRefund()" [disabled]="surplusBusy()">
+              <lucide-icon name="undo-2" [size]="22" aria-hidden="true" /><span
+                ><strong>Solicitar devolución</strong
+                ><small>Se enviará a revisión antes de ejecutar cualquier devolución.</small></span
+              >
+            </button>
+          } @else {
+            <p class="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+              Este excedente ya tiene una decisión registrada.
+            </p>
+          }
         </div>
       </section>
     </div>

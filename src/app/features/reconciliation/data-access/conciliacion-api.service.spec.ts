@@ -22,10 +22,11 @@ describe('ConciliacionApiService', () => {
   });
   it('carga el XLSX como multipart sin inventar integración bancaria', () => {
     const file = new File(['xlsx'], 'bank.xlsx');
-    service.upload(file).subscribe((v) => expect(v.status).toBe('PROCESSED'));
+    service.upload(file, 'run-1').subscribe((v) => expect(v.status).toBe('PROCESSED'));
     const req = http.expectOne((r) => r.url.endsWith('/bank-imports'));
     expect(req.request.body instanceof FormData).toBe(true);
     expect((req.request.body as FormData).get('file')).toBe(file);
+    expect((req.request.body as FormData).get('process_run_id')).toBe('run-1');
     req.flush({ data: { status: 'PROCESSED' } });
   });
   it('consulta movimientos conciliados paginados', () => {
@@ -46,9 +47,10 @@ describe('ConciliacionApiService', () => {
     expect(create.request.method).toBe('POST');
     create.flush({ data: { id: 's1', payment_reference: 'REL-1' } });
 
-    service.exportSimulatedTransfers().subscribe((file) => expect(file.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
+    service.exportSimulatedTransfers('run-1').subscribe((file) => expect(file.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
     const download = http.expectOne((request) => request.url.endsWith('/bank-simulations/export'));
     expect(download.request.responseType).toBe('blob');
+    expect(download.request.params.get('process_run_id')).toBe('run-1');
     download.flush(new Blob(['xlsx'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
 
     service.simulationTicket('s1').subscribe((file) => expect(file.type).toBe('application/pdf'));

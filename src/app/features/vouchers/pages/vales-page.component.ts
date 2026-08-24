@@ -37,6 +37,7 @@ import { HistoryPageHeaderComponent } from '../../../shared/components/history/h
 import { HistoryPaginationComponent } from '../../../shared/components/history/history-pagination.component';
 import { HistoryFilterBarComponent } from '../../../shared/components/history/history-filter-bar.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import { ConfirmationService } from '../../../shared/dialogs/confirmation.service';
 
 @Component({
   selector: 'app-vales-page',
@@ -60,6 +61,7 @@ export class ValesPageComponent implements OnInit {
   private readonly session = inject(SessionStore);
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly confirmation = inject(ConfirmationService);
 
   protected readonly form = this.formBuilder.group({
     search: this.formBuilder.nonNullable.control(''),
@@ -118,7 +120,8 @@ export class ValesPageComponent implements OnInit {
       !!this.selectedClient() &&
       !!this.selectedProduct() &&
       !this.busy() &&
-      value.installmentCount !== null
+      value.installmentCount !== null &&
+      this.form.controls.installmentCount.valid
     );
   });
 
@@ -134,7 +137,15 @@ export class ValesPageComponent implements OnInit {
         error: (error) => this.handle(error),
       });
     this.api.obtenerContextoFinanciero().subscribe({
-      next: (context) => this.financialContext.set(context),
+      next: (context) => {
+        this.financialContext.set(context);
+        this.form.controls.installmentCount.setValidators([
+          Validators.required,
+          Validators.min(context.conditions.minimum_installment_count),
+          Validators.max(context.conditions.maximum_installment_count),
+        ]);
+        this.form.controls.installmentCount.updateValueAndValidity({ emitEvent: false });
+      },
       error: (error) => this.handle(error),
     });
     this.api.obtenerLineaCreditoPropia().subscribe({
@@ -271,6 +282,39 @@ export class ValesPageComponent implements OnInit {
     return labels[status] ?? status.replaceAll('_', ' ').toLocaleLowerCase('es-MX');
   }
 
+  protected canCancel(voucher: VoucherView): boolean {
+    return (
+      this.canCreate() &&
+      ['GENERATED', 'CASH_VALIDATION', 'CORRECTION_PENDING', 'RELEASED'].includes(voucher.status)
+    );
+  }
+
+  protected async cancelVoucher(voucher: VoucherView): Promise<void> {
+    if (this.busy() || !this.canCancel(voucher)) return;
+    const confirmed = await this.confirmation.confirm({
+      title: 'Cancelar vale',
+      message: `Se cancelará ${voucher.folio}. Esta acción solo está permitida antes de feriarlo.`,
+      confirmLabel: 'Cancelar vale',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    this.busy.set(true);
+    this.clearError();
+    this.api
+      .cancelar(voucher.id)
+      .pipe(finalize(() => this.busy.set(false)))
+      .subscribe({
+        next: (cancelled) => {
+          this.vouchers.update((items) =>
+            items.map((item) => (item.id === cancelled.id ? cancelled : item)),
+          );
+          this.reloadHistory();
+        },
+        error: (error) => this.handle(error),
+      });
+  }
+
   protected changeHistoryPage(page: number): void {
     if (page < 1 || page > this.historyPages() || this.loadingHistory()) return;
     this.reloadHistory(page);
@@ -316,6 +360,13 @@ export class ValesPageComponent implements OnInit {
 
       return;
     }
+    if (code === 'VOUCHER_INSTALLMENT_COUNT_OUT_OF_RANGE') {
+      this.error.set(
+        `Elige entre ${details?.minimum_installment_count ?? 2} y ${details?.maximum_installment_count ?? 16} quincenas.`,
+      );
+
+      return;
+    }
     const messages: Record<string, string> = {
       VOUCHER_FINANCIAL_CONFIGURATION_MISSING:
         'Gerencia debe publicar las condiciones financieras antes de otorgar este vale.',
@@ -327,6 +378,12 @@ export class ValesPageComponent implements OnInit {
         'El importe elegido supera el crédito disponible. Elige otro producto o solicita un incremento.',
       CREDIT_50_PERCENT_RULE_NOT_SATISFIED:
         'El importe no cumple la regla temporal de tu línea de crédito. Revisa el rango permitido antes de continuar.',
+      PENDING_PREVOUCHER_MUST_BE_CASHED:
+        'Tienes un prevale pendiente. Debes feriarlo o cancelarlo antes de solicitar otro vale.',
+      PENDING_RESTRICTED_VOUCHER_MUST_BE_CASHED:
+        'Tienes un vale pendiente ligado a la regla del 50%. Debes feriarlo o cancelarlo antes de solicitar otro.',
+      VOUCHER_CANCELLATION_NOT_ALLOWED:
+        'Este vale ya no puede cancelarse porque fue feriado o terminó su atención en Caja.',
     };
     this.error.set(
       messages[code] ??
@@ -366,6 +423,16 @@ export class ValesPageComponent implements OnInit {
       PARTIALLY_PAID: 'Abono parcial',
     };
     return labels[status] ?? status;
+  }
+
+  protected installmentCount(voucher: VoucherView, status: string): number {
+    return (voucher.installments ?? []).filter((item) => item.status === status).length;
+  }
+
+  protected installmentPaidTotal(voucher: VoucherView): number {
+    return (voucher.installments ?? [])
+      .filter((item) => item.status === 'SETTLED' || item.status === 'PARTIALLY_PAID')
+      .reduce((sum, item) => sum + Number(item.client_payment), 0);
   }
 
   protected createClient(): void {

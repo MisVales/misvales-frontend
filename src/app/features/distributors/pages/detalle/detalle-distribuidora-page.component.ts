@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
@@ -27,6 +28,10 @@ import { AsignarCategoriaDialogComponent } from '../../dialogs/asignar-categoria
 import { ReenviarInvitacionDialogComponent } from '../../dialogs/reenviar-invitacion-dialog/reenviar-invitacion-dialog.component';
 import { DistribuidorasStore } from '../../state/distribuidoras.store';
 import { SessionStore } from '../../../../core/session/session.store';
+import { apiErrorMessage } from '../../../../core/api/api-error';
+import { RefactorSelectComponent } from '../../../../shared/components/inputs/refactor-select/refactor-select.component';
+import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
+import type { PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
 import { DistributorWorkspaceContextService } from '../../../../shared/components/navigation/distributor-workspace-nav/distributor-workspace-context.service';
 import {
   BreadcrumbsComponent,
@@ -38,6 +43,7 @@ import {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     HistorialCategoriasComponent,
     AsignarCategoriaDialogComponent,
     ReenviarInvitacionDialogComponent,
@@ -46,6 +52,7 @@ import {
     EmptyStateComponent,
     DistributorWorkspaceNavComponent,
     BreadcrumbsComponent,
+    RefactorSelectComponent,
   ],
   templateUrl: './detalle-distribuidora-page.component.html',
   styleUrl: './detalle-distribuidora-page.component.css',
@@ -60,6 +67,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   private readonly relationsApi = inject(RelacionesApiService);
   private readonly riskApi = inject(RiesgoApiService);
   private readonly session = inject(SessionStore);
+  private readonly organizationApi = inject(OrganizationApiService);
   private readonly workspaceContext = inject(DistributorWorkspaceContextService);
   private readonly workspaceOwner = {};
 
@@ -70,6 +78,30 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   readonly increases = signal<CreditIncreaseView[]>([]);
   readonly relations = signal<RelationView[]>([]);
   readonly riskAlerts = signal<RiskAlert[]>([]);
+  readonly transferOpen = signal(false);
+  readonly transferLoading = signal(false);
+  readonly transferError = signal('');
+  readonly selectedCoordinatorId = signal('');
+  readonly coordinators = signal<PersonnelAssignment[]>([]);
+  readonly canTransfer = computed(() => {
+    const permissions = this.session.permissions();
+    return permissions.includes('assignments.manage') || permissions.includes('all');
+  });
+  readonly coordinatorOptions = computed(() => {
+    const currentCoordinatorId = this.store.detalle()?.coordinador?.id;
+    const seen = new Set<string>();
+    return this.coordinators()
+      .filter(
+        (assignment) =>
+          assignment.assignment_status === 'ACTIVE' &&
+          assignment.role.code === 'coordinator' &&
+          assignment.user.id !== currentCoordinatorId,
+      )
+      .filter((assignment) =>
+        seen.has(assignment.user.id) ? false : (seen.add(assignment.user.id), true),
+      )
+      .map((assignment) => ({ value: assignment.user.id, label: assignment.user.name }));
+  });
   readonly workspaceSection = computed<DistributorWorkspaceSection>(() => {
     if (this.activeSection() === 'credito') return 'credit';
     if (this.activeSection() === 'historial') return 'history';
@@ -182,6 +214,68 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
 
   volver(): void {
     void this.router.navigate([this.distributorDirectoryRoute()]);
+  }
+
+  async abrirTransferencia(): Promise<void> {
+    const distributor = this.store.detalle();
+    if (!distributor || !this.canTransfer()) return;
+
+    this.transferOpen.set(true);
+    this.transferError.set('');
+    this.selectedCoordinatorId.set('');
+    if (this.coordinators().length) return;
+
+    this.transferLoading.set(true);
+    try {
+      const response = await firstValueFrom(
+        this.organizationApi.getBranchAssignments(distributor.sucursal.id, { status: 'ACTIVE' }),
+      );
+      this.coordinators.set(response.data);
+    } catch (error: unknown) {
+      this.transferError.set(
+        apiErrorMessage(error, 'No fue posible cargar los coordinadores disponibles.'),
+      );
+    } finally {
+      this.transferLoading.set(false);
+    }
+  }
+
+  cerrarTransferencia(): void {
+    if (this.transferLoading()) return;
+    this.transferOpen.set(false);
+    this.transferError.set('');
+    this.selectedCoordinatorId.set('');
+  }
+
+  seleccionarCoordinador(value: string | number | boolean | null): void {
+    this.selectedCoordinatorId.set(typeof value === 'string' ? value : '');
+    this.transferError.set('');
+  }
+
+  async transferirDistribuidora(): Promise<void> {
+    const distributor = this.store.detalle();
+    const coordinatorId = this.selectedCoordinatorId();
+    if (!distributor || !coordinatorId || this.transferLoading()) return;
+
+    this.transferLoading.set(true);
+    this.transferError.set('');
+    try {
+      await firstValueFrom(
+        this.organizationApi.assignCoordinatorDistributor({
+          branch_id: distributor.sucursal.id,
+          distributor_id: distributor.id,
+          coordinator_id: coordinatorId,
+        }),
+      );
+      await this.store.cargarDetalle(distributor.id);
+      this.transferOpen.set(false);
+      this.selectedCoordinatorId.set('');
+      this.alerts.success('La distribuidora fue transferida al coordinador seleccionado.');
+    } catch (error: unknown) {
+      this.transferError.set(apiErrorMessage(error, 'No fue posible transferir la distribuidora.'));
+    } finally {
+      this.transferLoading.set(false);
+    }
   }
 
   money(value: string | number | null | undefined): string {

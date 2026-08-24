@@ -6,6 +6,7 @@ import { MediaApiService } from '../../../core/api/media/media-api.service';
 import { SessionStore } from '../../../core/session/session.store';
 import { ConfirmationService } from '../../../shared/dialogs/confirmation.service';
 import { ExcedentesApiService, Surplus } from '../data-access/excedentes-api.service';
+import { groupSurpluses } from '../data-access/surplus-group';
 import { ExcedentesPageComponent } from './excedentes-page.component';
 
 const pending: Surplus = {
@@ -26,6 +27,7 @@ const pending: Surplus = {
   refund_requests: [],
   created_at: '2026-08-21T10:00:00-06:00',
 };
+const pendingGroup = groupSurpluses([pending])[0];
 
 describe('ExcedentesPageComponent', () => {
   const api = {
@@ -54,13 +56,13 @@ describe('ExcedentesPageComponent', () => {
   it('muestra las dos decisiones solo mientras el excedente está pendiente', async () => {
     const fixture = TestBed.createComponent(ExcedentesPageComponent);
     await fixture.whenStable();
-    fixture.componentInstance.open(pending);
+    fixture.componentInstance.open(pendingGroup);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Conservar como saldo a favor');
     expect(fixture.nativeElement.textContent).toContain('Solicitar devolución');
 
     fixture.componentInstance.selected.set({
-      ...pending,
+      ...pendingGroup,
       status: 'REFUND_PENDING',
       available_amount: '0.0000',
       reserved_amount: '700.0000',

@@ -32,7 +32,7 @@ import { ConciliacionApiService } from '../data-access/conciliacion-api.service'
           <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <h3 class="font-bold text-slate-950">1. Descargar Excel bancario</h3>
             <p class="mt-1 text-sm text-slate-600">Incluye {{ movementCount() }} movimientos simulados del corte actual.</p>
-            <button type="button" class="mt-4 min-h-11 rounded-lg bg-slate-950 px-4 font-semibold text-white disabled:opacity-50" [disabled]="downloadBusy() || !movementCount()" (click)="download()">{{ downloadBusy() ? 'Preparando…' : 'Descargar Excel' }}</button>
+            <button type="button" class="mt-4 min-h-11 rounded-lg bg-slate-950 px-4 font-semibold text-white disabled:opacity-50" [disabled]="downloadBusy()" (click)="download()">{{ downloadBusy() ? 'Preparando…' : 'Descargar Excel' }}</button>
           </article>
           <article class="rounded-xl border border-slate-200 bg-slate-50 p-4">
             <h3 class="font-bold text-slate-950">2. Subir Excel para conciliar</h3>
@@ -64,6 +64,7 @@ export class BankReconciliationActionsComponent {
   readonly uploadBusy = signal(false);
   readonly error = signal('');
   readonly success = signal('');
+  readonly processRunId = signal('');
 
   constructor() { this.checkAvailability(); }
 
@@ -77,7 +78,7 @@ export class BankReconciliationActionsComponent {
   }
   download(): void {
     this.downloadBusy.set(true); this.error.set('');
-    this.api.exportSimulatedTransfers().subscribe({
+    this.api.exportSimulatedTransfers(this.processRunId()).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob); const link = document.createElement('a');
         link.href = url; link.download = `excel-bancario-${new Date().toISOString().slice(0, 10)}.xlsx`; link.click(); URL.revokeObjectURL(url);
@@ -89,14 +90,22 @@ export class BankReconciliationActionsComponent {
   upload(): void {
     const file = this.file(); if (!file || !this.available()) return;
     this.uploadBusy.set(true); this.error.set(''); this.success.set('');
-    this.api.upload(file).subscribe({
+    this.api.upload(file, this.processRunId()).subscribe({
       next: (result) => { this.uploadBusy.set(false); this.file.set(null); this.success.set(result.replayed ? 'Ese archivo ya había sido procesado.' : `Conciliación procesada: ${result.row_count} movimientos.`); },
       error: (error) => { this.uploadBusy.set(false); this.showError(error, 'El archivo fue rechazado.'); },
     });
   }
   private checkAvailability(): void {
-    this.api.simulatedTransfers().subscribe({
-      next: (items) => { this.movementCount.set(items.length); this.available.set(true); this.loading.set(false); },
+    this.api.pendingPeriods().subscribe({
+      next: (periods) => {
+        const processRunId = periods[0]?.process_run_id ?? '';
+        this.processRunId.set(processRunId);
+        if (!processRunId) { this.available.set(false); this.loading.set(false); return; }
+        this.api.simulatedTransfers(processRunId).subscribe({
+          next: (items) => { this.movementCount.set(items.length); this.available.set(true); this.loading.set(false); },
+          error: (error: HttpErrorResponse) => { this.available.set(false); this.loading.set(false); this.availabilityMessage.set(error.error?.error?.message ?? this.availabilityMessage()); },
+        });
+      },
       error: (error: HttpErrorResponse) => { this.available.set(false); this.loading.set(false); this.availabilityMessage.set(error.error?.error?.message ?? this.availabilityMessage()); },
     });
   }

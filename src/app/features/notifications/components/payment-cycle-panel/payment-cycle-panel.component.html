@@ -66,6 +66,10 @@
     <p class="cycle__error" role="alert">{{ error() }}</p>
   }
 
+  @if (notice()) {
+    <p class="cycle__notice" role="status" aria-live="polite">{{ notice() }}</p>
+  }
+
   @if (modalOpen()) {
     <div class="cycle-modal" (click)="closeConfirmation()">
       <div
