@@ -1,45 +1,76 @@
-@import "@ng-select/ng-select/themes/default.theme.css";
+@import '@ng-select/ng-select/themes/default.theme.css';
 @import 'tailwindcss';
 @import './shell-responsive.css';
 
 :root {
-  --mv-primary-50: #f1f7f2;
-  --mv-primary-100: #dcecdf;
-  --mv-primary-600: #386641;
-  --mv-primary-700: #2f5737;
-  --mv-primary-800: #24442b;
+  --mv-primary-50: #eefaf3;
+  --mv-primary-100: #d7f3e2;
+  --mv-primary-300: #78d4a0;
+  --mv-primary-400: #35bc73;
+  --mv-primary-500: #12a85a;
+  --mv-primary-600: #087a42;
+  --mv-primary-700: #066536;
+  --mv-primary-800: #064d2b;
   --mv-surface: #fff;
-  --mv-canvas: #f6f8f7;
-  --mv-surface-muted: #f9faf9;
-  --mv-border: #dfe5e1;
-  --mv-border-strong: #c9d3cc;
-  --mv-text: #18211b;
-  --mv-text-muted: #5f6d64;
-  --mv-focus: #76a65e;
-  --mv-radius-sm: .5rem;
-  --mv-radius-md: .75rem;
+  --mv-canvas: #f6f9f7;
+  --mv-surface-muted: #f9fbfa;
+  --mv-border: #dfe8e2;
+  --mv-border-strong: #c6d4cb;
+  --mv-text: #101b2d;
+  --mv-text-muted: #607087;
+  --mv-focus: #0a7c44;
+  --mv-info: #1468d4;
+  --mv-warning: #b45309;
+  --mv-danger: #c9362b;
+  --mv-font-display: 'Aptos Display', 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+  --mv-font-body: 'Aptos', 'Segoe UI Variable Text', 'Segoe UI', sans-serif;
+  --mv-radius-sm: 0.5rem;
+  --mv-radius-md: 0.75rem;
   --mv-radius-lg: 1rem;
+  --mv-shadow-card: 0 1px 2px rgb(15 23 42 / 4%), 0 10px 28px rgb(15 45 29 / 5%);
+  --mv-shadow-sheet: 0 -18px 45px rgb(15 23 42 / 18%);
+  --mv-shadow-drawer: 18px 0 45px rgb(15 23 42 / 18%);
   --mv-motion-fast: 120ms;
   --mv-motion-standard: 180ms;
-  --mv-ease: cubic-bezier(.2, 0, 0, 1);
+  --mv-ease: cubic-bezier(0.2, 0, 0, 1);
 }
 
-*, *::before, *::after { box-sizing: border-box; }
-html { min-width: 320px; color-scheme: light; background: var(--mv-canvas); }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  min-width: 320px;
+  color-scheme: light;
+  background: var(--mv-canvas);
+}
 body {
   margin: 0;
   background: var(--mv-canvas);
   color: var(--mv-text);
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: var(--mv-font-body);
   line-height: 1.5;
   text-rendering: optimizeLegibility;
 }
-::selection { background: var(--mv-primary-100); }
+:where(h1, h2, h3) {
+  font-family: var(--mv-font-display);
+  color: var(--mv-text);
+  text-wrap: balance;
+}
+:where(button:not(:disabled), [role='button'], a[href]) {
+  cursor: pointer;
+}
+::selection {
+  background: var(--mv-primary-100);
+}
 :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
   outline: 3px solid color-mix(in srgb, var(--mv-focus) 72%, white);
   outline-offset: 2px;
 }
-:where(button, input, select, textarea) { font: inherit; }
+:where(button, input, select, textarea) {
+  font: inherit;
+}
 :where(button, [role='button'], a) {
   transition-duration: var(--mv-motion-fast);
   transition-timing-function: var(--mv-ease);
@@ -50,7 +81,9 @@ body {
   border-radius: var(--mv-radius-sm) !important;
   background-color: var(--mv-surface);
 }
-:where(input:not([type='checkbox']):not([type='radio']), select, textarea):hover:not(:disabled) { border-color: #9eada3 !important; }
+:where(input:not([type='checkbox']):not([type='radio']), select, textarea):hover:not(:disabled) {
+  border-color: #9eada3 !important;
+}
 :where(input:not([type='checkbox']):not([type='radio']), select, textarea):focus {
   border-color: var(--mv-primary-600) !important;
   box-shadow: 0 0 0 3px rgb(56 102 65 / 12%) !important;
@@ -60,25 +93,66 @@ body {
   border-color: #dc2626 !important;
   box-shadow: 0 0 0 1px #dc2626 !important;
 }
-:where(button, a).bg-\[\#386641\], :where(button, a).bg-blue-600 { background-color: var(--mv-primary-600) !important; }
+:where(button, a).bg-\[\#386641\],
+:where(button, a).bg-blue-600 {
+  background-color: var(--mv-primary-600) !important;
+}
 :where(button, a).bg-\[\#386641\]:hover,
 :where(button, a).hover\:bg-\[\#6A994E\]:hover,
-:where(button, a).bg-blue-600:hover { background-color: var(--mv-primary-700) !important; }
-:where(button, a):disabled { cursor: not-allowed; box-shadow: none !important; }
-:where(.shadow-sm, .shadow-md) { box-shadow: none !important; }
-:where(.rounded-2xl) { border-radius: var(--mv-radius-lg); }
-:where(.rounded-xl) { border-radius: var(--mv-radius-md); }
-:where(.rounded-lg) { border-radius: var(--mv-radius-sm); }
-:where(.border-gray-100, .border-gray-200, .border-gray-300) { border-color: var(--mv-border) !important; }
-:where(.text-gray-400, .text-gray-500, .text-gray-600) { color: var(--mv-text-muted) !important; }
-:where(.text-gray-700, .text-gray-800, .text-gray-900) { color: var(--mv-text) !important; }
-:where(.bg-gray-50, .bg-\[\#F8F9FA\]) { background-color: var(--mv-surface-muted) !important; }
-table { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
-thead { background: var(--mv-surface-muted); }
-th { color: #445047; font-weight: 650; letter-spacing: .025em; }
-tbody tr { transition: background-color var(--mv-motion-fast) var(--mv-ease); }
-tbody tr:hover { background: #f7faf8; }
-.font-mono, [data-financial] { font-variant-numeric: tabular-nums; }
+:where(button, a).bg-blue-600:hover {
+  background-color: var(--mv-primary-700) !important;
+}
+:where(button, a):disabled {
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+:where(.shadow-sm, .shadow-md) {
+  box-shadow: none !important;
+}
+:where(.rounded-2xl) {
+  border-radius: var(--mv-radius-lg);
+}
+:where(.rounded-xl) {
+  border-radius: var(--mv-radius-md);
+}
+:where(.rounded-lg) {
+  border-radius: var(--mv-radius-sm);
+}
+:where(.border-gray-100, .border-gray-200, .border-gray-300) {
+  border-color: var(--mv-border) !important;
+}
+:where(.text-gray-400, .text-gray-500, .text-gray-600) {
+  color: var(--mv-text-muted) !important;
+}
+:where(.text-gray-700, .text-gray-800, .text-gray-900) {
+  color: var(--mv-text) !important;
+}
+:where(.bg-gray-50, .bg-\[\#F8F9FA\]) {
+  background-color: var(--mv-surface-muted) !important;
+}
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+thead {
+  background: var(--mv-surface-muted);
+}
+th {
+  color: #445047;
+  font-weight: 650;
+  letter-spacing: 0.025em;
+}
+tbody tr {
+  transition: background-color var(--mv-motion-fast) var(--mv-ease);
+}
+tbody tr:hover {
+  background: #f7faf8;
+}
+.font-mono,
+[data-financial] {
+  font-variant-numeric: tabular-nums;
+}
 .skip-link {
   position: fixed;
   z-index: 1000;
@@ -91,7 +165,9 @@ tbody tr:hover { background: #f7faf8; }
   padding: 10px 14px;
   font-weight: 700;
 }
-.skip-link:focus { transform: translateY(0); }
+.skip-link:focus {
+  transform: translateY(0);
+}
 @media (max-width: 767px) {
   app-mobile-layout.distributor-mobile main {
     padding: 12px;
@@ -107,31 +183,90 @@ tbody tr:hover { background: #f7faf8; }
   app-mobile-layout.distributor-mobile :where(.rounded-3xl) {
     border-radius: 1rem;
   }
-  app-mobile-layout.distributor-mobile .voucher-page .page-heading { margin-bottom: 1.25rem; gap: 0.75rem; }
-  app-mobile-layout.distributor-mobile .voucher-page h1 { font-size: 1.8rem; }
+  app-mobile-layout.distributor-mobile .voucher-page .page-heading {
+    margin-bottom: 1.25rem;
+    gap: 0.75rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page h1 {
+    font-size: 1.8rem;
+  }
   app-mobile-layout.distributor-mobile .voucher-page .page-intro,
-  app-mobile-layout.distributor-mobile .voucher-page .type-note { font-size: 0.86rem; }
-  app-mobile-layout.distributor-mobile .voucher-page .type-note { padding: 0.7rem 0 0.7rem 0.8rem; border-radius: 0 .5rem .5rem 0; background: var(--mv-surface-muted); }
+  app-mobile-layout.distributor-mobile .voucher-page .type-note {
+    font-size: 0.86rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .type-note {
+    padding: 0.7rem 0 0.7rem 0.8rem;
+    border-radius: 0 0.5rem 0.5rem 0;
+    background: var(--mv-surface-muted);
+  }
   app-mobile-layout.distributor-mobile .voucher-page .flow,
-  app-mobile-layout.distributor-mobile .voucher-page .history-section { border-radius: 0.9rem; }
-  app-mobile-layout.distributor-mobile .voucher-page .steps { display: flex; gap: 0.7rem; overflow-x: auto; scrollbar-width: none; }
-  app-mobile-layout.distributor-mobile .voucher-page .steps::-webkit-scrollbar { display: none; }
-  app-mobile-layout.distributor-mobile .voucher-page .steps li { min-width: 6.25rem; }
-  app-mobile-layout.distributor-mobile .voucher-page .product-options { grid-template-columns: 1fr; }
-  app-mobile-layout.distributor-mobile .voucher-page .product-option { min-height: 4.5rem; padding: 1rem; }
-  app-mobile-layout.distributor-mobile .voucher-page .credit-availability { gap: 0.8rem; padding: 0.9rem; }
-  app-mobile-layout.distributor-mobile .voucher-page .credit-availability dl { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-  app-mobile-layout.distributor-mobile .voucher-page .credit-availability strong { font-size: 1.15rem; }
-  :where(.content-wrapper) { padding: 16px !important; }
-  :where(.flex.gap-4):has(> input[type='search'], > select) { flex-wrap: wrap; }
-  :where(.flex.gap-4):has(> input[type='search'], > select) > * { min-width: min(100%, 220px); flex: 1 1 100%; }
-  :where(table) th, :where(table) td { padding-left: 12px !important; padding-right: 12px !important; }
+  app-mobile-layout.distributor-mobile .voucher-page .history-section {
+    border-radius: 0.9rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .steps {
+    display: flex;
+    gap: 0.7rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .steps::-webkit-scrollbar {
+    display: none;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .steps li {
+    min-width: 6.25rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .product-options {
+    grid-template-columns: 1fr;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .product-option {
+    min-height: 4.5rem;
+    padding: 1rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .credit-availability {
+    gap: 0.8rem;
+    padding: 0.9rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .credit-availability dl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+  app-mobile-layout.distributor-mobile .voucher-page .credit-availability strong {
+    font-size: 1.15rem;
+  }
+  :where(.content-wrapper) {
+    padding: 16px !important;
+  }
+  :where(.flex.gap-4):has(> input[type='search'], > select) {
+    flex-wrap: wrap;
+  }
+  :where(.flex.gap-4):has(> input[type='search'], > select) > * {
+    min-width: min(100%, 220px);
+    flex: 1 1 100%;
+  }
+  :where(table) th,
+  :where(table) td {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     scroll-behavior: auto !important;
     transition-duration: 1ms !important;
     animation-duration: 1ms !important;
     animation-iteration-count: 1 !important;
   }
 }
+/* Pagos distributor workspace: relation surplus actions and forced mobile shell. */
+.surplus-chip{display:flex;align-items:center;gap:.35rem;margin-top:.6rem;border-radius:.55rem;padding:.42rem .55rem;background:#fff7df;color:#795400;font-size:.72rem;font-weight:750}
+.surplus-action-card{display:flex;align-items:center;justify-content:space-between;gap:1rem;border:1px solid #f2cc75;border-radius:1rem;padding:1rem;background:linear-gradient(135deg,#fffaf0,#fff4d5)}
+.surplus-action-card span,.surplus-action-card strong,.action-options span,.action-options strong,.action-options small{display:block}.surplus-action-card span{color:#795400;font-size:.72rem;font-weight:800;text-transform:uppercase}.surplus-action-card strong{margin:.15rem 0;color:#442e00;font-size:1.35rem}.surplus-action-card p{margin:0;color:#795400;font-size:.78rem}
+.btn-surplus{min-height:2.75rem;border:0;border-radius:.7rem;padding:.65rem .9rem;background:#8a5b00;color:#fff;font:inherit;font-weight:750;cursor:pointer}
+.action-backdrop{position:fixed;z-index:70;inset:0;display:grid;place-items:end center;padding:1rem;background:rgb(10 23 15/.52)}.action-dialog{width:min(100%,30rem);border-radius:1.15rem;background:#fff;box-shadow:0 1.5rem 4rem rgb(10 23 15/.3)}
+.action-dialog header{display:flex;align-items:start;justify-content:space-between;gap:1rem;padding:1rem 1.1rem;border-bottom:1px solid var(--mv-border)}.action-dialog header p,.action-dialog header h2{margin:0}.action-dialog header p{color:var(--mv-primary-700);font-size:.68rem;font-weight:800;text-transform:uppercase}.action-dialog header h2{margin-top:.2rem;font-size:1.1rem}.action-dialog header button{width:2.75rem;height:2.75rem;border:1px solid var(--mv-border);border-radius:.75rem;background:#fff;font-size:1.35rem}
+.action-amount{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.1rem;background:#fff9e9}.action-amount strong{font-size:1.25rem}.action-options{display:grid;gap:.6rem;padding:1rem}.action-options button{min-height:4.5rem;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:.75rem;border:1px solid var(--mv-border);border-radius:.85rem;padding:.75rem;background:#fff;color:var(--mv-text);text-align:left}.action-options button:hover{border-color:var(--mv-primary-600);background:var(--mv-primary-50)}.action-options small{margin-top:.15rem;color:var(--mv-text-muted);line-height:1.35}
+.distributor-mobile app-pagos-page .pagos-container{width:100%;max-width:100%;padding:0}.distributor-mobile app-pagos-page .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.distributor-mobile app-pagos-page .main-layout{grid-template-columns:minmax(0,1fr)}.distributor-mobile app-pagos-page .relations-panel{position:static;max-height:none}.distributor-mobile app-pagos-page .detail-area{min-width:0}.distributor-mobile app-pagos-page .payments-masthead{align-items:flex-start;flex-direction:column}.distributor-mobile app-pagos-page .distributor-credit-grid{grid-template-columns:1fr}.distributor-mobile app-pagos-page .surplus-action-card{align-items:stretch;flex-direction:column}.distributor-mobile app-pagos-page .btn-surplus{width:100%}
+@media(max-width:380px){.distributor-mobile app-pagos-page .metrics-grid{grid-template-columns:1fr}}

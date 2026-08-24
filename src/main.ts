@@ -1,6 +1,6 @@
 import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
-import { App } from './app/app';
+import { AppComponent } from './app/app.component';
 
 if (typeof window !== 'undefined') {
   const win = window as any;
@@ -21,6 +21,6 @@ if (typeof window !== 'undefined') {
   }
 }
 
-bootstrapApplication(App, appConfig)
+bootstrapApplication(AppComponent, appConfig)
   .catch((err) => console.error(err));
 
