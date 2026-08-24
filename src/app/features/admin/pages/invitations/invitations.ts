@@ -8,12 +8,20 @@ import { RoleRes } from '../../data-access/admin.dtos';
 import { InvitationRes, InvitationService } from '../../data-access/invitation.service';
 import { RoleService } from '../../data-access/role.service';
 import { OrganizationFacade } from '../../../organization/state/organization.facade';
-import { ReasonActionDialogComponent } from '../../../../shared/ui/reason-action-dialog/reason-action-dialog.component';
+import { ReasonActionDialogComponent } from '../../../../shared/dialogs/reason-action-dialog/reason-action-dialog.component';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-invitations',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, DatePipe, ReasonActionDialogComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    LucideAngularModule,
+    DatePipe,
+    ReasonActionDialogComponent,
+    RefactorSelectComponent,
+  ],
   templateUrl: './invitations.html',
 })
 export class Invitations implements OnInit {
@@ -30,15 +38,19 @@ export class Invitations implements OnInit {
   readonly lastPage = signal(1);
   readonly totalItems = signal(0);
   readonly filterState = signal<string>(''); // empty means all
-  
+
   readonly isModalOpen = signal(false);
   readonly isSubmitting = signal(false);
   readonly formTouched = signal(false);
   readonly newInvitation = signal({ name: '', email: '', role_id: '', branch_id: '' });
 
   readonly isNameValid = computed(() => !!this.newInvitation().name.trim());
-  readonly isEmailValid = computed(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.newInvitation().email.trim()));
-  readonly isBranchValid = computed(() => !this.isBranchRequired() || !!this.newInvitation().branch_id);
+  readonly isEmailValid = computed(() =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.newInvitation().email.trim()),
+  );
+  readonly isBranchValid = computed(
+    () => !this.isBranchRequired() || !!this.newInvitation().branch_id,
+  );
 
   // Revocation modal state
   readonly isRevokeModalOpen = signal(false);
@@ -47,7 +59,9 @@ export class Invitations implements OnInit {
 
   readonly filteredBranches = computed(() => {
     const roleId = this.newInvitation().role_id;
-    const branches = this.organizationFacade.branches().filter((branch) => branch.status === 'ACTIVE');
+    const branches = this.organizationFacade
+      .branches()
+      .filter((branch) => branch.status === 'ACTIVE');
 
     if (!roleId) return branches;
 
@@ -96,7 +110,9 @@ export class Invitations implements OnInit {
     this.error.set('');
     try {
       const state = this.filterState();
-      const response = await firstValueFrom(this.invitationService.getInvitations(page, state || undefined));
+      const response = await firstValueFrom(
+        this.invitationService.getInvitations(page, state || undefined),
+      );
       this.invitations.set(response.data);
       this.currentPage.set(response.current_page);
       this.lastPage.set(response.last_page ?? 1);

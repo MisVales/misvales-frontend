@@ -2,13 +2,28 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
-import { AlertTriangle, Eye, Inbox, Loader2, Lock, LucideAngularModule, Plus } from 'lucide-angular';
+import {
+  AlertTriangle,
+  Building2,
+  ChevronDown,
+  CircleCheck,
+  Eye,
+  Inbox,
+  ListFilter,
+  Loader2,
+  Lock,
+  LucideAngularModule,
+  Plus,
+  Search,
+  Users,
+  X,
+} from 'lucide-angular';
 import { SessionStore } from '../../../../core/session/session.store';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { RoleService } from '../../data-access/role.service';
 import { UserService } from '../../data-access/user.service';
 import { UserListComponent } from './user-list.component';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
 
 describe('UserListComponent', () => {
   let component: UserListComponent;
@@ -25,7 +40,21 @@ describe('UserListComponent', () => {
     await TestBed.configureTestingModule({
       imports: [
         UserListComponent,
-        LucideAngularModule.pick({ AlertTriangle, Eye, Inbox, Loader2, Lock, Plus }),
+        LucideAngularModule.pick({
+          AlertTriangle,
+          Building2,
+          ChevronDown,
+          CircleCheck,
+          Eye,
+          Inbox,
+          ListFilter,
+          Loader2,
+          Lock,
+          Plus,
+          Search,
+          Users,
+          X,
+        }),
       ],
       providers: [
         provideRouter([]),
@@ -66,10 +95,12 @@ describe('UserListComponent', () => {
   });
 
   it('notifica al enviar una invitación correctamente', async () => {
-    userService.createAccount.mockReturnValue(of({
-      message: 'La invitación se envió correctamente.',
-      user: { id: 'user-1', name: 'Usuario', email: 'usuario@ejemplo.com', state: 'INVITED' },
-    }));
+    userService.createAccount.mockReturnValue(
+      of({
+        message: 'La invitación se envió correctamente.',
+        user: { id: 'user-1', name: 'Usuario', email: 'usuario@ejemplo.com', state: 'INVITED' },
+      }),
+    );
     component.inviteName.set('Usuario');
     component.inviteEmail.set('usuario@ejemplo.com');
     component.inviteRoleId.set('role-id');

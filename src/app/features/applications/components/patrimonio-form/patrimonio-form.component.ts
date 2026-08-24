@@ -1,20 +1,28 @@
 import { firstValueFrom, from, Observable } from 'rxjs';
-import { Component, inject, OnInit, ChangeDetectorRef, QueryList, ViewChildren } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ChangeDetectorRef,
+  QueryList,
+  ViewChildren,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { PatrimonioFormFactory } from '../../forms/patrimonio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
-import { AlertService } from '../../../../shared/services/alert.service';
-import { ConfirmationService } from '../../../../shared/services/confirmation.service';
-import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../../shared/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
-import { MediaApiService } from '../../../../core/services/media-api.service';
+import { MediaApiService } from '../../../../core/api/media/media-api.service';
 import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 import { MoneyInputDirective } from '../../directives/money-input.directive';
-import { AttachmentPreviewComponent } from '../../../../shared/ui/attachment-preview/attachment-preview.component';
+import { AttachmentPreviewComponent } from '../../../../shared/components/media/attachment-preview/attachment-preview.component';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 type TipoPatrimonio = 'ASSET' | 'LIABILITY' | 'ACTIVE_COMMITMENT';
 
@@ -26,25 +34,78 @@ interface OpcionPatrimonio {
 
 const OPCIONES_PATRIMONIO: Record<TipoPatrimonio, OpcionPatrimonio[]> = {
   ASSET: [
-    ...['Terreno', 'Departamento', 'Local comercial', 'Bodega', 'Oficina'].map((label) => ({ group: 'Inmuebles', value: label, label })),
-    ...['Negocio propio', 'Maquinaria', 'Equipo de trabajo', 'Herramientas', 'Inventario'].map((label) => ({ group: 'Negocios y equipo', value: label, label })),
-    ...['Ahorros', 'Inversiones', 'Acciones', 'Fondos de inversión'].map((label) => ({ group: 'Dinero e inversiones', value: label, label })),
-    ...['Muebles de valor', 'Joyas', 'Otro'].map((label) => ({ group: 'Otros', value: label, label })),
+    ...['Terreno', 'Departamento', 'Local comercial', 'Bodega', 'Oficina'].map((label) => ({
+      group: 'Inmuebles',
+      value: label,
+      label,
+    })),
+    ...['Negocio propio', 'Maquinaria', 'Equipo de trabajo', 'Herramientas', 'Inventario'].map(
+      (label) => ({ group: 'Negocios y equipo', value: label, label }),
+    ),
+    ...['Ahorros', 'Inversiones', 'Acciones', 'Fondos de inversión'].map((label) => ({
+      group: 'Dinero e inversiones',
+      value: label,
+      label,
+    })),
+    ...['Muebles de valor', 'Joyas', 'Otro'].map((label) => ({
+      group: 'Otros',
+      value: label,
+      label,
+    })),
   ],
   LIABILITY: [
-    ...['Crédito hipotecario', 'Crédito automotriz', 'Préstamo personal', 'Préstamo bancario', 'Tarjeta de crédito', 'Crédito de nómina', 'Crédito Infonavit', 'Crédito Fovissste', 'Préstamo con financiera', 'Préstamo con caja de ahorro', 'Préstamo familiar', 'Deuda con tienda departamental', 'Deuda comercial', 'Otro'].map((label) => ({ group: 'Pasivos', value: label, label })),
+    ...[
+      'Crédito hipotecario',
+      'Crédito automotriz',
+      'Préstamo personal',
+      'Préstamo bancario',
+      'Tarjeta de crédito',
+      'Crédito de nómina',
+      'Crédito Infonavit',
+      'Crédito Fovissste',
+      'Préstamo con financiera',
+      'Préstamo con caja de ahorro',
+      'Préstamo familiar',
+      'Deuda con tienda departamental',
+      'Deuda comercial',
+      'Otro',
+    ].map((label) => ({ group: 'Pasivos', value: label, label })),
   ],
   ACTIVE_COMMITMENT: [
-    ...['Renta de vivienda', 'Renta de local', 'Pensión alimenticia', 'Colegiaturas', 'Guardería', 'Manutención de hijos', 'Apoyo económico a familiares', 'Arrendamiento de equipo', 'Arrendamiento de maquinaria', 'Pago de servicios contratados', 'Planes o mensualidades recurrentes', 'Seguros con pago periódico', 'Otro'].map((label) => ({ group: 'Compromisos activos', value: label, label })),
+    ...[
+      'Renta de vivienda',
+      'Renta de local',
+      'Pensión alimenticia',
+      'Colegiaturas',
+      'Guardería',
+      'Manutención de hijos',
+      'Apoyo económico a familiares',
+      'Arrendamiento de equipo',
+      'Arrendamiento de maquinaria',
+      'Pago de servicios contratados',
+      'Planes o mensualidades recurrentes',
+      'Seguros con pago periódico',
+      'Otro',
+    ].map((label) => ({ group: 'Compromisos activos', value: label, label })),
   ],
 };
 
 @Component({
   selector: 'app-patrimonio-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, NgSelectModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective, MoneyInputDirective, AttachmentPreviewComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    NgSelectModule,
+    InputErrorComponent,
+    AutosaveDirective,
+    ApplicationFormErrorStateDirective,
+    MoneyInputDirective,
+    AttachmentPreviewComponent,
+    RefactorSelectComponent,
+  ],
   templateUrl: './patrimonio-form.component.html',
-  styleUrls: ['./patrimonio-form.component.css']
+  styleUrls: ['./patrimonio-form.component.css'],
 })
 export class PatrimonioFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
@@ -57,14 +118,14 @@ export class PatrimonioFormComponent implements OnInit {
 
   patrimonioArray: FormArray = PatrimonioFormFactory.createArray(this.fb);
   cargando = false;
-  
+
   tipoActivo: TipoPatrimonio = 'ASSET';
   autosaveStatuses: Record<number, AutosaveStatus> = {};
   mensajeBloqueoCambio?: string;
-  uploadingEvidence = false;
-  evidenceUploaded = false;
-  evidenceError?: string;
-  currentEvidenceFile?: File;
+  private evidenceByForm = new WeakMap<
+    FormGroup,
+    { uploading: boolean; uploaded: boolean; error?: string; file?: File }
+  >();
 
   @ViewChildren(AutosaveDirective)
   private autoguardados!: QueryList<AutosaveDirective>;
@@ -74,7 +135,7 @@ export class PatrimonioFormComponent implements OnInit {
   }
 
   get gruposFiltrados(): FormGroup[] {
-    return this.patrimonioGroups.filter(g => g.value.entry_type === this.tipoActivo);
+    return this.patrimonioGroups.filter((g) => g.value.entry_type === this.tipoActivo);
   }
 
   get opcionesPatrimonio(): OpcionPatrimonio[] {
@@ -83,11 +144,18 @@ export class PatrimonioFormComponent implements OnInit {
 
   opcionesPatrimonioPara(form: FormGroup): OpcionPatrimonio[] {
     const selectedValue = form.controls['name'].value;
-    if (typeof selectedValue !== 'string' || selectedValue.trim() === '' || this.opcionesPatrimonio.some((option) => option.value === selectedValue)) {
+    if (
+      typeof selectedValue !== 'string' ||
+      selectedValue.trim() === '' ||
+      this.opcionesPatrimonio.some((option) => option.value === selectedValue)
+    ) {
       return this.opcionesPatrimonio;
     }
 
-    return [{ group: 'Registro existente', value: selectedValue, label: selectedValue }, ...this.opcionesPatrimonio];
+    return [
+      { group: 'Registro existente', value: selectedValue, label: selectedValue },
+      ...this.opcionesPatrimonio,
+    ];
   }
 
   get etiquetaTipoActivo(): string {
@@ -105,9 +173,19 @@ export class PatrimonioFormComponent implements OnInit {
       this.mensajeBloqueoCambio = 'Corrige los campos marcados antes de cambiar de pestaña.';
       return false;
     }
+    if (!this.patrimonioGroups.every((form) => this.evidenceState(form).uploaded)) {
+      this.mensajeBloqueoCambio =
+        'Cada bien, deuda o compromiso activo requiere su propia evidencia.';
+      return false;
+    }
 
-    if (this.autoguardados.some((autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving')) {
-      this.mensajeBloqueoCambio = 'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
+    if (
+      this.autoguardados.some(
+        (autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving',
+      )
+    ) {
+      this.mensajeBloqueoCambio =
+        'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
       this.autoguardados.forEach((autosave) => autosave.flush());
       return false;
     }
@@ -117,57 +195,94 @@ export class PatrimonioFormComponent implements OnInit {
   }
 
   getSaveFn(formGroup: FormGroup) {
-    return (rawValue: any): Observable<any> => from(this.store.ejecutarGuardado(async () => {
-      const index = this.patrimonioGroups.indexOf(formGroup);
-      const detalle = this.store.detalle();
-      const idSolicitud = detalle?.id;
-      if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
+    return (rawValue: any): Observable<any> =>
+      from(
+        this.store.ejecutarGuardado(async () => {
+          const index = this.patrimonioGroups.indexOf(formGroup);
+          const detalle = this.store.detalle();
+          const idSolicitud = detalle?.id;
+          if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
 
-      const payload = { ...rawValue };
-      const idRegistro = payload.id;
-      const otherDescription = payload.other_description;
-      delete payload.id;
-      delete payload.other_description;
+          const payload = { ...rawValue };
+          const idRegistro = payload.id;
+          const otherDescription = payload.other_description;
+          delete payload.id;
+          delete payload.other_description;
 
-      const details = { ...(payload.details_payload ?? {}) };
-      if (payload.name === 'Otro') {
-        payload.details_payload = { ...details, description: typeof otherDescription === 'string' ? otherDescription.trim() : '' };
-      } else {
-        delete details.description;
-        payload.details_payload = Object.keys(details).length > 0 ? details : null;
-      }
+          const details = { ...(payload.details_payload ?? {}) };
+          if (payload.name === 'Otro') {
+            payload.details_payload = {
+              ...details,
+              description: typeof otherDescription === 'string' ? otherDescription.trim() : '',
+            };
+          } else {
+            delete details.description;
+            payload.details_payload = Object.keys(details).length > 0 ? details : null;
+          }
 
-      const request$ = idRegistro
-        ? this.api.actualizarPatrimonio(idSolicitud, idRegistro, payload, detalle.versionBloqueo)
-        : this.api.crearPatrimonio(idSolicitud, payload, detalle.versionBloqueo);
+          const request$ = idRegistro
+            ? this.api.actualizarPatrimonio(
+                idSolicitud,
+                idRegistro,
+                payload,
+                detalle.versionBloqueo,
+              )
+            : this.api.crearPatrimonio(idSolicitud, payload, detalle.versionBloqueo);
 
-      return firstValueFrom(request$).then(res => {
-        if (!idRegistro && res && res.id && index !== -1) {
-           this.patrimonioArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
-        }
-        this.store.registrarAutoguardado(res);
-        return res;
-      });
-    }));
+          return firstValueFrom(request$).then((res) => {
+            if (!idRegistro && res && res.id && index !== -1) {
+              this.patrimonioArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+            }
+            this.store.registrarAutoguardado(res);
+            return res;
+          });
+        }),
+      );
   }
 
   async ngOnInit() {
     await this.esperarDetalle();
-    this.evidenceUploaded = this.store.detalle()?.hasAssetsEvidence === true;
     await this.cargarPatrimonio();
   }
 
-  onEvidenceChange(event: Event): void {
+  evidenceState(form: FormGroup) {
+    let state = this.evidenceByForm.get(form);
+    if (!state) {
+      state = { uploading: false, uploaded: false };
+      this.evidenceByForm.set(form, state);
+    }
+    return state;
+  }
+
+  onEvidenceChange(form: FormGroup, event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
-    const applicationId = this.store.detalle()?.id;
-    if (!file || !applicationId) return;
-    this.currentEvidenceFile = file;
-    this.uploadingEvidence = true;
-    this.evidenceError = undefined;
-    this.mediaApi.upload({ file, owner_type: 'distributor_application', owner_id: applicationId, purpose: 'ASSET_EVIDENCE' }).subscribe({
-      next: () => { this.uploadingEvidence = false; this.evidenceUploaded = true; this.cdr.markForCheck(); },
-      error: (error) => { this.uploadingEvidence = false; this.evidenceError = apiValidationErrors(error)['file']?.[0] ?? apiErrorMessage(error, 'No fue posible subir la evidencia.'); this.cdr.markForCheck(); },
-    });
+    const recordId = form.value.id;
+    if (!file || !recordId) return;
+    const state = this.evidenceState(form);
+    state.file = file;
+    state.uploading = true;
+    state.error = undefined;
+    this.mediaApi
+      .upload({
+        file,
+        owner_type: 'application_asset_liability',
+        owner_id: recordId,
+        purpose: 'ASSET_EVIDENCE',
+      })
+      .subscribe({
+        next: () => {
+          state.uploading = false;
+          state.uploaded = true;
+          this.cdr.markForCheck();
+        },
+        error: (error) => {
+          state.uploading = false;
+          state.error =
+            apiValidationErrors(error)['file']?.[0] ??
+            apiErrorMessage(error, 'No fue posible subir la evidencia.');
+          this.cdr.markForCheck();
+        },
+      });
   }
 
   private esperarDetalle(): Promise<void> {
@@ -197,12 +312,14 @@ export class PatrimonioFormComponent implements OnInit {
         this.prepararFormulario(form);
         form.patchValue({
           ...item,
-          other_description: item.name === 'Otro' ? item.details_payload?.description ?? '' : '',
+          other_description: item.name === 'Otro' ? (item.details_payload?.description ?? '') : '',
         });
         this.configurarDescripcionOtro(form);
+        this.evidenceByForm.set(form, { uploading: false, uploaded: item.has_evidence === true });
         this.patrimonioArray.push(form);
       });
-    } catch {} finally {
+    } catch {
+    } finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -217,6 +334,7 @@ export class PatrimonioFormComponent implements OnInit {
     const form = PatrimonioFormFactory.create(this.fb);
     this.prepararFormulario(form);
     form.patchValue({ entry_type: this.tipoActivo });
+    this.evidenceByForm.set(form, { uploading: false, uploaded: false });
     this.patrimonioArray.push(form);
     this.cdr.markForCheck();
   }
@@ -247,7 +365,7 @@ export class PatrimonioFormComponent implements OnInit {
   }
 
   removerRegistroVisual(formGroup: FormGroup) {
-    const index = this.patrimonioGroups.findIndex(g => g === formGroup);
+    const index = this.patrimonioGroups.findIndex((g) => g === formGroup);
     if (index !== -1) {
       this.patrimonioArray.removeAt(index);
       delete this.autosaveStatuses[index];
@@ -256,17 +374,25 @@ export class PatrimonioFormComponent implements OnInit {
   }
 
   async eliminarRegistroAPI(formGroup: FormGroup, idRegistro: string) {
-    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar registro patrimonial', message: 'El bien o pasivo se eliminará del expediente.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
+    const confirmacion = await this.confirmation.confirm({
+      title: 'Eliminar registro patrimonial',
+      message: 'El bien o pasivo se eliminará del expediente.',
+      confirmLabel: 'Sí, eliminar',
+      tone: 'danger',
+    });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
 
     try {
-      await this.api.eliminarPatrimonio(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
+      await this.api
+        .eliminarPatrimonio(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo)
+        .toPromise();
       this.removerRegistroVisual(formGroup);
       await this.store.cargarDetalle(idSolicitud);
-    } catch {} finally {
+    } catch {
+    } finally {
       this.cdr.markForCheck();
     }
   }

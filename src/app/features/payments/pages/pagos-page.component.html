@@ -1,0 +1,763 @@
+<section class="pagos-container">
+  <app-breadcrumbs [items]="breadcrumbs()" />
+
+  @if (contextDistributorNumber()) {
+    <div class="page-workspace-nav">
+      <app-distributor-workspace-nav
+        [distributorId]="contextDistributorId()"
+        [distributorNumber]="contextDistributorNumber()"
+        active="payments"
+        [backRoute]="distributorDirectoryRoute()"
+      />
+    </div>
+  }
+
+  <header class="payments-masthead">
+    <div>
+      <p>Seguimiento financiero</p>
+      <h1>Pagos</h1>
+      <span>
+        {{
+          contextDistributorNumber()
+            ? 'Consulta abonos, saldos y recuperación de línea de ' +
+              contextDistributorNumber() +
+              '.'
+            : 'Relaciones pagadas, pendientes o vencidas; pagos, excedentes y línea recuperada en un solo lugar.'
+        }}
+      </span>
+    </div>
+    <div class="payments-masthead__scope">
+      <lucide-icon name="lock" [size]="18" aria-hidden="true" />
+      <span>Alcance autorizado</span>
+    </div>
+  </header>
+
+  <!-- Global Metrics Grid -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <span class="metric-label">Total Pagado Acumulado</span>
+      <span class="metric-value">{{
+        metrics().totalPaid | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+      }}</span>
+      <span class="metric-desc"
+        >{{ metrics().totalPaymentsCount }} pagos en
+        {{ metrics().totalRelationsWithPayments }} relaciones</span
+      >
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-label">Aplicado a Cargos</span>
+      <span class="metric-value text-amber-600">{{
+        metrics().totalCharges | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+      }}</span>
+      <span class="metric-desc">Recargos, intereses, seguro y comisiones</span>
+    </div>
+
+    <div class="metric-card">
+      <span class="metric-label">Aplicado a Capital</span>
+      <span class="metric-value text-emerald-600">{{
+        metrics().totalCapital | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+      }}</span>
+      <span class="metric-desc">Capital amortizado de vales</span>
+    </div>
+
+    <div class="metric-card accent-recovery">
+      <span class="metric-label">Línea Total Recuperada</span>
+      <span class="metric-value">{{
+        metrics().totalLineRecovered | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+      }}</span>
+      <span class="metric-desc">Crédito liberado y disponible nuevamente</span>
+    </div>
+  </div>
+
+  <!-- Error message if any -->
+  @if (error()) {
+    <div
+      role="alert"
+      class="rounded-xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700"
+    >
+      {{ error() }}
+    </div>
+  }
+  @if (surplusSuccess()) {
+    <div
+      role="status"
+      class="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-800"
+    >
+      {{ surplusSuccess() }}
+    </div>
+  }
+
+  <!-- Main Content Layout -->
+  <div class="main-layout">
+    <!-- Left Panel: Relations List & Filters -->
+    <aside class="relations-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Relaciones</h2>
+      </div>
+
+      <app-history-filter-bar label="Filtros del historial de pagos">
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Buscar por referencia o distribuidora..."
+          [ngModel]="searchTerm()"
+          (ngModelChange)="searchTerm.set($event)"
+        />
+        <refactor-select
+          class="select-input"
+          [ngModel]="statusFilter()"
+          (ngModelChange)="statusFilter.set($event)"
+        >
+          <option value="">Todos los estados</option>
+          <option value="SETTLED">Liquidadas</option>
+          <option value="PARTIALLY_PAID">Con abonos</option>
+          <option value="PENDING">Pendientes</option>
+          <option value="OVERDUE">Vencidas</option>
+        </refactor-select>
+      </app-history-filter-bar>
+
+      <div class="relations-scroll">
+        @for (rel of displayedRelations(); track rel.id) {
+          <button
+            type="button"
+            class="relation-item-card"
+            [class.is-active]="selectedRelation()?.id === rel.id"
+            (click)="selectRelation(rel.id)"
+          >
+            <div class="relation-card-header">
+              <span class="relation-ref">{{ rel.payment_reference }}</span>
+              <span
+                class="badge-status"
+                [class.status-settled]="rel.financial_status === 'SETTLED'"
+                [class.status-partial]="rel.financial_status === 'PARTIALLY_PAID'"
+                [class.status-overdue]="isOverdue(rel.financial_status)"
+                [class.status-pending]="
+                  rel.financial_status !== 'SETTLED' && rel.financial_status !== 'PARTIALLY_PAID'
+                "
+              >
+                {{ relationStatusLabel(rel.financial_status) }}
+              </span>
+            </div>
+
+            <div class="distributor-name">
+              <lucide-icon name="user-round" [size]="15" aria-hidden="true" />
+              {{ rel.header_snapshot?.name || rel.distribuidora?.usuario?.name || 'Distribuidora' }}
+              @if (rel.header_snapshot?.number || rel.distribuidora?.distributor_number) {
+                <span class="text-xs text-gray-500"
+                  >({{
+                    rel.header_snapshot?.number || rel.distribuidora?.distributor_number
+                  }})</span
+                >
+              }
+            </div>
+
+            <div class="relation-card-footer">
+              <span class="text-gray-500"
+                >Saldo:
+                <strong>{{
+                  rel.balance | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                }}</strong></span
+              >
+              <span class="text-emerald-700 font-semibold">
+                {{ rel.pagos?.length || 0 }} {{ rel.pagos?.length === 1 ? 'pago' : 'pagos' }}
+              </span>
+            </div>
+            @if (surplusForRelation(rel.id); as surplus) {
+              <div class="surplus-chip">
+                <lucide-icon name="circle-dollar-sign" [size]="15" aria-hidden="true" /> Relación
+                con excedente · {{ surplus.available_amount | currency: 'MXN' }}
+              </div>
+            }
+          </button>
+        } @empty {
+          <div class="p-6 text-center text-sm text-gray-500">
+            No se encontraron relaciones con los criterios seleccionados.
+          </div>
+        }
+      </div>
+      <app-history-pagination
+        [page]="effectiveHistoryPage()"
+        [pages]="historyPages()"
+        [total]="filteredRelations().length"
+        noun="relaciones"
+        label="Paginación del historial de pagos"
+        (previous)="setHistoryPage(effectiveHistoryPage() - 1)"
+        (next)="setHistoryPage(effectiveHistoryPage() + 1)"
+      />
+    </aside>
+
+    <!-- Right Panel: Relation Detail & Payments Breakdown -->
+    <main class="detail-area">
+      @if (selectedRelation(); as relation) {
+        @if (surplusForRelation(relation.id); as surplus) {
+          <section class="surplus-action-card">
+            <div>
+              <span>Excedente disponible</span
+              ><strong>{{
+                surplus.available_amount | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+              }}</strong>
+              <p>Este excedente pertenece al pago de esta relación.</p>
+            </div>
+            <button
+              type="button"
+              class="btn-surplus"
+              (click)="openSurplusActions(surplus)"
+              [disabled]="surplusBusy()"
+            >
+              Elegir qué hacer
+            </button>
+          </section>
+        }
+        <!-- Distributor & Credit Line Overview -->
+        <section class="card-section">
+          <div class="card-header-flex">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-600"
+                >Relación Seleccionada</span
+              >
+              <h2 class="section-title">{{ relation.payment_reference }}</h2>
+            </div>
+            <div class="flex items-center gap-2">
+              <span
+                class="badge-status"
+                [class.status-settled]="relation.financial_status === 'SETTLED'"
+                [class.status-partial]="relation.financial_status === 'PARTIALLY_PAID'"
+                [class.status-overdue]="isOverdue(relation.financial_status)"
+                [class.status-pending]="
+                  relation.financial_status !== 'SETTLED' &&
+                  relation.financial_status !== 'PARTIALLY_PAID'
+                "
+              >
+                {{ relationStatusLabel(relation.financial_status) }}
+              </span>
+              @if (relation.temporal_classification) {
+                <span class="badge-status bg-slate-100 text-slate-700">
+                  {{
+                    relation.temporal_classification === 'EARLY'
+                      ? 'Pago Anticipado'
+                      : relation.temporal_classification === 'ON_TIME'
+                        ? 'Pago Puntual'
+                        : 'Fuera de Tiempo'
+                  }}
+                </span>
+              }
+            </div>
+          </div>
+
+          <div class="distributor-credit-grid">
+            <!-- Distributor Info -->
+            <div class="info-box">
+              <span class="info-box-title">Datos de la Distribuidora</span>
+              <dl class="flex flex-col gap-1.5">
+                <div class="info-row">
+                  <dt>Distribuidora</dt>
+                  <dd>
+                    {{
+                      relation.header_snapshot?.name ||
+                        relation.distribuidora?.usuario?.name ||
+                        'N/A'
+                    }}
+                  </dd>
+                </div>
+                <div class="info-row">
+                  <dt>Número de Distribuidora</dt>
+                  <dd>
+                    {{
+                      relation.header_snapshot?.number ||
+                        relation.distribuidora?.distributor_number ||
+                        'N/A'
+                    }}
+                  </dd>
+                </div>
+                <div class="info-row">
+                  <dt>Sucursal</dt>
+                  <dd>
+                    {{
+                      relation.header_snapshot?.branch ||
+                        relation.distribuidora?.sucursal?.name ||
+                        'N/A'
+                    }}
+                  </dd>
+                </div>
+                <div class="info-row">
+                  <dt>Fecha Límite</dt>
+                  <dd>{{ relation.payment_deadline_at | date: 'dd/MM/yyyy HH:mm' }}</dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- Credit Line Status -->
+            <div class="info-box">
+              <span class="info-box-title">Línea de Crédito de la Distribuidora</span>
+              <dl class="flex flex-col gap-1.5">
+                <div class="info-row">
+                  <dt>Línea Total Autorizada</dt>
+                  <dd>
+                    {{ creditLine().totalAuthorized | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                  </dd>
+                </div>
+                <div class="info-row">
+                  <dt>Saldo Utilizado Actual</dt>
+                  <dd class="text-red-600 font-bold">
+                    {{ creditLine().usedBalance | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                  </dd>
+                </div>
+                <div class="info-row">
+                  <dt>Línea Disponible Actual</dt>
+                  <dd class="text-emerald-600 font-bold">
+                    {{ creditLine().available | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                  </dd>
+                </div>
+              </dl>
+
+              <!-- Progress bar of credit usage -->
+              <div class="credit-progress-container">
+                <div class="progress-track">
+                  <div
+                    class="progress-bar-used"
+                    [style.width.%]="creditLine().usedPercentage"
+                  ></div>
+                  <div
+                    class="progress-bar-available"
+                    [style.width.%]="creditLine().availablePercentage"
+                  ></div>
+                </div>
+                <div class="progress-legend">
+                  <span class="text-red-600"
+                    >Utilizado: {{ creditLine().usedPercentage | number: '1.1-1' }}%</span
+                  >
+                  <span class="text-emerald-600"
+                    >Disponible: {{ creditLine().availablePercentage | number: '1.1-1' }}%</span
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        @if (canRegisterPayment()) {
+          <section class="card-section" aria-labelledby="register-payment-title">
+            <div class="card-header-flex">
+              <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-emerald-700">{{
+                  isCashier() ? 'Pago en ventanilla' : 'Simulación bancaria'
+                }}</span>
+                <h3 id="register-payment-title" class="section-title">
+                  {{ isCashier() ? 'Registrar pago en efectivo' : 'Simular transferencia' }}
+                </h3>
+                <p class="text-sm text-gray-600">
+                  {{
+                    isCashier()
+                      ? 'Confirma el folio proporcionado por la distribuidora y captura el efectivo recibido.'
+                      : 'Selecciona Banca en línea, Transferencia o Ventanilla para esta relación.'
+                  }}
+                </p>
+              </div>
+              <span
+                class="rounded-full bg-emerald-50 px-3 py-1 font-mono text-xs font-bold text-emerald-900"
+                >{{ relation.payment_reference }}</span
+              >
+            </div>
+
+            @if (paymentSuccess()) {
+              <div
+                role="status"
+                class="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm font-semibold text-green-800"
+              >
+                {{ paymentSuccess() }}
+              </div>
+            }
+
+            @if (isCashier()) {
+              <div class="grid gap-4 md:grid-cols-2">
+                <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p class="text-xs font-bold uppercase tracking-wide text-emerald-800">
+                    Total a pagar
+                  </p>
+                  <p class="mt-1 text-3xl font-black text-emerald-950">
+                    {{ relation.balance | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                  </p>
+                </div>
+                <label class="text-sm font-bold text-gray-800"
+                  >Monto recibido
+                  <input
+                    class="mt-1 min-h-12 w-full rounded-lg border border-gray-300 bg-white px-3 text-lg font-bold text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    [(ngModel)]="paymentAmount"
+                    placeholder="$0.00"
+                  />
+                  <span class="mt-1 block text-xs font-normal text-gray-600"
+                    >Esta captura no modifica el saldo. Se aplicará al importar y conciliar el
+                    Excel.</span
+                  >
+                </label>
+              </div>
+              <div class="mt-5">
+                <button
+                  type="button"
+                  class="min-h-11 rounded-lg bg-emerald-700 px-5 font-bold text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  [disabled]="paymentBusy() || !paymentAmount || paymentAmount <= 0"
+                  (click)="registerPayment(relation)"
+                >
+                  {{
+                    paymentBusy() ? 'Guardando…' : 'Guardar para conciliación y descargar ticket'
+                  }}
+                </button>
+              </div>
+            } @else {
+              <div class="grid gap-4 md:grid-cols-2">
+                <label class="text-sm font-bold text-gray-800"
+                  >Referencia
+                  <input
+                    class="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-gray-100 px-3 font-mono font-normal text-gray-700"
+                    type="text"
+                    [value]="relation.payment_reference"
+                    readonly
+                  />
+                </label>
+                <label class="text-sm font-bold text-gray-800"
+                  >Tipo de pago
+                  <refactor-select
+                    class="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                    [(ngModel)]="paymentType"
+                    (ngModelChange)="paymentSuccess.set('')"
+                  >
+                    <option value="ONLINE_BANKING">Banca en línea</option>
+                    <option value="TRANSFER">Transferencia</option>
+                    <option value="COUNTER">Ventanilla</option>
+                  </refactor-select>
+                </label>
+                @if (paymentType !== 'COUNTER') {
+                  <label class="text-sm font-bold text-gray-800"
+                    >Monto
+                    <input
+                      class="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      [(ngModel)]="paymentAmount"
+                      placeholder="0.00"
+                    />
+                  </label>
+                  <label class="text-sm font-bold text-gray-800 md:col-span-2"
+                    >Concepto <span class="font-normal text-gray-500">(opcional)</span>
+                    <input
+                      class="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                      maxlength="500"
+                      [(ngModel)]="paymentConcept"
+                      placeholder="Ej. Abono a referencia"
+                    />
+                  </label>
+                }
+              </div>
+
+              @if (paymentType === 'COUNTER') {
+                <div
+                  class="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950"
+                >
+                  <p class="font-bold">Instrucciones para pagar en ventanilla</p>
+                  <p class="mt-1">
+                    Descarga el PDF y preséntalo en ventanilla con la cajera. Ella se encargará de
+                    registrar tu pago. Deberás dictarle tu referencia y confirmar que sea la misma
+                    que aparece en el documento. Al finalizar, la cajera te entregará un ticket;
+                    consérvalo, ya que deberás presentarlo para realizar un reporte en caso de algún
+                    error.
+                  </p>
+                </div>
+              } @else {
+                <div
+                  class="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950"
+                >
+                  <p class="font-bold">Datos bancarios configurados</p>
+                  <dl class="mt-2 grid gap-2 sm:grid-cols-2">
+                    <div>
+                      <dt class="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                        CLABE
+                      </dt>
+                      <dd class="mt-1 font-mono font-bold">
+                        {{ relation.bank_snapshot.clabe || 'Sin dato' }}
+                      </dd>
+                    </div>
+                    @if (paymentType === 'ONLINE_BANKING') {
+                      <div>
+                        <dt class="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                          Convenio
+                        </dt>
+                        <dd class="mt-1 font-mono font-bold">
+                          {{ relation.bank_snapshot.agreement || 'Sin dato' }}
+                        </dd>
+                      </div>
+                    }
+                  </dl>
+                </div>
+              }
+
+              <div class="mt-5 flex flex-wrap gap-3">
+                @if (paymentType === 'COUNTER') {
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg bg-emerald-700 px-5 font-bold text-white hover:bg-emerald-800 disabled:opacity-50"
+                    [disabled]="relationPdfBusy()"
+                    (click)="downloadRelationPdf(relation)"
+                  >
+                    {{ relationPdfBusy() ? 'Preparando…' : 'Descargar PDF de la relación' }}
+                  </button>
+                } @else {
+                  <button
+                    type="button"
+                    class="min-h-11 rounded-lg bg-emerald-700 px-5 font-bold text-white transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    [disabled]="paymentBusy() || !paymentAmount || paymentAmount <= 0"
+                    (click)="registerPayment(relation)"
+                  >
+                    {{ paymentBusy() ? 'Simulando…' : 'Simular transferencia' }}
+                  </button>
+                }
+              </div>
+            }
+
+            @if (canReportError()) {
+              <details class="group mt-5 rounded-xl border border-amber-200 bg-amber-50/60">
+                <summary
+                  class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 font-bold text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-700"
+                >
+                  Reportar una equivocación
+                  <span aria-hidden="true" class="text-xl transition group-open:rotate-45">+</span>
+                </summary>
+                <div class="border-t border-amber-200 p-4">
+                  <p class="text-sm text-amber-900">
+                    Sube el ticket PDF o el comprobante relacionado y explica el error. Caja lo
+                    revisará sin aplicar dinero automáticamente.
+                  </p>
+                  @if (reportSuccess()) {
+                    <p
+                      role="status"
+                      class="mt-3 rounded-lg bg-green-100 p-3 text-sm font-semibold text-green-800"
+                    >
+                      {{ reportSuccess() }}
+                    </p>
+                  }
+                  <div class="mt-4 grid gap-4 md:grid-cols-2">
+                    <label class="text-sm font-bold text-amber-950"
+                      >Ticket o comprobante<input
+                        class="mt-1 block min-h-11 w-full rounded-lg border border-amber-300 bg-white p-2 font-normal text-gray-900"
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        (change)="selectReportFile($event)"
+                    /></label>
+                    <label class="text-sm font-bold text-amber-950"
+                      >Descripción del error<textarea
+                        class="mt-1 min-h-24 w-full rounded-lg border border-amber-300 bg-white p-3 font-normal text-gray-900"
+                        maxlength="1000"
+                        [ngModel]="reportReason()"
+                        (ngModelChange)="reportReason.set($event)"
+                      ></textarea>
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    class="mt-4 min-h-11 rounded-lg bg-amber-800 px-5 font-bold text-white hover:bg-amber-900 disabled:opacity-50"
+                    [disabled]="reportBusy() || !reportFile() || !reportReason().trim()"
+                    (click)="submitReport(relation)"
+                  >
+                    {{ reportBusy() ? 'Enviando…' : 'Enviar reporte' }}
+                  </button>
+                </div>
+              </details>
+            }
+          </section>
+        }
+
+        <!-- Payments History & Cascade Breakdown -->
+        <section class="card-section">
+          <div class="card-header-flex">
+            <div>
+              <h3 class="section-title">Historial de Pagos Aplicados</h3>
+              <p class="text-xs text-gray-500">
+                Desglose por componente financiero y recuperación efectiva de línea por cada abono.
+              </p>
+            </div>
+            <span class="text-xs font-semibold text-gray-500">
+              Total pagado en relación:
+              <strong>{{
+                relation.reconciled_total | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+              }}</strong>
+              de
+              <strong>{{
+                relation.misvales_total | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+              }}</strong>
+            </span>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            @for (payment of relation.pagos ?? []; track payment.id) {
+              <article class="payment-card">
+                <!-- Payment Top Info -->
+                <div class="payment-card-top">
+                  <div class="flex items-center gap-3">
+                    <span class="payment-amount-badge">
+                      {{ payment.amount | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                    </span>
+                  </div>
+                  <div class="payment-date">
+                    <lucide-icon name="calendar-range" [size]="15" aria-hidden="true" />
+                    Aplicado el {{ payment.applied_at | date: 'dd/MM/yyyy, HH:mm' }}
+                  </div>
+                </div>
+
+                <!-- Waterfall Visual Bar -->
+                <div class="flex flex-col gap-1.5">
+                  <div class="waterfall-bar">
+                    @if (getPaymentPercentages(payment); as p) {
+                      <div
+                        class="waterfall-segment seg-surcharge"
+                        [style.width.%]="p.surcharge"
+                        title="Recargos: {{ payment.surcharge_applied | currency: 'MXN' }}"
+                      ></div>
+                      <div
+                        class="waterfall-segment seg-interest"
+                        [style.width.%]="p.interest"
+                        title="Intereses: {{ payment.interest_applied | currency: 'MXN' }}"
+                      ></div>
+                      <div
+                        class="waterfall-segment seg-insurance"
+                        [style.width.%]="p.insurance"
+                        title="Seguro: {{ payment.insurance_applied | currency: 'MXN' }}"
+                      ></div>
+                      <div
+                        class="waterfall-segment seg-commission"
+                        [style.width.%]="p.commission"
+                        title="Comisión: {{ payment.commission_applied | currency: 'MXN' }}"
+                      ></div>
+                      <div
+                        class="waterfall-segment seg-capital"
+                        [style.width.%]="p.capital"
+                        title="Capital: {{ payment.capital_applied | currency: 'MXN' }}"
+                      ></div>
+                    }
+                  </div>
+
+                  <div class="waterfall-legend">
+                    <div class="legend-item">
+                      <span class="legend-dot" style="background: #f59e0b"></span> Recargos
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-dot" style="background: #f97316"></span> Intereses
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-dot" style="background: #8b5cf6"></span> Seguro
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-dot" style="background: #3b82f6"></span> Comisión
+                    </div>
+                    <div class="legend-item font-bold text-emerald-800">
+                      <span class="legend-dot" style="background: #10b981"></span> Capital (Recupera
+                      Línea)
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Detailed Component Cascade Grid -->
+                <div class="cascade-grid">
+                  <div class="cascade-item">
+                    <span class="cascade-label">1. Recargos</span>
+                    <span class="cascade-value text-amber-600">{{
+                      payment.surcharge_applied | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                    }}</span>
+                  </div>
+                  <div class="cascade-item">
+                    <span class="cascade-label">2. Intereses</span>
+                    <span class="cascade-value text-orange-600">{{
+                      payment.interest_applied | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                    }}</span>
+                  </div>
+                  <div class="cascade-item">
+                    <span class="cascade-label">3. Seguro</span>
+                    <span class="cascade-value text-purple-600">{{
+                      payment.insurance_applied | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                    }}</span>
+                  </div>
+                  <div class="cascade-item">
+                    <span class="cascade-label">4. Comisión</span>
+                    <span class="cascade-value text-blue-600">{{
+                      payment.commission_applied | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                    }}</span>
+                  </div>
+                  <div class="cascade-item highlight-capital">
+                    <span class="cascade-label">5. Capital</span>
+                    <span class="cascade-value">{{
+                      payment.capital_applied | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                    }}</span>
+                  </div>
+                  <div class="cascade-item highlight-recovery">
+                    <span class="cascade-label">★ Línea Recuperada</span>
+                    <span class="cascade-value">{{
+                      payment.line_recovered | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                    }}</span>
+                  </div>
+                </div>
+              </article>
+            } @empty {
+              <div
+                class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500"
+              >
+                Esta relación aún no cuenta con pagos registrados o conciliados.
+              </div>
+            }
+          </div>
+        </section>
+      } @else {
+        <div class="empty-detail">
+          <lucide-icon name="credit-card" [size]="42" aria-hidden="true" />
+          <h3 class="text-lg font-bold text-slate-800">Selecciona una relación</h3>
+          <p class="text-sm">
+            Elige una relación del listado izquierdo para inspeccionar sus pagos aplicados, desglose
+            en cascada y recuperación de línea.
+          </p>
+        </div>
+      }
+    </main>
+  </div>
+
+  @if (surplusAction(); as surplus) {
+    <div class="action-backdrop" role="presentation" (click)="closeSurplusActions()">
+      <section
+        class="action-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="surplus-action-title"
+        (click)="$event.stopPropagation()"
+      >
+        <header>
+          <div>
+            <p>Excedente de la relación</p>
+            <h2 id="surplus-action-title">¿Qué quieres hacer con el saldo?</h2>
+          </div>
+          <button type="button" aria-label="Cerrar" (click)="closeSurplusActions()">×</button>
+        </header>
+        <div class="action-amount">
+          <span>Disponible</span
+          ><strong>{{
+            surplus.available_amount | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+          }}</strong>
+        </div>
+        <div class="action-options">
+          <button type="button" (click)="applySurplusAsBalance()" [disabled]="surplusBusy()">
+            <lucide-icon name="wallet-cards" [size]="22" aria-hidden="true" /><span
+              ><strong>Usar como saldo a favor</strong
+              ><small>Se conservará para aplicarlo conforme a las reglas vigentes.</small></span
+            >
+          </button>
+          <button type="button" (click)="requestSurplusRefund()" [disabled]="surplusBusy()">
+            <lucide-icon name="undo-2" [size]="22" aria-hidden="true" /><span
+              ><strong>Solicitar devolución</strong
+              ><small>Se enviará a revisión antes de ejecutar cualquier devolución.</small></span
+            >
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+</section>

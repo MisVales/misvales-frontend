@@ -1,0 +1,998 @@
+.pagos-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+:host-context(app-tablet-layout) .page-workspace-nav {
+  display: none;
+}
+
+/* Header & Rule banner */
+.page-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.page-subtitle {
+  font-size: 0.925rem;
+  color: #64748b;
+}
+
+/* Metrics row */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.metric-card {
+  background: #ffffff;
+  border-radius: 0.875rem;
+  padding: 1.25rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.06);
+}
+
+.metric-card.accent-recovery {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: #86efac;
+}
+
+.metric-label {
+  font-size: 0.775rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.metric-card.accent-recovery .metric-label {
+  color: #166534;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.metric-card.accent-recovery .metric-value {
+  color: #15803d;
+}
+
+.metric-desc {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.metric-card.accent-recovery .metric-desc {
+  color: #166534;
+}
+
+/* Main content grid */
+.main-layout {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Sidebar / Relations list */
+.relations-panel {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.panel-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.filters-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.search-input,
+.select-input {
+  width: 100%;
+  padding: 0.6rem 0.85rem;
+  border-radius: 0.5rem;
+  border: 1px solid #cbd5e1;
+  font-size: 0.875rem;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.search-input:focus,
+.select-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.relations-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 620px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.relation-item-card {
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.875rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  position: relative;
+}
+
+.relation-item-card:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.relation-item-card.is-active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.relation-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.relation-ref {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #1e293b;
+}
+
+.distributor-name {
+  font-size: 0.8rem;
+  color: #475569;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.relation-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.25rem;
+  font-size: 0.775rem;
+}
+
+.badge-status {
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.375rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-settled {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-partial {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.status-pending {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.status-overdue {
+  background: #fef2f2;
+  color: #b42318;
+}
+
+/* Detail Area */
+.detail-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.empty-detail {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 1rem;
+  padding: 3.5rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  color: #64748b;
+}
+
+.empty-detail lucide-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+}
+
+.card-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* Distributor and Credit Line Cards */
+.distributor-credit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+@media (max-width: 768px) {
+  .distributor-credit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-box {
+  background: #f8fafc;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  padding: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.info-box-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #475569;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.info-row dt {
+  color: #64748b;
+}
+
+.info-row dd {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.credit-progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+
+.progress-track {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 9999px;
+  overflow: hidden;
+  display: flex;
+}
+
+.progress-bar-used {
+  background: #ef4444;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-bar-available {
+  background: #10b981;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progress-legend {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Payment breakdown card */
+.payment-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.875rem;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.payment-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.payment-amount-badge {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.payment-date {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.cascade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 0.6rem;
+}
+
+.cascade-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cascade-item.highlight-capital {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.cascade-item.highlight-recovery {
+  background: #10b981;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.cascade-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.cascade-item.highlight-recovery .cascade-label {
+  color: #ecfdf5;
+}
+
+.cascade-value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #1e293b;
+}
+
+.cascade-item.highlight-capital .cascade-value {
+  color: #166534;
+}
+
+.cascade-item.highlight-recovery .cascade-value {
+  color: #ffffff;
+}
+
+.waterfall-bar {
+  display: flex;
+  height: 14px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: #e2e8f0;
+}
+
+.waterfall-segment {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.seg-surcharge {
+  background: #f59e0b;
+}
+.seg-interest {
+  background: #f97316;
+}
+.seg-insurance {
+  background: #8b5cf6;
+}
+.seg-commission {
+  background: #3b82f6;
+}
+.seg-capital {
+  background: #10b981;
+}
+
+.waterfall-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  font-size: 0.75rem;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: #475569;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* Operational ledger treatment: one continuous workspace, not a card gallery. */
+.pagos-container {
+  --ledger-ink: #0b2119;
+  --ledger-pine: #0e4a32;
+  --ledger-rule: var(--mv-border);
+  gap: 1rem;
+  padding: 0;
+}
+
+.payments-masthead {
+  position: relative;
+  min-height: 9rem;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.4rem 1.6rem;
+  overflow: hidden;
+  border-radius: 1rem 1rem 0 0;
+  color: #f4fff8;
+  background: linear-gradient(110deg, #092b1e, #0d5738 72%, #138654);
+}
+
+.payments-masthead::after {
+  content: '';
+  position: absolute;
+  width: 17rem;
+  height: 17rem;
+  right: -7rem;
+  top: -11rem;
+  border: 1px solid rgb(255 255 255 / 19%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2.8rem rgb(255 255 255 / 4%);
+}
+
+.payments-masthead p {
+  margin: 0 0 0.25rem;
+  color: #add3bd;
+  font-size: 0.62rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.payments-masthead h1 {
+  margin: 0;
+  color: #f4fff8;
+  font-size: clamp(1.6rem, 3vw, 2.35rem);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.payments-masthead > div > span {
+  display: block;
+  max-width: 44rem;
+  margin-top: 0.55rem;
+  color: #d3e9dc;
+  font-size: 0.7rem;
+}
+
+.payments-masthead__scope {
+  z-index: 1;
+  min-height: 2.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 0.7rem;
+  background: rgb(4 31 21 / 35%);
+  white-space: nowrap;
+}
+
+.metrics-grid {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border: 1px solid var(--ledger-rule);
+  border-top: 0;
+  background: color-mix(in srgb, var(--mv-surface) 86%, var(--mv-canvas));
+}
+
+.metric-card,
+.metric-card.accent-recovery {
+  min-width: 0;
+  padding: 0.9rem 1rem;
+  border: 0;
+  border-right: 1px solid var(--ledger-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  transition: none;
+}
+
+.metric-card:last-child {
+  border-right: 0;
+}
+.metric-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+.metric-label,
+.metric-card.accent-recovery .metric-label {
+  color: var(--mv-text-muted);
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+.metric-value,
+.metric-card.accent-recovery .metric-value {
+  overflow: hidden;
+  color: var(--mv-text);
+  font-size: clamp(0.9rem, 1.8vw, 1.25rem);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+}
+.metric-card.accent-recovery .metric-value {
+  color: var(--mv-primary-700);
+}
+.metric-desc,
+.metric-card.accent-recovery .metric-desc {
+  color: var(--mv-text-muted);
+  font-size: 0.58rem;
+}
+
+.main-layout {
+  grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--ledger-rule);
+}
+
+.relations-panel {
+  position: sticky;
+  top: 0;
+  max-height: calc(100dvh - 10rem);
+  padding: 1rem 1rem 1rem 0;
+  border: 0;
+  border-right: 1px solid var(--ledger-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.panel-title {
+  font-size: 0.9rem;
+}
+.relations-scroll {
+  gap: 0;
+  padding: 0;
+}
+.relation-item-card {
+  gap: 0.3rem;
+  padding: 0.75rem 0.55rem;
+  border: 0;
+  border-bottom: 1px solid var(--ledger-rule);
+  border-radius: 0;
+  background: transparent;
+  transition:
+    background-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.relation-item-card:hover {
+  border-color: var(--ledger-rule);
+  background: var(--mv-primary-50);
+}
+.relation-item-card.is-active {
+  border-color: var(--ledger-rule);
+  background: var(--mv-primary-50);
+  box-shadow: inset 3px 0 var(--mv-primary-600);
+}
+.relation-ref {
+  font-size: 0.72rem;
+}
+.distributor-name {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+}
+.relation-card-footer {
+  font-size: 0.62rem;
+}
+.badge-status {
+  border-radius: 999px;
+  font-size: 0.55rem;
+}
+
+.detail-area {
+  min-width: 0;
+  gap: 0;
+  padding-left: 1.25rem;
+}
+.card-section {
+  gap: 1rem;
+  padding: 1.15rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--ledger-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.section-title {
+  font-size: 1rem;
+}
+.distributor-credit-grid {
+  gap: 0;
+  border-top: 1px solid var(--ledger-rule);
+}
+.info-box {
+  gap: 0.45rem;
+  padding: 0.9rem 1rem 0.9rem 0;
+  border: 0;
+  border-right: 1px solid var(--ledger-rule);
+  border-radius: 0;
+  background: transparent;
+}
+.info-box + .info-box {
+  padding-left: 1rem;
+  border-right: 0;
+}
+.info-box-title {
+  color: var(--mv-primary-700);
+  font-size: 0.6rem;
+}
+.info-row {
+  font-size: 0.7rem;
+}
+.payment-card {
+  gap: 0.75rem;
+  padding: 1rem 0;
+  border: 0;
+  border-bottom: 1px solid var(--ledger-rule);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.payment-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.65rem;
+}
+.payment-amount-badge {
+  font-size: 1.05rem;
+}
+.cascade-grid {
+  grid-template-columns: repeat(6, minmax(5rem, 1fr));
+  gap: 0;
+  border: 1px solid var(--ledger-rule);
+}
+.cascade-item,
+.cascade-item.highlight-capital,
+.cascade-item.highlight-recovery {
+  padding: 0.6rem;
+  border: 0;
+  border-right: 1px solid var(--ledger-rule);
+  border-radius: 0;
+  color: var(--mv-text);
+  background: transparent;
+}
+.cascade-item:last-child {
+  border-right: 0;
+}
+.cascade-item.highlight-capital {
+  background: var(--mv-primary-50);
+}
+.cascade-item.highlight-recovery {
+  color: #fff;
+  background: var(--mv-primary-700);
+}
+.cascade-label {
+  font-size: 0.55rem;
+}
+.cascade-value {
+  font-size: 0.72rem;
+}
+.empty-detail {
+  min-height: 20rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+@media (max-width: 1024px) {
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+  .relations-panel {
+    position: static;
+    max-height: none;
+    padding-right: 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ledger-rule);
+  }
+  .relations-scroll {
+    max-height: 20rem;
+  }
+  .detail-area {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .payments-masthead {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .metric-card:nth-child(2) {
+    border-right: 0;
+  }
+  .metric-card {
+    border-bottom: 1px solid var(--ledger-rule);
+  }
+  .cascade-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cascade-item {
+    border-bottom: 1px solid var(--ledger-rule);
+  }
+  .distributor-credit-grid {
+    grid-template-columns: 1fr;
+  }
+  .info-box,
+  .info-box + .info-box {
+    padding: 0.8rem 0;
+    border-right: 0;
+    border-bottom: 1px solid var(--ledger-rule);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .relation-item-card {
+    transition: none;
+  }
+}
+
+/* Contextual payment workspace: navigation first, financial detail second. */
+.payments-masthead {
+  margin-top: 1rem;
+  padding: 1.15rem 1.25rem;
+  border: 1px solid var(--ledger-rule);
+  border-radius: 1rem 1rem 0 0;
+  color: var(--mv-text);
+  background: var(--mv-surface);
+  box-shadow: none;
+}
+
+.payments-masthead::after {
+  display: none;
+}
+
+.payments-masthead p {
+  color: var(--mv-primary-700);
+}
+
+.payments-masthead h1 {
+  color: var(--mv-text);
+  font-size: clamp(1.45rem, 3vw, 2.15rem);
+}
+
+.payments-masthead > div > span {
+  color: var(--mv-text-muted);
+}
+
+.payments-masthead__scope {
+  color: var(--mv-primary-800, #075f3a);
+  border-color: var(--mv-primary-200, #b8e8cc);
+  background: var(--mv-primary-50);
+}
+
+.metrics-grid {
+  border-radius: 0 0 1rem 1rem;
+}
+
+/* Match the coordinator workspaces: page heading, KPI cards and a single master-detail panel. */
+.pagos-container {
+  max-width: none;
+  gap: 1rem;
+  margin: 0;
+  padding: 0;
+}
+
+.payments-masthead {
+  align-items: end;
+  margin: 0;
+  padding: 0.1rem 0.15rem 0.25rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.payments-masthead p {
+  margin-bottom: 0.25rem;
+  font-size: 0.65rem;
+}
+
+.payments-masthead > div > span {
+  margin-top: 0.35rem;
+  font-size: 0.82rem;
+}
+
+.payments-masthead__scope {
+  min-height: 2.75rem;
+  border-radius: 999px;
+}
+
+.metrics-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.metric-card,
+.metric-card.accent-recovery {
+  min-height: 6.5rem;
+  padding: 1rem;
+  border: 1px solid var(--mv-border);
+  border-radius: var(--mv-radius-lg);
+  background: var(--mv-surface);
+}
+
+.metric-card:last-child {
+  border-right: 1px solid var(--mv-border);
+}
+
+.metric-label,
+.metric-card.accent-recovery .metric-label {
+  font-size: 0.64rem;
+}
+
+.metric-value,
+.metric-card.accent-recovery .metric-value {
+  font-size: 1.35rem;
+}
+
+.metric-desc,
+.metric-card.accent-recovery .metric-desc {
+  font-size: 0.65rem;
+}
+
+.main-layout {
+  grid-template-columns: minmax(18rem, 0.75fr) minmax(0, 1.7fr);
+  gap: 0.8rem;
+  border-top: 0;
+}
+
+.relations-panel {
+  position: static;
+  max-height: none;
+  padding: 1rem;
+  border: 1px solid var(--mv-border);
+  border-radius: var(--mv-radius-lg);
+  background: var(--mv-surface);
+}
+
+.detail-area {
+  gap: 0.8rem;
+  padding-left: 0;
+}
+
+.card-section,
+.empty-detail {
+  padding: 1rem;
+  border: 1px solid var(--mv-border);
+  border-radius: var(--mv-radius-lg);
+  background: var(--mv-surface);
+}
+
+.card-section {
+  gap: 1rem;
+}
+
+@media (max-width: 1050px) {
+  .metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .main-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .metric-card:nth-child(2) {
+    border-right: 1px solid var(--mv-border);
+  }
+}
+
+@media (max-width: 560px) {
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+}

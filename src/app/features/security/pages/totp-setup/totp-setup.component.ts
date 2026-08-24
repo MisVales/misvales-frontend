@@ -6,7 +6,7 @@ import * as QRCode from 'qrcode';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/api/api-error';
 import { SecurityService } from '../../data-access/security.service';
-import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
 
 @Component({
   selector: 'app-totp-setup',

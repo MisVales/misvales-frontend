@@ -5,16 +5,17 @@
       <p class="text-gray-500 mt-1">Administra las invitaciones enviadas a nuevos usuarios.</p>
     </div>
     <div class="flex items-center gap-4">
-      <select 
+      <refactor-select
         (change)="onFilterChange($event)"
-        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-[#386641] focus:border-[#386641] outline-none bg-white">
+        class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-[#386641] focus:border-[#386641] outline-none bg-white"
+      >
         <option value="">Todas</option>
         <option value="ACTIVE">Activas</option>
         <option value="PREPARED">Preparadas</option>
         <option value="CONSUMED">Consumidas</option>
         <option value="EXPIRED">Expiradas</option>
         <option value="REVOKED">Revocadas</option>
-      </select>
+      </refactor-select>
 
       <button
         (click)="openModal()"
@@ -231,7 +232,7 @@
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Rol (Opcional)</label>
-          <select
+          <refactor-select
             [ngModel]="newInvitation().role_id"
             (ngModelChange)="onRoleChange($event)"
             name="role_id"
@@ -241,13 +242,13 @@
             @for (r of roles(); track r.id) {
               <option [value]="r.id">{{ r.name }}</option>
             }
-          </select>
+          </refactor-select>
         </div>
 
         @if (isBranchRequired()) {
           <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Sucursal *</label>
-            <select
+            <refactor-select
               [ngModel]="newInvitation().branch_id"
               (ngModelChange)="newInvitation.set({ ...newInvitation(), branch_id: $event })"
               name="branch_id"
@@ -260,7 +261,7 @@
                   {{ b.is_headquarters ? '⭐ ' : '' }}{{ b.name }} ({{ b.code }})
                 </option>
               }
-            </select>
+            </refactor-select>
             @if (formTouched() && !isBranchValid()) {
               <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
                 <span>•</span> <span>La sucursal es obligatoria para este rol.</span>

@@ -5,10 +5,10 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { EmpleoFormFactory } from '../../forms/empleo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
-import { AlertService } from '../../../../shared/services/alert.service';
-import { ConfirmationService } from '../../../../shared/services/confirmation.service';
-import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../../shared/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
 
 @Component({

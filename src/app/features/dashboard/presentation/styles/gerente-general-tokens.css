@@ -1,0 +1,34 @@
+:host {
+  --gg-green: var(--v-green, #08783f);
+  --gg-green-soft: var(--v-green-soft, #eaf7ef);
+  --gg-ink: var(--v-ink, #172033);
+  --gg-muted: var(--v-muted, #687386);
+  --gg-line: var(--v-line, #dfe5e8);
+  --gg-canvas: var(--v-canvas, #f6f8f7);
+  --gg-red: var(--v-red, #d52626);
+  --gg-orange: var(--v-orange, #d76c00);
+  --gg-blue: var(--v-blue, #1768ca);
+  --gg-purple: var(--v-purple, #6747ba);
+  color: var(--gg-ink);
+  font-family: Inter, 'Segoe UI', Arial, sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+button,
+select {
+  font: inherit;
+}
+button:focus-visible,
+select:focus-visible {
+  outline: 3px solid rgb(35 116 219 / 24%);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

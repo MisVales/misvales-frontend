@@ -1,78 +1,55 @@
-import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { SolicitudesListadoStore } from '../../state/solicitudes-listado.store';
-import { firstValueFrom } from 'rxjs';
-import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
-import { Branch, PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
+import { LucideAngularModule } from 'lucide-angular';
 import { SessionStore } from '../../../../core/session/session.store';
-import { EstadoSolicitudComponent } from '../../../verificacion-distribuidoras/components/estado-solicitud/estado-solicitud.component';
+import { DistribuidorasStore } from '../../../distributors/state/distribuidoras.store';
+import { EstadoSolicitudComponent } from '../../../verifications/components/estado-solicitud/estado-solicitud.component';
+import { SolicitudesListadoStore } from '../../state/solicitudes-listado.store';
 
 @Component({
   selector: 'app-listado-solicitudes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink, EstadoSolicitudComponent],
+  imports: [CommonModule, RouterLink, LucideAngularModule, EstadoSolicitudComponent],
   templateUrl: './listado-solicitudes-page.component.html',
-  styleUrls: ['./listado-solicitudes-page.component.css']
+  styleUrls: ['./listado-solicitudes-page.component.css'],
 })
 export class ListadoSolicitudesPageComponent implements OnInit {
-  protected store = inject(SolicitudesListadoStore);
-  private fb = inject(FormBuilder);
-  private organizationApi = inject(OrganizationApiService);
-  private sessionStore = inject(SessionStore);
+  protected readonly applicationsStore = inject(SolicitudesListadoStore);
+  protected readonly distributorsStore = inject(DistribuidorasStore);
+  private readonly sessionStore = inject(SessionStore);
 
-  branches: Branch[] = [];
-  coordinators: PersonnelAssignment[] = [];
-
-  filtrosForm = this.fb.group({
-    application_number: [''],
-    status: [''],
-    branch_id: [''],
-    coordinator_id: [''],
-    created_from: ['']
-  });
-
-  async ngOnInit() {
-    this.store.listar();
-    await this.cargarCatalogos();
-
-    this.filtrosForm.valueChanges.subscribe(() => {
-      this.store.listar(1, 10, this.getFiltrosVigentes());
-    });
+  ngOnInit(): void {
+    void this.distributorsStore.listar(1, 10);
+    void this.applicationsStore.listar(1, 5);
   }
 
-  private async cargarCatalogos(): Promise<void> {
+  canCreateApplication(): boolean {
+    return this.sessionStore.roles().includes('coordinator') &&
+      this.hasPermission('distributor_applications.create');
+  }
+
+  distributorStatusLabel(status: string): string {
+    return ({ ACTIVE: 'Activa', PENDING_ACTIVATION: 'Pendiente de activación', DISABLED: 'Desactivada', BLOCKED: 'Bloqueada' } as Record<string, string>)[status] ?? 'Estado no disponible';
+  }
+
+  accessStatusLabel(status: string): string {
+    return status === 'ACTIVE' ? 'Acceso permitido' : 'Acceso restringido';
+  }
+
+  applicantName(application: { solicitante: { nombreCompleto?: string; nombre: string; apellidoPaterno: string; apellidoMaterno: string } | null }): string {
+    const applicant = application.solicitante;
+    if (!applicant) return 'Datos por capturar';
+    return applicant.nombreCompleto || [applicant.nombre, applicant.apellidoPaterno, applicant.apellidoMaterno].filter(Boolean).join(' ');
+  }
+
+  changeDistributorPage(delta: number): void {
+    const pagination = this.distributorsStore.paginacion();
+    void this.distributorsStore.listar(pagination.paginaActiva + delta, pagination.porPagina, this.distributorsStore.filtros());
+  }
+
+  private hasPermission(permission: string): boolean {
     const permissions = this.sessionStore.permissions();
-    const puedeConsultarOrganizacion = permissions.includes('all')
-      || permissions.includes('branches.view')
-      || permissions.includes('roles.assign');
-
-    if (!puedeConsultarOrganizacion) return;
-
-    const [branches, personnel] = await Promise.allSettled([
-      firstValueFrom(this.organizationApi.getBranches({ per_page: 100, status: 'ACTIVE' })),
-      firstValueFrom(this.organizationApi.getPersonnel({ per_page: 100, assignment_status: 'ACTIVE' })),
-    ]);
-
-    if (branches.status === 'fulfilled') this.branches = branches.value.data;
-    if (personnel.status === 'fulfilled') {
-      this.coordinators = personnel.value.data.filter((assignment) => assignment.role.code === 'coordinator');
-    }
-  }
-
-  getFiltrosVigentes(): Record<string, string> {
-    const val = this.filtrosForm.value;
-    const filtrosActivos: Record<string, string> = {};
-    Object.keys(val).forEach(key => {
-      const value = (val as any)[key];
-      if (value) filtrosActivos[key] = value;
-    });
-    return filtrosActivos;
-  }
-
-  getProgresoAncho(completadas: number, totales: number): string {
-    if (!totales) return '0%';
-    return `${(completadas / totales) * 100}%`;
+    return permissions.includes('all') || permissions.includes(permission);
   }
 }

@@ -1,0 +1,143 @@
+<div class="page-container">
+  @if (facade.isLoading() && !facade.solicitudSeleccionada()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando información...</p>
+    </div>
+  }
+
+  @if (facade.error()) {
+    <div class="alert alert-danger">
+      {{ facade.error() }}
+      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">
+        Cerrar
+      </button>
+    </div>
+  }
+
+  @if (facade.solicitudSeleccionada(); as solicitud) {
+    <div class="page-header">
+      <h1 class="page-title">Correcciones de la Solicitud</h1>
+      <p class="page-desc">Folio: {{ solicitud.folio }}</p>
+    </div>
+
+    <div class="layout-grid">
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Panel de Diferencias Pendientes -->
+        <section class="content-section">
+          <h2 class="section-title">Diferencias Reportadas en Visita (Pendientes)</h2>
+
+          <div class="diferencias-pendientes">
+            @for (dif of diferenciasPendientes(); track dif.id) {
+              <div class="diferencia-card">
+                <div class="card-content">
+                  <p class="difference-eyebrow">{{ etiquetaSeccion(dif.seccion) }}</p>
+                  <h4>{{ etiquetaCampo(dif.campo) }}</h4>
+                  @if (dif.registroNombre) {
+                    <p><strong>Registro:</strong> {{ dif.registroNombre }}</p>
+                  }
+                  <p><strong>Declarado:</strong> {{ dif.datoDeclarado }}</p>
+                  <p><strong>Observado:</strong> {{ dif.datoObservado || 'N/A' }}</p>
+                  <p class="desc"><strong>Motivo del Verificador:</strong> {{ dif.descripcion }}</p>
+                </div>
+                <div class="card-action">
+                  <button
+                    class="btn btn-primary btn-sm"
+                    [disabled]="facade.isLoading()"
+                    (click)="abrirCorreccion(dif)"
+                  >
+                    Revisar y aceptar
+                  </button>
+                </div>
+              </div>
+            }
+            @if (diferenciasPendientes().length === 0) {
+              <div class="empty-state">No hay diferencias pendientes por corregir.</div>
+            }
+          </div>
+        </section>
+
+        <!-- Panel de Correcciones Aplicadas -->
+        <section class="content-section">
+          <h2 class="section-title">Correcciones Aplicadas</h2>
+          <app-comparador-correcciones
+            [correcciones]="solicitud.correcciones"
+          ></app-comparador-correcciones>
+        </section>
+
+        <!-- Acciones Finales -->
+        <div class="actions-panel">
+          <button class="btn btn-secondary" (click)="onCancel()">Volver</button>
+          <button class="btn btn-primary" (click)="finalizarCorrecciones()">
+            Finalizar y Continuar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Modal/Overlay para Formulario de Corrección -->
+  @if (mostrarFormularioCorreccion() && diferenciaSeleccionada()) {
+    <div class="modal-overlay">
+      <div class="modal-content">
+        <h3 class="modal-title">Aceptar corrección del verificador</h3>
+        <p class="modal-subtitle">
+          {{ etiquetaSeccion(diferenciaSeleccionada()?.seccion) }} ·
+          {{ etiquetaCampo(diferenciaSeleccionada()?.campo) }}
+        </p>
+
+        <div class="form-group readonly-group mt-3">
+          <label>Dato Declarado</label>
+          <div class="readonly-value">{{ diferenciaSeleccionada()?.datoDeclarado }}</div>
+        </div>
+
+        @if (requiereRegistro(diferenciaSeleccionada())) {
+          <div class="form-group">
+            <label for="record-target">¿Qué registro deseas corregir?</label>
+            <refactor-select
+              id="record-target"
+              class="form-control"
+              [ngModel]="registroSeleccionado()"
+              (ngModelChange)="registroSeleccionado.set($event)"
+            >
+              <option value="">Selecciona el registro exacto</option>
+              @for (opcion of opcionesRegistro(diferenciaSeleccionada()); track opcion.id) {
+                <option [value]="opcion.id">{{ opcion.nombre }}</option>
+              }
+            </refactor-select>
+            <small class="form-help"
+              >Esta selección evita modificar otro familiar, vehículo o crédito por error.</small
+            >
+          </div>
+        }
+
+        <div class="form-group readonly-group">
+          <label>Dato Observado por Verificador</label>
+          <div class="readonly-value">
+            {{ diferenciaSeleccionada()?.datoObservado || diferenciaSeleccionada()?.descripcion }}
+          </div>
+        </div>
+
+        <div class="acceptance-note">
+          El valor observado y el motivo fueron capturados por el verificador. Al aceptar, quedarán
+          registrados en el expediente y en el historial de auditoría.
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" (click)="cerrarCorreccion()">
+            Cancelar
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary"
+            [disabled]="facade.isLoading()"
+            (click)="aplicarCorreccion()"
+          >
+            {{ facade.isLoading() ? 'Aceptando…' : 'Aceptar corrección' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

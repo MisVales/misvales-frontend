@@ -1,19 +1,43 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnDestroy,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { apiErrorMessage, apiValidationErrors, ValidationErrorsByField } from '../../../../core/api/api-error';
+import {
+  apiErrorMessage,
+  apiValidationErrors,
+  ValidationErrorsByField,
+} from '../../../../core/api/api-error';
 import { SessionStore } from '../../../../core/session/session.store';
-import { PageHeaderComponent } from '../../../../shared/ui/page-header/page-header.component';
-import { StatusBadgeComponent, StatusBadgeTone } from '../../../../shared/ui/status-badge/status-badge.component';
-import { ViewStateComponent } from '../../../../shared/ui/view-state/view-state.component';
+import {
+  EmptyStateComponent,
+  InformationBannerComponent,
+  PageContextHeaderComponent,
+} from '../../../verifications/presentation/components/primitives/verification-primitives';
+import {
+  StatusBadgeComponent,
+  StatusBadgeTone,
+} from '../../../../shared/components/badges/semantic-status-badge/status-badge.component';
+import { ViewStateComponent } from '../../../../shared/components/loading/view-state/view-state.component';
 import { LucideAngularModule } from 'lucide-angular';
 import { Branch } from '../../../organization/data-access/organization.dtos';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { RoleRes, UserRes, UserState } from '../../data-access/admin.dtos';
 import { RoleService } from '../../data-access/role.service';
 import { UserService } from '../../data-access/user.service';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import {
+  RefactorSelectComponent,
+  RefactorSelectOption,
+} from '../../../../shared/components/inputs/refactor-select/refactor-select.component';
+import { RefactorInputComponent } from '../../../../shared/components/inputs/refactor-input/refactor-input.component';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type InviteField = 'name' | 'email' | 'role' | 'branch';
@@ -21,7 +45,18 @@ type InviteField = 'name' | 'email' | 'role' | 'branch';
 @Component({
   selector: 'app-user-list',
   standalone: true,
-  imports: [FormsModule, RouterLink, PageHeaderComponent, StatusBadgeComponent, ViewStateComponent, LucideAngularModule],
+  imports: [
+    FormsModule,
+    RouterLink,
+    EmptyStateComponent,
+    InformationBannerComponent,
+    PageContextHeaderComponent,
+    StatusBadgeComponent,
+    ViewStateComponent,
+    LucideAngularModule,
+    RefactorInputComponent,
+    RefactorSelectComponent,
+  ],
   templateUrl: './user-list.component.html',
   styleUrl: './user-list.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -57,6 +92,36 @@ export class UserListComponent implements OnInit, OnDestroy {
   readonly assignableRoles = signal<RoleRes[]>([]);
   readonly availableBranches = signal<Branch[]>([]);
   readonly userToBlock = signal<UserRes | null>(null);
+  readonly statusFilterOptions: readonly RefactorSelectOption[] = [
+    { value: '', label: 'Todos los estados', tone: 'gray' },
+    { value: 'ACTIVE', label: 'Activo', tone: 'green' },
+    { value: 'PENDING_ACTIVATION', label: 'Pendiente de activación', tone: 'orange' },
+    { value: 'DISABLED', label: 'Deshabilitado', tone: 'red' },
+  ];
+  readonly roleFilterOptions = computed<readonly RefactorSelectOption[]>(() => [
+    { value: '', label: 'Todos los roles', tone: 'gray' },
+    ...this.availableRoles().map((role) => ({
+      value: role.id,
+      label: role.name,
+      tone: 'green' as const,
+    })),
+  ]);
+  readonly branchFilterOptions = computed<readonly RefactorSelectOption[]>(() => [
+    { value: '', label: 'Todas las sucursales', tone: 'gray' },
+    ...this.availableBranches().map((branch) => ({
+      value: branch.id,
+      label: `${branch.code} · ${branch.name}`,
+      tone: 'green' as const,
+    })),
+  ]);
+  readonly assignableRoleOptions = computed<readonly RefactorSelectOption[]>(() =>
+    this.assignableRoles().map((role) => ({
+      value: role.id,
+      label: role.name,
+      description: role.default_scope === 'GLOBAL' ? 'Cobertura global' : 'Requiere sucursal',
+      tone: 'green',
+    })),
+  );
 
   readonly selectedInviteRole = computed(
     () => this.assignableRoles().find((role) => role.id === this.inviteRoleId()) ?? null,
@@ -65,11 +130,27 @@ export class UserListComponent implements OnInit, OnDestroy {
     const role = this.selectedInviteRole();
     return role ? role.default_scope !== 'GLOBAL' : false;
   });
+  readonly isBranchManagerActor = computed(() =>
+    this.sessionStore.roles().includes('branch_manager') &&
+    !this.sessionStore.roles().includes('general_manager'),
+  );
+  readonly fixedInviteBranch = computed(() => {
+    if (!this.isBranchManagerActor()) return null;
+    const branchId = this.sessionStore.activeBranch()
+      ?? this.sessionStore.scopes().find((scope) => scope.role === 'branch_manager')?.branchId;
+    return this.availableBranches().find((branch) => branch.id === branchId)
+      ?? (this.availableBranches().length === 1 ? this.availableBranches()[0] : null);
+  });
   readonly inviteIsValid = computed(() => {
     const name = this.inviteName().trim();
     const branchValid = !this.inviteRequiresBranch() || Boolean(this.inviteBranchId());
-    return name.length > 0 && name.length <= 255 && EMAIL_PATTERN.test(this.inviteEmail().trim())
-      && Boolean(this.inviteRoleId()) && branchValid;
+    return (
+      name.length > 0 &&
+      name.length <= 255 &&
+      EMAIL_PATTERN.test(this.inviteEmail().trim()) &&
+      Boolean(this.inviteRoleId()) &&
+      branchValid
+    );
   });
 
   private searchTimer: ReturnType<typeof setTimeout> | null = null;
@@ -100,7 +181,9 @@ export class UserListComponent implements OnInit, OnDestroy {
   async loadRoles(): Promise<void> {
     try {
       const roles = await firstValueFrom(this.roleService.getRoles());
-      this.availableRoles.set(roles.filter((role) => role.is_active !== false && role.code !== 'distributor'));
+      this.availableRoles.set(
+        roles.filter((role) => role.is_active !== false && role.code !== 'distributor'),
+      );
     } catch (error: unknown) {
       this.pageError.set(apiErrorMessage(error, 'No fue posible cargar los roles disponibles.'));
     }
@@ -119,8 +202,13 @@ export class UserListComponent implements OnInit, OnDestroy {
     try {
       const response = await firstValueFrom(this.organizationApi.getBranches({ per_page: 100 }));
       this.availableBranches.set(response.data.filter((branch) => branch.status === 'ACTIVE'));
+      if (this.isBranchManagerActor() && this.fixedInviteBranch()) {
+        this.inviteBranchId.set(this.fixedInviteBranch()!.id);
+      }
     } catch (error: unknown) {
-      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar las sucursales disponibles.'));
+      this.pageError.set(
+        apiErrorMessage(error, 'No fue posible cargar las sucursales disponibles.'),
+      );
     }
   }
 
@@ -128,13 +216,15 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.loading.set(true);
     this.pageError.set('');
     try {
-      const response = await firstValueFrom(this.userService.getUsers({
-        search: this.filterSearch().trim() || undefined,
-        state: this.filterStatus() || undefined,
-        role_id: this.filterRole() || undefined,
-        branch_id: this.filterBranch() || undefined,
-        page: this.page(),
-      }));
+      const response = await firstValueFrom(
+        this.userService.getUsers({
+          search: this.filterSearch().trim() || undefined,
+          state: this.filterStatus() || undefined,
+          role_id: this.filterRole() || undefined,
+          branch_id: this.filterBranch() || undefined,
+          page: this.page(),
+        }),
+      );
       this.users.set(response.data);
       this.totalUsers.set(response.total);
     } catch (error: unknown) {
@@ -164,27 +254,41 @@ export class UserListComponent implements OnInit, OnDestroy {
     }
     return this.availableBranches();
   });
+  readonly currentInviteBranchOptions = computed<readonly RefactorSelectOption[]>(() =>
+    this.currentInviteBranches().map((branch) => ({
+      value: branch.id,
+      label: `${branch.code} · ${branch.name}`,
+      tone: 'green',
+    })),
+  );
 
   async onInviteRoleChange(roleId: string): Promise<void> {
+    this.markInviteFieldAsTouched('role');
     this.inviteRoleId.set(roleId);
     this.inviteBranchId.set('');
     this.inviteError.set('');
     this.clearInviteValidationErrors('role_id', 'branch_id');
-    
+
     const role = this.selectedInviteRole();
+    if (this.isBranchManagerActor() && this.inviteRequiresBranch()) {
+      this.inviteBranchId.set(this.fixedInviteBranch()?.id ?? '');
+      return;
+    }
     if (role?.code === 'branch_manager') {
-        this.isFetchingEligibleBranches.set(true);
-        try {
-            const response = await firstValueFrom(this.organizationApi.getBranches({ 
-                per_page: 100,
-                eligible_for_manager: true
-            } as any));
-            this.eligibleBranchesForManager.set(response.data);
-        } catch (error: unknown) {
-            this.inviteError.set('No se pudieron cargar las sucursales elegibles.');
-        } finally {
-            this.isFetchingEligibleBranches.set(false);
-        }
+      this.isFetchingEligibleBranches.set(true);
+      try {
+        const response = await firstValueFrom(
+          this.organizationApi.getBranches({
+            per_page: 100,
+            eligible_for_manager: true,
+          } as any),
+        );
+        this.eligibleBranchesForManager.set(response.data);
+      } catch (error: unknown) {
+        this.inviteError.set('No se pudieron cargar las sucursales elegibles.');
+      } finally {
+        this.isFetchingEligibleBranches.set(false);
+      }
     }
   }
 
@@ -212,6 +316,7 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   updateInviteBranch(value: string): void {
+    this.markInviteFieldAsTouched('branch');
     this.inviteBranchId.set(value);
     this.inviteError.set('');
     this.clearInviteValidationErrors('branch_id');
@@ -231,7 +336,8 @@ export class UserListComponent implements OnInit, OnDestroy {
     if (field === 'name' && !this.inviteName().trim()) return 'El nombre es obligatorio.';
     if (field === 'email') {
       if (!this.inviteEmail().trim()) return 'El correo electrónico es obligatorio.';
-      if (!EMAIL_PATTERN.test(this.inviteEmail().trim())) return 'Ingresa un correo electrónico válido.';
+      if (!EMAIL_PATTERN.test(this.inviteEmail().trim()))
+        return 'Ingresa un correo electrónico válido.';
     }
     if (field === 'role' && !this.inviteRoleId()) return 'Selecciona un rol para la persona.';
     if (field === 'branch' && this.inviteRequiresBranch() && !this.inviteBranchId()) {
@@ -247,7 +353,9 @@ export class UserListComponent implements OnInit, OnDestroy {
       this.markInviteFieldAsTouched('email');
       this.markInviteFieldAsTouched('role');
       if (this.inviteRequiresBranch()) this.markInviteFieldAsTouched('branch');
-      this.inviteError.set('Complete nombre, correo, rol y el alcance requerido con datos válidos.');
+      this.inviteError.set(
+        'Complete nombre, correo, rol y el alcance requerido con datos válidos.',
+      );
       return;
     }
 
@@ -255,13 +363,15 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.inviteError.set('');
     this.inviteValidationErrors.set({});
     try {
-      const response = await firstValueFrom(this.userService.createAccount({
-        name: this.inviteName().trim(),
-        email: this.inviteEmail().trim().toLowerCase(),
-        role_id: this.inviteRoleId(),
-        branch_id: this.inviteBranchId() || null,
-        send_invitation: true,
-      }));
+      const response = await firstValueFrom(
+        this.userService.createAccount({
+          name: this.inviteName().trim(),
+          email: this.inviteEmail().trim().toLowerCase(),
+          role_id: this.inviteRoleId(),
+          branch_id: this.inviteBranchId() || null,
+          send_invitation: true,
+        }),
+      );
       this.alerts.success(response.message || 'La invitación se envió correctamente.');
       this.closeInviteModal();
       await this.loadUsers();
@@ -294,9 +404,10 @@ export class UserListComponent implements OnInit, OnDestroy {
     this.isActionLoading.set(`block-${user.id}`);
     this.pageError.set('');
     try {
-      const request = user.state === 'BLOCKED'
-        ? this.userService.unblockUser(user.id)
-        : this.userService.blockUser(user.id);
+      const request =
+        user.state === 'BLOCKED'
+          ? this.userService.unblockUser(user.id)
+          : this.userService.blockUser(user.id);
       await firstValueFrom(request);
       this.closeBlockModal();
       await this.loadUsers();
@@ -308,23 +419,27 @@ export class UserListComponent implements OnInit, OnDestroy {
   }
 
   stateLabel(state: UserState): string {
-    return ({
-      ACTIVE: 'Activo',
-      INVITED: 'Invitado',
-      PENDING_ACTIVATION: 'Pendiente de activación',
-      BLOCKED: 'Bloqueado',
-      DISABLED: 'Deshabilitado',
-    } satisfies Record<UserState, string>)[state];
+    return (
+      {
+        ACTIVE: 'Activo',
+        INVITED: 'Invitado',
+        PENDING_ACTIVATION: 'Pendiente de activación',
+        BLOCKED: 'Bloqueado',
+        DISABLED: 'Deshabilitado',
+      } satisfies Record<UserState, string>
+    )[state];
   }
 
   stateTone(state: UserState): StatusBadgeTone {
-    return ({
-      ACTIVE: 'success',
-      INVITED: 'info',
-      PENDING_ACTIVATION: 'warning',
-      BLOCKED: 'danger',
-      DISABLED: 'neutral',
-    } satisfies Record<UserState, StatusBadgeTone>)[state];
+    return (
+      {
+        ACTIVE: 'green',
+        INVITED: 'blue',
+        PENDING_ACTIVATION: 'orange',
+        BLOCKED: 'red',
+        DISABLED: 'gray',
+      } satisfies Record<UserState, StatusBadgeTone>
+    )[state];
   }
 
   private hasPermission(permission: string): boolean {

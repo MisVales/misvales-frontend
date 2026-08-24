@@ -1,0 +1,107 @@
+<a class="skip-link" href="#catalog-content">Saltar al catálogo</a>
+
+<main class="catalog" id="catalog-content">
+  <header class="catalog-hero">
+    <div class="hero-copy">
+      <p class="eyebrow"><span aria-hidden="true"></span> Inventario de recuperación</p>
+      <h1>Componentes, visibles y verificables.</h1>
+      <p class="hero-summary">
+        Este laboratorio reúne el material recuperado del refactor. Sus datos son ilustrativos,
+        todas las acciones están aisladas y ninguna pantalla cambia permisos o reglas del sistema.
+      </p>
+    </div>
+
+    <dl class="recovery-ledger" aria-label="Resumen de recuperación">
+      <div>
+        <dt>Componentes</dt>
+        <dd>{{ totalComponents }}</dd>
+      </div>
+      <div>
+        <dt>Archivos recuperados</dt>
+        <dd>{{ recoveredFiles }}</dd>
+      </div>
+      <div class="ledger-status">
+        <dt>Estado</dt>
+        <dd><span aria-hidden="true"></span> Integrado</dd>
+      </div>
+    </dl>
+  </header>
+
+  <aside class="catalog-notice" aria-label="Alcance del catálogo">
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22">
+      <path
+        d="M12 3 4.5 6.2v5.1c0 4.7 3.2 8.2 7.5 9.7 4.3-1.5 7.5-5 7.5-9.7V6.2L12 3Z"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+      />
+      <path
+        d="m8.7 12 2.1 2.1 4.5-4.6"
+        fill="none"
+        stroke="currentColor"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="1.8"
+      />
+    </svg>
+    <div>
+      <strong>Catálogo visual de desarrollo</strong>
+      <p>No consume datos reales, no ejecuta operaciones y no sustituye las vistas autorizadas.</p>
+    </div>
+  </aside>
+
+  <nav class="catalog-index" aria-label="Índice de galerías">
+    @for (group of groups; track group.id) {
+      <a [href]="'#' + group.id">
+        <span class="index-number">{{ group.index }}</span>
+        <span class="index-copy"
+          ><strong>{{ group.title }}</strong
+          ><small>{{ group.count }} componentes</small></span
+        >
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18">
+          <path
+            d="m9 6 6 6-6 6"
+            fill="none"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          />
+        </svg>
+      </a>
+    }
+  </nav>
+
+  <section class="catalog-group" id="archivos" aria-labelledby="archivos-title">
+    <header class="group-heading">
+      <span>01 / {{ groups[0].count }}</span>
+      <div>
+        <h2 id="archivos-title">{{ groups[0].title }}</h2>
+        <p>{{ groups[0].description }}</p>
+      </div>
+    </header>
+    <div class="gallery-frame"><refactor-attachment-gallery [readOnly]="true" /></div>
+  </section>
+
+  <section class="catalog-group" id="verificador" aria-labelledby="verificador-title">
+    <header class="group-heading">
+      <span>02 / {{ groups[1].count }}</span>
+      <div>
+        <h2 id="verificador-title">{{ groups[1].title }}</h2>
+        <p>{{ groups[1].description }}</p>
+      </div>
+    </header>
+    <div class="gallery-frame"><refactor-verification-gallery /></div>
+  </section>
+
+  <section class="catalog-group" id="gerencia" aria-labelledby="gerencia-title">
+    <header class="group-heading">
+      <span>03 / {{ groups[2].count }}</span>
+      <div>
+        <h2 id="gerencia-title">{{ groups[2].title }}</h2>
+        <p>{{ groups[2].description }}</p>
+      </div>
+    </header>
+    <div class="gallery-frame"><gg-executive-gallery /></div>
+  </section>
+</main>

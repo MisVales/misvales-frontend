@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { permissionGuard } from '../../core/guards/permission.guard';
+import { anyPermissionGuard, permissionGuard } from '../../core/guards/permission.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -23,8 +23,8 @@ export const ADMIN_ROUTES: Routes = [
   },
   {
     path: 'auditoria',
-    canActivate: [permissionGuard('audit.view')],
-    loadComponent: () => import('./pages/audit-logs/audit-logs').then(c => c.AuditLogs)
+    canActivate: [anyPermissionGuard(['audit.view_global', 'audit.view_branch', 'audit.view'])],
+    loadChildren: () => import('../audit/auditoria.routes').then((m) => m.AUDITORIA_ROUTES)
   },
   {
     path: '',

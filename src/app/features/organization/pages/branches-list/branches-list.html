@@ -1,0 +1,134 @@
+<main class="branches-page">
+  <verification-page-context-header
+    eyebrow="Organización territorial"
+    [title]="isBranchManager() ? 'Mi sucursal' : 'Sucursales'"
+    [subtitle]="isBranchManager()
+      ? 'Consulta tu centro operativo, su ubicación y el equipo asignado.'
+      : 'Consulta cada centro operativo, su ubicación y el equipo que trabaja en él.'"
+  >
+    @if (canManage()) {
+      <a routerLink="nueva" class="primary-action">
+        <lucide-icon name="plus" [size]="18" aria-hidden="true" />
+        Nueva sucursal
+      </a>
+    }
+  </verification-page-context-header>
+
+  @if (!isBranchManager()) {
+  <section class="directory-tools" aria-label="Buscar y filtrar sucursales">
+    <refactor-input
+      type="search"
+      size="compact"
+      leadingIcon="search"
+      ariaLabel="Buscar sucursal"
+      placeholder="Buscar por nombre"
+      [clearable]="true"
+      [ngModel]="searchTerm"
+      (ngModelChange)="searchTerm = $event; onSearch(true)"
+    />
+    <refactor-select
+      ariaLabel="Filtrar sucursales por estado"
+      placeholder="Todas las sucursales"
+      leadingIcon="list-filter"
+      size="compact"
+      [options]="statusOptions"
+      [ngModel]="statusFilter"
+      (ngModelChange)="statusFilter = $event ?? ''; onSearch()"
+    />
+  </section>
+  }
+
+  @if (facade.isLoading()) {
+    <app-view-state
+      kind="loading"
+      [title]="isBranchManager() ? 'Cargando mi sucursal' : 'Cargando sucursales'"
+      [message]="isBranchManager()
+        ? 'Preparando la información de tu centro operativo.'
+        : 'Preparando el directorio territorial y sus ubicaciones.'"
+    />
+  } @else if (facade.branches().length === 0) {
+    <verification-empty-state
+      [title]="isBranchManager() ? 'No hay una sucursal asignada' : 'No hay sucursales para mostrar'"
+      [description]="isBranchManager()
+        ? 'Tu cuenta no tiene una sucursal activa disponible.'
+        : 'Ajusta la búsqueda o el estado seleccionado.'"
+    />
+  } @else {
+    <section class="branch-grid" aria-label="Directorio de sucursales">
+      @for (branch of facade.branches(); track branch.id) {
+        <a
+          class="branch-card"
+          [routerLink]="[branch.id]"
+          [attr.aria-labelledby]="'branch-name-' + branch.id"
+        >
+          <div class="branch-card__map" aria-hidden="true">
+            <app-branch-map-preview
+              [latitude]="branch.lat"
+              [longitude]="branch.lng"
+              [label]="branch.name"
+            />
+            <span class="branch-card__type">
+              <lucide-icon name="building-2" [size]="15" aria-hidden="true" />
+              {{ branch.is_headquarters ? 'Sede principal' : 'Sucursal' }}
+            </span>
+          </div>
+
+          <div class="branch-card__body">
+            <div class="branch-card__heading">
+              <div>
+                <p>Centro operativo</p>
+                <h2 [id]="'branch-name-' + branch.id">{{ branch.name }}</h2>
+              </div>
+              <app-branch-status-badge [isActive]="branch.status === 'ACTIVE'" />
+            </div>
+
+            <p class="branch-card__address">
+              {{ branch.address || 'Dirección pendiente de captura' }}
+            </p>
+
+            <div class="branch-card__footer">
+              <span>
+                <lucide-icon name="users" [size]="18" aria-hidden="true" />
+                <strong>{{ branch.active_personnel_count ?? 0 }}</strong>
+                personas activas
+              </span>
+              <span class="branch-card__open">
+                Ver sucursal
+                <lucide-icon name="chevron-right" [size]="18" aria-hidden="true" />
+              </span>
+            </div>
+          </div>
+        </a>
+      }
+    </section>
+
+    @if (!isBranchManager()) {
+    <footer class="pagination" aria-label="Paginación de sucursales">
+      <p>
+        {{ (facade.page() - 1) * facade.perPage() + 1 }}–{{
+          Math.min(facade.page() * facade.perPage(), facade.total())
+        }}
+        de {{ facade.total() }} sucursales
+      </p>
+      <div>
+        <button
+          type="button"
+          (click)="changePage(-1)"
+          [disabled]="facade.page() === 1"
+          aria-label="Página anterior"
+        >
+          <lucide-icon name="chevron-left" [size]="19" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          (click)="changePage(1)"
+          [disabled]="facade.page() * facade.perPage() >= facade.total()"
+          aria-label="Página siguiente"
+        >
+          <lucide-icon name="chevron-right" [size]="19" aria-hidden="true" />
+        </button>
+      </div>
+    </footer>
+    }
+  }
+</main>

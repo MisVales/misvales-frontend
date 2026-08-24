@@ -1,8 +1,19 @@
 <div class="flex-1 flex flex-col h-full">
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-xl font-bold text-gray-900">Domicilios Registrados</h2>
-    <button *ngIf="store.detalle()?.estado === 'DRAFT' && !mostrandoFormulario" (click)="abrirFormulario()" class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+    <button
+      *ngIf="store.detalle()?.estado === 'DRAFT' && !mostrandoFormulario"
+      (click)="abrirFormulario()"
+      class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+        ></path>
+      </svg>
       Agregar Domicilio
     </button>
   </div>
@@ -11,38 +22,98 @@
 
   <!-- VISTA DE TARJETAS -->
   <div *ngIf="!cargando && !mostrandoFormulario">
-    
-    <div *ngIf="domiciliosArray.length === 0" class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50">
-      <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-      <p class="text-sm text-gray-500 max-w-[250px]">No hay domicilios registrados en el expediente.</p>
+    <div
+      *ngIf="domiciliosArray.length === 0"
+      class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50"
+    >
+      <svg
+        class="w-10 h-10 text-gray-400 mb-3"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+        ></path>
+      </svg>
+      <p class="text-sm text-gray-500 max-w-[250px]">
+        No hay domicilios registrados en el expediente.
+      </p>
     </div>
 
     <div *ngIf="domiciliosArray.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div *ngFor="let form of domiciliosGroups; let i = index" class="border border-gray-200 rounded-xl p-4 relative bg-white shadow-sm hover:shadow transition-shadow">
-        
+      <div
+        *ngFor="let form of domiciliosGroups; let i = index"
+        class="border border-gray-200 rounded-xl p-4 relative bg-white shadow-sm hover:shadow transition-shadow"
+      >
         <div class="absolute right-4 top-4 flex gap-2" *ngIf="store.detalle()?.estado === 'DRAFT'">
-          <button (click)="abrirFormulario(form, i)" class="text-gray-400 hover:text-[#1A4D2E] p-1" title="Editar">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+          <button
+            (click)="abrirFormulario(form, i)"
+            class="text-gray-400 hover:text-[#1A4D2E] p-1"
+            title="Editar"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              ></path>
+            </svg>
           </button>
-          <button (click)="eliminarDomicilio(form.value.id)" class="text-red-500 hover:text-red-700 p-1" title="Eliminar">
-             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+          <button
+            (click)="eliminarDomicilio(form.value.id)"
+            class="text-red-500 hover:text-red-700 p-1"
+            title="Eliminar"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              ></path>
+            </svg>
           </button>
         </div>
 
-        <span *ngIf="form.value.is_current" class="inline-block px-2 py-0.5 bg-[#E8F3E8] text-[#1A4D2E] text-xs font-bold rounded mb-3">Principal / Actual</span>
-        <button *ngIf="!form.value.is_current && store.detalle()?.estado === 'DRAFT'" (click)="marcarComoActual(i)" class="inline-block px-2 py-0.5 border border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-gray-700 text-xs font-semibold rounded mb-3 transition-colors">Marcar como Actual</button>
-        
-        <h4 class="font-bold text-gray-900 mb-1">{{ form.value.street }} {{ form.value.exterior_number }} {{ form.value.interior_number ? 'Int ' + form.value.interior_number : '' }}</h4>
-        <p class="text-sm text-gray-600 mb-4 line-clamp-2">Col. {{ form.value.neighborhood }}, {{ form.value.city }}, {{ form.value.state }}, {{ form.value.postal_code }}</p>
-        
+        <span
+          *ngIf="form.value.is_current"
+          class="inline-block px-2 py-0.5 bg-[#E8F3E8] text-[#1A4D2E] text-xs font-bold rounded mb-3"
+          >Principal / Actual</span
+        >
+        <button
+          *ngIf="!form.value.is_current && store.detalle()?.estado === 'DRAFT'"
+          (click)="marcarComoActual(i)"
+          class="inline-block px-2 py-0.5 border border-gray-300 text-gray-500 hover:bg-gray-50 hover:text-gray-700 text-xs font-semibold rounded mb-3 transition-colors"
+        >
+          Marcar como Actual
+        </button>
+
+        <h4 class="font-bold text-gray-900 mb-1">
+          {{ form.value.street }} {{ form.value.exterior_number }}
+          {{ form.value.interior_number ? 'Int ' + form.value.interior_number : '' }}
+        </h4>
+        <p class="text-sm text-gray-600 mb-4 line-clamp-2">
+          Col. {{ form.value.neighborhood }}, {{ form.value.city }}, {{ form.value.state }},
+          {{ form.value.postal_code }}
+        </p>
+
         <div class="flex items-center gap-6 text-sm">
           <div>
-            <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wide">Tenencia</span>
-            <span class="font-medium text-gray-900">{{ form.value.housing_tenure }}</span>
+            <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wide"
+              >Tenencia</span
+            >
+            <span class="font-medium text-gray-900">{{ tenenciaLabel(form.value.housing_tenure) }}</span>
           </div>
           <div>
-            <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wide">Financiamiento</span>
-            <span class="font-medium text-gray-900">{{ form.value.financing_status }}</span>
+            <span class="block text-xs font-semibold text-gray-400 uppercase tracking-wide"
+              >Financiamiento</span
+            >
+            <span class="font-medium text-gray-900">{{ financiamientoLabel(form.value.financing_status) }}</span>
           </div>
         </div>
       </div>
@@ -50,51 +121,114 @@
   </div>
 
   <!-- FORMULARIO DE ALTA / EDICIÓN -->
-  <div *ngIf="mostrandoFormulario && formularioActual" [formGroup]="formularioActual" [appApplicationFormErrorState]="formularioActual" [appAutosave]="formularioActual" [saveFn]="saveCurrentAddress" (statusChange)="autosaveStatus = $event" class="bg-white rounded-xl shadow-sm border border-[#C1E1C1] p-6 relative">
-    <h3 class="text-lg font-bold text-gray-900 mb-4">{{ indiceEdicion !== null ? 'Editar Domicilio' : 'Nuevo Domicilio' }}</h3>
-    
+  <div
+    *ngIf="mostrandoFormulario && formularioActual"
+    [formGroup]="formularioActual"
+    [appApplicationFormErrorState]="formularioActual"
+    [appAutosave]="formularioActual"
+    [saveFn]="saveCurrentAddress"
+    (statusChange)="autosaveStatus = $event"
+    class="bg-white rounded-xl shadow-sm border border-[#C1E1C1] p-6 relative"
+  >
+    <h3 class="text-lg font-bold text-gray-900 mb-4">
+      {{ indiceEdicion !== null ? 'Editar Domicilio' : 'Nuevo Domicilio' }}
+    </h3>
+
     <div class="mb-4">
       <app-address-form
         [initialAddress]="mapToAddressResult(formularioActual.value)"
         [showValidationState]="true"
         [enableStreetAutocomplete]="false"
-        (addressChange)="onAddressChange($event)">
+        (addressChange)="onAddressChange($event)"
+      >
       </app-address-form>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <!-- Métricas (String Decimal) -->
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Frente (mts) <span class="text-red-500">*</span></label>
-        <input type="text" formControlName="width_meters" placeholder="Ej. 10.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
-        <app-input-error [control]="formularioActual.controls['width_meters']" label="El frente" [customMessages]="{ invalidDecimalString: 'Debe ser un valor numérico válido (ej. 10.5).' }"></app-input-error>
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Frente (mts) <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="width_meters"
+          placeholder="Ej. 10.5"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm"
+        />
+        <app-input-error
+          [control]="formularioActual.controls['width_meters']"
+          label="El frente"
+          [customMessages]="{
+            invalidDecimalString: 'Debe ser un valor numérico válido (ej. 10.5).',
+          }"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Fondo (mts) <span class="text-red-500">*</span></label>
-        <input type="text" formControlName="length_meters" placeholder="Ej. 20.0" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
-        <app-input-error [control]="formularioActual.controls['length_meters']" label="El fondo" [customMessages]="{ invalidDecimalString: 'Debe ser un valor numérico válido (ej. 20.0).' }"></app-input-error>
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Fondo (mts) <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="length_meters"
+          placeholder="Ej. 20.0"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm"
+        />
+        <app-input-error
+          [control]="formularioActual.controls['length_meters']"
+          label="El fondo"
+          [customMessages]="{
+            invalidDecimalString: 'Debe ser un valor numérico válido (ej. 20.0).',
+          }"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Área Construida (m2) <span class="text-red-500">*</span></label>
-        <input type="text" formControlName="built_area_square_meters" placeholder="Ej. 150.25" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
-        <app-input-error [control]="formularioActual.controls['built_area_square_meters']" label="El área construida" [customMessages]="{ invalidDecimalString: 'Debe ser un valor numérico válido (ej. 150.25).' }"></app-input-error>
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Área Construida (m2) <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="built_area_square_meters"
+          placeholder="Ej. 150.25"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm"
+        />
+        <app-input-error
+          [control]="formularioActual.controls['built_area_square_meters']"
+          label="El área construida"
+          [customMessages]="{
+            invalidDecimalString: 'Debe ser un valor numérico válido (ej. 150.25).',
+          }"
+        ></app-input-error>
       </div>
 
       <!-- Estatus de Propiedad -->
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Tenencia <span class="text-red-500">*</span></label>
-        <select formControlName="housing_tenure" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Tenencia <span class="text-red-500">*</span></label
+        >
+        <refactor-select
+          formControlName="housing_tenure"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white"
+        >
           <option value="">Seleccionar...</option>
           <option value="OWNED">Propia</option>
           <option value="RENTED">Rentada</option>
           <option value="BORROWED">Prestada</option>
           <option value="OTHER">Otro</option>
-        </select>
-        <app-input-error [control]="formularioActual.controls['housing_tenure']" label="La tenencia"></app-input-error>
+        </refactor-select>
+        <app-input-error
+          [control]="formularioActual.controls['housing_tenure']"
+          label="La tenencia"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Financiamiento <span class="text-red-500">*</span></label>
-        <select formControlName="financing_status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Financiamiento <span class="text-red-500">*</span></label
+        >
+        <refactor-select
+          formControlName="financing_status"
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white"
+        >
           <option value="">Seleccionar...</option>
           <option value="PAID">Pagada</option>
           <option value="MORTGAGE">Hipotecada</option>
@@ -102,23 +236,63 @@
           <option value="INFONAVIT">INFONAVIT</option>
           <option value="OTHER">Otro</option>
           <option value="NOT_APPLICABLE">No Aplica</option>
-        </select>
-        <app-input-error [control]="formularioActual.controls['financing_status']" label="El financiamiento"></app-input-error>
+        </refactor-select>
+        <app-input-error
+          [control]="formularioActual.controls['financing_status']"
+          label="El financiamiento"
+        ></app-input-error>
       </div>
     </div>
-    
+
     <div class="mt-4 flex items-center gap-2">
-      <input type="checkbox" formControlName="is_current" id="is_curr" class="rounded border-gray-300 text-[#1A4D2E] focus:ring-[#1A4D2E]">
-      <label for="is_curr" class="text-sm text-gray-700 font-medium">Es el Domicilio Actual (Principal)</label>
+      <input
+        type="checkbox"
+        formControlName="is_current"
+        [disabled]="hayOtroDomicilioActual()"
+        id="is_curr"
+        class="rounded border-gray-300 text-[#1A4D2E] focus:ring-[#1A4D2E]"
+      />
+      <label for="is_curr" class="text-sm text-gray-700 font-medium"
+        >Es el Domicilio Actual (Principal)</label
+      >
     </div>
+    <p *ngIf="hayOtroDomicilioActual()" class="mt-1 text-xs text-gray-500">
+      Ya existe un domicilio principal. Desmárcalo primero si necesitas cambiarlo.
+    </p>
 
     <div class="mt-6 pt-4 border-t border-gray-100 flex items-center justify-between gap-3">
-      <span class="text-sm" [class.text-gray-500]="autosaveStatus === 'saving'" [class.text-green-600]="autosaveStatus === 'saved'" [class.text-red-600]="autosaveStatus === 'error'">
-        {{ autosaveStatus === 'saving' ? 'Guardando…' : autosaveStatus === 'saved' ? 'Guardado automáticamente' : autosaveStatus === 'error' ? 'No se pudo guardar' : '' }}
+      <span
+        class="text-sm"
+        [class.text-gray-500]="autosaveStatus === 'saving'"
+        [class.text-green-600]="autosaveStatus === 'saved'"
+        [class.text-red-600]="autosaveStatus === 'error'"
+      >
+        {{
+          autosaveStatus === 'saving'
+            ? 'Guardando…'
+            : autosaveStatus === 'saved'
+              ? 'Guardado automáticamente'
+              : autosaveStatus === 'error'
+                ? 'No se pudo guardar'
+                : ''
+        }}
       </span>
       <div class="flex gap-3">
-        <button type="button" (click)="cancelarFormulario()" class="px-5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">Cancelar</button>
-        <button type="button" (click)="guardarYFinalizar()" [disabled]="formularioActual.invalid || autosaveStatus === 'saving'" class="px-5 py-2 bg-[#1A4D2E] hover:bg-[#133c23] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors">Guardar Domicilio</button>
+        <button
+          type="button"
+          (click)="cancelarFormulario()"
+          class="px-5 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          (click)="guardarYFinalizar()"
+          [disabled]="formularioActual.invalid || autosaveStatus === 'saving'"
+          class="px-5 py-2 bg-[#1A4D2E] hover:bg-[#133c23] disabled:opacity-50 text-white rounded-lg text-sm font-medium transition-colors"
+        >
+          Guardar Domicilio
+        </button>
       </div>
     </div>
   </div>

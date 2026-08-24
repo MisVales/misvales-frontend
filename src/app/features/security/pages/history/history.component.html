@@ -2,16 +2,21 @@
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
     <div>
       <h2 class="text-xl font-bold text-gray-900">Historial de Seguridad</h2>
-      <p class="text-sm text-gray-500 mt-1">Revisa la actividad de seguridad reciente en tu cuenta.</p>
+      <p class="text-sm text-gray-500 mt-1">
+        Revisa la actividad de seguridad reciente en tu cuenta.
+      </p>
     </div>
-    
+
     <form [formGroup]="filterForm" class="w-full sm:w-auto">
-      <select formControlName="severity" class="w-full sm:w-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+      <refactor-select
+        formControlName="severity"
+        class="w-full sm:w-auto bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5"
+      >
         <option value="">Todas las severidades</option>
         <option value="CRITICAL">Crítica</option>
         <option value="WARNING">Advertencia</option>
         <option value="INFO">Informativa</option>
-      </select>
+      </refactor-select>
     </form>
   </div>
 
@@ -20,37 +25,46 @@
       <lucide-icon name="loader-2" class="w-8 h-8 animate-spin text-[#386641]"></lucide-icon>
     </div>
   } @else if (error()) {
-    <div class="p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
+    <div
+      class="p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2"
+    >
       <lucide-icon name="alert-triangle" class="w-5 h-5 flex-shrink-0"></lucide-icon>
       {{ error() }}
     </div>
   } @else {
     <div class="space-y-4">
       @for (event of events(); track event.id) {
-        <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row gap-4 transition-all hover:shadow-md items-start">
-          <div class="p-3 rounded-full flex-shrink-0" [ngClass]="getColorForSeverity(event.severity)">
+        <div
+          class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row gap-4 transition-all hover:shadow-md items-start"
+        >
+          <div
+            class="p-3 rounded-full flex-shrink-0"
+            [ngClass]="getColorForSeverity(event.severity)"
+          >
             <lucide-icon [name]="getIconForSeverity(event.severity)" class="w-6 h-6"></lucide-icon>
           </div>
-          
+
           <div class="flex-grow">
             <h3 class="font-bold text-gray-900">{{ eventLabel(event.event_type) }}</h3>
-            
-            <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mt-2">
+
+            <div
+              class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-gray-500 mt-2"
+            >
               <span class="flex items-center gap-1">
                 <lucide-icon name="calendar-clock" class="w-4 h-4"></lucide-icon>
-                {{ event.occurred_at | date:'medium' }}
+                {{ event.occurred_at | date: 'medium' }}
               </span>
-              
             </div>
           </div>
-          
+
           <div class="flex-shrink-0 self-start sm:self-center">
-            <span 
+            <span
               class="px-2.5 py-1 text-xs font-medium rounded-full"
               [ngClass]="{
                 'bg-green-100 text-green-800': event.outcome === 'SUCCESS',
                 'bg-red-100 text-red-800': event.outcome === 'FAILURE',
-                'bg-gray-100 text-gray-800': event.outcome !== 'SUCCESS' && event.outcome !== 'FAILURE'
+                'bg-gray-100 text-gray-800':
+                  event.outcome !== 'SUCCESS' && event.outcome !== 'FAILURE',
               }"
             >
               {{ outcomeLabel(event.outcome) }}

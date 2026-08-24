@@ -4,7 +4,7 @@ import { PasswordChange } from './password-change';
 import { CheckCircle2, Circle, Loader2, LucideAngularModule } from 'lucide-angular';
 import { importProvidersFrom } from '@angular/core';
 import { SecurityService } from '../../data-access/security.service';
-import { AuthFacade } from '../../../auth/state/auth.facade';
+import { AuthFacade } from '@core/auth/state/auth.facade';
 import { vi } from 'vitest';
 
 describe('PasswordChange', () => {

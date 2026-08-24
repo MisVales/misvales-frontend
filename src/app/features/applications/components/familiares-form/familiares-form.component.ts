@@ -1,23 +1,38 @@
 import { firstValueFrom, from, Observable } from 'rxjs';
-import { Component, inject, OnInit, ChangeDetectorRef, QueryList, ViewChildren } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ChangeDetectorRef,
+  QueryList,
+  ViewChildren,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { FamiliarFormFactory } from '../../forms/familiar-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
-import { AlertService } from '../../../../shared/services/alert.service';
-import { ConfirmationService } from '../../../../shared/services/confirmation.service';
-import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../../shared/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
 import { maxAdultBirthDate, MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-familiares-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    InputErrorComponent,
+    AutosaveDirective,
+    ApplicationFormErrorStateDirective,
+    RefactorSelectComponent,
+  ],
   templateUrl: './familiares-form.component.html',
-  styleUrls: ['./familiares-form.component.css']
+  styleUrls: ['./familiares-form.component.css'],
 })
 export class FamiliaresFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
@@ -29,7 +44,7 @@ export class FamiliaresFormComponent implements OnInit {
 
   familiaresArray: FormArray = FamiliarFormFactory.createArray(this.fb);
   cargando = false;
-  
+
   autosaveStatuses: Record<number, AutosaveStatus> = {};
   mensajeBloqueoCambio?: string;
   readonly minBirthDate = MIN_BIRTH_DATE;
@@ -46,7 +61,8 @@ export class FamiliaresFormComponent implements OnInit {
     this.cdr.markForCheck();
 
     if (this.familiaresArray.length < 2) {
-      this.mensajeBloqueoCambio = 'Debes registrar dos referencias familiares antes de cambiar de pestaña.';
+      this.mensajeBloqueoCambio =
+        'Debes registrar dos referencias familiares antes de cambiar de pestaña.';
       return false;
     }
 
@@ -55,8 +71,13 @@ export class FamiliaresFormComponent implements OnInit {
       return false;
     }
 
-    if (this.autoguardados.some((autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving')) {
-      this.mensajeBloqueoCambio = 'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
+    if (
+      this.autoguardados.some(
+        (autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving',
+      )
+    ) {
+      this.mensajeBloqueoCambio =
+        'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
       this.autoguardados.forEach((autosave) => autosave.flush());
       return false;
     }
@@ -66,35 +87,40 @@ export class FamiliaresFormComponent implements OnInit {
   }
 
   getSaveFn(index: number) {
-    return (rawValue: any): Observable<any> => from(this.store.ejecutarGuardado(async () => {
-      const detalle = this.store.detalle();
-      const idSolicitud = detalle?.id;
-      if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
+    return (rawValue: any): Observable<any> =>
+      from(
+        this.store.ejecutarGuardado(async () => {
+          const detalle = this.store.detalle();
+          const idSolicitud = detalle?.id;
+          if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
 
-      const payload = { ...rawValue };
-      const idFamiliar = payload.id;
-      delete payload.id;
-      const otherRelationship = payload.other_relationship;
-      delete payload.other_relationship;
-      payload.details_payload = {
-        ...(payload.details_payload ?? {}),
-        ...(payload.relationship === 'OTHER' ? { other_relationship: otherRelationship?.trim() ?? '' } : {}),
-      };
-      if (payload.relationship !== 'OTHER') delete payload.details_payload.other_relationship;
+          const payload = { ...rawValue };
+          const idFamiliar = payload.id;
+          delete payload.id;
+          const otherRelationship = payload.other_relationship;
+          delete payload.other_relationship;
+          payload.details_payload = {
+            ...(payload.details_payload ?? {}),
+            ...(payload.relationship === 'OTHER'
+              ? { other_relationship: otherRelationship?.trim() ?? '' }
+              : {}),
+          };
+          if (payload.relationship !== 'OTHER') delete payload.details_payload.other_relationship;
 
-      const request$ = idFamiliar
-        ? this.api.actualizarFamiliar(idSolicitud, idFamiliar, payload, detalle.versionBloqueo)
-        : this.api.crearFamiliar(idSolicitud, payload, detalle.versionBloqueo);
+          const request$ = idFamiliar
+            ? this.api.actualizarFamiliar(idSolicitud, idFamiliar, payload, detalle.versionBloqueo)
+            : this.api.crearFamiliar(idSolicitud, payload, detalle.versionBloqueo);
 
-      return firstValueFrom(request$).then(res => {
-        // Update form with real ID if created
-        if (!idFamiliar && res && res.id) {
-           this.familiaresArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
-        }
-        this.store.registrarAutoguardado(res);
-        return res;
-      });
-    }));
+          return firstValueFrom(request$).then((res) => {
+            // Update form with real ID if created
+            if (!idFamiliar && res && res.id) {
+              this.familiaresArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+            }
+            this.store.registrarAutoguardado(res);
+            return res;
+          });
+        }),
+      );
   }
 
   async ngOnInit() {
@@ -131,7 +157,8 @@ export class FamiliaresFormComponent implements OnInit {
         this.configurarParentescoOtro(form);
         this.familiaresArray.push(form);
       });
-    } catch {} finally {
+    } catch {
+    } finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -174,17 +201,25 @@ export class FamiliaresFormComponent implements OnInit {
   }
 
   async eliminarFamiliarAPI(index: number, idFamiliar: string) {
-    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar familiar', message: 'La persona se eliminará de la sección familiar del expediente.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
+    const confirmacion = await this.confirmation.confirm({
+      title: 'Eliminar familiar',
+      message: 'La persona se eliminará de la sección familiar del expediente.',
+      confirmLabel: 'Sí, eliminar',
+      tone: 'danger',
+    });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
 
     try {
-      await this.api.eliminarFamiliar(idSolicitud, idFamiliar, this.store.detalle()!.versionBloqueo).toPromise();
+      await this.api
+        .eliminarFamiliar(idSolicitud, idFamiliar, this.store.detalle()!.versionBloqueo)
+        .toPromise();
       this.removerFamiliarVisual(index);
       await this.store.cargarDetalle(idSolicitud);
-    } catch {} finally {
+    } catch {
+    } finally {
       this.cdr.markForCheck();
     }
   }

@@ -1,0 +1,161 @@
+<div class="scheduler-backdrop" role="presentation">
+  @if (facade.isLoading() && !facade.solicitudSeleccionada()) {
+    <div class="loading-state" aria-live="polite">
+      <div class="spinner"></div>
+      <p>Cargando información…</p>
+    </div>
+  }
+
+  @if (facade.solicitudSeleccionada(); as solicitud) {
+    <section
+      class="scheduler-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="scheduler-title"
+      aria-describedby="scheduler-help"
+    >
+      <header class="dialog-header">
+        <div>
+          <p class="eyebrow">Agenda de verificación</p>
+          <h1 id="scheduler-title">Asignar verificador</h1>
+          <p>{{ solicitud.folio }} · {{ solicitud.aspirante.nombreCompleto }}</p>
+        </div>
+        <button
+          type="button"
+          class="close-button"
+          (click)="onCancel()"
+          aria-label="Cerrar asignación"
+        >
+          ×
+        </button>
+      </header>
+
+      @if (facade.error()) {
+        <div class="alert" role="alert">{{ facade.error() }}</div>
+      }
+
+      <div class="dialog-body">
+        <div class="form-group">
+          <label for="verifierSelect">Verificador</label>
+          <refactor-select
+            id="verifierSelect"
+            class="form-control"
+            [ngModel]="verifierId"
+            (ngModelChange)="onVerifierChange($event)"
+            [disabled]="facade.isLoading()"
+          >
+            <option value="">Selecciona un verificador</option>
+            @for (verifier of facade.verificadoresDisponibles(); track verifier.id) {
+              <option [value]="verifier.id" [disabled]="verifier.estado === 'INACTIVE'">
+                {{ verifier.nombreCompleto }}
+              </option>
+            }
+          </refactor-select>
+          @if (submitted && !verifierId) {
+            <p class="field-error">Debes seleccionar un verificador.</p>
+          }
+        </div>
+
+        <div class="schedule-layout" [class.is-disabled]="!verifierId">
+          <section class="mini-calendar" aria-label="Selecciona la fecha de la visita">
+            <header class="calendar-header">
+              <button type="button" (click)="changeMonth(-1)" aria-label="Mes anterior">‹</button>
+              <strong>{{ monthLabel() }}</strong>
+              <button type="button" (click)="changeMonth(1)" aria-label="Mes siguiente">›</button>
+            </header>
+            <div class="weekday-row" aria-hidden="true">
+              <span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span
+              ><span>D</span>
+            </div>
+            <div class="calendar-grid">
+              @for (day of calendarDays(); track $index) {
+                @if (day) {
+                  <button
+                    type="button"
+                    class="day-button"
+                    [class.is-selected]="isSelectedDay(day)"
+                    [class.has-visits]="hasVisits(day)"
+                    [disabled]="!verifierId || isPastDay(day)"
+                    [attr.aria-pressed]="isSelectedDay(day)"
+                    (click)="selectDate(day)"
+                  >
+                    {{ day.getDate() }}
+                  </button>
+                } @else {
+                  <span></span>
+                }
+              }
+            </div>
+            <p class="calendar-legend"><span></span> Día con visitas programadas</p>
+          </section>
+
+          <section class="day-agenda" aria-live="polite">
+            <div class="agenda-heading">
+              <div>
+                <p class="eyebrow">Horario</p>
+                <h2>{{ selectedDate }}</h2>
+              </div>
+              @if (scheduleLoading()) {
+                <span class="loading-copy">Consultando…</span>
+              }
+            </div>
+            @if (selectedDayVisits().length) {
+              <div class="busy-list">
+                @for (visit of selectedDayVisits(); track visit.id) {
+                  <div>
+                    <strong>{{ formatVisitTime(visit.scheduled_for) }}</strong
+                    ><span>{{ visit.application_number || 'Visita programada' }}</span>
+                  </div>
+                }
+              </div>
+            } @else if (verifierId && !scheduleLoading()) {
+              <p class="empty-day">Sin visitas programadas este día.</p>
+            }
+
+            <label for="visitTime">Hora de inicio</label>
+            <select
+              id="visitTime"
+              class="time-select"
+              [(ngModel)]="selectedTime"
+              [disabled]="!verifierId || scheduleLoading()"
+            >
+              <option value="">Selecciona una hora</option>
+              @for (time of timeSlots; track time) {
+                <option [value]="time" [disabled]="slotDisabled(time)">
+                  {{ time }}{{ slotDisabled(time) ? ' · no disponible' : '' }}
+                </option>
+              }
+            </select>
+            <p id="scheduler-help" class="schedule-help">
+              Para hoy, el primer horario disponible es el siguiente bloque de 15 minutos.
+              Cada visita reserva 15 min antes, 30 min de visita y 30 min para validación y
+              traslado. Debe haber 75 min entre inicios.
+            </p>
+            @if (submitted && !isValidSchedule()) {
+              <p class="field-error">Elige un horario disponible entre 08:00 y 19:00.</p>
+            }
+          </section>
+        </div>
+      </div>
+
+      <footer class="dialog-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onCancel()"
+          [disabled]="facade.isLoading()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onAssign()"
+          [disabled]="facade.isLoading() || scheduleLoading() || !verifierId || !isValidSchedule()"
+        >
+          Asignar visita
+        </button>
+      </footer>
+    </section>
+  }
+</div>

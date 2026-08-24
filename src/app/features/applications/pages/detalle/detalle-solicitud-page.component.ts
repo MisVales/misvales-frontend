@@ -10,7 +10,7 @@ import { PatrimonioFormComponent } from '../../components/patrimonio-form/patrim
 import { EmpleosFormComponent } from '../../components/empleos-form/empleos-form.component';
 import { CreditosComercialesFormComponent } from '../../components/creditos-comerciales-form/creditos-comerciales-form.component';
 import { ResumenEnvioComponent } from '../../components/resumen-envio/resumen-envio.component';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' | 'patrimonio' | 'empleos' | 'creditos' | 'resumen';

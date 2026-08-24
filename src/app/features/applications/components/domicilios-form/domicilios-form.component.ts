@@ -1,25 +1,42 @@
-import { Component, inject, OnInit, ChangeDetectorRef, QueryList, ViewChild, ViewChildren } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  ChangeDetectorRef,
+  QueryList,
+  ViewChild,
+  ViewChildren,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DomicilioFormFactory } from '../../forms/domicilio-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
 import { firstValueFrom } from 'rxjs';
 import { from, Observable } from 'rxjs';
-import { AlertService } from '../../../../shared/services/alert.service';
-import { ConfirmationService } from '../../../../shared/services/confirmation.service';
-import { apiErrorMessage } from '../../../../core/api/api-error';
-import { AddressFormComponent } from '../../../../shared/components/address-form/address-form';
-import { AutosaveDirective, AutosaveStatus } from '../../../../core/forms/autosave.directive';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
+import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
+import { AddressFormComponent } from '../../../../shared/components/inputs/address-form/address-form';
+import { AutosaveDirective, AutosaveStatus } from '../../../../shared/forms/autosave.directive';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-domicilios-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AddressFormComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    InputErrorComponent,
+    AddressFormComponent,
+    AutosaveDirective,
+    ApplicationFormErrorStateDirective,
+    RefactorSelectComponent,
+  ],
   templateUrl: './domicilios-form.component.html',
-  styleUrls: ['./domicilios-form.component.css']
+  styleUrls: ['./domicilios-form.component.css'],
 })
 export class DomiciliosFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
@@ -88,8 +105,13 @@ export class DomiciliosFormComponent implements OnInit {
       return false;
     }
 
-    if (this.autoguardados.some((autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving')) {
-      this.mensajeBloqueoCambio = 'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
+    if (
+      this.autoguardados.some(
+        (autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving',
+      )
+    ) {
+      this.mensajeBloqueoCambio =
+        'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
       this.autoguardados.forEach((autosave) => autosave.flush());
       return false;
     }
@@ -112,7 +134,8 @@ export class DomiciliosFormComponent implements OnInit {
         form.patchValue(domicilio);
         this.domiciliosArray.push(form);
       });
-    } catch {} finally {
+    } catch {
+    } finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -141,10 +164,29 @@ export class DomiciliosFormComponent implements OnInit {
   marcarComoActual(index: number) {
     const yaExisteActual = this.domiciliosGroups.some((g, i) => i !== index && g.value.is_current);
     if (yaExisteActual) {
-      this.alerts.showAlert('Ya existe un domicilio actual. Desmarca el anterior antes de guardar para conservar una sola dirección vigente.', 'warning');
+      this.alerts.showAlert(
+        'Ya existe un domicilio actual. Desmarca el anterior antes de guardar para conservar una sola dirección vigente.',
+        'warning',
+      );
+      return;
     }
     this.domiciliosGroups[index].get('is_current')?.setValue(true);
     void this.guardarDomicilioDirecto(this.domiciliosGroups[index]).catch(() => undefined);
+  }
+
+  hayOtroDomicilioActual(): boolean {
+    const editedId = this.formularioActual?.value.id;
+    return this.domiciliosGroups.some(
+      (group) => group.value.is_current && group.value.id !== editedId,
+    );
+  }
+
+  tenenciaLabel(value: string | null): string {
+    return ({ OWNED: 'Propia', RENTED: 'Rentada', BORROWED: 'Prestada', OTHER: 'Otra' } as Record<string, string>)[value || ''] || 'Sin dato';
+  }
+
+  financiamientoLabel(value: string | null): string {
+    return ({ PAID: 'Pagada', MORTGAGE: 'Hipotecada', LOAN: 'Préstamo', INFONAVIT: 'INFONAVIT', OTHER: 'Otro', NOT_APPLICABLE: 'No aplica' } as Record<string, string>)[value || ''] || 'Sin dato';
   }
 
   mapToAddressResult(val: any) {
@@ -159,7 +201,7 @@ export class DomiciliosFormComponent implements OnInit {
       municipality: val.municipality,
       city: val.city,
       state: val.state,
-      country: val.country
+      country: val.country,
     };
   }
 
@@ -174,7 +216,7 @@ export class DomiciliosFormComponent implements OnInit {
       municipality: result.municipality,
       city: result.city,
       state: result.state,
-      country: result.country
+      country: result.country,
     });
   }
 
@@ -200,7 +242,7 @@ export class DomiciliosFormComponent implements OnInit {
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
 
-    const payload = { ...formGroup.value };
+    const payload = { ...formGroup.getRawValue() };
     const idDomicilio = payload.id;
     delete payload.id;
 
@@ -210,18 +252,34 @@ export class DomiciliosFormComponent implements OnInit {
         if (!detalle || detalle.versionBloqueo === undefined) return;
 
         const saved: any = idDomicilio
-          ? await firstValueFrom(this.api.actualizarDomicilio(idSolicitud, idDomicilio, payload, detalle.versionBloqueo))
-          : await firstValueFrom(this.api.crearDomicilio(idSolicitud, payload, detalle.versionBloqueo));
+          ? await firstValueFrom(
+              this.api.actualizarDomicilio(
+                idSolicitud,
+                idDomicilio,
+                payload,
+                detalle.versionBloqueo,
+              ),
+            )
+          : await firstValueFrom(
+              this.api.crearDomicilio(idSolicitud, payload, detalle.versionBloqueo),
+            );
 
         const createdId = saved?.id ?? saved?.data?.id;
-        if (!idDomicilio && createdId) formGroup.patchValue({ id: createdId }, { emitEvent: false });
+        if (!idDomicilio && createdId)
+          formGroup.patchValue({ id: createdId }, { emitEvent: false });
         this.store.registrarAutoguardado(saved);
       });
     } catch (e: any) {
       if (e?.status === 409) {
-        this.alerts.showAlert('La información cambió en otra sesión. No se guardó este cambio; actualiza el expediente antes de reintentar.', 'warning');
+        this.alerts.showAlert(
+          'La información cambió en otra sesión. No se guardó este cambio; actualiza el expediente antes de reintentar.',
+          'warning',
+        );
       } else {
-        this.alerts.showAlert(apiErrorMessage(e, 'No fue posible guardar el domicilio.'), 'error');
+        const validation = apiValidationErrors(e);
+        const message = validation['is_current']?.[0]
+          ?? apiErrorMessage(e, 'No fue posible guardar el domicilio. Revisa los campos marcados.');
+        this.alerts.showAlert(message, 'error');
       }
       throw e;
     } finally {
@@ -230,17 +288,26 @@ export class DomiciliosFormComponent implements OnInit {
   }
 
   async eliminarDomicilio(idDomicilio: string) {
-    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar domicilio', message: 'La dirección se eliminará del expediente. Si es la vigente, verifica antes el domicilio que quedará activo.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
+    const confirmacion = await this.confirmation.confirm({
+      title: 'Eliminar domicilio',
+      message:
+        'La dirección se eliminará del expediente. Si es la vigente, verifica antes el domicilio que quedará activo.',
+      confirmLabel: 'Sí, eliminar',
+      tone: 'danger',
+    });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarDomicilio(idSolicitud, idDomicilio, this.store.detalle()!.versionBloqueo));
+      await firstValueFrom(
+        this.api.eliminarDomicilio(idSolicitud, idDomicilio, this.store.detalle()!.versionBloqueo),
+      );
       await this.store.cargarDetalle(idSolicitud);
       await this.cargarDomicilios();
-    } catch {} finally {
+    } catch {
+    } finally {
       this.cdr.markForCheck();
     }
   }

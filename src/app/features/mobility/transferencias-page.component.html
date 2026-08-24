@@ -1,0 +1,228 @@
+<main class="transfer-page">
+  <header class="page-heading">
+    <div>
+      <p class="eyebrow">Movilidad de clientes</p>
+      <h1>Transferencias</h1>
+      <p>Supervisa el recorrido y atiende las salidas que requieren decisión de Coordinación.</p>
+    </div>
+    <div class="scope-note">
+      <lucide-icon name="info" [size]="19" aria-hidden="true" />
+      <span>El historial completo permanece ligado a cada distribuidora.</span>
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="notice notice--warning" role="alert">{{ error() }}</p>
+  }
+  @if (success()) {
+    <p class="notice notice--success" role="status">{{ success() }}</p>
+  }
+
+  <section class="kpis" aria-label="Resumen de transferencias">
+    <article>
+      <span class="kpi-icon kpi-icon--orange"
+        ><lucide-icon name="clipboard-check" aria-hidden="true"
+      /></span>
+      <div>
+        <span>Requieren tu decisión</span><strong>{{ awaitingDecision() }}</strong
+        ><small>Salida por autorizar</small>
+      </div>
+    </article>
+    <article>
+      <span class="kpi-icon kpi-icon--blue"
+        ><lucide-icon name="arrow-left-right" aria-hidden="true"
+      /></span>
+      <div>
+        <span>En proceso</span><strong>{{ inProgress() }}</strong
+        ><small>En alguna etapa activa</small>
+      </div>
+    </article>
+    <article>
+      <span class="kpi-icon kpi-icon--green"
+        ><lucide-icon name="circle-check" aria-hidden="true"
+      /></span>
+      <div>
+        <span>Completadas</span><strong>{{ completed() }}</strong
+        ><small>Transferencias concluidas</small>
+      </div>
+    </article>
+  </section>
+
+  <ol class="stages" aria-label="Etapas de una transferencia">
+    <li>
+      <span>1</span>
+      <div><strong>Solicitud</strong><small>Origen inicia</small></div>
+    </li>
+    <li>
+      <span>2</span>
+      <div><strong>Preaceptación</strong><small>Destino revisa</small></div>
+    </li>
+    <li class="stages__focus">
+      <span>3</span>
+      <div><strong>Autorización</strong><small>Coordinación decide</small></div>
+    </li>
+    <li>
+      <span>4</span>
+      <div><strong>Aceptación final</strong><small>Destino confirma</small></div>
+    </li>
+    <li>
+      <span>5</span>
+      <div><strong>Completada</strong><small>Cambio aplicado</small></div>
+    </li>
+  </ol>
+
+  <section class="workbench">
+    <header class="workbench__header">
+      <div>
+        <h2>Bandeja de transferencias</h2>
+        <p>Los casos aparecen aquí mientras avanzan por el proceso.</p>
+      </div>
+      <label class="search"
+        ><span class="sr-only">Buscar transferencia</span
+        ><lucide-icon name="search" [size]="18" aria-hidden="true" /><input
+          type="search"
+          placeholder="Cliente, origen, destino o folio…"
+          [value]="query()"
+          (input)="setQuery($event)"
+      /></label>
+    </header>
+    <nav class="filters" aria-label="Filtrar transferencias">
+      <button [class.active]="filter() === 'all'" (click)="selectFilter('all')">
+        Todas <span>{{ transfers().length }}</span>
+      </button>
+      <button [class.active]="filter() === 'action'" (click)="selectFilter('action')">
+        Por decidir <span>{{ awaitingDecision() }}</span>
+      </button>
+      <button [class.active]="filter() === 'progress'" (click)="selectFilter('progress')">
+        En proceso <span>{{ inProgress() }}</span>
+      </button>
+      <button [class.active]="filter() === 'closed'" (click)="selectFilter('closed')">
+        Cerradas
+      </button>
+    </nav>
+
+    @if (loading()) {
+      <div class="loading">
+        <lucide-icon name="loader-2" class="spin" aria-hidden="true" /> Cargando transferencias…
+      </div>
+    } @else if (!filteredTransfers().length) {
+      <app-empty-state
+        [compact]="true"
+        [variant]="query() || filter() !== 'all' ? 2 : 1"
+        [title]="
+          query() || filter() !== 'all' ? 'No hay coincidencias' : 'No hay transferencias visibles'
+        "
+        [message]="
+          query() || filter() !== 'all'
+            ? 'Cambia el filtro o la búsqueda para consultar otros casos.'
+            : 'Las solicitudes aparecerán cuando una distribuidora inicie una transferencia.'
+        "
+      />
+    } @else {
+      <div class="transfer-list">
+        @for (transfer of filteredTransfers(); track transfer.id) {
+          <article
+            class="transfer-card"
+            [class.transfer-card--action]="transfer.status === 'PREACCEPTED'"
+          >
+            <header>
+              <div>
+                <span class="status" [attr.data-tone]="statusTone(transfer.status)">{{
+                  statusLabel(transfer.status)
+                }}</span
+                ><small>Folio {{ transfer.id }}</small>
+              </div>
+              <div class="next-step">
+                <span>Siguiente paso</span><strong>{{ nextStep(transfer.status) }}</strong>
+              </div>
+            </header>
+            <dl>
+              <div>
+                <dt>Cliente</dt>
+                <dd>{{ transfer.client_id }}</dd>
+              </div>
+              <div>
+                <dt>Distribuidora origen</dt>
+                <dd>{{ transfer.origin_distributor_id }}</dd>
+              </div>
+              <lucide-icon name="arrow-right" [size]="20" aria-hidden="true" />
+              <div>
+                <dt>Distribuidora destino</dt>
+                <dd>{{ transfer.destination_distributor_id }}</dd>
+              </div>
+            </dl>
+            @if (transfer.origin_decision_reason) {
+              <p class="recorded-reason">
+                <strong>Motivo registrado:</strong> {{ transfer.origin_decision_reason }}
+              </p>
+            }
+            @if (canDecide() && transfer.status === 'PREACCEPTED') {
+              <div class="decision">
+                <label [for]="'decision-' + transfer.id"
+                  >Motivo de la decisión <span>Obligatorio</span></label
+                >
+                <textarea
+                  [id]="'decision-' + transfer.id"
+                  [ngModel]="decisionReasons[transfer.id] ?? ''"
+                  (ngModelChange)="decisionReasons[transfer.id] = $event"
+                  rows="2"
+                  maxlength="1000"
+                  placeholder="Documenta por qué autorizas o rechazas la salida."
+                ></textarea>
+                <div class="decision__actions">
+                  <button
+                    class="button button--reject"
+                    [disabled]="savingId() === transfer.id || !decisionReasons[transfer.id]?.trim()"
+                    (click)="decide(transfer, false)"
+                  >
+                    Rechazar salida
+                  </button>
+                  <button
+                    class="button button--approve"
+                    [disabled]="savingId() === transfer.id || !decisionReasons[transfer.id]?.trim()"
+                    (click)="decide(transfer, true)"
+                  >
+                    {{ savingId() === transfer.id ? 'Guardando…' : 'Autorizar salida' }}
+                  </button>
+                </div>
+              </div>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  @if (canViewHistory()) {
+    <section class="history-panel">
+      <header>
+        <div>
+          <p class="eyebrow">Trazabilidad</p>
+          <h2>Cambios organizacionales recientes</h2>
+        </div>
+        <lucide-icon name="history" aria-hidden="true" />
+      </header>
+      @if (!history().length) {
+        <app-empty-state
+          [compact]="true"
+          [variant]="2"
+          title="Sin movimientos recientes"
+          message="Aquí aparecerán los cambios organizacionales que estén dentro de tu alcance."
+        />
+      } @else {
+        <ol>
+          @for (change of history(); track change.id) {
+            <li>
+              <span class="timeline-dot"></span>
+              <div>
+                <strong>{{ change.type }}</strong>
+                <p>{{ change.reason }}</p>
+              </div>
+              <time>{{ change.occurred_at | date: 'medium' }}</time>
+            </li>
+          }
+        </ol>
+      }
+    </section>
+  }
+</main>

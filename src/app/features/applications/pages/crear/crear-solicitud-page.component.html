@@ -1,71 +1,158 @@
 <div class="flex items-center justify-center min-h-full p-6">
   <div class="bg-white rounded-xl shadow-lg border-t-4 border-[#C1E1C1] w-full max-w-md p-8">
     <div class="flex items-center gap-3 mb-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-[#1A4D2E]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-6 w-6 text-[#1A4D2E]"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
       </svg>
       <h2 class="text-xl font-bold text-gray-900">Crear Solicitud</h2>
     </div>
-    <p class="text-xs text-gray-500 mb-6">Complete los detalles para iniciar un nuevo expediente de vale.</p>
+    <p class="text-xs text-gray-500 mb-6">
+      Complete los detalles para iniciar un nuevo expediente de vale.
+    </p>
 
-    <div *ngIf="catalogError()" role="alert" class="p-3 bg-red-50 text-red-700 text-sm rounded-lg mb-5 border border-red-200">
+    <div
+      *ngIf="catalogError()"
+      role="alert"
+      class="p-3 bg-red-50 text-red-700 text-sm rounded-lg mb-5 border border-red-200"
+    >
       {{ catalogError() }}
     </div>
 
-    <form [formGroup]="crearForm" [appApplicationFormErrorState]="crearForm" (ngSubmit)="onSubmit()" class="space-y-5">
-      
+    <form
+      [formGroup]="crearForm"
+      [appApplicationFormErrorState]="crearForm"
+      (ngSubmit)="onSubmit()"
+      class="space-y-5"
+    >
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Sucursal <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-        <p *ngIf="isFixedBranch()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 bg-gray-50">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Sucursal <span class="text-red-600" aria-hidden="true">*</span
+          ><span class="sr-only"> obligatorio</span></label
+        >
+        <p
+          *ngIf="isFixedBranch()"
+          class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 bg-gray-50"
+        >
           {{ activeBranchName() }}
         </p>
         <div *ngIf="!isFixedBranch()" class="relative">
-          <select formControlName="branch_id" (change)="onBranchChange($any($event.target).value)" (focus)="marcarCampoAlEnfocar('branch_id')" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white">
+          <refactor-select
+            formControlName="branch_id"
+            (change)="onBranchChange($any($event.target).value)"
+            (focus)="marcarCampoAlEnfocar('branch_id')"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white"
+          >
             <option value="">Selecciona una sucursal...</option>
             <option *ngFor="let branch of branches()" [value]="branch.id">{{ branch.name }}</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+          </refactor-select>
+          <div
+            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              ></path>
+            </svg>
           </div>
         </div>
-        <p *ngIf="crearForm.controls.branch_id.touched && crearForm.controls.branch_id.invalid" class="text-red-600 text-xs mt-1">Selecciona una sucursal para continuar.</p>
+        <p
+          *ngIf="crearForm.controls.branch_id.touched && crearForm.controls.branch_id.invalid"
+          class="text-red-600 text-xs mt-1"
+        >
+          Selecciona una sucursal para continuar.
+        </p>
       </div>
 
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Coordinador <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-        <p *ngIf="isFixedCoordinator()" class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 bg-gray-50">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Coordinador <span class="text-red-600" aria-hidden="true">*</span
+          ><span class="sr-only"> obligatorio</span></label
+        >
+        <p
+          *ngIf="isFixedCoordinator()"
+          class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-gray-700 bg-gray-50"
+        >
           {{ session.user()?.name }}
         </p>
         <div *ngIf="!isFixedCoordinator()" class="relative">
-          <select formControlName="coordinator_id" (focus)="marcarCampoAlEnfocar('coordinator_id')" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white" [disabled]="!selectedBranchId() || !coordinators().length">
+          <refactor-select
+            formControlName="coordinator_id"
+            (focus)="marcarCampoAlEnfocar('coordinator_id')"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-gray-700 bg-white"
+            [disabled]="!selectedBranchId() || !coordinators().length"
+          >
             <option value="" *ngIf="!selectedBranchId()">Primero selecciona una sucursal...</option>
-            <option value="" *ngIf="selectedBranchId() && !coordinators().length">No hay coordinadores en esta sucursal</option>
-            <option value="" *ngIf="selectedBranchId() && coordinators().length">Selecciona un coordinador...</option>
-            <option *ngFor="let coordinator of coordinators()" [value]="coordinator.user.id">{{ coordinator.user.name }}</option>
-          </select>
-          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            <option value="" *ngIf="selectedBranchId() && !coordinators().length">
+              No hay coordinadores en esta sucursal
+            </option>
+            <option value="" *ngIf="selectedBranchId() && coordinators().length">
+              Selecciona un coordinador...
+            </option>
+            <option *ngFor="let coordinator of coordinators()" [value]="coordinator.user.id">
+              {{ coordinator.user.name }}
+            </option>
+          </refactor-select>
+          <div
+            class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500"
+          >
+            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              ></path>
+            </svg>
           </div>
         </div>
-        <p *ngIf="crearForm.controls.coordinator_id.touched && crearForm.controls.coordinator_id.invalid" class="text-red-600 text-xs mt-1">Selecciona un coordinador para continuar.</p>
+        <p
+          *ngIf="
+            crearForm.controls.coordinator_id.touched && crearForm.controls.coordinator_id.invalid
+          "
+          class="text-red-600 text-xs mt-1"
+        >
+          Selecciona un coordinador para continuar.
+        </p>
       </div>
 
-
-
       <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 mt-6">
-        <button type="button" (click)="cancelar()" class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+        <button
+          type="button"
+          (click)="cancelar()"
+          class="px-5 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
           Cancelar
         </button>
-        <button type="submit" [disabled]="store.guardandoSeccion() || isLoadingCatalogs() || !!catalogError()" class="px-5 py-2.5 bg-[#1A4D2E] hover:bg-[#133c23] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2">
+        <button
+          type="submit"
+          [disabled]="store.guardandoSeccion() || isLoadingCatalogs() || !!catalogError()"
+          class="px-5 py-2.5 bg-[#1A4D2E] hover:bg-[#133c23] text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+        >
           <span *ngIf="store.guardandoSeccion()">Creando...</span>
           <span *ngIf="!store.guardandoSeccion()">Crear Expediente</span>
         </button>
       </div>
 
-      <div *ngIf="store.error()" class="p-3 bg-red-50 text-red-700 text-sm rounded-lg mt-4 border border-red-200">
+      <div
+        *ngIf="store.error()"
+        class="p-3 bg-red-50 text-red-700 text-sm rounded-lg mt-4 border border-red-200"
+      >
         {{ store.error() }}
       </div>
-
     </form>
   </div>
 </div>

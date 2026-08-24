@@ -2,9 +2,9 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
-import { BranchStatusBadgeComponent } from '@shared/ui/branch-status-badge/branch-status-badge.component';
+import { BranchStatusBadgeComponent } from '@shared/components/badges/branch-status-badge/branch-status-badge.component';
 import { SessionStore } from '@core/session/session.store';
-import { ConfirmDialogComponent } from '@shared/ui/confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent } from '@shared/dialogs/confirm-dialog/confirm-dialog.component';
 import { MisvalesDateTimePipe } from '@shared/pipes/misvales-date-time.pipe';
 
 @Component({

@@ -1,19 +1,27 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal, computed } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnInit,
+  signal,
+  computed,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrganizationApiService } from '../../data-access/organization-api.service';
 // import { StaffRes, AssignStaffReq } from '../../data-access/organization.dtos';
 import { SessionStore } from '@core/session/session.store';
-import { MeService } from '@core/services/me.service';
+import { MeService } from '@core/auth/data-access/me.service';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-staff-assignment',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, RefactorSelectComponent],
   templateUrl: './staff-assignment.html',
   styleUrls: ['./staff-assignment.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffAssignment implements OnInit {
   private api = inject(OrganizationApiService);
@@ -51,7 +59,12 @@ export class StaffAssignment implements OnInit {
   }
 
   isFormValid() {
-    return this.role() && (this.scopeType() === 'global' || this.branchId()) && this.startDate() && this.reason();
+    return (
+      this.role() &&
+      (this.scopeType() === 'global' || this.branchId()) &&
+      this.startDate() &&
+      this.reason()
+    );
   }
 
   openConfirmModal() {
@@ -63,7 +76,7 @@ export class StaffAssignment implements OnInit {
   submitAssignment() {
     if (!this.staff()) return;
     this.isSubmitting.set(true);
-    
+
     this.isSubmitting.set(false);
     this.showConfirmModal.set(false);
   }

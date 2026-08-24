@@ -2,99 +2,277 @@
   <div class="flex flex-col gap-4 mb-6 sm:flex-row sm:items-end sm:justify-between">
     <div>
       <h2 class="text-xl font-bold text-gray-900">Patrimonio</h2>
-      <p class="mt-1 text-sm text-gray-500">Captura bienes, deudas y compromisos con categorías para evitar descripciones inconsistentes.</p>
+      <p class="mt-1 text-sm text-gray-500">
+        Captura bienes, deudas y compromisos con categorías para evitar descripciones
+        inconsistentes.
+      </p>
     </div>
-    <button *ngIf="store.detalle()?.estado === 'DRAFT'" (click)="agregarRegistro()" class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+    <button
+      *ngIf="store.detalle()?.estado === 'DRAFT'"
+      (click)="agregarRegistro()"
+      class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+        ></path>
+      </svg>
       Agregar {{ etiquetaTipoActivo }}
     </button>
   </div>
 
   <div class="mb-6 max-w-sm">
-    <label for="tipo-patrimonio" class="block text-xs font-semibold text-gray-700 mb-1">Tipo de patrimonio</label>
-    <select id="tipo-patrimonio" [value]="tipoActivo" (change)="setTipoTab($any($event.target).value)" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white">
+    <label for="tipo-patrimonio" class="block text-xs font-semibold text-gray-700 mb-1"
+      >Tipo de patrimonio</label
+    >
+    <refactor-select
+      id="tipo-patrimonio"
+      [value]="tipoActivo"
+      (change)="setTipoTab($any($event.target).value)"
+      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white"
+    >
       <option value="ASSET">Bien</option>
       <option value="LIABILITY">Deuda</option>
       <option value="ACTIVE_COMMITMENT">Compromiso activo</option>
-    </select>
+    </refactor-select>
     <p class="mt-1 text-xs text-gray-500">Elige el tipo antes de agregar un registro.</p>
   </div>
 
   <div *ngIf="cargando" class="text-gray-500 py-8 text-center">Cargando datos...</div>
 
-  <div *ngIf="!cargando && gruposFiltrados.length === 0" class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50">
-    <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+  <div
+    *ngIf="!cargando && gruposFiltrados.length === 0"
+    class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50"
+  >
+    <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      ></path>
+    </svg>
     <p class="text-sm text-gray-500 max-w-[250px]">No hay registros de este tipo.</p>
   </div>
 
   <div *ngIf="!cargando && gruposFiltrados.length > 0" class="space-y-6">
-    <div *ngFor="let form of gruposFiltrados" [formGroup]="form" [appApplicationFormErrorState]="form" [appAutosave]="form" [saveFn]="getSaveFn(form)" (statusChange)="autosaveStatuses[patrimonioGroups.indexOf(form)] = $event" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative">
-      <div class="absolute right-4 top-4 flex items-center gap-4" *ngIf="store.detalle()?.estado === 'DRAFT'">
+    <div
+      *ngFor="let form of gruposFiltrados"
+      [formGroup]="form"
+      [appApplicationFormErrorState]="form"
+      [appAutosave]="form"
+      [saveFn]="getSaveFn(form)"
+      (statusChange)="autosaveStatuses[patrimonioGroups.indexOf(form)] = $event"
+      class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative"
+    >
+      <div
+        class="absolute right-4 top-4 flex items-center gap-4"
+        *ngIf="store.detalle()?.estado === 'DRAFT'"
+      >
         <div class="text-sm font-medium">
-          <span *ngIf="autosaveStatuses[patrimonioGroups.indexOf(form)] === 'saving'" class="text-gray-500 flex items-center gap-1">
-            <svg class="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+          <span
+            *ngIf="autosaveStatuses[patrimonioGroups.indexOf(form)] === 'saving'"
+            class="text-gray-500 flex items-center gap-1"
+          >
+            <svg
+              class="animate-spin h-4 w-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
           </span>
-          <span *ngIf="autosaveStatuses[patrimonioGroups.indexOf(form)] === 'saved'" class="text-green-600 flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></span>
-          <span *ngIf="autosaveStatuses[patrimonioGroups.indexOf(form)] === 'error'" class="text-red-500 flex items-center gap-1">Error</span>
+          <span
+            *ngIf="autosaveStatuses[patrimonioGroups.indexOf(form)] === 'saved'"
+            class="text-green-600 flex items-center gap-1"
+            ><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path></svg
+          ></span>
+          <span
+            *ngIf="autosaveStatuses[patrimonioGroups.indexOf(form)] === 'error'"
+            class="text-red-500 flex items-center gap-1"
+            >Error</span
+          >
         </div>
-        <button (click)="form.value.id ? eliminarRegistroAPI(form, form.value.id) : removerRegistroVisual(form)" class="text-red-500 hover:text-red-700 p-1" title="Eliminar">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+        <button
+          (click)="
+            form.value.id ? eliminarRegistroAPI(form, form.value.id) : removerRegistroVisual(form)
+          "
+          class="text-red-500 hover:text-red-700 p-1"
+          title="Eliminar"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            ></path>
+          </svg>
         </button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div class="md:col-span-2">
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo de {{ etiquetaTipoActivo }} <span class="text-red-500">*</span></label>
-          <ng-select [items]="opcionesPatrimonioPara(form)" groupBy="group" bindLabel="label" bindValue="value" formControlName="name" placeholder="Busca y selecciona una opción" [clearable]="true" notFoundText="No se encontró una opción" class="w-full text-sm"></ng-select>
-          <p class="mt-1 text-xs text-gray-500">Selecciona una categoría; usa “Otro” únicamente si no existe una opción equivalente.</p>
-          <app-input-error [control]="form.controls['name']" label="El tipo de patrimonio"></app-input-error>
+          <label class="block text-xs font-semibold text-gray-700 mb-1"
+            >Tipo de {{ etiquetaTipoActivo }} <span class="text-red-500">*</span></label
+          >
+          <ng-select
+            [items]="opcionesPatrimonioPara(form)"
+            groupBy="group"
+            bindLabel="label"
+            bindValue="value"
+            formControlName="name"
+            placeholder="Busca y selecciona una opción"
+            [clearable]="true"
+            notFoundText="No se encontró una opción"
+            class="w-full text-sm"
+          ></ng-select>
+          <p class="mt-1 text-xs text-gray-500">
+            Selecciona una categoría; usa “Otro” únicamente si no existe una opción equivalente.
+          </p>
+          <app-input-error
+            [control]="form.controls['name']"
+            label="El tipo de patrimonio"
+          ></app-input-error>
         </div>
 
         <div *ngIf="esOtro(form)" class="md:col-span-2">
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Especifica el {{ etiquetaTipoActivo }} <span class="text-red-500">*</span></label>
-          <input type="text" formControlName="other_description" placeholder="Describe el {{ etiquetaTipoActivo }}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
-          <p class="mt-1 text-xs text-gray-500">Indica una descripción concreta para poder identificarlo.</p>
-          <app-input-error [control]="form.controls['other_description']" label="La descripción del {{ etiquetaTipoActivo }}"></app-input-error>
+          <label class="block text-xs font-semibold text-gray-700 mb-1"
+            >Especifica el {{ etiquetaTipoActivo }} <span class="text-red-500">*</span></label
+          >
+          <input
+            type="text"
+            formControlName="other_description"
+            placeholder="Describe el {{ etiquetaTipoActivo }}"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Indica una descripción concreta para poder identificarlo.
+          </p>
+          <app-input-error
+            [control]="form.controls['other_description']"
+            label="La descripción del {{ etiquetaTipoActivo }}"
+          ></app-input-error>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">{{ tipoActivo === 'ASSET' ? 'Valor aproximado' : 'Monto original' }} <span class="text-red-500">*</span></label>
+          <label class="block text-xs font-semibold text-gray-700 mb-1"
+            >{{ tipoActivo === 'ASSET' ? 'Valor aproximado' : 'Monto original' }}
+            <span class="text-red-500">*</span></label
+          >
           <div class="relative">
             <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
-            <input appMoneyInput type="text" inputmode="decimal" formControlName="amount" placeholder="50,000.00" class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono">
+            <input
+              appMoneyInput
+              type="text"
+              inputmode="decimal"
+              formControlName="amount"
+              placeholder="50,000.00"
+              class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono"
+            />
           </div>
-          <p class="mt-1 text-xs text-gray-500">Escribe 50000 y se mostrará como 50,000. Los centavos usan punto: 50,000.50.</p>
-          <app-input-error [control]="form.controls['amount']" label="El valor aproximado" [customMessages]="{ invalidDecimalString: 'El valor aproximado debe ser un monto válido.', negativeDecimal: 'El valor aproximado no puede ser negativo.' }"></app-input-error>
+          <p class="mt-1 text-xs text-gray-500">
+            Escribe 50000 y se mostrará como 50,000. Los centavos usan punto: 50,000.50.
+          </p>
+          <app-input-error
+            [control]="form.controls['amount']"
+            label="El valor aproximado"
+            [customMessages]="{
+              invalidDecimalString: 'El valor aproximado debe ser un monto válido.',
+              negativeDecimal: 'El valor aproximado no puede ser negativo.',
+            }"
+          ></app-input-error>
         </div>
 
         <div *ngIf="tipoActivo === 'LIABILITY' || tipoActivo === 'ACTIVE_COMMITMENT'">
           <label class="block text-xs font-semibold text-gray-700 mb-1">Saldo pendiente</label>
           <div class="relative">
             <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
-            <input appMoneyInput type="text" inputmode="decimal" formControlName="outstanding_balance" placeholder="0.00" class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono">
+            <input
+              appMoneyInput
+              type="text"
+              inputmode="decimal"
+              formControlName="outstanding_balance"
+              placeholder="0.00"
+              class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono"
+            />
           </div>
           <p class="mt-1 text-xs text-gray-500">Indica el monto que aún falta por pagar.</p>
-          <app-input-error [control]="form.controls['outstanding_balance']" label="El saldo pendiente" [customMessages]="{ invalidDecimalString: 'El saldo pendiente debe ser un monto válido.', negativeDecimal: 'El saldo pendiente no puede ser negativo.' }"></app-input-error>
+          <app-input-error
+            [control]="form.controls['outstanding_balance']"
+            label="El saldo pendiente"
+            [customMessages]="{
+              invalidDecimalString: 'El saldo pendiente debe ser un monto válido.',
+              negativeDecimal: 'El saldo pendiente no puede ser negativo.',
+            }"
+          ></app-input-error>
         </div>
 
         <div *ngIf="tipoActivo === 'LIABILITY' || tipoActivo === 'ACTIVE_COMMITMENT'">
           <label class="block text-xs font-semibold text-gray-700 mb-1">Pago mensual</label>
           <div class="relative">
             <span class="absolute left-3 top-2 text-gray-500 text-sm">$</span>
-            <input appMoneyInput type="text" inputmode="decimal" formControlName="monthly_payment" placeholder="0.00" class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono">
+            <input
+              appMoneyInput
+              type="text"
+              inputmode="decimal"
+              formControlName="monthly_payment"
+              placeholder="0.00"
+              class="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm font-mono"
+            />
           </div>
           <p class="mt-1 text-xs text-gray-500">Indica el pago recurrente que realizas cada mes.</p>
-          <app-input-error [control]="form.controls['monthly_payment']" label="El pago mensual" [customMessages]="{ invalidDecimalString: 'El pago mensual debe ser un monto válido.', negativeDecimal: 'El pago mensual no puede ser negativo.' }"></app-input-error>
+          <app-input-error
+            [control]="form.controls['monthly_payment']"
+            label="El pago mensual"
+            [customMessages]="{
+              invalidDecimalString: 'El pago mensual debe ser un monto válido.',
+              negativeDecimal: 'El pago mensual no puede ser negativo.',
+            }"
+          ></app-input-error>
         </div>
       </div>
 
       <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
         <label class="block text-sm font-semibold text-gray-700">Evidencia de patrimonio</label>
-        <input type="file" accept="image/*,.pdf" (change)="onEvidenceChange($event)" [disabled]="uploadingEvidence" class="mt-2 block w-full text-sm">
-        <p *ngIf="uploadingEvidence" class="mt-1 text-xs text-gray-500">Subiendo evidencia...</p>
-        <p *ngIf="evidenceUploaded" class="mt-1 text-xs text-green-600">Evidencia cargada correctamente.</p>
-        <p *ngIf="evidenceError" class="mt-1 text-xs text-red-600">{{ evidenceError }}</p>
-        <app-attachment-preview [file]="currentEvidenceFile"></app-attachment-preview>
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          (change)="onEvidenceChange(form, $event)"
+          [disabled]="evidenceState(form).uploading || !form.value.id"
+          class="mt-2 block w-full text-sm"
+        />
+        <p *ngIf="!form.value.id" class="mt-1 text-xs text-amber-700">
+          Completa el registro y espera a que quede guardado para adjuntar su evidencia.
+        </p>
+        <p *ngIf="evidenceState(form).uploading" class="mt-1 text-xs text-gray-500">
+          Subiendo evidencia...
+        </p>
+        <p *ngIf="evidenceState(form).uploaded" class="mt-1 text-xs text-green-600">
+          Evidencia cargada correctamente para este registro.
+        </p>
+        <p *ngIf="evidenceState(form).error" class="mt-1 text-xs text-red-600">
+          {{ evidenceState(form).error }}
+        </p>
+        <app-attachment-preview [file]="evidenceState(form).file"></app-attachment-preview>
       </div>
     </div>
   </div>

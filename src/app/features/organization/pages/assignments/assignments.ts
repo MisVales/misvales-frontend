@@ -1,7 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '@core/api/api-error';
 import { SessionStore } from '@core/session/session.store';
@@ -10,13 +18,16 @@ import { UserService } from '../../../admin/data-access/user.service';
 import { OrganizationApiService } from '../../data-access/organization-api.service';
 import { MisvalesDateTimePipe } from '../../../../shared/pipes/misvales-date-time.pipe';
 import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { BranchStatusBadgeComponent } from '@shared/components/badges/branch-status-badge/branch-status-badge.component';
+import { BranchMapPreviewComponent } from '../../components/branch-map-preview/branch-map-preview.component';
 import {
   Branch,
   CoordinatorDistributorAssignment,
   DistributorCandidate,
   PersonnelAssignment,
 } from '../../data-access/organization.dtos';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 type OrganizationalRole = {
   id: string;
@@ -60,10 +71,10 @@ export function personnelCandidates(
 
   for (const assignment of personnelHistory) {
     if (
-      assignment.assignment_status !== 'REVOKED'
-      || assignment.user.state !== 'ACTIVE'
-      || candidates.has(assignment.user.id)
-      || activeAssignmentUserIds.has(assignment.user.id)
+      assignment.assignment_status !== 'REVOKED' ||
+      assignment.user.state !== 'ACTIVE' ||
+      candidates.has(assignment.user.id) ||
+      activeAssignmentUserIds.has(assignment.user.id)
     ) {
       continue;
     }
@@ -84,10 +95,11 @@ export function personnelCandidates(
 }
 
 function organizationalRole(user: UserRes): OrganizationalRole | null {
-  const role = user.role_scopes?.find((scope) =>
-    typeof scope.role.id === 'string'
-    && typeof scope.role.code === 'string'
-    && ORGANIZATIONAL_ROLE_CODES.has(scope.role.code),
+  const role = user.role_scopes?.find(
+    (scope) =>
+      typeof scope.role.id === 'string' &&
+      typeof scope.role.code === 'string' &&
+      ORGANIZATIONAL_ROLE_CODES.has(scope.role.code),
   )?.role;
 
   return role?.id && role.code ? { id: role.id, code: role.code, name: role.name } : null;
@@ -96,7 +108,17 @@ function organizationalRole(user: UserRes): OrganizationalRole | null {
 @Component({
   selector: 'app-organization-assignments',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, MisvalesDateTimePipe, StatusLabelPipe],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    LucideAngularModule,
+    MisvalesDateTimePipe,
+    StatusLabelPipe,
+    BranchStatusBadgeComponent,
+    BranchMapPreviewComponent,
+    RefactorSelectComponent,
+  ],
   templateUrl: './assignments.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -105,6 +127,9 @@ export class AssignmentsPage implements OnInit {
   private readonly userService = inject(UserService);
   private readonly session = inject(SessionStore);
   private readonly alerts = inject(AlertService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly routeBranchId = this.route.snapshot.paramMap.get('id');
 
   readonly branches = signal<Branch[]>([]);
   readonly users = signal<UserRes[]>([]);
@@ -130,39 +155,62 @@ export class AssignmentsPage implements OnInit {
   readonly withdrawalReason = signal('');
   readonly withdrawalReasonTouched = signal(false);
 
-  readonly eligibleUsers = computed(() => personnelCandidates(this.users(), this.personnelHistory()));
-  readonly selectedPersonnelCandidate = computed(() =>
-    this.eligibleUsers().find((candidate) => candidate.id === this.personnelForm().user_id) ?? null,
+  readonly eligibleUsers = computed(() =>
+    personnelCandidates(this.users(), this.personnelHistory()),
+  );
+  readonly selectedPersonnelCandidate = computed(
+    () =>
+      this.eligibleUsers().find((candidate) => candidate.id === this.personnelForm().user_id) ??
+      null,
   );
   readonly selectedPersonnelRole = computed(() => this.selectedPersonnelCandidate()?.role ?? null);
   readonly coordinators = computed(() => {
     const seen = new Set<string>();
     return this.personnel()
-      .filter((assignment) => assignment.assignment_status === 'ACTIVE' && assignment.role.code === 'coordinator')
-      .filter((assignment) => seen.has(assignment.user.id) ? false : (seen.add(assignment.user.id), true));
+      .filter(
+        (assignment) =>
+          assignment.assignment_status === 'ACTIVE' && assignment.role.code === 'coordinator',
+      )
+      .filter((assignment) =>
+        seen.has(assignment.user.id) ? false : (seen.add(assignment.user.id), true),
+      );
   });
   readonly canManagePersonnel = computed(() => this.hasPermission('roles.assign'));
   readonly canManageDistributors = computed(() => this.hasPermission('assignments.manage'));
 
   async ngOnInit(): Promise<void> {
-    await this.loadCatalogs();
+    await this.loadCatalogs(this.routeBranchId);
   }
 
-  async loadCatalogs(): Promise<void> {
+  async loadCatalogs(branchId: string | null = null): Promise<void> {
     this.isLoading.set(true);
     this.pageError.set('');
     try {
-      const [branches, users] = await Promise.all([
-        firstValueFrom(this.api.getBranches({ per_page: 100, status: 'ACTIVE' })),
-        firstValueFrom(this.userService.getUsers({ page: 1, per_page: 100 })),
-      ]);
-      this.branches.set(branches.data);
-      this.users.set(users.data);
+      const usersRequest = firstValueFrom(this.userService.getUsers({ page: 1, per_page: 100 }));
+      if (branchId) {
+        const [branch, users] = await Promise.all([
+          firstValueFrom(this.api.getBranch(branchId)),
+          usersRequest,
+        ]);
+        this.users.set(users.data);
+        this.selectedBranch.set(branch);
+      } else {
+        const [branches, users] = await Promise.all([
+          firstValueFrom(this.api.getBranches({ per_page: 100 })),
+          usersRequest,
+        ]);
+        this.branches.set(branches.data);
+        this.users.set(users.data);
+      }
     } catch (error: unknown) {
-      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar la estructura organizacional.'));
+      this.pageError.set(
+        apiErrorMessage(error, 'No fue posible cargar la estructura organizacional.'),
+      );
     } finally {
       this.isLoading.set(false);
     }
+
+    if (this.selectedBranch()) await this.reload();
   }
 
   async openBranch(branch: Branch): Promise<void> {
@@ -174,6 +222,10 @@ export class AssignmentsPage implements OnInit {
   }
 
   showBranches(): void {
+    if (this.routeBranchId) {
+      void this.router.navigate(['/organizacion/sucursales']);
+      return;
+    }
     this.selectedBranch.set(null);
     this.personnel.set([]);
     this.personnelHistory.set([]);
@@ -190,21 +242,39 @@ export class AssignmentsPage implements OnInit {
     this.isLoading.set(true);
     this.pageError.set('');
     try {
-      const [personnel, personnelHistory, coordinatorAssignments, distributors] = await Promise.all([
-        firstValueFrom(this.api.getBranchAssignments(branch.id, { status: this.personnelStatus() })),
-        firstValueFrom(this.api.getBranchAssignments(branch.id, { includeHistory: true })),
-        firstValueFrom(this.api.getCoordinatorDistributorAssignments(branch.id)),
-        firstValueFrom(this.api.getActiveDistributorCandidates(branch.id)),
-      ]);
+      const [personnel, personnelHistory, coordinatorAssignments, distributors] = await Promise.all(
+        [
+          firstValueFrom(
+            this.api.getBranchAssignments(branch.id, { status: this.personnelStatus() }),
+          ),
+          firstValueFrom(this.api.getBranchAssignments(branch.id, { includeHistory: true })),
+          firstValueFrom(this.api.getCoordinatorDistributorAssignments(branch.id)),
+          firstValueFrom(this.api.getActiveDistributorCandidates(branch.id)),
+        ],
+      );
       this.personnel.set(personnel.data);
       this.personnelHistory.set(personnelHistory.data);
       this.distributorAssignments.set(coordinatorAssignments);
       this.distributors.set(distributors);
     } catch (error: unknown) {
-      this.pageError.set(apiErrorMessage(error, 'No fue posible cargar las asignaciones de la sucursal.'));
+      this.pageError.set(
+        apiErrorMessage(error, 'No fue posible cargar las asignaciones de la sucursal.'),
+      );
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  showDistributorTransfers(): void {
+    this.activeTab.set('distributors');
+  }
+
+  canUpdateBranch(): boolean {
+    return this.hasPermission('branches.update');
+  }
+
+  canManageBranch(): boolean {
+    return this.canUpdateBranch() || this.hasPermission('branches.manage_state');
   }
 
   async changePersonnelStatus(status: string): Promise<void> {
@@ -228,17 +298,21 @@ export class AssignmentsPage implements OnInit {
     }
 
     await this.runAction(async () => {
-      await firstValueFrom(this.api.assignPersonnel(form.user_id, {
-        role_id: roleId,
-        branch_id: branch.id,
-        scope: 'BRANCH',
-        assignment_reason: form.reason.trim(),
-      }));
+      await firstValueFrom(
+        this.api.assignPersonnel(form.user_id, {
+          role_id: roleId,
+          branch_id: branch.id,
+          scope: 'BRANCH',
+          assignment_reason: form.reason.trim(),
+        }),
+      );
       this.personnelForm.set({ user_id: '', reason: '' });
       this.personnelTouchedFields.set(new Set());
-      this.alerts.success(candidate?.isReactivation
-        ? `${candidate.name} se reactivó como ${role.name}.`
-        : 'El personal quedó asignado con el rol que ya tiene registrado.');
+      this.alerts.success(
+        candidate?.isReactivation
+          ? `${candidate.name} se reactivó como ${role.name}.`
+          : 'El personal quedó asignado con el rol que ya tiene registrado.',
+      );
     });
   }
 
@@ -257,12 +331,14 @@ export class AssignmentsPage implements OnInit {
     }
 
     await this.runAction(async () => {
-      await firstValueFrom(this.api.assignCoordinatorDistributor({
-        branch_id: branch.id,
-        distributor_id: form.distributor_id,
-        coordinator_id: form.coordinator_id,
-        assignment_reason: form.reason.trim(),
-      }));
+      await firstValueFrom(
+        this.api.assignCoordinatorDistributor({
+          branch_id: branch.id,
+          distributor_id: form.distributor_id,
+          coordinator_id: form.coordinator_id,
+          assignment_reason: form.reason.trim(),
+        }),
+      );
       this.distributorForm.set({ distributor_id: '', coordinator_id: '', reason: '' });
       this.pageMessage.set('La distribuidora quedó asignada al coordinador seleccionado.');
     });
@@ -270,7 +346,9 @@ export class AssignmentsPage implements OnInit {
 
   requestEndDistributor(assignment: CoordinatorDistributorAssignment): void {
     if (assignment.distributor?.status === 'ACTIVE') {
-      this.pageError.set('Una distribuidora activa debe reasignarse; no puede quedar sin coordinador.');
+      this.pageError.set(
+        'Una distribuidora activa debe reasignarse; no puede quedar sin coordinador.',
+      );
       return;
     }
     this.withdrawalReason.set('');
@@ -335,13 +413,17 @@ export class AssignmentsPage implements OnInit {
 
     await this.runAction(async () => {
       if (pending.type === 'personnel') {
-        await firstValueFrom(this.api.endPersonnelAssignment(
-          pending.assignment.user.id,
-          pending.assignment.assignment_id,
-          reason,
-        ));
+        await firstValueFrom(
+          this.api.endPersonnelAssignment(
+            pending.assignment.user.id,
+            pending.assignment.assignment_id,
+            reason,
+          ),
+        );
       } else {
-        await firstValueFrom(this.api.terminateCoordinatorDistributorAssignment(pending.assignment.id, reason));
+        await firstValueFrom(
+          this.api.terminateCoordinatorDistributorAssignment(pending.assignment.id, reason),
+        );
       }
       this.closeWithdrawalDialog();
       this.alerts.success('La asignación se retiró sin borrar el historial.');

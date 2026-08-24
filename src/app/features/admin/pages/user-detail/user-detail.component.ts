@@ -1,5 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -10,13 +17,21 @@ import { OrganizationApiService } from '../../../organization/data-access/organi
 import { RoleRes, UserAssignmentRes, UserRes } from '../../data-access/admin.dtos';
 import { RoleService } from '../../data-access/role.service';
 import { UserService } from '../../data-access/user.service';
-import { ConfirmDialogComponent } from '../../../../shared/ui/confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog.component';
 import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-user-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, ConfirmDialogComponent, StatusLabelPipe],
+  imports: [
+    CommonModule,
+    RouterLink,
+    FormsModule,
+    ConfirmDialogComponent,
+    StatusLabelPipe,
+    RefactorSelectComponent,
+  ],
   templateUrl: './user-detail.component.html',
   styleUrl: './user-detail.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -87,7 +102,9 @@ export class UserDetailComponent implements OnInit {
   async loadRoles(): Promise<void> {
     try {
       const roles = await firstValueFrom(this.roleService.getRoles());
-      this.availableRoles.set(roles.filter((role) => role.is_active !== false && role.code !== 'general_manager'));
+      this.availableRoles.set(
+        roles.filter((role) => role.is_active !== false && role.code !== 'general_manager'),
+      );
     } catch (error: unknown) {
       this.pageError.set(apiErrorMessage(error, 'No fue posible cargar los roles.'));
     }
@@ -112,10 +129,18 @@ export class UserDetailComponent implements OnInit {
     }
   }
 
-  openBlockModal(): void { this.isBlockModalOpen.set(true); }
-  closeBlockModal(): void { this.isBlockModalOpen.set(false); }
-  openDisableModal(): void { this.isDisableModalOpen.set(true); }
-  closeDisableModal(): void { this.isDisableModalOpen.set(false); }
+  openBlockModal(): void {
+    this.isBlockModalOpen.set(true);
+  }
+  closeBlockModal(): void {
+    this.isBlockModalOpen.set(false);
+  }
+  openDisableModal(): void {
+    this.isDisableModalOpen.set(true);
+  }
+  closeDisableModal(): void {
+    this.isDisableModalOpen.set(false);
+  }
 
   async confirmBlock(): Promise<void> {
     const id = this.userId();
@@ -125,9 +150,10 @@ export class UserDetailComponent implements OnInit {
     this.isActionLoading.set('block');
     this.pageError.set('');
     try {
-      const request = currentUser.state === 'BLOCKED'
-        ? this.userService.unblockUser(id)
-        : this.userService.blockUser(id);
+      const request =
+        currentUser.state === 'BLOCKED'
+          ? this.userService.unblockUser(id)
+          : this.userService.blockUser(id);
       const response = await firstValueFrom(request);
       this.pageMessage.set(response.message);
       this.closeBlockModal();
@@ -147,9 +173,10 @@ export class UserDetailComponent implements OnInit {
     this.isActionLoading.set('disable');
     this.pageError.set('');
     try {
-      const request = currentUser.state === 'DISABLED'
-        ? this.userService.enableUser(id)
-        : this.userService.disableUser(id);
+      const request =
+        currentUser.state === 'DISABLED'
+          ? this.userService.enableUser(id)
+          : this.userService.disableUser(id);
       const response = await firstValueFrom(request);
       this.pageMessage.set(response.message);
       this.closeDisableModal();
@@ -186,10 +213,12 @@ export class UserDetailComponent implements OnInit {
 
     this.isActionLoading.set('assign');
     try {
-      const response = await firstValueFrom(this.userService.assignRole(id, {
-        role_id: assignment.role_id,
-        branch_id: assignment.branch_id || null,
-      }));
+      const response = await firstValueFrom(
+        this.userService.assignRole(id, {
+          role_id: assignment.role_id,
+          branch_id: assignment.branch_id || null,
+        }),
+      );
       this.pageMessage.set(response.message);
       this.closeAssignModal();
       await this.loadAssignments();

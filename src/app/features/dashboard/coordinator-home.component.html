@@ -1,0 +1,602 @@
+@if (view() === 'home') {
+  <section class="coordinator-home" aria-labelledby="coordinator-home-title">
+    <header class="page-heading">
+      <div>
+        <h1 id="coordinator-home-title">Panel del coordinador</h1>
+        <p>Supervisa distribuidoras, solicitudes, pendientes y alertas en un solo lugar.</p>
+      </div>
+      @if (partial()) {
+        <span class="partial-notice"
+          ><lucide-icon name="info" [size]="16" aria-hidden="true" /> Información parcial</span
+        >
+      }
+    </header>
+
+    @if (loading()) {
+      <div class="loading-grid" aria-label="Cargando panel" aria-busy="true">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <span></span>
+        }
+      </div>
+    } @else {
+      <section class="kpi-grid" aria-label="Indicadores principales">
+        <a routerLink="/coordinacion/distribuidoras" class="kpi kpi--green"
+          ><span class="kpi__icon"><lucide-icon name="store" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Distribuidoras activas</small><strong>{{ lines().length }}</strong
+            ><em>Dentro de tu alcance</em></span
+          ></a
+        >
+        <a routerLink="/solicitudes-distribuidoras" class="kpi kpi--blue"
+          ><span class="kpi__icon"
+            ><lucide-icon name="clipboard-list" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Solicitudes</small><strong>{{ applicationTotal() }}</strong
+            ><em>{{ applications().length }} visibles en esta carga</em></span
+          ></a
+        >
+        <a routerLink="/coordinacion/pendientes" class="kpi kpi--orange"
+          ><span class="kpi__icon"><lucide-icon name="clock" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Pendientes</small><strong>{{ pendingCount() }}</strong
+            ><em>Acciones visibles</em></span
+          ></a
+        >
+        <a routerLink="/coordinacion/alertas" class="kpi kpi--red"
+          ><span class="kpi__icon"
+            ><lucide-icon name="triangle-alert" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Alertas</small><strong>{{ openAlertCount() }}</strong
+            ><em>Abiertas en este momento</em></span
+          ></a
+        >
+      </section>
+
+      <section class="master-detail">
+        <div class="directory-card">
+          <header class="card-heading">
+            <h2>Distribuidoras</h2>
+            <label class="search"
+              ><lucide-icon name="search" [size]="18" aria-hidden="true" /><span class="sr-only"
+                >Buscar distribuidora o folio</span
+              ><input
+                type="search"
+                placeholder="Buscar distribuidora o folio…"
+                [value]="query()"
+                (input)="setQuery($event)"
+            /></label>
+          </header>
+          <div class="filters" aria-label="Filtrar distribuidoras">
+            <button [class.active]="filter() === 'all'" (click)="selectFilter('all')">Todas</button
+            ><button [class.active]="filter() === 'active'" (click)="selectFilter('active')">
+              Activas</button
+            ><button
+              [class.active]="filter() === 'applications'"
+              (click)="selectFilter('applications')"
+            >
+              Solicitudes
+            </button>
+            @if (canTransfer()) {
+              <a routerLink="/transferencias">Transferencias</a>
+            }
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Folio / Clave</th>
+                  <th>Distribuidora / Solicitante</th>
+                  <th>Estado</th>
+                  <th>Línea disponible</th>
+                  <th>Seguimiento</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of filteredRows().slice(0, 6); track row.kind + row.id) {
+                  <tr [class.selected]="selected()?.id === row.id" (click)="select(row)">
+                    <td>
+                      <button class="row-select" type="button" (click)="select(row)">
+                        <span class="avatar" [class.application]="row.kind === 'application'">{{
+                          row.kind === 'line' ? 'D' : 'S'
+                        }}</span
+                        >{{ row.key }}
+                      </button>
+                    </td>
+                    <td>
+                      <strong>{{ row.name }}</strong
+                      ><small>{{ row.owner }}</small>
+                    </td>
+                    <td>
+                      <span class="status" [class.status--active]="row.kind === 'line'">{{
+                        row.status
+                      }}</span>
+                    </td>
+                    <td>
+                      @if (row.available !== null) {
+                        <strong>{{ money(row.available) }}</strong
+                        ><small>de {{ money(row.total) }}</small>
+                      } @else {
+                        —
+                      }
+                    </td>
+                    <td>{{ row.pending }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="5" class="empty-row">
+                      <app-empty-state
+                        [compact]="true"
+                        [variant]="2"
+                        title="Sin resultados"
+                        message="No hay distribuidoras o solicitudes que coincidan con este filtro."
+                      />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <footer>
+            {{ Math.min(filteredRows().length, 6) }} de {{ filteredRows().length }} visibles
+          </footer>
+        </div>
+
+        <aside class="detail-card" aria-live="polite">
+          @if (selected(); as row) {
+            <header>
+              <div>
+                <small>{{
+                  row.kind === 'line' ? 'Distribuidora activa' : 'Solicitud de distribuidora'
+                }}</small>
+                <h2>{{ row.name }}</h2>
+              </div>
+              <span class="status" [class.status--active]="row.kind === 'line'">{{
+                row.status
+              }}</span>
+            </header>
+            <dl>
+              <div>
+                <dt>Clave / Folio</dt>
+                <dd>{{ row.key }}</dd>
+              </div>
+              <div>
+                <dt>Contexto</dt>
+                <dd>{{ row.owner }}</dd>
+              </div>
+              @if (row.kind === 'line') {
+                <div>
+                  <dt>Línea total</dt>
+                  <dd>{{ money(row.total) }}</dd>
+                </div>
+                <div>
+                  <dt>Línea disponible</dt>
+                  <dd>{{ money(row.available) }}</dd>
+                </div>
+              }
+            </dl>
+            @if (row.kind === 'line') {
+              <div class="credit-summary">
+                <div>
+                  <span>Línea disponible</span><strong>{{ money(row.available) }}</strong
+                  ><small>de {{ money(row.total) }}</small>
+                </div>
+                <div class="progress"><span [style.width.%]="percent(row)"></span></div>
+                <b>{{ percent(row) }}%</b>
+              </div>
+            }
+            <div class="quick-actions">
+              <a [routerLink]="row.route"
+                ><lucide-icon name="chart-no-axes-combined" [size]="22" aria-hidden="true" />Ver
+                resumen</a
+              >
+              @if (row.kind === 'line') {
+                <a [routerLink]="row.route" [queryParams]="{ section: 'credito' }"
+                  ><lucide-icon name="credit-card" [size]="22" aria-hidden="true" />Revisar
+                  crédito</a
+                >
+                @if (canViewPayments()) {
+                  <a
+                    routerLink="/relaciones-pagos/pagos"
+                    [queryParams]="{
+                      distribuidora: row.key,
+                      distributorId: row.source.distributor.id,
+                    }"
+                    ><lucide-icon name="banknote" [size]="22" aria-hidden="true" />Ver pagos</a
+                  >
+                }
+                @if (canTransfer()) {
+                  <a routerLink="/transferencias"
+                    ><lucide-icon
+                      name="arrow-left-right"
+                      [size]="22"
+                      aria-hidden="true"
+                    />Transferir cliente</a
+                  >
+                }
+              }
+            </div>
+          } @else {
+            <div class="detail-empty">
+              <lucide-icon name="inbox" [size]="30" aria-hidden="true" />
+              <h2>Sin selección</h2>
+              <p>Selecciona una distribuidora o solicitud para consultar su contexto.</p>
+            </div>
+          }
+        </aside>
+      </section>
+
+      <section class="feed-grid">
+        <article class="feed">
+          <header>
+            <h2>Pendientes recientes</h2>
+            <a routerLink="/coordinacion/pendientes">Ver todos</a>
+          </header>
+          @for (item of pendingItems().slice(0, 5); track item.id) {
+            <a class="feed-row" [routerLink]="item.route"
+              ><span class="feed-icon" [attr.data-tone]="item.tone"
+                ><lucide-icon [name]="item.icon" [size]="20" aria-hidden="true" /></span
+              ><span
+                ><strong>{{ item.title }}</strong
+                ><small>{{ item.subtitle }}</small></span
+              ><em>{{ item.status }}</em
+              ><time>{{ item.meta }}</time
+              ><lucide-icon name="chevron-right" [size]="17" aria-hidden="true"
+            /></a>
+          } @empty {
+            <app-empty-state
+              [compact]="true"
+              title="Sin pendientes recientes"
+              message="No hay acciones pendientes en las fuentes disponibles."
+            />
+          }
+        </article>
+        <article class="feed">
+          <header>
+            <h2>Alertas recientes</h2>
+            <a routerLink="/coordinacion/alertas">Ver todas</a>
+          </header>
+          @for (item of alertItems().slice(0, 5); track item.id) {
+            <a class="feed-row" [routerLink]="item.route"
+              ><span class="feed-icon" [attr.data-tone]="item.tone"
+                ><lucide-icon [name]="item.icon" [size]="20" aria-hidden="true" /></span
+              ><span
+                ><strong>{{ item.title }}</strong
+                ><small>{{ item.subtitle }}</small></span
+              ><em>{{ item.status }}</em
+              ><time>{{ item.meta }}</time
+              ><lucide-icon name="chevron-right" [size]="17" aria-hidden="true"
+            /></a>
+          } @empty {
+            <app-empty-state
+              [compact]="true"
+              [variant]="2"
+              title="Sin alertas abiertas"
+              message="No hay situaciones que requieran seguimiento en este momento."
+            />
+          }
+        </article>
+      </section>
+    }
+  </section>
+} @else {
+  <section class="coordinator-home workspace-view" aria-labelledby="workspace-view-title">
+    <header class="page-heading">
+      <div>
+        <h1 id="workspace-view-title">
+          {{
+            view() === 'distribuidoras'
+              ? 'Distribuidoras'
+              : view() === 'pendientes'
+                ? 'Pendientes'
+                : 'Alertas'
+          }}
+        </h1>
+        <p>
+          @if (view() === 'distribuidoras') {
+            Consulta el ciclo completo de las distribuidoras asignadas.
+          }
+          @if (view() === 'pendientes') {
+            Atiende los casos que requieren una acción concreta de tu parte.
+          }
+          @if (view() === 'alertas') {
+            Supervisa situaciones que necesitan seguimiento antes de convertirse en pendientes.
+          }
+        </p>
+      </div>
+      <div class="page-heading__actions">
+        @if (view() === 'distribuidoras' && canCreateApplication()) {
+          <a class="primary-action" routerLink="/solicitudes-distribuidoras/nueva">
+            <lucide-icon name="plus" [size]="18" aria-hidden="true" />
+            Nueva solicitud
+          </a>
+        }
+        @if (partial()) {
+          <span class="partial-notice"
+            ><lucide-icon name="info" [size]="16" aria-hidden="true" /> Información parcial</span
+          >
+        }
+      </div>
+    </header>
+
+    @if (loading()) {
+      <div class="loading-grid" aria-label="Cargando información" aria-busy="true">
+        @for (item of [1, 2, 3, 4]; track item) {
+          <span></span>
+        }
+      </div>
+    } @else if (view() === 'distribuidoras') {
+      <section class="kpi-grid kpi-grid--compact" aria-label="Resumen de distribuidoras">
+        <article class="kpi kpi--green">
+          <span class="kpi__icon"><lucide-icon name="store" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Activas</small><strong>{{ lines().length }}</strong
+            ><em>Con línea de crédito</em></span
+          >
+        </article>
+        <article class="kpi kpi--blue">
+          <span class="kpi__icon"
+            ><lucide-icon name="clipboard-list" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Solicitudes</small><strong>{{ applicationTotal() }}</strong
+            ><em>{{ applications().length }} en esta carga</em></span
+          >
+        </article>
+        <article class="kpi kpi--orange">
+          <span class="kpi__icon"
+            ><lucide-icon name="circle-arrow-up" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Incrementos</small><strong>{{ increases().length }}</strong
+            ><em>Solicitudes visibles</em></span
+          >
+        </article>
+        <article class="kpi kpi--red">
+          <span class="kpi__icon"
+            ><lucide-icon name="triangle-alert" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Con alertas</small><strong>{{ openAlertCount() }}</strong
+            ><em>Requieren seguimiento</em></span
+          >
+        </article>
+      </section>
+      <section class="directory-card operational-table">
+        <header class="card-heading">
+          <div>
+            <h2>Directorio operativo</h2>
+            <p>Solicitudes y distribuidoras activas en un solo ciclo.</p>
+          </div>
+          <label class="search"
+            ><lucide-icon name="search" [size]="18" aria-hidden="true" /><span class="sr-only"
+              >Buscar distribuidora o folio</span
+            ><input
+              type="search"
+              placeholder="Buscar distribuidora o folio…"
+              [value]="query()"
+              (input)="setQuery($event)"
+          /></label>
+        </header>
+        <div class="filters" aria-label="Filtrar directorio">
+          <button [class.active]="filter() === 'all'" (click)="selectFilter('all')">
+            Todas <span>{{ rows().length }}</span></button
+          ><button [class.active]="filter() === 'active'" (click)="selectFilter('active')">
+            Activas <span>{{ lines().length }}</span></button
+          ><button
+            [class.active]="filter() === 'applications'"
+            (click)="selectFilter('applications')"
+          >
+            Solicitudes <span>{{ applications().length }}</span>
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Folio / Clave</th>
+                <th>Distribuidora / Solicitante</th>
+                <th>Estado</th>
+                <th>Línea disponible</th>
+                <th>Seguimiento</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of filteredRows(); track row.kind + row.id) {
+                <tr
+                  role="link"
+                  tabindex="0"
+                  [attr.aria-label]="'Abrir ' + row.name"
+                  (click)="openRow(row)"
+                  (keydown.enter)="openRow(row)"
+                  (keydown.space)="$event.preventDefault(); openRow(row)"
+                >
+                  <td>
+                    <span class="row-select"
+                      ><span class="avatar" [class.application]="row.kind === 'application'">{{
+                        row.kind === 'line' ? 'D' : 'S'
+                      }}</span
+                      >{{ row.key }}</span
+                    >
+                  </td>
+                  <td>
+                    <strong>{{ row.name }}</strong
+                    ><small>{{ row.owner }}</small>
+                  </td>
+                  <td>
+                    <span class="status" [class.status--active]="row.kind === 'line'">{{
+                      row.status
+                    }}</span>
+                  </td>
+                  <td>
+                    @if (row.available !== null) {
+                      <strong>{{ money(row.available) }}</strong
+                      ><small>de {{ money(row.total) }}</small>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>{{ row.pending }}</td>
+                  <td>
+                    <span class="table-action" aria-hidden="true"
+                      ><lucide-icon name="chevron-right" [size]="18"
+                    /></span>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="6" class="empty-row">
+                    <app-empty-state
+                      [compact]="true"
+                      [variant]="2"
+                      title="Sin resultados"
+                      message="No hay registros que coincidan con la búsqueda o filtro actual."
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    } @else if (view() === 'pendientes') {
+      <section class="kpi-grid kpi-grid--compact" aria-label="Resumen de pendientes">
+        <article class="kpi kpi--orange">
+          <span class="kpi__icon"
+            ><lucide-icon name="clipboard-check" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Solicitudes</small><strong>{{ pendingApplicationCount() }}</strong
+            ><em>Revisión o evaluación</em></span
+          >
+        </article>
+        <article class="kpi kpi--blue">
+          <span class="kpi__icon"
+            ><lucide-icon name="circle-arrow-up" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Crédito</small><strong>{{ pendingCreditCount() }}</strong
+            ><em>Preautorizaciones</em></span
+          >
+        </article>
+        <article class="kpi kpi--green">
+          <span class="kpi__icon"
+            ><lucide-icon name="git-merge" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Pagos</small><strong>{{ pendingPaymentCount() }}</strong
+            ><em>Conciliaciones</em></span
+          >
+        </article>
+        <article class="kpi kpi--red">
+          <span class="kpi__icon"><lucide-icon name="clock" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Total</small><strong>{{ pendingCount() }}</strong
+            ><em>Acciones visibles</em></span
+          >
+        </article>
+      </section>
+      <section class="feed operational-feed">
+        <header>
+          <div>
+            <h2>Bandeja de trabajo</h2>
+            <p>Sólo se muestran asuntos que esperan una acción del Coordinador.</p>
+          </div>
+        </header>
+        <div class="filters">
+          <button [class.active]="feedFilter() === 'all'" (click)="feedFilter.set('all')">
+            Todos</button
+          ><button
+            [class.active]="feedFilter() === 'applications'"
+            (click)="feedFilter.set('applications')"
+          >
+            Solicitudes</button
+          ><button [class.active]="feedFilter() === 'credit'" (click)="feedFilter.set('credit')">
+            Crédito</button
+          ><button
+            [class.active]="feedFilter() === 'payments'"
+            (click)="feedFilter.set('payments')"
+          >
+            Pagos
+          </button>
+        </div>
+        @for (item of visiblePendingItems(); track item.id) {
+          <a class="feed-row feed-row--workspace" [routerLink]="item.route"
+            ><span class="feed-icon" [attr.data-tone]="item.tone"
+              ><lucide-icon [name]="item.icon" [size]="20" aria-hidden="true" /></span
+            ><span
+              ><strong>{{ item.title }}</strong
+              ><small>{{ item.subtitle }}</small></span
+            ><span class="feed-category">{{
+              item.category === 'applications'
+                ? 'Solicitudes'
+                : item.category === 'credit'
+                  ? 'Crédito'
+                  : 'Pagos'
+            }}</span
+            ><em>{{ item.status }}</em
+            ><time>{{ item.meta }}</time
+            ><lucide-icon name="chevron-right" [size]="17" aria-hidden="true"
+          /></a>
+        } @empty {
+          <app-empty-state
+            title="Sin pendientes en este filtro"
+            message="No hay casos que esperen una acción tuya en las fuentes disponibles."
+          />
+        }
+      </section>
+    } @else {
+      <section class="kpi-grid kpi-grid--compact" aria-label="Resumen de alertas">
+        <article class="kpi kpi--red">
+          <span class="kpi__icon"
+            ><lucide-icon name="triangle-alert" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Abiertas</small><strong>{{ openAlertCount() }}</strong
+            ><em>En seguimiento</em></span
+          >
+        </article>
+        <article class="kpi kpi--orange">
+          <span class="kpi__icon"
+            ><lucide-icon name="shield-alert" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Críticas</small><strong>{{ criticalAlertCount() }}</strong
+            ><em>Tres incumplimientos o más</em></span
+          >
+        </article>
+        <article class="kpi kpi--blue">
+          <span class="kpi__icon"
+            ><lucide-icon name="receipt-text" [size]="27" aria-hidden="true" /></span
+          ><span
+            ><small>Seguimiento</small><strong>{{ followUpAlertCount() }}</strong
+            ><em>Relaciones y crédito</em></span
+          >
+        </article>
+      </section>
+      <section class="feed operational-feed">
+        <header>
+          <div>
+            <h2>Supervisión de alertas</h2>
+            <p>
+              Situaciones que debes conocer o vigilar, aunque todavía no requieran autorización.
+            </p>
+          </div>
+          <a routerLink="/riesgo">Abrir riesgo</a>
+        </header>
+        @for (item of alertItems(); track item.id) {
+          <a class="feed-row feed-row--workspace" [routerLink]="item.route"
+            ><span class="feed-icon" [attr.data-tone]="item.tone"
+              ><lucide-icon [name]="item.icon" [size]="20" aria-hidden="true" /></span
+            ><span
+              ><strong>{{ item.title }}</strong
+              ><small>{{ item.subtitle }}</small></span
+            ><span class="feed-category">Riesgo</span><em>{{ item.status }}</em
+            ><time>{{ item.meta }}</time
+            ><lucide-icon name="chevron-right" [size]="17" aria-hidden="true"
+          /></a>
+        } @empty {
+          <app-empty-state
+            [variant]="2"
+            title="Sin alertas abiertas"
+            message="No hay alertas de riesgo ni relaciones con saldo dentro de tu alcance."
+            actionRoute="/riesgo"
+            actionLabel="Consultar historial"
+          />
+        }
+      </section>
+    }
+  </section>
+}

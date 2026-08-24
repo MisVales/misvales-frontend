@@ -5,12 +5,16 @@ import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/api/api-error';
 import { SecurityEventRes, SecurityService } from '../../../security/data-access/security.service';
-import { securityEventLabel, securityOutcomeLabel } from '../../../security/utils/security-event-labels';
+import {
+  securityEventLabel,
+  securityOutcomeLabel,
+} from '../../../security/utils/security-event-labels';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-audit-logs',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule, DatePipe],
+  imports: [CommonModule, FormsModule, LucideAngularModule, DatePipe, RefactorSelectComponent],
   templateUrl: './audit-logs.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -35,10 +39,12 @@ export class AuditLogs implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const response = await firstValueFrom(this.securityService.getSecurityEvents({
-        page,
-        event_type: this.eventTypeFilter() || undefined,
-      }));
+      const response = await firstValueFrom(
+        this.securityService.getSecurityEvents({
+          page,
+          event_type: this.eventTypeFilter() || undefined,
+        }),
+      );
       this.events.set(response.data);
       this.currentPage.set(response.current_page);
       this.lastPage.set(response.last_page);

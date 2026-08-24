@@ -2,8 +2,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
-import { AlertService } from '../../../../shared/services/alert.service';
-import { ConfirmationService } from '../../../../shared/services/confirmation.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
 
 @Component({

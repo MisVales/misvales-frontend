@@ -1,0 +1,109 @@
+:host {
+  --v-green: #08783f;
+  --v-green-2: #11a05a;
+  --v-green-soft: #eaf7ef;
+  --v-ink: #172033;
+  --v-muted: #687386;
+  --v-line: #dfe5e8;
+  --v-surface: #fff;
+  --v-canvas: #f6f8f7;
+  --v-orange: #f08a19;
+  --v-blue: #2374db;
+  --v-red: #e53935;
+  --v-purple: #7156c8;
+  color: var(--v-ink);
+  font-family:
+    Inter,
+    Segoe UI,
+    Arial,
+    sans-serif;
+}
+* {
+  box-sizing: border-box;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+.v-card {
+  background: var(--v-surface);
+  border: 1px solid var(--v-line);
+  border-radius: 14px;
+  box-shadow: 0 5px 18px rgb(31 55 45 / 6%);
+}
+.v-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 750;
+}
+.v-muted {
+  color: var(--v-muted);
+}
+.v-row {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+}
+.v-grid {
+  display: grid;
+  gap: 12px;
+}
+.v-control {
+  background: #fff;
+  border: 1px solid #d6dde2;
+  border-radius: 9px;
+  color: var(--v-ink);
+  min-height: 40px;
+  padding: 9px 12px;
+  width: 100%;
+}
+.v-control:focus-visible,
+button:focus-visible {
+  outline: 3px solid rgb(35 116 219 / 24%);
+  outline-offset: 2px;
+}
+.v-button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  display: inline-flex;
+  font-weight: 700;
+  gap: 8px;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 16px;
+}
+.v-button.primary {
+  background: var(--v-green);
+  color: #fff;
+}
+.v-button.secondary,
+.v-button.outline {
+  background: #fff;
+  border-color: var(--v-green);
+  color: var(--v-green);
+}
+.v-button.danger {
+  background: #fff3f3;
+  border-color: #ffc6c6;
+  color: var(--v-red);
+}
+.v-button.ghost {
+  background: transparent;
+  color: var(--v-ink);
+}
+.v-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

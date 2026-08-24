@@ -6,17 +6,22 @@ import { SessionStore } from '../../../../core/session/session.store';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { CrearSolicitudPageComponent } from './crear-solicitud-page.component';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
 
 describe('CrearSolicitudPageComponent catalogs', () => {
   const organizationApi = {
     getBranches: vi.fn(),
+    getBranch: vi.fn(),
     getBranchAssignments: vi.fn(),
   };
   const store = { guardandoSeccion: () => false, error: () => null, crearSolicitud: vi.fn() };
 
   beforeEach(() => {
     vi.resetAllMocks();
+    organizationApi.getBranch.mockReturnValue(of({
+      id: 'branch-a', code: 'MAT', name: 'Sucursal Matamoros', address: null,
+      is_headquarters: false, status: 'ACTIVE', lock_version: 1,
+    }));
     TestBed.configureTestingModule({
       providers: [
         { provide: OrganizationApiService, useValue: organizationApi },
@@ -68,6 +73,7 @@ describe('CrearSolicitudPageComponent catalogs', () => {
     await component.ngOnInit();
 
     expect(organizationApi.getBranches).not.toHaveBeenCalled();
+    expect(organizationApi.getBranch).not.toHaveBeenCalled();
     expect(component.crearForm.getRawValue()).toEqual({
       branch_id: 'branch-a',
       coordinator_id: 'coordinator-a',

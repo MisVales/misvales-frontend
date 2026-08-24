@@ -1,0 +1,72 @@
+<section class="category-history" aria-labelledby="category-history-title">
+  <header class="category-history__heading">
+    <div>
+      <p>Categoría comercial</p>
+      <h2 id="category-history-title">Historial de categorías</h2>
+      <span>Cambios aplicados a comisión, vigencia y clasificación.</span>
+    </div>
+    @if (!cargando && !error) {
+      <strong>{{ historial.length }} {{ historial.length === 1 ? 'cambio' : 'cambios' }}</strong>
+    }
+  </header>
+
+  @if (cargando) {
+    <div class="history-loading" role="status" aria-live="polite">
+      <lucide-icon name="loader-2" [size]="25" aria-hidden="true" />
+      <div>
+        <strong>Cargando historial</strong><span>Consultando los cambios registrados…</span>
+      </div>
+    </div>
+  } @else if (error) {
+    <div class="history-error" role="alert">
+      <lucide-icon name="triangle-alert" [size]="24" aria-hidden="true" />
+      <div>
+        <strong>No se pudo cargar el historial</strong><span>{{ error }}</span>
+      </div>
+      <button type="button" (click)="cargarHistorial()">Reintentar</button>
+    </div>
+  } @else if (historial.length === 0) {
+    <app-empty-state
+      [variant]="2"
+      title="Sin cambios de categoría"
+      message="La categoría actual sigue vigente y todavía no existen modificaciones registradas."
+    />
+  } @else {
+    <div class="history-table-scroll">
+      <table>
+        <thead>
+          <tr>
+            <th>Categoría</th>
+            <th>Comisión</th>
+            <th>Vigencia</th>
+            <th>Aplicó</th>
+            <th>Motivo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of historial; track item.id) {
+            <tr>
+              <td>
+                <span class="category-badge">{{ item.nombre }}</span>
+              </td>
+              <td class="number">{{ +item.porcentajeGanancia * 100 | number: '1.0-2' }}%</td>
+              <td>
+                {{ item.inicioVigencia | date: 'dd MMM yyyy' }}
+                <small>{{
+                  item.finVigencia ? (item.finVigencia | date: 'dd MMM yyyy') : 'Actual'
+                }}</small>
+              </td>
+              <td>
+                <span class="user-cell">
+                  <lucide-icon name="user-round" [size]="16" aria-hidden="true" />
+                  {{ item.usuarioAsignoId || 'Sistema' }}
+                </span>
+              </td>
+              <td class="reason" [title]="item.motivoAsignacion">{{ item.motivoAsignacion }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

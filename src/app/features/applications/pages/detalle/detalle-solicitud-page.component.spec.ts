@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DetalleSolicitudPageComponent } from './detalle-solicitud-page.component';
 

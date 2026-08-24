@@ -20,6 +20,8 @@ export interface Branch {
   code: string;
   name: string;
   address: string | null;
+  lat?: number | null;
+  lng?: number | null;
   is_headquarters: boolean;
   status: 'ACTIVE' | 'INACTIVE';
   has_branch_manager?: boolean;

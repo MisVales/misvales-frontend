@@ -1,0 +1,64 @@
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ProductosStore } from '../../estado/productos.store';
+import { RouterModule } from '@angular/router';
+import { ProductosService } from '../../data-access/productos.service';
+import { SessionStore } from '../../../../core/session/session.store';
+import { firstValueFrom } from 'rxjs';
+import { apiErrorMessage } from '../../../../core/api/api-error';
+import { ReasonActionDialogComponent } from '../../../../shared/dialogs/reason-action-dialog/reason-action-dialog.component';
+
+@Component({
+  selector: 'app-productos-lista',
+  imports: [CommonModule, RouterModule, ReasonActionDialogComponent],
+  templateUrl: './productos-lista.component.html',
+  styleUrls: ['./productos-lista.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class ProductosListaComponent implements OnInit {
+  protected readonly store = inject(ProductosStore);
+  private readonly api = inject(ProductosService);
+  protected readonly session = inject(SessionStore);
+  readonly pendingPublication = signal<{ versionId: string; lockVersion: number } | null>(null);
+  readonly publicationReason = signal('');
+  readonly actionError = signal('');
+  readonly actionLoading = signal(false);
+
+  ngOnInit(): void {
+    this.store.listar();
+  }
+
+  canManageCatalogs(): boolean {
+    const permissions = this.session.permissions();
+    return permissions.includes('catalogs.manage') || permissions.includes('all');
+  }
+
+  isGeneralManager(): boolean {
+    return this.session.roles().includes('general_manager');
+  }
+
+  protected estadoProducto(estado: 'ACTIVE' | 'INACTIVE'): string {
+    return estado === 'ACTIVE' ? 'Disponible' : 'Desactivado';
+  }
+
+  protected estadoEdicion(estado: string): string {
+    const labels: Record<string, string> = { DRAFT: 'Borrador', PUBLISHED: 'Publicado', INACTIVE: 'Archivado' };
+    return labels[estado] ?? estado;
+  }
+
+  requestPublication(versionId: string, lockVersion: number): void {
+    this.publicationReason.set(''); this.actionError.set('');
+    this.pendingPublication.set({ versionId, lockVersion });
+  }
+  closePublication(): void { this.pendingPublication.set(null); }
+  async confirmPublication(): Promise<void> {
+    const pending = this.pendingPublication(); const reason = this.publicationReason().trim();
+    if (!pending || !reason || this.actionLoading()) return;
+    this.actionLoading.set(true); this.actionError.set('');
+    try {
+      await firstValueFrom(this.api.publicarVersion(pending.versionId, pending.lockVersion, reason));
+      this.closePublication(); await this.store.listar();
+    } catch (error: unknown) { this.actionError.set(apiErrorMessage(error, 'No fue posible publicar el producto.')); }
+    finally { this.actionLoading.set(false); }
+  }
+}

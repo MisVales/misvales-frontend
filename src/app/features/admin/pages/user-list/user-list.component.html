@@ -1,183 +1,282 @@
 <div class="max-w-6xl mx-auto space-y-6">
-  <app-page-header
+  <verification-page-context-header
     eyebrow="Acceso y seguridad"
     title="Usuarios"
-    description="Administra identidades y estados de acceso."
+    subtitle="Administra identidades y estados de acceso."
   >
     @if (canInviteUsers()) {
-    <button pageHeaderActions class="bg-[#386641] hover:bg-[#6A994E] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2" (click)="showInviteModal.set(true)">
-      <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
-      Invitar usuario
-    </button>
+      <button
+        class="bg-[#386641] hover:bg-[#6A994E] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+        (click)="showInviteModal.set(true)"
+      >
+        <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
+        Invitar usuario
+      </button>
     }
-  </app-page-header>
+  </verification-page-context-header>
 
   @if (pageError()) {
-    <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{{ pageError() }}</div>
+    <verification-info-banner variant="error" [message]="pageError()" />
   }
   @if (pageMessage()) {
-    <div class="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-700" role="status">{{ pageMessage() }}</div>
+    <verification-info-banner variant="success" [message]="pageMessage()" />
   }
 
   <div class="flex flex-wrap gap-3 mb-6" aria-label="Filtros del directorio">
-    <input type="search" [ngModel]="filterSearch()" (ngModelChange)="filterSearch.set($event); onFilterChange(true)" aria-label="Buscar usuarios" placeholder="Buscar por nombre o correo" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1">
-    
-    <select aria-label="Filtrar por estado" [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-44">
-      <option value="">Todos los estados</option>
-      <option value="ACTIVE">Activo</option>
-      <option value="PENDING_ACTIVATION">Pendiente Activación</option>
-      <option value="DISABLED">Deshabilitado</option>
-    </select>
-    
+    <refactor-input
+      class="flex-1"
+      type="search"
+      size="compact"
+      leadingIcon="search"
+      ariaLabel="Buscar usuarios"
+      placeholder="Buscar por nombre o correo"
+      [clearable]="true"
+      [ngModel]="filterSearch()"
+      (ngModelChange)="filterSearch.set($event); onFilterChange(true)"
+    />
+
+    <refactor-select
+      class="flex-1 min-w-44"
+      ariaLabel="Filtrar por estado"
+      placeholder="Todos los estados"
+      size="compact"
+      leadingIcon="list-filter"
+      [options]="statusFilterOptions"
+      [ngModel]="filterStatus()"
+      (ngModelChange)="filterStatus.set($any($event)); onFilterChange()"
+    />
+
     @if (canViewRoles()) {
-    <select aria-label="Filtrar por rol" [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-44">
-      <option value="">Todos los roles</option>
-      @for (role of availableRoles(); track role.id) {
-        <option [value]="role.id">{{ role.name }}</option>
-      }
-    </select>
+      <refactor-select
+        class="flex-1 min-w-44"
+        ariaLabel="Filtrar por rol"
+        placeholder="Todos los roles"
+        size="compact"
+        leadingIcon="users"
+        [options]="roleFilterOptions()"
+        [ngModel]="filterRole()"
+        (ngModelChange)="filterRole.set($event ?? ''); onFilterChange()"
+      />
     }
 
     @if (availableBranches().length) {
-    <select aria-label="Filtrar por sucursal" [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-44">
-      <option value="">Todas las sucursales</option>
-      @for (branch of availableBranches(); track branch.id) {
-        <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
-      }
-    </select>
+      <refactor-select
+        class="flex-1 min-w-44"
+        ariaLabel="Filtrar por sucursal"
+        placeholder="Todas las sucursales"
+        size="compact"
+        leadingIcon="building-2"
+        [options]="branchFilterOptions()"
+        [ngModel]="filterBranch()"
+        (ngModelChange)="filterBranch.set($event ?? ''); onFilterChange()"
+      />
     }
   </div>
 
   @if (loading()) {
-    <app-view-state kind="loading" title="Cargando usuarios" message="Consultando el directorio y sus alcances vigentes." [compact]="true"></app-view-state>
+    <app-view-state
+      kind="loading"
+      title="Cargando usuarios"
+      message="Consultando el directorio y sus alcances vigentes."
+      [compact]="true"
+    ></app-view-state>
   } @else if (users().length === 0) {
-    <app-view-state kind="empty" title="No hay usuarios para mostrar" message="Ajusta los filtros o invita a una persona si tu rol lo permite." [compact]="true"></app-view-state>
+    <verification-empty-state
+      title="No hay usuarios para mostrar"
+      description="Ajusta los filtros o invita a una persona si tu rol lo permite."
+    />
   } @else {
-  <div class="overflow-x-auto bg-white rounded-xl border border-gray-200" tabindex="0" aria-label="Directorio de usuarios; desplázate horizontalmente si es necesario">
-    <table class="w-full min-w-[900px] table-fixed text-sm text-left text-gray-500">
-      <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
-        <tr>
-          <th scope="col" class="w-[21%] px-4 py-4">Nombre</th>
-          <th scope="col" class="w-[19%] px-4 py-4">Email</th>
-          <th scope="col" class="w-[15%] px-4 py-4">Rol</th>
-          <th scope="col" class="w-[15%] px-4 py-4">Sucursal</th>
-          <th scope="col" class="w-[20%] px-4 py-4">Estado</th>
-          <th scope="col" class="w-[10%] px-4 py-4">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (user of users(); track user.id) {
-          <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-            <td class="px-4 py-4 font-medium text-gray-900">{{ user.name }}</td>
-            <td class="break-words px-4 py-4">{{ user.email }}</td>
-            <td class="px-4 py-4">
-              @if (user.role_scopes?.length) {
-                @for (scope of user.role_scopes; track $index) {
-                  <app-status-badge tone="neutral">{{ scope.role.name }}</app-status-badge>
-                }
-              } @else {
-                <span class="text-gray-400 italic text-xs">Sin roles</span>
-              }
-            </td>
-            <td class="px-4 py-4">
-              @if (user.role_scopes?.length) {
-                @for (scope of user.role_scopes; track $index) {
-                  <span class="block text-xs text-gray-600">{{ scope.branch?.name || 'Alcance global' }}</span>
-                }
-              } @else {
-                <span class="text-xs italic text-gray-400">Sin sucursal</span>
-              }
-            </td>
-            <td class="px-4 py-4">
-              <app-status-badge [tone]="stateTone(user.state)">{{ stateLabel(user.state) }}</app-status-badge>
-            </td>
-            <td class="px-4 py-4">
-              <div class="flex flex-col items-start gap-2">
-              <a [routerLink]="['/usuarios', user.id]" class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1">
-                <lucide-icon name="eye" class="h-4 w-4"></lucide-icon>
-                Ver
-              </a>
-              </div>
-            </td>
+    <div
+      class="overflow-x-auto bg-white rounded-xl border border-gray-200"
+      tabindex="0"
+      aria-label="Directorio de usuarios; desplázate horizontalmente si es necesario"
+    >
+      <table class="w-full min-w-[900px] table-fixed text-sm text-left text-gray-500">
+        <thead class="text-xs text-gray-700 uppercase bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th scope="col" class="w-[21%] px-4 py-4">Nombre</th>
+            <th scope="col" class="w-[19%] px-4 py-4">Email</th>
+            <th scope="col" class="w-[15%] px-4 py-4">Rol</th>
+            <th scope="col" class="w-[15%] px-4 py-4">Sucursal</th>
+            <th scope="col" class="w-[20%] px-4 py-4">Estado</th>
+            <th scope="col" class="w-[10%] px-4 py-4">Acciones</th>
           </tr>
-        }
-      </tbody>
-    </table>
-  </div>
-}
+        </thead>
+        <tbody>
+          @for (user of users(); track user.id) {
+            <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
+              <td class="px-4 py-4 font-medium text-gray-900">{{ user.name }}</td>
+              <td class="break-words px-4 py-4">{{ user.email }}</td>
+              <td class="px-4 py-4">
+                @if (user.role_scopes?.length) {
+                  @for (scope of user.role_scopes; track $index) {
+                    <refactor-status-badge [label]="scope.role.name" tone="gray" />
+                  }
+                } @else {
+                  <span class="text-gray-400 italic text-xs">Sin roles</span>
+                }
+              </td>
+              <td class="px-4 py-4">
+                @if (user.role_scopes?.length) {
+                  @for (scope of user.role_scopes; track $index) {
+                    <span class="block text-xs text-gray-600">{{
+                      scope.branch?.name || 'Alcance global'
+                    }}</span>
+                  }
+                } @else {
+                  <span class="text-xs italic text-gray-400">Sin sucursal</span>
+                }
+              </td>
+              <td class="px-4 py-4">
+                <refactor-status-badge
+                  [label]="stateLabel(user.state)"
+                  [tone]="stateTone(user.state)"
+                />
+              </td>
+              <td class="px-4 py-4">
+                <div class="flex flex-col items-start gap-2">
+                  <a
+                    [routerLink]="['/usuarios', user.id]"
+                    class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1"
+                  >
+                    <lucide-icon name="eye" class="h-4 w-4"></lucide-icon>
+                    Ver
+                  </a>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </div>
 
 @if (showInviteModal()) {
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="invite-user-title">
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 backdrop-blur-sm"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="invite-user-title"
+  >
     <div class="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4">
-      <h3 id="invite-user-title" class="text-xl font-bold text-gray-900 mb-6">Invitar nuevo usuario</h3>
+      <h3 id="invite-user-title" class="text-xl font-bold text-gray-900 mb-6">
+        Invitar nuevo usuario
+      </h3>
 
       @if (inviteError()) {
-        <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700" role="alert">{{ inviteError() }}</div>
+        <verification-info-banner class="mb-4 block" variant="error" [message]="inviteError()" />
       }
-      
-      <div class="mb-4">
-        <label for="invite-name" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Nombre <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-        <input id="invite-name" type="text" [ngModel]="inviteName()" (ngModelChange)="updateInviteName($event)" (focus)="markInviteFieldAsTouched('name')" maxlength="255" autocomplete="name" placeholder="Juan Pérez"
-               [class.border-red-600]="inviteFieldError('name')" [attr.aria-invalid]="!!inviteFieldError('name')" aria-describedby="invite-name-error"
-               class="block w-full px-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
-        @if (inviteFieldError('name'); as error) { <p id="invite-name-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
-      </div>
-      
-      <div class="mb-4">
-        <label for="invite-email" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Correo electrónico <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-        <input id="invite-email" type="email" [ngModel]="inviteEmail()" (ngModelChange)="updateInviteEmail($event)" (focus)="markInviteFieldAsTouched('email')" autocomplete="email" maxlength="255" placeholder="correo@ejemplo.com"
-               [class.border-red-600]="inviteFieldError('email')" [attr.aria-invalid]="!!inviteFieldError('email')" aria-describedby="invite-email-error"
-               class="block w-full px-3 py-3 border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
-        @if (inviteFieldError('email'); as error) { <p id="invite-email-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
-      </div>
-      
-      <div class="mb-6">
-        <label for="invite-role" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Rol a asignar <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-        <select id="invite-role" [ngModel]="inviteRoleId()" (ngModelChange)="onInviteRoleChange($event)" (focus)="markInviteFieldAsTouched('role')"
-                [class.border-red-600]="inviteFieldError('role')" [attr.aria-invalid]="!!inviteFieldError('role')" aria-describedby="invite-role-error"
-                class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
-          <option value="" disabled>Selecciona un rol...</option>
-          @for (role of assignableRoles(); track role.id) {
-            <option [value]="role.id">{{ role.name }}</option>
-          }
-        </select>
-        @if (inviteFieldError('role'); as error) { <p id="invite-role-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
-      </div>
+
+      <refactor-input
+        class="mb-4 block"
+        label="Nombre"
+        placeholder="Juan Pérez"
+        autocomplete="name"
+        [required]="true"
+        [maxLength]="255"
+        [invalid]="!!inviteFieldError('name')"
+        [errorMessage]="inviteFieldError('name') ?? ''"
+        [ngModel]="inviteName()"
+        (ngModelChange)="updateInviteName($event)"
+        (blurred)="markInviteFieldAsTouched('name')"
+      />
+
+      <refactor-input
+        class="mb-4 block"
+        label="Correo electrónico"
+        type="email"
+        placeholder="correo@ejemplo.com"
+        autocomplete="email"
+        [required]="true"
+        [maxLength]="255"
+        [invalid]="!!inviteFieldError('email')"
+        [errorMessage]="inviteFieldError('email') ?? ''"
+        [ngModel]="inviteEmail()"
+        (ngModelChange)="updateInviteEmail($event)"
+        (blurred)="markInviteFieldAsTouched('email')"
+      />
+
+      <refactor-select
+        class="mb-6 block"
+        label="Rol a asignar"
+        placeholder="Selecciona un rol..."
+        leadingIcon="shield-check"
+        [required]="true"
+        [options]="assignableRoleOptions()"
+        [invalid]="!!inviteFieldError('role')"
+        [errorMessage]="inviteFieldError('role') ?? ''"
+        [ngModel]="inviteRoleId()"
+        (ngModelChange)="onInviteRoleChange($event ?? '')"
+      />
 
       @if (inviteRequiresBranch()) {
         <div class="mb-6">
-          <label for="invite-branch" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">Sucursal <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-          
-          @if (selectedInviteRole()?.code === 'branch_manager' && isFetchingEligibleBranches()) {
+          @if (isBranchManagerActor() && fixedInviteBranch(); as branch) {
+            <label class="mb-1.5 block text-sm font-medium text-gray-700">Sucursal <span aria-hidden="true">*</span></label>
+            <div class="flex min-h-11 items-center gap-2 rounded-lg border border-gray-200 bg-gray-100 px-3 text-sm font-medium text-gray-700" aria-disabled="true">
+              <lucide-icon name="building-2" class="h-4 w-4 text-gray-500"></lucide-icon>
+              {{ branch.code }} · {{ branch.name }}
+            </div>
+          } @else if (selectedInviteRole()?.code === 'branch_manager' && isFetchingEligibleBranches()) {
             <div class="text-sm text-gray-500 py-2">Buscando sucursales elegibles...</div>
-          } @else if (selectedInviteRole()?.code === 'branch_manager' && currentInviteBranches().length === 0) {
-            <div class="text-sm font-medium text-red-600 py-2 bg-red-50 px-3 rounded border border-red-100">
+          } @else if (
+            selectedInviteRole()?.code === 'branch_manager' && currentInviteBranches().length === 0
+          ) {
+            <div
+              class="text-sm font-medium text-red-600 py-2 bg-red-50 px-3 rounded border border-red-100"
+            >
               No hay sucursales disponibles para asignar un gerente.
             </div>
           } @else {
-            <select id="invite-branch" [ngModel]="inviteBranchId()" (ngModelChange)="updateInviteBranch($event)" (focus)="markInviteFieldAsTouched('branch')"
-                    [class.border-red-600]="inviteFieldError('branch')" [attr.aria-invalid]="!!inviteFieldError('branch')" aria-describedby="invite-branch-error"
-                    class="block w-full px-3 py-3 bg-white border border-[#B08968]/40 rounded-lg text-gray-900 focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] sm:text-sm transition-colors">
-              <option value="" disabled>Selecciona una sucursal...</option>
-              @for (branch of currentInviteBranches(); track branch.id) {
-                <option [value]="branch.id">{{ branch.code }} · {{ branch.name }}</option>
-              }
-            </select>
+            <refactor-select
+              label="Sucursal"
+              placeholder="Selecciona una sucursal..."
+              leadingIcon="building-2"
+              [required]="true"
+              [options]="currentInviteBranchOptions()"
+              [invalid]="!!inviteFieldError('branch')"
+              [errorMessage]="inviteFieldError('branch') ?? ''"
+              [ngModel]="inviteBranchId()"
+              (ngModelChange)="updateInviteBranch($event ?? '')"
+            />
           }
-          @if (inviteFieldError('branch'); as error) { <p id="invite-branch-error" class="mt-1 text-xs text-red-600">{{ error }}</p> }
         </div>
       }
 
       <div class="flex justify-end gap-3">
-        <button type="button" class="bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors" (click)="closeInviteModal()">Cancelar</button>
-        <button class="bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/70 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2" 
-                [disabled]="!inviteIsValid() || isActionLoading() === 'invite'"
-                (click)="inviteUser()">
+        <button
+          type="button"
+          class="bg-transparent border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors"
+          (click)="closeInviteModal()"
+        >
+          Cancelar
+        </button>
+        <button
+          class="bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/70 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+          [disabled]="!inviteIsValid() || isActionLoading() === 'invite'"
+          (click)="inviteUser()"
+        >
           @if (isActionLoading() === 'invite') {
-            <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg
+              class="animate-spin h-4 w-4 text-white"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
             </svg>
             Creando...
           } @else {
@@ -191,25 +290,44 @@
 
 <!-- Modal Bloquear Usuario -->
 @if (userToBlock()) {
-  <div class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="block-user-title">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 border border-gray-100 transform transition-all">
+  <div
+    class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="block-user-title"
+  >
+    <div
+      class="bg-white rounded-2xl max-w-sm w-full p-6 border border-gray-100 transform transition-all"
+    >
       <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
         <svg class="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          />
         </svg>
       </div>
       <h3 id="block-user-title" class="text-lg font-bold text-gray-900 text-center mb-2">
-        ¿{{ userToBlock()?.state === 'BLOCKED' ? 'Desbloquear' : 'Bloquear' }} a {{ userToBlock()?.name }}?
+        ¿{{ userToBlock()?.state === 'BLOCKED' ? 'Desbloquear' : 'Bloquear' }} a
+        {{ userToBlock()?.name }}?
       </h3>
       <p class="text-sm text-gray-500 text-center mb-6">
         Al bloquear un usuario, perderá el acceso al sistema inmediatamente.
       </p>
-      
+
       <div class="flex gap-3">
-        <button (click)="closeBlockModal()" class="flex-1 px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-colors">
+        <button
+          (click)="closeBlockModal()"
+          class="flex-1 px-4 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium rounded-lg transition-colors"
+        >
           Cancelar
         </button>
-        <button (click)="confirmBlock()" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm">
+        <button
+          (click)="confirmBlock()"
+          class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+        >
           Confirmar
         </button>
       </div>

@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, DoCheck, ElementRef, Input, OnDestroy, Renderer2 } from '@angular/core';
+import { AfterViewInit, Directive, DoCheck, ElementRef, inject, Input, OnDestroy, Renderer2 } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
 
 /**
@@ -13,12 +13,9 @@ import { AbstractControl, FormGroup } from '@angular/forms';
 export class ApplicationFormErrorStateDirective implements AfterViewInit, DoCheck, OnDestroy {
   @Input({ required: true }) appApplicationFormErrorState!: FormGroup;
 
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly renderer = inject(Renderer2);
   private observer?: MutationObserver;
-
-  constructor(
-    private readonly host: ElementRef<HTMLElement>,
-    private readonly renderer: Renderer2,
-  ) {}
 
   ngAfterViewInit(): void {
     this.observer = new MutationObserver(() => this.updateControlStates());

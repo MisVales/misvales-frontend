@@ -4,28 +4,45 @@
   </div>
 
   <div class="flex flex-wrap gap-4 mb-6">
-    <input type="text" [ngModel]="filterSearch()" (ngModelChange)="filterSearch.set($event); onFilterChange()" placeholder="Buscar por nombre..."
-           class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-[200px]">
-    
-    <select [ngModel]="filterBranch()" (ngModelChange)="filterBranch.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+    <input
+      type="text"
+      [ngModel]="filterSearch()"
+      (ngModelChange)="filterSearch.set($event); onFilterChange()"
+      placeholder="Buscar por nombre..."
+      class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5 flex-1 min-w-[200px]"
+    />
+
+    <refactor-select
+      [ngModel]="filterBranch()"
+      (ngModelChange)="filterBranch.set($event); onFilterChange()"
+      class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5"
+    >
       <option value="">Todas las Sucursales</option>
       <option value="b1">Sucursal Norte</option>
       <option value="b2">Sucursal Centro</option>
-    </select>
+    </refactor-select>
 
-    <select [ngModel]="filterRole()" (ngModelChange)="filterRole.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+    <refactor-select
+      [ngModel]="filterRole()"
+      (ngModelChange)="filterRole.set($event); onFilterChange()"
+      class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5"
+    >
       <option value="">Todos los Roles</option>
       <option value="admin">Administrador</option>
       <option value="gerente">Gerente</option>
       <option value="cajero">Cajero</option>
-    </select>
+    </refactor-select>
 
-    <select [ngModel]="filterStatus()" (ngModelChange)="filterStatus.set($event); onFilterChange()" class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5">
+    <refactor-select
+      [ngModel]="filterStatus()"
+      (ngModelChange)="filterStatus.set($event); onFilterChange()"
+      class="bg-white border border-[#B08968]/40 text-gray-700 text-sm rounded-lg focus:ring-[#386641] focus:border-[#386641] block p-2.5"
+    >
       <option value="">Todos los Estados</option>
       <option value="active">Activo</option>
       <option value="pending">Pendiente</option>
       <option value="revoked">Revocado</option>
-    </select>
+    </refactor-select>
   </div>
 
   <div class="overflow-x-auto bg-white shadow-sm rounded-xl border border-gray-200">
@@ -44,33 +61,79 @@
         @if (isLoading()) {
           <tr>
             <td colspan="6" class="px-6 py-8 text-center">
-              <svg class="animate-spin h-6 w-6 text-[#386641] mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              <svg
+                class="animate-spin h-6 w-6 text-[#386641] mx-auto"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
               </svg>
             </td>
           </tr>
         } @else {
           @for (user of staff(); track user.assignment_id) {
             <tr class="bg-white border-b hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{{ user.user?.name || 'Desconocido' }}</td>
+              <td class="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                {{ user.user?.name || 'Desconocido' }}
+              </td>
               <td class="px-6 py-4">{{ user.user?.email || 'N/A' }}</td>
-              <td class="px-6 py-4">{{ user.scope === 'GLOBAL' ? 'Global' : 'Sucursal asignada' }}</td>
               <td class="px-6 py-4">
-                <span class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full">{{ user.role?.name || 'Sin Rol' }}</span>
+                {{ user.scope === 'GLOBAL' ? 'Global' : 'Sucursal asignada' }}
               </td>
               <td class="px-6 py-4">
-                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                      [class.bg-green-100]="user.assignment_status === 'ACTIVE'" [class.text-green-800]="user.assignment_status === 'ACTIVE'"
-                      [class.bg-red-100]="user.assignment_status !== 'ACTIVE'" [class.text-red-800]="user.assignment_status !== 'ACTIVE'">
+                <span
+                  class="bg-[#B08968]/10 text-[#B08968] text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                  >{{ user.role?.name || 'Sin Rol' }}</span
+                >
+              </td>
+              <td class="px-6 py-4">
+                <span
+                  class="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                  [class.bg-green-100]="user.assignment_status === 'ACTIVE'"
+                  [class.text-green-800]="user.assignment_status === 'ACTIVE'"
+                  [class.bg-red-100]="user.assignment_status !== 'ACTIVE'"
+                  [class.text-red-800]="user.assignment_status !== 'ACTIVE'"
+                >
                   {{ user.assignment_status | statusLabel }}
                 </span>
               </td>
               <td class="px-6 py-4 flex items-center gap-3">
-                <a [routerLink]="['/usuarios', user.user.id]" class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <a
+                  [routerLink]="['/usuarios', user.user.id]"
+                  class="text-gray-500 hover:text-[#386641] font-medium text-sm transition-colors flex items-center gap-1"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
                   </svg>
                   Ver
                 </a>
@@ -78,7 +141,9 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="6" class="px-6 py-8 text-center text-gray-500">No se encontró personal.</td>
+              <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                No se encontró personal.
+              </td>
             </tr>
           }
         }

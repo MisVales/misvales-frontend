@@ -3,10 +3,10 @@ import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { OrganizationFacade } from '../../state/organization.facade';
-import { AddressFormComponent, AddressResult } from '../../../../shared/components/address-form/address-form';
-import { InputErrorComponent } from '../../../../shared/ui/input-error/input-error.component';
-import { AlertComponent } from '../../../../shared/ui/alert/alert.component';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AddressFormComponent, AddressResult } from '../../../../shared/components/inputs/address-form/address-form';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
+import { AlertComponent } from '../../../../shared/components/alerts/inline-alert/alert.component';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
 
 @Component({
   selector: 'app-branch-form',

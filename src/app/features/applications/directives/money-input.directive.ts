@@ -1,4 +1,4 @@
-import { Directive, ElementRef, forwardRef, HostListener, Renderer2 } from '@angular/core';
+import { Directive, ElementRef, forwardRef, HostListener, inject, Renderer2 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 /**
@@ -16,13 +16,10 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
   }],
 })
 export class MoneyInputDirective implements ControlValueAccessor {
+  private readonly elementRef = inject<ElementRef<HTMLInputElement>>(ElementRef);
+  private readonly renderer = inject(Renderer2);
   private onChange: (value: string) => void = () => undefined;
   private onTouched: () => void = () => undefined;
-
-  constructor(
-    private readonly elementRef: ElementRef<HTMLInputElement>,
-    private readonly renderer: Renderer2,
-  ) {}
 
   writeValue(value: unknown): void {
     this.setDisplayedValue(formatMoneyValue(normalizeMoneyValue(value)));

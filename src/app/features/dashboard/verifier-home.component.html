@@ -1,0 +1,56 @@
+<main class="verifier-home" aria-labelledby="verifier-home-title">
+  <header class="home-header"><h1 id="verifier-home-title">Inicio</h1><p>Panel operativo del verificador.</p></header>
+
+  @if (loading()) {
+    <div class="kpi-grid" aria-busy="true" aria-label="Cargando indicadores">@for (item of [1,2,3,4]; track item) { <div class="skeleton"></div> }</div>
+    <div class="content-grid loading-panels" aria-hidden="true"><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div><div class="skeleton"></div></div>
+  } @else if (error()) {
+    <section class="error-state" role="alert"><lucide-icon name="triangle-alert" [size]="26"/><strong>No se pudo cargar Inicio</strong><p>{{ error() }}</p><button type="button" (click)="load()">Reintentar</button></section>
+  } @else {
+    <section class="kpi-grid" aria-label="Resumen de visitas">
+      <a class="kpi-card tone-blue" routerLink="/verificacion-distribuidoras/verificaciones/asignadas"><span class="kpi-icon"><lucide-icon name="clipboard-list" [size]="29"/></span><span class="kpi-copy"><small>Visitas asignadas</small><strong>{{ visits().length }}</strong><em>{{ assigned().length }} pendientes</em></span></a>
+      <a class="kpi-card tone-orange" routerLink="/verificacion-distribuidoras/verificaciones/asignadas"><span class="kpi-icon"><lucide-icon name="hourglass" [size]="29"/></span><span class="kpi-copy"><small>Pendientes de iniciar</small><strong>{{ assigned().length }}</strong><em>{{ pending().length }} por atender</em></span></a>
+      <a class="kpi-card tone-amber" routerLink="/verificacion-distribuidoras/verificaciones/asignadas"><span class="kpi-icon"><lucide-icon name="refresh-cw" [size]="29"/></span><span class="kpi-copy"><small>En proceso</small><strong>{{ inProgress().length }}</strong><em>{{ withDifferences() }} con diferencias</em></span></a>
+      <a class="kpi-card tone-green" routerLink="/verificacion-distribuidoras/verificaciones/asignadas"><span class="kpi-icon"><lucide-icon name="check" [size]="30"/></span><span class="kpi-copy"><small>Terminadas hoy</small><strong>{{ completedToday().length }}</strong><em>{{ completedFavorableToday() }} favorables · {{ completedUnfavorableToday() }} desfavorables</em></span></a>
+    </section>
+
+    <div class="content-grid">
+      <section class="panel priority-panel" aria-labelledby="priority-title">
+        <header class="panel-header"><span class="panel-icon tone-blue"><lucide-icon name="calendar-check" [size]="18"/></span><h2 id="priority-title">Próxima visita prioritaria</h2></header>
+        @if (nextVisit(); as visit) {
+          <div class="priority-body">
+            <dl class="visit-facts"><div><dt>Solicitud</dt><dd>{{ visit.application?.application_number || 'Sin folio' }}</dd></div><div><dt>Solicitante</dt><dd>{{ applicant(visit) }}</dd></div><div><dt>Sucursal</dt><dd>{{ branch(visit) }}</dd></div><div><dt>Coordinador</dt><dd>{{ coordinator(visit) }}</dd></div><div><dt>Fecha y hora</dt><dd>{{ visit.scheduled_for | date:'dd/MM/yyyy, h:mm a' }}</dd></div><div><dt>Estado</dt><dd><span class="status assigned">{{ statusLabel(visit.status) }}</span></dd></div></dl>
+            <div class="readiness"><p class="ready"><lucide-icon name="circle-check" [size]="18"/> Expediente disponible</p><p class="ready"><lucide-icon name="circle-check" [size]="18"/> Fecha confirmada</p><p [class.ready]="visit.media_files.length > 0"><lucide-icon [name]="visit.media_files.length ? 'circle-check' : 'circle'" [size]="18"/> Evidencias {{ visit.media_files.length ? 'cargadas' : 'pendientes' }}</p><p [class.ready]="visit.status === 'COMPLETED'"><lucide-icon [name]="visit.status === 'COMPLETED' ? 'circle-check' : 'circle'" [size]="18"/> Resultado pendiente</p></div>
+          </div>
+          <div class="priority-actions"><a class="button secondary" routerLink="/verificacion-distribuidoras/verificaciones/asignadas">Ver expediente</a><a class="button primary" [routerLink]="visitRoute(visit)"><lucide-icon name="play" [size]="16"/> {{ visit.status === 'IN_PROGRESS' ? 'Continuar visita' : 'Ir a visitas' }}</a></div>
+        } @else {
+          <app-empty-state title="Sin próxima visita" message="No tienes una visita próxima programada." [variant]="1" [compact]="true" />
+        }
+      </section>
+
+      <section class="panel visits-panel" aria-labelledby="visits-title">
+        <header class="panel-header"><span class="panel-icon tone-blue"><lucide-icon name="users" [size]="18"/></span><h2 id="visits-title">Mis visitas</h2></header>
+        @if (visibleVisits().length) {
+          <div class="table-wrap"><table><thead><tr><th>Solicitante</th><th>Sucursal</th><th>Estado</th><th>Acción</th></tr></thead><tbody>@for (visit of visibleVisits(); track visit.id) {<tr><td><strong>{{ applicant(visit) }}</strong><small>{{ visit.scheduled_for | date:'dd MMM, h:mm a' }}</small></td><td>{{ branch(visit) }}</td><td><span class="status" [class.progress]="visit.status === 'IN_PROGRESS'" [class.assigned]="visit.status === 'ASSIGNED'">{{ statusLabel(visit.status) }}</span></td><td><a class="table-action" [routerLink]="visitRoute(visit)"><lucide-icon name="play" [size]="13"/> {{ visit.status === 'IN_PROGRESS' ? 'Continuar' : 'Ver' }}</a></td></tr>}</tbody></table></div>
+          <a class="panel-link" routerLink="/verificacion-distribuidoras/verificaciones/asignadas">Ver todas las visitas <lucide-icon name="arrow-right" [size]="15"/></a>
+        } @else {
+          <app-empty-state title="Sin visitas próximas" message="Cuando tengas una visita programada aparecerá aquí." [variant]="2" [compact]="true" />
+        }
+      </section>
+
+      <section class="panel pending-panel" aria-labelledby="pending-title">
+        <header class="panel-header"><span class="panel-icon tone-orange"><lucide-icon name="clipboard-check" [size]="18"/></span><h2 id="pending-title">Pendientes de completar</h2></header>
+        @if (pending().length) { <div class="table-wrap"><table><thead><tr><th>Folio</th><th>Pendiente</th><th>Prioridad</th><th>Acción</th></tr></thead><tbody>@for (visit of pending(); track visit.id) {<tr><td><strong>{{ visit.application?.application_number || 'Sin folio' }}</strong></td><td>{{ pendingLabel(visit) }}</td><td><span class="priority" [class.high]="priorityLabel(visit) === 'Alta'">{{ priorityLabel(visit) }}</span></td><td><a class="table-action" [routerLink]="visitRoute(visit)">{{ visit.status === 'ASSIGNED' ? 'Abrir' : 'Continuar' }}</a></td></tr>}</tbody></table></div> } @else {
+          <app-empty-state title="Todo está al día" message="No hay pendientes por completar." [variant]="1" [compact]="true" />
+        }
+      </section>
+
+      <section class="panel activity-panel" aria-labelledby="activity-title">
+        <header class="panel-header"><span class="panel-icon tone-purple"><lucide-icon name="bell" [size]="18"/></span><h2 id="activity-title">Notificaciones y actividad reciente</h2></header>
+        @if (activities().length) { <ul class="activity-list">@for (activity of activities(); track activity.id) {<li><span class="activity-icon tone-{{ activity.tone }}"><lucide-icon [name]="activity.icon" [size]="16"/></span><p>{{ activity.text }}</p><time [attr.datetime]="activity.date">{{ relativeTime(activity.date) }}</time></li>}</ul> } @else {
+          <app-empty-state title="Sin actividad reciente" message="Las notificaciones y los cambios de tus visitas aparecerán aquí." [variant]="2" [compact]="true" />
+        }
+      </section>
+    </div>
+  }
+</main>

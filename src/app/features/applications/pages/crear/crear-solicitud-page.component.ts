@@ -8,14 +8,20 @@ import { OrganizationApiService } from '../../../organization/data-access/organi
 import { Branch, PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
 import { SessionStore } from '../../../../core/session/session.store';
 import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
-import { AlertService } from '../../../../shared/services/alert.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-crear-solicitud-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, ApplicationFormErrorStateDirective],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    ApplicationFormErrorStateDirective,
+    RefactorSelectComponent,
+  ],
   templateUrl: './crear-solicitud-page.component.html',
-  styleUrls: ['./crear-solicitud-page.component.css']
+  styleUrls: ['./crear-solicitud-page.component.css'],
 })
 export class CrearSolicitudPageComponent {
   private fb = inject(FormBuilder);
@@ -35,18 +41,20 @@ export class CrearSolicitudPageComponent {
   isBranchManager = computed(() => this.session.roles().includes('branch_manager'));
   isCoordinator = computed(() => this.session.roles().includes('coordinator'));
 
-  isFixedBranch = computed(() => !this.isGeneralManager() && (this.isBranchManager() || this.isCoordinator()));
+  isFixedBranch = computed(
+    () => !this.isGeneralManager() && (this.isBranchManager() || this.isCoordinator()),
+  );
   isFixedCoordinator = computed(() => this.isCoordinator());
 
   activeBranchName = computed(() => {
     const branchId = this.session.activeBranch();
-    const branch = this.branches().find(b => b.id === branchId);
+    const branch = this.branches().find((b) => b.id === branchId);
     return branch ? branch.name : 'Sucursal asignada a su sesión';
   });
 
   crearForm = this.fb.group({
     branch_id: ['', Validators.required],
-    coordinator_id: ['', Validators.required]
+    coordinator_id: ['', Validators.required],
   });
 
   async ngOnInit() {
@@ -80,6 +88,9 @@ export class CrearSolicitudPageComponent {
           return;
         }
 
+        const branch = await firstValueFrom(this.organizationApi.getBranch(branchId));
+        this.branches.set([branch]);
+
         await this.onBranchChange(branchId);
         return;
       }
@@ -101,9 +112,7 @@ export class CrearSolicitudPageComponent {
         await this.onBranchChange(branches.data[0].id);
       }
     } catch {
-      this.catalogError.set(
-        'No fue posible cargar las opciones autorizadas. Intenta nuevamente.',
-      );
+      this.catalogError.set('No fue posible cargar las opciones autorizadas. Intenta nuevamente.');
     } finally {
       this.isLoadingCatalogs.set(false);
     }
@@ -118,9 +127,7 @@ export class CrearSolicitudPageComponent {
     if (!branchId) return;
 
     try {
-      const assignments = await firstValueFrom(
-        this.organizationApi.getBranchAssignments(branchId),
-      );
+      const assignments = await firstValueFrom(this.organizationApi.getBranchAssignments(branchId));
       this.coordinators.set(
         assignments.data.filter(
           (assignment) =>
@@ -143,7 +150,7 @@ export class CrearSolicitudPageComponent {
     try {
       const id = await this.store.crearSolicitud({
         branch_id: this.crearForm.value.branch_id!,
-        coordinator_id: this.crearForm.value.coordinator_id!
+        coordinator_id: this.crearForm.value.coordinator_id!,
       });
       this.alerts.success('El expediente se creó correctamente.');
       await this.router.navigate(['/solicitudes-distribuidoras', id]);
