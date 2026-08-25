@@ -22,6 +22,15 @@ export class MeService {
           permissions: scope.permissions,
         }));
         const activeBranch = scopes.find((scope) => scope.branchId)?.branchId ?? null;
+        const isManager = roles.includes('general_manager') || roles.includes('branch_manager');
+        const isVpnHost =
+          typeof window !== 'undefined' &&
+          (window.location.hostname === 'vpn.safeacces.lat' ||
+            window.location.hostname.startsWith('vpn.'));
+        const vpn = Boolean(response.access_context?.vpn || isVpnHost);
+        const managerActions = Boolean(
+          response.capabilities?.manager_actions || (isManager && vpn),
+        );
 
         this.sessionStore.setSession(
           response.user,
@@ -29,8 +38,8 @@ export class MeService {
           response.effective_permissions,
           activeBranch,
           scopes,
-          response.access_context.vpn,
-          response.capabilities.manager_actions,
+          vpn,
+          managerActions,
         );
       }),
     );

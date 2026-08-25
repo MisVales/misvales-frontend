@@ -144,8 +144,21 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
     provideAppInitializer(() => {
-      if (!isDevMode() && 'serviceWorker' in navigator) {
-        window.setTimeout(() => void navigator.serviceWorker.register('/ngsw-worker.js'), 30_000);
+      if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (const registration of registrations) {
+            void registration.unregister();
+          }
+        });
+        if ('caches' in window) {
+          caches.keys().then((keys) => {
+            for (const key of keys) {
+              if (key.includes('ngsw')) {
+                void caches.delete(key);
+              }
+            }
+          });
+        }
       }
     }),
     provideAppInitializer(() => inject(AuthConfigurationService).load()),

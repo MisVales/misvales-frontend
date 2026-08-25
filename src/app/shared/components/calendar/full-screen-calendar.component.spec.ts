@@ -38,7 +38,7 @@ describe('FullScreenCalendarComponent', () => {
   it('emite el evento seleccionado desde la agenda', () => {
     const event: FullScreenCalendarEvent = {
       id: 'visit-1',
-      datetime: '2026-08-24T15:00:00-06:00',
+      datetime: new Date().toISOString(),
       title: 'Visita programada',
       time: '3:00 p.m.',
     };

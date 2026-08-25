@@ -7,8 +7,15 @@ export const managerVpnGuard: CanActivateFn = () => {
   const router = inject(Router);
   const roles = session.roles();
   const isManager = roles.includes('general_manager') || roles.includes('branch_manager');
+  const isVpnHost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'vpn.safeacces.lat' ||
+      window.location.hostname.startsWith('vpn.'));
 
-  return !isManager || session.managerActions()
+  const hasManagerActions = Boolean(session.managerActions?.());
+  const hasVpn = Boolean(session.vpn?.());
+
+  return !isManager || hasManagerActions || hasVpn || isVpnHost
     ? true
     : router.createUrlTree(['/acceso-denegado'], { queryParams: { reason: 'vpn_required' } });
 };
