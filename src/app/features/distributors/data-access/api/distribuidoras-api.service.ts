@@ -11,6 +11,7 @@ import { DistributorDetailResponseDto } from '../dtos/distributor-detail-respons
 import { AssignDistributorCategoryRequestDto } from '../dtos/assign-distributor-category-request.dto';
 import { ActivateDistributorRequestDto } from '../dtos/activate-distributor-request.dto';
 import { ResendDistributorInvitationRequestDto } from '../dtos/resend-distributor-invitation-request.dto';
+import { API_CONFIG } from '../../../../core/api/api.config';
 
 interface Pagina<T> {
   datos: T[];
@@ -23,7 +24,11 @@ interface Pagina<T> {
 @Injectable({ providedIn: 'root' })
 export class DistribuidorasApiService {
   private http = inject(HttpClient);
-  private apiUrl = '/api/v1/distributors';
+  private apiConfig = inject(API_CONFIG);
+
+  private get apiUrl() {
+    return `${this.apiConfig.baseUrl}/distributors`;
+  }
 
   listar(pagina: number = 1, porPagina: number = 10, filtros?: FiltroDistribuidoras): Observable<Pagina<Distribuidora>> {
     let params = new HttpParams()
@@ -56,7 +61,7 @@ export class DistribuidorasApiService {
   activarSolicitud(solicitudId: string, categoryVersionId: string): Observable<Distribuidora> {
     const payload: ActivateDistributorRequestDto = { category_version_id: categoryVersionId };
     const headers = new HttpHeaders().set('Idempotency-Key', crypto.randomUUID());
-    return this.http.post<{ data: DistributorDetailResponseDto }>(`/api/v1/distributor-applications/${solicitudId}/activation`, payload, { headers }).pipe(
+    return this.http.post<{ data: DistributorDetailResponseDto }>(`${this.apiConfig.baseUrl}/distributor-applications/${solicitudId}/activation`, payload, { headers }).pipe(
       map(({ data }) => DistribuidoraMapper.fromDto(data))
     );
   }

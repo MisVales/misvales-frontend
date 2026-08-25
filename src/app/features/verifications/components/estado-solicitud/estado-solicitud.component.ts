@@ -9,9 +9,11 @@ import { EstadoSolicitudDistribuidora } from '../../models/verificacion-distribu
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EstadoSolicitudComponent {
-  estado = input.required<EstadoSolicitudDistribuidora>();
+  estado = input<EstadoSolicitudDistribuidora | null>(null);
   
   estadoLabel = computed(() => {
+    const val = this.estado();
+    if (!val) return 'Sin estado';
     const map: Record<EstadoSolicitudDistribuidora, string> = {
       'DRAFT': 'Borrador',
       'COORDINATOR_REVIEW': 'Revisión Coord.',
@@ -25,11 +27,12 @@ export class EstadoSolicitudComponent {
       'REJECTED': 'Rechazado',
       'ACTIVE': 'Activa'
     };
-    return map[this.estado()] || this.estado();
+    return map[val] || val;
   });
   
   estadoClass = computed(() => {
-    switch (this.estado()) {
+    const val = this.estado();
+    switch (val) {
       case 'DRAFT': return 'badge-neutral';
       case 'COORDINATOR_REVIEW': 
       case 'VERIFIER_ASSIGNED':
