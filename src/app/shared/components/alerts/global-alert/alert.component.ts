@@ -8,6 +8,7 @@ import { LucideAngularModule } from 'lucide-angular';
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   templateUrl: './alert.component.html',
+  styleUrl: './alert.component.css',
 })
 export class AlertComponent {
   alertService = inject(AlertService);
@@ -40,5 +41,9 @@ export class AlertComponent {
       case 'info':
       default: return 'text-blue-500';
     }
+  }
+
+  title(type: string): string {
+    return ({ success: 'Listo', error: 'No se pudo completar', warning: 'Revisa antes de continuar', info: 'Información' } as Record<string, string>)[type] ?? 'Información';
   }
 }

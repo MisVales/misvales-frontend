@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 export type AlertType = 'success' | 'error' | 'warning' | 'info';
 
 @Component({
-  selector: 'app-alert',
+  selector: 'app-inline-alert',
   standalone: true,
   imports: [CommonModule],
   template: `

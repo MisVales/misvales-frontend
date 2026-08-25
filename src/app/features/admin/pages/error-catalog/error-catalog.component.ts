@@ -29,7 +29,7 @@ export class ErrorCatalogComponent {
     const status = Number(this.status());
     return this.items().filter((item) => {
       const matchesStatus = !status || item.http_statuses.includes(status);
-      const haystack = [item.code, item.client_definition, item.internal_definition, ...item.sources]
+      const haystack = [item.code, ...item.client_messages]
         .join(' ')
         .toLocaleLowerCase('es-MX');
       return matchesStatus && (!query || haystack.includes(query));
@@ -52,4 +52,10 @@ export class ErrorCatalogComponent {
   setQuery(value: string): void { this.query.set(value); }
   setStatus(value: string): void { this.status.set(value); }
   toggle(code: string): void { this.expanded.set(this.expanded() === code ? null : code); }
+
+  statusTone(status: number): string {
+    if (status >= 500) return 'critical';
+    if (status >= 400) return 'warning';
+    return 'neutral';
+  }
 }

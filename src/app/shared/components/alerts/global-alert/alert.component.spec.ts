@@ -7,12 +7,13 @@ import {
   OctagonAlert,
   X,
 } from 'lucide-angular';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AlertService } from '../alert.service';
 import { AlertComponent } from './alert.component';
 
 describe('AlertComponent accessibility', () => {
   it('announces errors assertively and exposes a named close button', () => {
+    vi.useFakeTimers();
     TestBed.configureTestingModule({
       imports: [
         AlertComponent,
@@ -34,9 +35,11 @@ describe('AlertComponent accessibility', () => {
     expect(closeButton.getAttribute('aria-label')).toBe('Cerrar aviso: No fue posible guardar.');
 
     closeButton.click();
+    vi.advanceTimersByTime(220);
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+    vi.useRealTimers();
   });
 
   it('announces non-critical feedback politely', () => {

@@ -6,37 +6,67 @@ export interface Alert {
   id: string;
   type: AlertType;
   message: string;
-  duration?: number;
+  duration: number;
+  closing: boolean;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AlertService {
-  alerts = signal<Alert[]>([]);
+  readonly alerts = signal<Alert[]>([]);
+  private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
+  private sequence = 0;
 
   success(message: string, duration = 5000): void {
     this.showAlert(message, 'success', duration);
   }
 
-  showAlert(message: string, type: AlertType = 'info', duration: number = 5000): void {
-    const id = Math.random().toString(36).substring(2, 9);
-    const alert: Alert = { id, type, message, duration };
-    
-    this.alerts.update(current => [...current, alert]);
+  error(message: string, duration = 8000): void { this.showAlert(message, 'error', duration); }
+  warning(message: string, duration = 6500): void { this.showAlert(message, 'warning', duration); }
+  info(message: string, duration = 5500): void { this.showAlert(message, 'info', duration); }
+
+  showAlert(message: string, type: AlertType = 'info', duration = this.defaultDuration(type)): void {
+    const normalized = message.trim();
+    if (!normalized) return;
+    const duplicate = this.alerts().find(alert => alert.message === normalized && alert.type === type);
+    if (duplicate) this.removeAlert(duplicate.id, true);
+    const id = `alert-${Date.now()}-${++this.sequence}`;
+    const alert: Alert = { id, type, message: normalized, duration, closing: false };
+    this.alerts.update(current => {
+      const evicted = current.slice(0, -3);
+      evicted.forEach(item => {
+        const timer = this.timers.get(item.id);
+        if (timer) clearTimeout(timer);
+        this.timers.delete(item.id);
+      });
+      return [...current.slice(-3), alert];
+    });
 
     if (duration > 0) {
-      setTimeout(() => {
-        this.removeAlert(id);
-      }, duration);
+      this.timers.set(id, setTimeout(() => this.removeAlert(id), duration));
     }
   }
 
-  removeAlert(id: string): void {
-    this.alerts.update(current => current.filter(a => a.id !== id));
+  removeAlert(id: string, immediately = false): void {
+    const timer = this.timers.get(id);
+    if (timer) clearTimeout(timer);
+    this.timers.delete(id);
+    if (immediately) {
+      this.alerts.update(current => current.filter(alert => alert.id !== id));
+      return;
+    }
+    this.alerts.update(current => current.map(alert => alert.id === id ? { ...alert, closing: true } : alert));
+    setTimeout(() => this.alerts.update(current => current.filter(alert => alert.id !== id)), 220);
   }
 
   clear(): void {
+    this.timers.forEach(timer => clearTimeout(timer));
+    this.timers.clear();
     this.alerts.set([]);
+  }
+
+  private defaultDuration(type: AlertType): number {
+    return ({ success: 4500, info: 5500, warning: 6500, error: 8000 })[type];
   }
 }

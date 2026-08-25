@@ -5,12 +5,9 @@ import { API_CONFIG } from '../../../core/api/api.config';
 
 export interface ErrorCatalogItem {
   code: string;
-  client_definition: string;
-  internal_definition: string;
-  admin_definition: string;
+  client_message: string;
+  client_messages: string[];
   http_statuses: number[];
-  sources: string[];
-  occurrences: number;
 }
 
 export interface ErrorCatalogResponse {

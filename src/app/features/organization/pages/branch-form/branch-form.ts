@@ -23,12 +23,12 @@ import { AlertService } from '../../../../shared/components/alerts/alert.service
       </nav>
 
       @if (facade.error()) {
-        <app-alert 
+        <app-inline-alert
           type="error" 
           [message]="facade.error()"
           [actionText]="facade.error()?.includes('concurrencia') ? 'Recargar información' : undefined"
           (onAction)="reload()">
-        </app-alert>
+        </app-inline-alert>
       }
 
       <section class="rounded-2xl border border-gray-100 bg-white p-6 shadow-xl md:p-8">
