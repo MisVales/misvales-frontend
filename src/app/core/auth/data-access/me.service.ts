@@ -19,6 +19,8 @@ export class MeService {
           role: scope.role,
           roleName: scope.role_name,
           branchId: scope.branch_id,
+          branchName: scope.branch_name,
+          branchCode: scope.branch_code,
           permissions: scope.permissions,
         }));
         const activeBranch = scopes.find((scope) => scope.branchId)?.branchId ?? null;

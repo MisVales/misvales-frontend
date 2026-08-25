@@ -1,5 +1,7 @@
 export interface Scope {
   branch_id: string | null;
+  branch_name?: string | null;
+  branch_code?: string | null;
   role_name: string;
   role: string;
   permissions: string[];

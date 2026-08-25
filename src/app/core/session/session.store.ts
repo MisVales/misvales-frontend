@@ -10,6 +10,8 @@ export interface SessionScope {
   role: string;
   roleName: string;
   branchId: string | null;
+  branchName?: string | null;
+  branchCode?: string | null;
   permissions: string[];
 }
 
