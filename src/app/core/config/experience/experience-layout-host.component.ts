@@ -45,16 +45,25 @@ export class ExperienceLayoutHostComponent {
   private readonly policy = inject(ExperiencePolicyService);
   private readonly loadLayout = inject(EXPERIENCE_LAYOUT_LOADER);
   private loadVersion = 0;
+  private currentExperience: string | null = null;
 
   readonly layoutComponent = signal<Type<unknown> | null>(null);
 
   constructor() {
     effect(() => {
       const decision = this.policy.decision();
-      const version = ++this.loadVersion;
+      if (decision.kind !== 'allowed') {
+        this.currentExperience = null;
+        this.layoutComponent.set(null);
+        return;
+      }
 
-      this.layoutComponent.set(null);
-      if (decision.kind !== 'allowed') return;
+      if (this.currentExperience === decision.requiredExperience && this.layoutComponent()) {
+        return;
+      }
+
+      this.currentExperience = decision.requiredExperience;
+      const version = ++this.loadVersion;
 
       void this.loadLayout(decision.requiredExperience).then((component) => {
         if (version === this.loadVersion) this.layoutComponent.set(component);

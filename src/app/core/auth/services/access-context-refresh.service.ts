@@ -12,6 +12,8 @@ export class AccessContextRefreshService {
   private readonly me = inject(MeService);
   private readonly session = inject(SessionStore);
   private refreshing = false;
+  private lastRefreshedAt = 0;
+  private readonly MIN_REFRESH_INTERVAL_MS = 10_000;
 
   constructor() {
     effect(() => {
@@ -34,7 +36,7 @@ export class AccessContextRefreshService {
 
   start(): void {
     this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
-      void this.refresh();
+      void this.refresh(true);
     });
     this.document.defaultView?.addEventListener('focus', () => void this.refresh());
     this.document.addEventListener('visibilitychange', () => {
@@ -42,9 +44,13 @@ export class AccessContextRefreshService {
     });
   }
 
-  async refresh(): Promise<void> {
+  async refresh(force = false): Promise<void> {
     if (!this.session.isAuthenticated() || this.refreshing) return;
+    const now = Date.now();
+    if (!force && now - this.lastRefreshedAt < this.MIN_REFRESH_INTERVAL_MS) return;
+
     this.refreshing = true;
+    this.lastRefreshedAt = now;
     try {
       await firstValueFrom(this.me.fetchMe());
     } catch {

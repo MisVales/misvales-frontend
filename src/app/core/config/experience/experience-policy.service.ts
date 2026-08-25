@@ -8,8 +8,11 @@ export class ExperiencePolicyService {
   private readonly sessionStore = inject(SessionStore);
   private readonly deviceExperience = inject(DeviceExperienceService);
 
-  readonly decision = computed(() =>
-    evaluateExperiencePolicy(this.sessionStore.roles(), this.deviceExperience.context()),
+  readonly decision = computed(
+    () => evaluateExperiencePolicy(this.sessionStore.roles(), this.deviceExperience.context()),
+    {
+      equal: (a, b) => JSON.stringify(a) === JSON.stringify(b),
+    },
   );
 
   private readonly returnUrlState = signal<string | null>(null);
