@@ -8,13 +8,18 @@ import { ClientDetailResponseDto } from '../dtos/client-detail-response.dto';
 import { CreateClientRequestDto } from '../dtos/create-client-request.dto';
 import { ClientBankAccountResponseDto } from '../dtos/client-bank-account-response.dto';
 import { CreateClientBankAccountRequestDto } from '../dtos/create-client-bank-account-request.dto';
+import { API_CONFIG } from '@core/api/api.config';
 
 export interface Pagina<T> { data: T[]; total: number; }
 
 @Injectable({ providedIn: 'root' })
 export class ClientesApiService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api/v1/clients';
+  private readonly apiConfig = inject(API_CONFIG);
+
+  private get baseUrl(): string {
+    return `${this.apiConfig.baseUrl}/clients`;
+  }
 
   listar(filtros: FiltroClientes): Observable<Pagina<Cliente>> {
     let params = new HttpParams();

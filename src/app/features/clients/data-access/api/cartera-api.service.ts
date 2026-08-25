@@ -7,6 +7,7 @@ import { CreateClientPortfolioEntryRequestDto } from '../dtos/create-client-port
 import { UpdateClientPortfolioEntryRequestDto } from '../dtos/update-client-portfolio-entry-request.dto';
 import { ClientPortfolioEntryResponseDto } from '../dtos/client-portfolio-entry-response.dto';
 import { ClienteMapper } from '../mappers/cliente.mapper';
+import { API_CONFIG } from '@core/api/api.config';
 
 export interface MovimientosCarteraRespuesta {
   data: MovimientoCartera[];
@@ -16,9 +17,10 @@ export interface MovimientosCarteraRespuesta {
 @Injectable({ providedIn: 'root' })
 export class CarteraApiService {
   private readonly http = inject(HttpClient);
+  private readonly apiConfig = inject(API_CONFIG);
 
   listarCartera(id: string): Observable<MovimientosCarteraRespuesta> {
-    return this.http.get<{ data: ClientPortfolioEntryResponseDto[]; summary?: any }>(`/api/v1/clients/${id}/portfolio-entries`).pipe(map(({ data, summary }) => ({
+    return this.http.get<{ data: ClientPortfolioEntryResponseDto[]; summary?: any }>(`${this.apiConfig.baseUrl}/clients/${id}/portfolio-entries`).pipe(map(({ data, summary }) => ({
       data: (data ?? []).map((entry) => ClienteMapper.portfolioEntryFromDto(entry)),
       summary: summary ? {
         saldoActual: summary.current_balance ?? '0',
@@ -33,13 +35,13 @@ export class CarteraApiService {
 
   registrarMovimiento(id: string, entrada: CreateClientPortfolioEntryRequestDto, idempotencyKey: string): Observable<MovimientoCartera> {
     const headers = new HttpHeaders().set('Idempotency-Key', idempotencyKey);
-    return this.http.post<{ data: ClientPortfolioEntryResponseDto }>(`/api/v1/clients/${id}/portfolio-entries`, entrada, { headers }).pipe(
+    return this.http.post<{ data: ClientPortfolioEntryResponseDto }>(`${this.apiConfig.baseUrl}/clients/${id}/portfolio-entries`, entrada, { headers }).pipe(
       map(({ data }) => ClienteMapper.portfolioEntryFromDto(data)),
     );
   }
 
   actualizarMovimiento(id: string, movimientoId: string, entrada: UpdateClientPortfolioEntryRequestDto): Observable<MovimientoCartera> {
-    return this.http.patch<{ data: ClientPortfolioEntryResponseDto }>(`/api/v1/clients/${id}/portfolio-entries/${movimientoId}`, entrada).pipe(
+    return this.http.patch<{ data: ClientPortfolioEntryResponseDto }>(`${this.apiConfig.baseUrl}/clients/${id}/portfolio-entries/${movimientoId}`, entrada).pipe(
       map(({ data }) => ClienteMapper.portfolioEntryFromDto(data)),
     );
   }
