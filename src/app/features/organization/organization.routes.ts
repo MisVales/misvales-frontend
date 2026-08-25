@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '@core/guards/auth.guard';
 import { anyPermissionGuard, permissionGuard } from '@core/guards/permission.guard';
+import { managerVpnGuard } from '@core/guards/manager-vpn.guard';
 
 export const organizationRoutes: Routes = [
   {
@@ -15,12 +16,12 @@ export const organizationRoutes: Routes = [
       },
       {
         path: 'sucursales/nueva',
-        canActivate: [permissionGuard('branches.create')],
+        canActivate: [permissionGuard('branches.create'), managerVpnGuard],
         loadComponent: () => import('./pages/branch-form/branch-form').then((m) => m.BranchForm),
       },
       {
         path: 'sucursales/:id/editar',
-        canActivate: [permissionGuard('branches.update')],
+        canActivate: [permissionGuard('branches.update'), managerVpnGuard],
         loadComponent: () => import('./pages/branch-form/branch-form').then((m) => m.BranchForm),
       },
       {
@@ -52,7 +53,7 @@ export const organizationRoutes: Routes = [
       },
       {
         path: 'personal/:id/asignar',
-        canActivate: [permissionGuard('roles.assign')],
+        canActivate: [permissionGuard('roles.assign'), managerVpnGuard],
         loadComponent: () =>
           import('./pages/staff-assignment/staff-assignment').then((m) => m.StaffAssignment),
       },
