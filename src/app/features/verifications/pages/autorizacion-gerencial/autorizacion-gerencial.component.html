@@ -78,7 +78,7 @@
                 <td><span class="folio">{{ solicitud.folio }}</span></td>
                 <td><div class="applicant"><span>{{ solicitud.aspirante.nombreCompleto.charAt(0) || 'S' }}</span><strong>{{ solicitud.aspirante.nombreCompleto || 'Sin nombre' }}</strong></div></td>
                 <td><span class="branch-name"><lucide-icon name="building-2" [size]="15" />{{ solicitud.sucursal.nombre }}</span></td>
-                <td><app-estado-solicitud [estado]="solicitud.estado" /></td>
+                <td><app-estado-solicitud [estado]="solicitud.estado"></app-estado-solicitud></td>
                 <td>{{ solicitud.fechaEnvio | date:'mediumDate' }}</td>
                 <td><a class="review-action" [routerLink]="['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id, 'autorizacion']">Revisar expediente<lucide-icon name="arrow-right" [size]="16" /></a></td>
               </tr>
@@ -100,140 +100,333 @@
   }
 
   @if (!isInbox() && facade.solicitudSeleccionada(); as solicitud) {
-    <div class="card">
-      <div class="card-header">
-        <h2 class="card-title">Autorización Gerencial Definitiva</h2>
-        <p class="card-subtitle">
-          Solicitud: {{ solicitud.folio }} - {{ solicitud.aspirante.nombreCompleto }}
+    <div class="detail-page-header">
+      <div>
+        <a routerLink="/verificacion-distribuidoras/solicitudes-distribuidora/autorizaciones" class="back-link">
+          <lucide-icon name="arrow-left" [size]="16" aria-hidden="true" />
+          Volver a solicitudes pendientes
+        </a>
+        <h1 class="page-title">Autorización Gerencial Definitiva</h1>
+        <p class="page-subtitle">
+          Solicitud: <strong>{{ solicitud.folio }}</strong> · {{ solicitud.aspirante.nombreCompleto }} · Sucursal: {{ solicitud.sucursal.nombre }}
         </p>
       </div>
+      <div class="header-status">
+        <app-estado-solicitud [estado]="solicitud.estado"></app-estado-solicitud>
+      </div>
+    </div>
 
-      <div data-manager-action class="card-body">
-        <div class="info-panel mb-4">
-          <h4>Dictamen Previos</h4>
-          <div class="grid-2">
-            <div>
-              <p class="label">Visita Física</p>
-              <span
-                class="badge"
-                [class.badge-success]="solicitud.visitas[0]?.resultadoFisico === 'FAVORABLE'"
-                [class.badge-danger]="solicitud.visitas[0]?.resultadoFisico === 'UNFAVORABLE'"
-              >
-                {{ solicitud.visitas[0]?.resultadoFisico || 'No registrado' }}
-              </span>
+    <div class="layout-grid">
+      <!-- Columna Principal: Expediente Completo -->
+      <div class="main-content">
+        <!-- Panel de Dictámenes Previos -->
+        <section class="content-section">
+          <h2 class="section-title">Dictámenes Previos</h2>
+          
+          <div class="dictamenes-grid">
+            <!-- Visita Física -->
+            <div
+              class="dictamen-card"
+              [class.is-favorable]="solicitud.visitas[0]?.resultadoFisico === 'FAVORABLE'"
+              [class.is-unfavorable]="solicitud.visitas[0]?.resultadoFisico === 'UNFAVORABLE'"
+            >
+              <div class="dictamen-card-header">
+                <span class="label">Visita Física</span>
+                <span
+                  class="badge"
+                  [class.badge-success]="solicitud.visitas[0]?.resultadoFisico === 'FAVORABLE'"
+                  [class.badge-danger]="solicitud.visitas[0]?.resultadoFisico === 'UNFAVORABLE'"
+                >
+                  {{ solicitud.visitas[0]?.resultadoFisico || 'No registrado' }}
+                </span>
+              </div>
+              @if (solicitud.visitas[0]; as visita) {
+                <div class="dictamen-details">
+                  @if (visita.fechaFin) {
+                    <p class="text-sm"><strong>Fecha de visita:</strong> {{ visita.fechaFin | date:'medium' }}</p>
+                  }
+                  @if (visita.observacionesGenerales) {
+                    <p class="text-sm"><strong>Observaciones:</strong> {{ visita.observacionesGenerales }}</p>
+                  }
+                  @if (visita.diferencias.length > 0) {
+                    <p class="text-sm text-warning"><strong>Diferencias reportadas:</strong> {{ visita.diferencias.length }}</p>
+                  }
+                </div>
+              }
             </div>
-            <div>
-              <p class="label">Evaluación Coordinación</p>
-              <span
-                class="badge"
-                [class.badge-success]="solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES'"
-                [class.badge-danger]="solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY'"
-              >
-                {{ solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple' }}
-              </span>
+
+            <!-- Evaluación Coordinación -->
+            <div
+              class="dictamen-card"
+              [class.is-favorable]="solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES'"
+              [class.is-unfavorable]="solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY'"
+            >
+              <div class="dictamen-card-header">
+                <span class="label">Evaluación Coordinación</span>
+                <span
+                  class="badge"
+                  [class.badge-success]="solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES'"
+                  [class.badge-danger]="solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY'"
+                >
+                  {{ solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES' ? 'Cumple (Favorable)' : (solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY' ? 'No Cumple' : 'Pendiente') }}
+                </span>
+              </div>
+              @if (solicitud.ultimaEvaluacion; as evaluacion) {
+                <div class="dictamen-details">
+                  @if (evaluacion.fechaEvaluacion) {
+                    <p class="text-sm"><strong>Fecha evaluación:</strong> {{ evaluacion.fechaEvaluacion | date:'medium' }}</p>
+                  }
+                  @if (evaluacion.motivo) {
+                    <p class="text-sm"><strong>Motivo coordinador:</strong> {{ evaluacion.motivo }}</p>
+                  }
+                </div>
+              }
             </div>
           </div>
-          @if (solicitud.ultimaEvaluacion?.motivo) {
-            <p class="mt-2 text-sm">
-              <strong>Motivo Coordinador:</strong> {{ solicitud.ultimaEvaluacion?.motivo }}
-            </p>
+
+          @if (solicitud.correcciones.length > 0) {
+            <div class="correcciones-resumen mt-4">
+              <h3 class="subsection-title">Correcciones de Coordinación ({{ solicitud.correcciones.length }})</h3>
+              <div class="correcciones-list">
+                @for (cor of solicitud.correcciones; track cor.id) {
+                  <div class="correccion-item">
+                    <span class="field-name">{{ cor.seccion }} · {{ cor.campo }}</span>
+                    <span class="field-change">Original: <em>{{ cor.valorOriginal }}</em> → Corregido: <strong>{{ cor.valorCorregido }}</strong></span>
+                    @if (cor.motivo) {
+                      <small class="field-reason">Motivo: {{ cor.motivo }}</small>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
           }
-        </div>
+        </section>
 
-        @if (decision() === 'APPROVED') {
-          <div class="form-group mt-4">
-            <label for="initial-credit-line">Línea inicial autorizada</label>
-            <input
-              id="initial-credit-line"
-              class="form-control"
-              appStrictNumber type="number"
-              inputmode="decimal"
-              min="0.0001"
-              step="0.0001"
-              required
-              placeholder="0.0000"
-              [ngModel]="lineaInicial()"
-              (ngModelChange)="lineaInicial.set($event)"
-              [disabled]="facade.isLoading()"
-              aria-describedby="initial-credit-line-help"
-            />
-            <p id="initial-credit-line-help" class="field-help">
-              Este importe se utilizará para crear la línea de crédito inicial.
-            </p>
+        <!-- Datos Declarados por el Aspirante -->
+        <section class="content-section">
+          <h2 class="section-title">Datos Declarados del Aspirante</h2>
+          
+          <div class="data-grid aspirante-summary">
+            <div class="data-group">
+              <dt>Nombre Completo</dt>
+              <dd>{{ solicitud.aspirante.nombreCompleto }}</dd>
+            </div>
+            <div class="data-group">
+              <dt>CURP</dt>
+              <dd>{{ solicitud.aspirante.curpEnmascarado }}</dd>
+            </div>
+            <div class="data-group">
+              <dt>RFC</dt>
+              <dd>{{ solicitud.aspirante.rfcEnmascarado }}</dd>
+            </div>
+            <div class="data-group">
+              <dt>Sucursal</dt>
+              <dd>{{ solicitud.sucursal.nombre }}</dd>
+            </div>
           </div>
+
+          @for (seccion of solicitud.datosDeclarados | keyvalue; track seccion.key) {
+            @if (seccion.value) {
+              <section class="declared-section" [attr.aria-labelledby]="'declared-' + seccion.key">
+                <h3 class="declared-section-title" [id]="'declared-' + seccion.key">{{ etiquetaSeccion(seccion.key) }}</h3>
+                @for (registro of registrosSeccion(seccion.value); track $index; let indice = $index) {
+                  <article class="declared-record">
+                    @if (registrosSeccion(seccion.value).length > 1) {
+                      <h4 class="declared-record-title">Registro {{ indice + 1 }}</h4>
+                    }
+                    <dl class="data-grid declared-grid">
+                      @for (campo of registro; track campo.etiqueta) {
+                        <div class="data-group">
+                          <dt>{{ campo.etiqueta }}</dt>
+                          <dd>{{ campo.valor }}</dd>
+                        </div>
+                      }
+                    </dl>
+                  </article>
+                }
+              </section>
+            }
+          }
+        </section>
+
+        <!-- Evidencias Declaradas -->
+        @if (solicitud.evidenciasDeclaradas.length > 0) {
+          <section class="content-section">
+            <h2 class="section-title">Evidencias Declaradas ({{ solicitud.evidenciasDeclaradas.length }})</h2>
+            <p class="section-desc">Documentación aportada por el aspirante (Identificación oficial, comprobantes de domicilio, facturas, etc.).</p>
+            <app-galeria-evidencias
+              [evidencias]="solicitud.evidenciasDeclaradas"
+              [permitirEliminar]="false"
+              [permitirDescargar]="true"
+              [descargaPrivada]="true"
+              [tiposPermitidos]="tiposEvidenciaDeclarada"
+              (download)="descargarEvidenciaDeclarada($event)"
+            ></app-galeria-evidencias>
+          </section>
         }
 
-        <div class="form-group mt-4">
-          <label>Decisión Gerencial *</label>
-          <div class="radio-group authorization-radios">
-            <label class="radio-label auth-approved">
-              <input
-                type="radio"
-                name="decision"
-                value="APPROVED"
-                [ngModel]="decision()"
-                (ngModelChange)="decision.set($event)"
-                [disabled]="facade.isLoading()"
-              />
-              <div class="radio-content">
-                <span class="auth-title">Aprobar Solicitud</span>
-                <span class="auth-desc">El aspirante será dado de alta como distribuidora.</span>
+        <!-- Visita de Verificación Física -->
+        @if (solicitud.visitas.length > 0) {
+          <section class="content-section">
+            <h2 class="section-title">Visita de Verificación Física</h2>
+            @for (visita of solicitud.visitas; track visita.id) {
+              <div class="visita-summary">
+                <div class="visita-header">
+                  <strong>Estado de Visita:</strong> {{ visita.estado | statusLabel }}
+                  @if (visita.resultadoFisico) {
+                    <span
+                      class="badge"
+                      [class.badge-success]="visita.resultadoFisico === 'FAVORABLE'"
+                      [class.badge-danger]="visita.resultadoFisico === 'UNFAVORABLE'"
+                    >
+                      Resultado: {{ visita.resultadoFisico }}
+                    </span>
+                  }
+                </div>
+                <div class="visita-details">
+                  <p><strong>Asignado el:</strong> {{ visita.fechaAsignacion | date:'medium' }}</p>
+                  @if (visita.fechaFin) {
+                    <p><strong>Finalizada el:</strong> {{ visita.fechaFin | date:'medium' }}</p>
+                  }
+                  @if (visita.observacionesGenerales) {
+                    <p><strong>Observaciones:</strong> {{ visita.observacionesGenerales }}</p>
+                  }
+                  <p><strong>Diferencias reportadas:</strong> {{ visita.diferencias.length }}</p>
+                  <p><strong>Evidencias fotográficas en sitio:</strong> {{ visita.evidencias.length }}</p>
+                </div>
+                @if (visita.evidencias.length > 0) {
+                  <div class="visita-evidencias">
+                    <h3 class="visita-evidencias-title">Evidencias Fotográficas de la Visita</h3>
+                    <app-galeria-evidencias
+                      [evidencias]="visita.evidencias"
+                      [permitirEliminar]="false"
+                      [permitirDescargar]="true"
+                      (download)="descargarEvidencia(visita.id, $event)"
+                    ></app-galeria-evidencias>
+                  </div>
+                }
               </div>
-            </label>
-            <label class="radio-label auth-rejected">
-              <input
-                type="radio"
-                name="decision"
-                value="REJECTED"
-                [ngModel]="decision()"
-                (ngModelChange)="decision.set($event)"
-                [disabled]="facade.isLoading()"
-              />
-              <div class="radio-content">
-                <span class="auth-title">Rechazar Solicitud</span>
-                <span class="auth-desc">La solicitud será denegada de forma permanente.</span>
-              </div>
-            </label>
+            }
+          </section>
+        }
+      </div>
+
+      <!-- Columna Lateral: Decisión Gerencial & Línea de Tiempo -->
+      <aside class="sidebar-content">
+        <!-- Formulario de Decisión Gerencial -->
+        <div class="card decision-card sticky-card">
+          <div class="card-header">
+            <h2 class="card-title">Decisión Gerencial Definitiva</h2>
+            <p class="card-subtitle">Emitir dictamen de aprobación o rechazo</p>
           </div>
-          @if (submitted() && !decision()) {
-            <p class="text-sm text-danger mt-1">Debes seleccionar una decisión gerencial (Aprobar o Rechazar).</p>
-          }
+
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Decisión Gerencial *</label>
+              <div class="radio-group authorization-radios">
+                <label class="radio-label auth-approved">
+                  <input
+                    type="radio"
+                    name="decision"
+                    value="APPROVED"
+                    [ngModel]="decision()"
+                    (ngModelChange)="decision.set($event)"
+                    [disabled]="facade.isLoading()"
+                  />
+                  <div class="radio-content">
+                    <span class="auth-title">Aprobar Solicitud</span>
+                    <span class="auth-desc">El aspirante será dado de alta como distribuidora.</span>
+                  </div>
+                </label>
+                <label class="radio-label auth-rejected">
+                  <input
+                    type="radio"
+                    name="decision"
+                    value="REJECTED"
+                    [ngModel]="decision()"
+                    (ngModelChange)="decision.set($event)"
+                    [disabled]="facade.isLoading()"
+                  />
+                  <div class="radio-content">
+                    <span class="auth-title">Rechazar Solicitud</span>
+                    <span class="auth-desc">La solicitud será denegada de forma permanente.</span>
+                  </div>
+                </label>
+              </div>
+              @if (submitted() && !decision()) {
+                <p class="text-sm text-danger mt-1">Debes seleccionar una decisión gerencial (Aprobar o Rechazar).</p>
+              }
+            </div>
+
+            @if (decision() === 'APPROVED') {
+              <div class="form-group mt-4">
+                <label for="initial-credit-line" class="form-label">Línea inicial autorizada ($) *</label>
+                <input
+                  id="initial-credit-line"
+                  class="form-control"
+                  appStrictNumber
+                  type="number"
+                  inputmode="decimal"
+                  min="0.0001"
+                  step="0.0001"
+                  required
+                  placeholder="0.0000"
+                  [ngModel]="lineaInicial()"
+                  (ngModelChange)="lineaInicial.set($event)"
+                  [disabled]="facade.isLoading()"
+                  aria-describedby="initial-credit-line-help"
+                />
+                <p id="initial-credit-line-help" class="field-help">
+                  Este importe se utilizará para crear la línea de crédito inicial.
+                </p>
+                @if (submitted() && (!lineaInicial() || +lineaInicial() <= 0)) {
+                  <p class="text-sm text-danger mt-1">Ingresa un importe de línea inicial válido mayor a 0.</p>
+                }
+              </div>
+            }
+
+            <div class="form-group mt-4">
+              <label class="form-label">Comentarios / Observaciones {{ decision() === 'REJECTED' ? '*' : '(Opcional)' }}</label>
+              <textarea
+                class="form-control"
+                rows="4"
+                placeholder="Observaciones o sustento de la gerencia..."
+                [ngModel]="comentarios()"
+                (ngModelChange)="comentarios.set($event)"
+                [disabled]="facade.isLoading()"
+              ></textarea>
+              @if (submitted() && decision() === 'REJECTED' && !comentarios()) {
+                <p class="text-sm text-danger mt-1">Es obligatorio proporcionar un motivo o comentarios para el rechazo.</p>
+              }
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="onCancel()"
+              [disabled]="facade.isLoading()"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary btn-lg"
+              (click)="onAuthorize()"
+              [disabled]="facade.isLoading()"
+            >
+              Emitir Dictamen Final
+            </button>
+          </div>
         </div>
 
-        <div class="form-group mt-4">
-          <label>Comentarios Adicionales {{ decision() === 'REJECTED' ? '*' : '(Opcional)' }}</label>
-          <textarea
-            class="form-control"
-            rows="4"
-            placeholder="Observaciones de la gerencia..."
-            [ngModel]="comentarios()"
-            (ngModelChange)="comentarios.set($event)"
-            [disabled]="facade.isLoading()"
-          ></textarea>
-          @if (submitted() && decision() === 'REJECTED' && !comentarios()) {
-            <p class="text-sm text-danger mt-1">Es obligatorio proporcionar un motivo o comentarios para el rechazo.</p>
-          }
-        </div>
-      </div>
-
-      <div data-manager-action class="card-footer">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          (click)="onCancel()"
-          [disabled]="facade.isLoading()"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary btn-lg"
-          (click)="onAuthorize()"
-          [disabled]="facade.isLoading()"
-        >
-          Emitir Dictamen Final
-        </button>
-      </div>
+        <!-- Línea de Tiempo del Expediente -->
+        <section class="content-section mt-4">
+          <h2 class="section-title">Historial del Proceso</h2>
+          <app-linea-tiempo-solicitud [solicitud]="solicitud"></app-linea-tiempo-solicitud>
+        </section>
+      </aside>
     </div>
   }
 </div>

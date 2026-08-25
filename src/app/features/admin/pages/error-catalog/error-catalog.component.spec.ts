@@ -17,9 +17,12 @@ describe('ErrorCatalogComponent', () => {
           list: () => of({
             data: [{
               code: 'AUTH_SCOPE_DENIED',
-              client_message: 'No tienes permiso.',
-              client_messages: ['No tienes permiso.', 'Tu sesión no tiene acceso a esta operación.'],
+              client_definition: 'No tienes permiso.',
+              internal_definition: 'Alcance de autorización insuficiente.',
+              admin_definition: 'Respuesta API con HTTP 403.',
               http_statuses: [403],
+              sources: ['app/Http/Middleware/RequirePermission.php'],
+              occurrences: 3,
             }],
             meta: { total: 1 },
           }),
@@ -31,11 +34,12 @@ describe('ErrorCatalogComponent', () => {
     fixture.detectChanges();
   });
 
-  it('muestra el código y el mensaje real para cliente', () => {
+  it('muestra las tres definiciones y el código real', () => {
     const text = fixture.nativeElement.textContent;
     expect(text).toContain('AUTH_SCOPE_DENIED');
     expect(text).toContain('No tienes permiso.');
-    expect(text).toContain('HTTP 403');
+    expect(text).toContain('Alcance de autorización insuficiente.');
+    expect(text).toContain('Respuesta API con HTTP 403.');
   });
 
   it('filtra por búsqueda y estado HTTP', () => {
