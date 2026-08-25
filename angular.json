@@ -27,8 +27,7 @@
               },
               "src/manifest.webmanifest"
             ],
-            "styles": ["src/styles.css"],
-            "serviceWorker": "ngsw-config.json"
+            "styles": ["src/styles.css"]
           },
           "configurations": {
             "production": {
