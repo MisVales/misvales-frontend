@@ -412,6 +412,14 @@ const managerialNavigationGroups = (
                   generalManagerItem('categories'),
                   generalManagerItem('configurations'),
                   generalManagerItem('operations-center'),
+                  ...(role === 'admin' ? [{
+                    id: 'admin-error-catalog',
+                    title: 'Errores',
+                    description: 'Diccionario de códigos y definiciones por audiencia',
+                    icon: 'book-open',
+                    route: '/errores',
+                    roles: ['admin' as const],
+                  }] : []),
                 ],
               },
             ]

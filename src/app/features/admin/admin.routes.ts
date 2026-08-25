@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { anyPermissionGuard, permissionGuard } from '../../core/guards/permission.guard';
+import { roleGuard } from '../../core/guards/role.guard';
 
 export const ADMIN_ROUTES: Routes = [
   {
@@ -20,6 +21,11 @@ export const ADMIN_ROUTES: Routes = [
     path: 'invitaciones',
     canActivate: [permissionGuard('users.manage_state')],
     loadComponent: () => import('./pages/invitations/invitations').then(c => c.Invitations)
+  },
+  {
+    path: 'errores',
+    canActivate: [roleGuard(['admin'])],
+    loadComponent: () => import('./pages/error-catalog/error-catalog.component').then(c => c.ErrorCatalogComponent)
   },
   {
     path: 'auditoria',
