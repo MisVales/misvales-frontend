@@ -17,9 +17,17 @@ export class AccessContextRefreshService {
     effect(() => {
       const roles = this.session.roles();
       const isManager = roles.includes('general_manager') || roles.includes('branch_manager');
+      const isVpnHost =
+        typeof window !== 'undefined' &&
+        (window.location.hostname === 'vpn.safeacces.lat' ||
+          window.location.hostname.startsWith('vpn.'));
+      const hasVpnAccess =
+        Boolean(this.session.managerActions?.()) ||
+        Boolean(this.session.vpn?.()) ||
+        isVpnHost;
       this.document.body.classList.toggle(
         'manager-actions-disabled',
-        isManager && !this.session.managerActions(),
+        isManager && !hasVpnAccess,
       );
     });
   }
