@@ -19,8 +19,6 @@ import { authInterceptor } from '@core/interceptors/auth.interceptor';
 import { errorHandlingInterceptor } from '@core/interceptors/error-handling.interceptor';
 import { requestActivityInterceptor } from '@core/interceptors/request-activity.interceptor';
 import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
-import { REALTIME_CONFIG, defaultRealtimeConfig } from '@core/realtime/realtime.config';
-import { RealtimeService } from '@core/realtime/realtime.service';
 import { GlobalErrorHandler } from '@core/error-handling/global-error-handler';
 import {
   LucideAngularModule,
@@ -283,8 +281,6 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
     { provide: API_CONFIG, useValue: defaultApiConfig },
-    { provide: REALTIME_CONFIG, useValue: defaultRealtimeConfig },
-    provideAppInitializer(() => inject(RealtimeService).initialize()),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],
 };
