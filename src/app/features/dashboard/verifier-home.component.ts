@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LucideAngularModule } from 'lucide-angular';
@@ -21,7 +20,7 @@ interface ActivityItem {
 @Component({
   selector: 'app-verifier-home',
   standalone: true,
-  imports: [DatePipe, RouterLink, LucideAngularModule, EmptyStateComponent],
+  imports: [RouterLink, LucideAngularModule, EmptyStateComponent],
   templateUrl: './verifier-home.component.html',
   styleUrl: './verifier-home.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -70,7 +69,8 @@ export class VerifierHomeComponent {
   coordinator(visit: Visit): string { return visit.application?.coordinator?.name || 'Sin coordinador'; }
   statusLabel(status: string): string { return status === 'IN_PROGRESS' ? 'En proceso' : status === 'COMPLETED' ? 'Terminada' : 'Asignada'; }
   differenceCount(visit: Visit): number { return differenceCount(visit); }
-  pendingLabel(visit: Visit): string { return visit.status === 'ASSIGNED' ? 'Iniciar visita' : visit.media_files.length ? 'Completar resultado' : 'Faltan evidencias'; }
+  pendingLabel(visit: Visit): string { return visit.status === 'ASSIGNED' ? 'Iniciar visita' : visit.media_files?.length ? 'Completar resultado' : 'Faltan evidencias'; }
+  scheduledDateTime(value: string | null): string { return businessDateTime(value); }
   priorityLabel(visit: Visit): string { return timestamp(visit.scheduled_for) < Date.now() ? 'Alta' : localDateKey(visit.scheduled_for) === this.todayKey ? 'Media' : 'Próxima'; }
   relativeTime(value: string): string { return relativeTime(value); }
   visitRoute(visit: Visit): string[] { return visit.status === 'ASSIGNED' ? ['/verificacion-distribuidoras/verificaciones/asignadas'] : ['/verificacion-distribuidoras/verificaciones', visit.id, 'visita']; }
@@ -82,3 +82,16 @@ function resultLabel(result: string | null): string { return result === 'UNFAVOR
 function timestamp(value: string | null | undefined): number { const parsed = value ? new Date(value).getTime() : Number.MAX_SAFE_INTEGER; return Number.isNaN(parsed) ? Number.MAX_SAFE_INTEGER : parsed; }
 function localDateKey(value: string | Date | null | undefined): string { if (!value) return ''; const parsed = value instanceof Date ? value : new Date(value); if (Number.isNaN(parsed.getTime())) return ''; return new Intl.DateTimeFormat('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(parsed); }
 function relativeTime(value: string): string { const minutes = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 60000)); if (minutes < 1) return 'Ahora'; if (minutes < 60) return `Hace ${minutes} min`; const hours = Math.floor(minutes / 60); if (hours < 24) return `Hace ${hours} h`; const days = Math.floor(hours / 24); return `Hace ${days} d`; }
+function businessDateTime(value: string | null): string {
+  if (!value) return 'Sin horario';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Sin horario';
+  return new Intl.DateTimeFormat('es-MX', {
+    timeZone: 'America/Monterrey',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(parsed);
+}
