@@ -146,11 +146,47 @@
               </div>
             </div>
 
+            @if (alert.pending_removal_request; as request) {
+              <section
+                class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"
+              >
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <p class="font-bold">Solicitud de retiro pendiente</p>
+                    <p class="mt-1">{{ request.reason }}</p>
+                    @if (request.solicitante?.name) {
+                      <p class="mt-1 text-xs text-amber-800">
+                        Solicitada por {{ request.solicitante?.name }}
+                      </p>
+                    }
+                  </div>
+                  @if (canDecideRemoval()) {
+                    <div class="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        class="btn-action btn-do-not-apply"
+                        (click)="openRemovalDecisionModal(request, 'REJECT')"
+                      >
+                        Rechazar
+                      </button>
+                      <button
+                        type="button"
+                        class="btn-action btn-apply"
+                        (click)="openRemovalDecisionModal(request, 'AUTHORIZE')"
+                      >
+                        Autorizar retiro
+                      </button>
+                    </div>
+                  }
+                </div>
+              </section>
+            }
+
             <div class="card-actions">
               <button type="button" class="btn-link" (click)="viewDetails(alert)">
                 <lucide-icon name="eye" class="w-4 h-4 inline-block"></lucide-icon>
                 <span
-                  >Ver detalle de los cortes vencidos ({{
+                  >Ver historial completo ({{
                     alert.relation_details?.length || alert.relation_ids.length
                   }})</span
                 >
@@ -277,7 +313,7 @@
                   } @else if (block.is_regularized) {
                     <span class="text-emerald-700 flex items-center gap-1">
                       <lucide-icon name="check-circle-2" class="w-3.5 h-3.5"></lucide-icon>
-                      <span>Listo para solicitar retiro</span>
+                      <span>Listo para retirar morosidad</span>
                     </span>
                   } @else {
                     <span class="text-gray-500">Debe liquidar adeudos primero</span>
@@ -289,13 +325,24 @@
             <div class="card-actions justify-end">
               <div class="actions-group">
                 @if (block.has_pending_request) {
-                  <button
-                    type="button"
-                    class="btn-action bg-amber-100 text-amber-900 border border-amber-300 cursor-default flex items-center gap-1.5"
-                  >
-                    <lucide-icon name="clock" class="w-4 h-4"></lucide-icon>
-                    <span>Solicitud de retiro ya en trámite</span>
-                  </button>
+                  @if (canDecideRemoval()) {
+                    <button
+                      type="button"
+                      class="btn-action btn-request-removal flex items-center gap-1.5"
+                      (click)="openRequestRemovalModalFromBlock(block)"
+                    >
+                      <lucide-icon name="unlock" class="w-4 h-4"></lucide-icon>
+                      <span>Retirar morosidad</span>
+                    </button>
+                  } @else {
+                    <button
+                      type="button"
+                      class="btn-action bg-amber-100 text-amber-900 border border-amber-300 cursor-default flex items-center gap-1.5"
+                    >
+                      <lucide-icon name="clock" class="w-4 h-4"></lucide-icon>
+                      <span>Solicitud de retiro ya en trámite</span>
+                    </button>
+                  }
                 } @else {
                   <button
                     type="button"
@@ -305,7 +352,7 @@
                   >
                     @if (block.is_regularized) {
                       <lucide-icon name="unlock" class="w-4 h-4"></lucide-icon>
-                      <span>Solicitar retiro de morosidad</span>
+                      <span>Retirar morosidad</span>
                     } @else {
                       <lucide-icon name="lock" class="w-4 h-4"></lucide-icon>
                       <span>Requiere regularización ($0 vencido)</span>
@@ -473,7 +520,9 @@
   @if (requestRemovalModalOpen(); as target) {
     <div class="modal-backdrop" (click)="closeModals()">
       <div class="modal-card" (click)="$event.stopPropagation()">
-        <h3 class="text-base font-bold text-slate-900">Solicitar Retiro de Morosidad</h3>
+        <h3 class="text-base font-bold text-slate-900">
+          {{ directRemoval() ? 'Retirar Morosidad' : 'Solicitar Retiro de Morosidad' }}
+        </h3>
         <p class="text-xs text-gray-600">
           Envía la solicitud a Gerencia para levantar el bloqueo operativo tras haber regularizado
           todos los pagos vencidos ($0.00 de adeudo).
@@ -504,7 +553,7 @@
             [disabled]="!decisionReason().trim() || isSubmitting()"
             (click)="confirmRequestRemoval()"
           >
-            Enviar Solicitud
+            {{ directRemoval() ? 'Retirar morosidad' : 'Enviar solicitud' }}
           </button>
         </div>
       </div>

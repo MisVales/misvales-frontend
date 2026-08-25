@@ -18,6 +18,8 @@ const STATUS_LABELS: Record<string, string> = {
   ASSIGNED: 'Asignada',
   IN_PROGRESS: 'En progreso',
   PARTIALLY_PAID: 'Abono',
+  OVERDUE: 'Vencida',
+  ROLLED_FORWARD: 'Vencida',
   PAID: 'Pagada',
   SETTLED: 'Liquidada',
   NO_RECORDS: 'Sin movimientos',

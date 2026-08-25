@@ -15,9 +15,14 @@ export class ProfileComponent {
   sessionStore = inject(SessionStore);
   private readonly riskApi = inject(RiesgoApiService);
   readonly accountStatus = signal<DelinquencyStatus | null>(null);
-  readonly accountStatusLoading = signal(true);
+  readonly accountStatusLoading = signal(false);
+
+  readonly isDistributor = this.sessionStore.roles().includes('distributor');
 
   constructor() {
+    if (!this.isDistributor) return;
+
+    this.accountStatusLoading.set(true);
     this.riskApi.me().subscribe({
       next: (status) => {
         this.accountStatus.set(status);

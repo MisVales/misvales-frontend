@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { forkJoin, map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
 export interface Surplus {
   id: string;
@@ -82,8 +82,14 @@ export class ExcedentesApiService {
   credit(id: string): Observable<Surplus> {
     return this.post(`${this.config.baseUrl}/surpluses/${id}/credit-balance`, {});
   }
+  creditMany(ids: readonly string[]): Observable<Surplus[]> {
+    return forkJoin(ids.map((id) => this.credit(id)));
+  }
   refund(id: string): Observable<RefundRequest> {
     return this.post(`${this.config.baseUrl}/surpluses/${id}/refund-requests`, {});
+  }
+  refundMany(ids: readonly string[]): Observable<RefundRequest[]> {
+    return forkJoin(ids.map((id) => this.refund(id)));
   }
   refunds(): Observable<RefundRequest[]> {
     return this.http

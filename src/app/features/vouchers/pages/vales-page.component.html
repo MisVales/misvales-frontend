@@ -239,10 +239,20 @@
                       id="voucher-fortnights"
                       type="number"
                       step="1"
-                      min="1"
+                      [min]="context.conditions.minimum_installment_count"
+                      [max]="context.conditions.maximum_installment_count"
                       formControlName="installmentCount"
-                      placeholder="Ej. 8"
+                      [placeholder]="
+                        'Entre ' +
+                        context.conditions.minimum_installment_count +
+                        ' y ' +
+                        context.conditions.maximum_installment_count
+                      "
                     />
+                    <small>
+                      Permitido: {{ context.conditions.minimum_installment_count }} a
+                      {{ context.conditions.maximum_installment_count }} quincenas.
+                    </small>
                   </div>
                   <div>
                     <label for="voucher-category">% Categoría de la distribuidora</label>
@@ -389,7 +399,7 @@
                     </dd>
                   </div>
                   <div>
-                    <dt>Neto para la distribuidora</dt>
+                    <dt>Neto a entregar a MisVales por quincena</dt>
                     <dd>
                       {{
                         data.calculation.net_payment_after_distributor_profit_per_fortnight
@@ -403,16 +413,24 @@
                 <p>Pago de la persona</p>
                 <dl class="calculation-table">
                   <div class="total-row">
-                    <dt>Total base</dt>
+                    <dt>Total que paga la persona</dt>
                     <dd>
                       {{
-                        data.calculation.misvales_total
-                          | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                        data.calculation.client_total | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
                       }}
                     </dd>
                   </div>
                   <div class="total-row">
-                    <dt>Pago base por quincena</dt>
+                    <dt>Pago de la persona por quincena</dt>
+                    <dd>
+                      {{
+                        data.calculation.client_payment_per_fortnight
+                          | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                      }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>Neto a MisVales por quincena</dt>
                     <dd>
                       {{
                         data.calculation.misvales_payment_per_fortnight
@@ -555,6 +573,17 @@
             >
               Parcialidades
             </button>
+            @if (canCancel(voucher)) {
+              <button
+                type="button"
+                class="secondary-button"
+                style="padding: 0.25rem 0.75rem; font-size: 0.875rem; color: #b42318"
+                [disabled]="busy()"
+                (click)="cancelVoucher(voucher)"
+              >
+                Cancelar vale
+              </button>
+            }
           </article>
         }
       </div>
@@ -650,6 +679,11 @@
         <div>
           <p class="eyebrow">Parcialidades</p>
           <h2 id="installments-dialog-title">{{ selectedVoucher.folio }}</h2>
+          <p class="installment-dialog__identity">
+            {{ selectedVoucher.client?.full_name || 'Cliente sin dato' }} ·
+            {{ selectedVoucher.client_total | currency: 'MXN' }} ·
+            {{ selectedVoucher.fortnights_count }} quincenas
+          </p>
         </div>
         <button
           type="button"
@@ -660,52 +694,40 @@
           ×
         </button>
       </div>
-      <p class="mb-4 text-sm text-gray-600" style="margin-bottom: 1rem">
-        Aquí van las parcialidades de este vale.
-      </p>
       @if (selectedVoucher.installments && selectedVoucher.installments.length > 0) {
-        <div style="overflow-x: auto; border: 1px solid #e5e7eb; border-radius: 0.5rem">
-          <table
-            style="width: 100%; text-align: left; border-collapse: collapse; font-size: 0.875rem"
+        <div class="installment-dialog__summary">
+          <span
+            ><strong>{{ installmentCount(selectedVoucher, 'SETTLED') }}</strong> pagadas</span
           >
-            <thead style="background-color: #f9fafb">
-              <tr>
-                <th style="padding: 0.75rem">Quincena</th>
-                <th style="padding: 0.75rem">Monto</th>
-                <th style="padding: 0.75rem">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (inst of selectedVoucher.installments; track inst.number) {
-                <tr style="border-top: 1px solid #e5e7eb">
-                  <td style="padding: 0.75rem">
-                    {{ inst.number }}/{{ selectedVoucher.fortnights_count }}
-                  </td>
-                  <td style="padding: 0.75rem">
-                    {{ inst.client_payment | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
-                  </td>
-                  <td style="padding: 0.75rem">
-                    <span
-                      style="
-                        border-radius: 9999px;
-                        padding: 0.25rem 0.5rem;
-                        font-size: 0.75rem;
-                        font-weight: 600;
-                      "
-                      [ngClass]="{
-                        'bg-gray-100 text-gray-700': inst.status === 'PENDING',
-                        'bg-amber-100 text-amber-800': inst.status === 'OVERDUE',
-                        'bg-emerald-100 text-emerald-800': inst.status === 'SETTLED',
-                        'bg-blue-100 text-blue-800': inst.status === 'PARTIALLY_PAID',
-                      }"
-                    >
-                      {{ installmentStatusLabel(inst.status) }}
-                    </span>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
+          <span class="is-overdue"
+            ><strong>{{ installmentCount(selectedVoucher, 'OVERDUE') }}</strong> vencidas</span
+          >
+          <span
+            ><strong>{{ installmentPaidTotal(selectedVoucher) | currency: 'MXN' }}</strong>
+            abonado</span
+          >
+        </div>
+        <div class="installment-dialog__track" role="list" aria-label="Avance del vale">
+          @for (inst of selectedVoucher.installments; track inst.number) {
+            <article
+              class="installment-dialog__item status-{{ inst.status.toLowerCase() }}"
+              role="listitem"
+            >
+              <div class="installment-dialog__number">{{ inst.number }}</div>
+              <div class="installment-dialog__body">
+                <div>
+                  <strong>Quincena {{ inst.number }}/{{ selectedVoucher.fortnights_count }}</strong
+                  ><span>{{ installmentStatusLabel(inst.status) }}</span>
+                </div>
+                <strong>{{
+                  inst.client_payment | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                }}</strong>
+                @if (inst.due_at) {
+                  <small>Vence {{ inst.due_at | date: 'dd/MM/yyyy' }}</small>
+                }
+              </div>
+            </article>
+          }
         </div>
       } @else {
         <p style="padding: 1rem 0; text-align: center; font-size: 0.875rem; color: #6b7280">

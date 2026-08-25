@@ -12,6 +12,7 @@ import {
 } from '@features/reconciliation/data-access/conciliacion-api.service';
 import {
   PaymentItem,
+  PaymentAllocation,
   RelacionesApiService,
   RelationView,
 } from '@features/relations/data-access/relaciones-api.service';
@@ -24,6 +25,8 @@ import {
   type CreditLineView,
 } from '@features/credit/data-access/credito-api.service';
 import { ExcedentesApiService, type Surplus } from '../data-access/excedentes-api.service';
+import { type DelinquencyStatus, RiesgoApiService } from '@features/delinquency/riesgo-api.service';
+import { groupSurpluses, type SurplusGroup } from '../data-access/surplus-group';
 import { DistributorWorkspaceContextService } from '@shared/components/navigation/distributor-workspace-nav/distributor-workspace-context.service';
 import {
   BreadcrumbsComponent,
@@ -36,6 +39,39 @@ interface PaymentPercentages {
   insurance: number;
   commission: number;
   capital: number;
+}
+
+interface RelationMoneyRoute {
+  inherited: number;
+  current: number;
+  inheritedPaid: number;
+  currentPaid: number;
+  outstanding: number;
+  points: number;
+}
+
+type InstallmentDisplayStatus = 'PAID' | 'LATE_PAID' | 'PARTIAL' | 'OVERDUE' | 'PENDING';
+
+interface VoucherInstallmentTimeline {
+  id: string;
+  number: number;
+  total: number;
+  clientAmount: number;
+  misvalesAmount: number;
+  paid: number;
+  status: InstallmentDisplayStatus;
+}
+
+interface VoucherInstallmentGroup {
+  folio: string;
+  client: string;
+  product: string;
+  totalInstallments: number;
+  installments: VoucherInstallmentTimeline[];
+  clientTotal: number;
+  paidTotal: number;
+  overdueTotal: number;
+  paidCount: number;
 }
 
 @Component({
@@ -62,12 +98,14 @@ export class PagosPageComponent implements OnDestroy {
   private readonly creditApi = inject(CreditoApiService);
   private readonly workspaceContext = inject(DistributorWorkspaceContextService);
   private readonly surplusesApi = inject(ExcedentesApiService);
+  private readonly riskApi = inject(RiesgoApiService);
   private readonly workspaceOwner = {};
 
   readonly relations = signal<RelationView[]>([]);
   readonly surpluses = signal<Surplus[]>([]);
   readonly selectedRelationId = signal<string | null>(null);
   readonly selectedRelation = signal<RelationView | null>(null);
+  readonly selectedPaymentId = signal<string | null>(null);
   readonly searchTerm = signal<string>('');
   readonly contextDistributorNumber = signal<string>('');
   readonly contextDistributorId = signal<string | null>(null);
@@ -110,9 +148,12 @@ export class PagosPageComponent implements OnDestroy {
   readonly error = signal<string>('');
   readonly paymentBusy = signal(false);
   readonly paymentSuccess = signal('');
-  readonly surplusAction = signal<Surplus | null>(null);
+  readonly surplusAction = signal<SurplusGroup | null>(null);
   readonly surplusBusy = signal(false);
   readonly surplusSuccess = signal('');
+  readonly delinquencyStatus = signal<DelinquencyStatus | null>(null);
+  readonly removalBusy = signal(false);
+  readonly removalSuccess = signal('');
   readonly relationPdfBusy = signal(false);
   readonly reportFile = signal<File | null>(null);
   readonly reportReason = signal('');
@@ -166,17 +207,20 @@ export class PagosPageComponent implements OnDestroy {
       OVERDUE: 'Vencida',
       PAST_DUE: 'Vencida',
       PENDING: 'Pendiente',
+      ROLLED_FORWARD: 'Vencida',
     };
     return labels[status] ?? 'Pendiente';
   }
 
   isOverdue(status: string): boolean {
-    return ['OVERDUE', 'PAST_DUE'].includes(status);
+    return ['OVERDUE', 'PAST_DUE', 'ROLLED_FORWARD'].includes(status);
   }
 
   readonly metrics = computed(() => {
     const all = this.filteredRelations();
     let totalPaid = 0;
+    let totalTransferred = 0;
+    let totalSurplus = 0;
     let totalSurcharge = 0;
     let totalInterest = 0;
     let totalInsurance = 0;
@@ -187,11 +231,14 @@ export class PagosPageComponent implements OnDestroy {
     let totalRelationsWithPayments = 0;
 
     for (const rel of all) {
-      if (rel.pagos && rel.pagos.length > 0) {
+      const payments = this.paymentsForRelation(rel);
+      if (payments.length > 0) {
         totalRelationsWithPayments++;
-        for (const p of rel.pagos) {
+        for (const p of payments) {
           totalPaymentsCount++;
           totalPaid += parseFloat(p.amount || '0');
+          totalTransferred += this.paymentTransferred(p);
+          totalSurplus += this.paymentSurplus(p);
           totalSurcharge += parseFloat(p.surcharge_applied || '0');
           totalInterest += parseFloat(p.interest_applied || '0');
           totalInsurance += parseFloat(p.insurance_applied || '0');
@@ -206,6 +253,8 @@ export class PagosPageComponent implements OnDestroy {
 
     return {
       totalPaid,
+      totalTransferred,
+      totalSurplus,
       totalCharges,
       totalCapital,
       totalLineRecovered,
@@ -245,6 +294,36 @@ export class PagosPageComponent implements OnDestroy {
     this.resolveDistributorContext(distributorNumber);
     this.loadRelations();
     this.loadSurpluses();
+    if (this.session.roles().includes('distributor')) {
+      this.loadDelinquencyStatus();
+    }
+  }
+
+  requestDelinquencyRemoval(): void {
+    const distributorId = this.relations()[0]?.distributor_id;
+    if (!distributorId || !this.delinquencyStatus()?.can_request_removal) return;
+    this.removalBusy.set(true);
+    this.error.set('');
+    this.riskApi
+      .requestRemoval(distributorId, 'La deuda acumulada de morosidad fue liquidada.')
+      .subscribe({
+        next: () => {
+          this.removalBusy.set(false);
+          this.removalSuccess.set('Solicitud de retiro enviada a Gerencia.');
+          this.loadDelinquencyStatus();
+        },
+        error: (response: HttpErrorResponse) => {
+          this.removalBusy.set(false);
+          this.error.set(response.error?.message ?? 'No fue posible solicitar el retiro.');
+        },
+      });
+  }
+
+  private loadDelinquencyStatus(): void {
+    this.riskApi.me().subscribe({
+      next: (status) => this.delinquencyStatus.set(status),
+      error: () => this.delinquencyStatus.set(null),
+    });
   }
 
   ngOnDestroy(): void {
@@ -296,6 +375,7 @@ export class PagosPageComponent implements OnDestroy {
     this.api.detail(id).subscribe({
       next: (detail) => {
         this.selectedRelation.set(detail);
+        this.selectedPaymentId.set(this.paymentsForRelation(detail).at(-1)?.id ?? null);
         this.resetPaymentForm();
       },
       error: () => {
@@ -304,11 +384,254 @@ export class PagosPageComponent implements OnDestroy {
     });
   }
 
+  selectPayment(paymentId: string): void {
+    this.selectedPaymentId.set(paymentId);
+  }
+
+  selectedPayment(): PaymentItem | null {
+    const id = this.selectedPaymentId();
+    const relation = this.selectedRelation();
+    return relation
+      ? (this.paymentsForRelation(relation).find((payment) => payment.id === id) ?? null)
+      : null;
+  }
+
+  paymentsForRelation(relation: RelationView): PaymentItem[] {
+    const payments = relation.pagos ?? [];
+    const creditPayments = payments.filter((payment) => payment.source_type === 'CREDIT_BALANCE');
+    if (creditPayments.length <= 1) return payments;
+
+    const total = (field: keyof PaymentItem): string =>
+      creditPayments.reduce((sum, payment) => sum + Number(payment[field] ?? 0), 0).toFixed(4);
+    const aggregate: PaymentItem = {
+      ...creditPayments[0],
+      id: `credit-balance:${relation.id}`,
+      source_id: relation.id,
+      amount: total('amount'),
+      surcharge_applied: total('surcharge_applied'),
+      interest_applied: total('interest_applied'),
+      insurance_applied: total('insurance_applied'),
+      commission_applied: total('commission_applied'),
+      capital_applied: total('capital_applied'),
+      line_recovered: total('line_recovered'),
+      asignaciones: creditPayments.flatMap((payment) => payment.asignaciones ?? []),
+      applied_at:
+        creditPayments
+          .map((payment) => payment.applied_at)
+          .sort()
+          .at(-1) ?? creditPayments[0].applied_at,
+    };
+
+    return [
+      ...payments.filter((payment) => payment.source_type !== 'CREDIT_BALANCE'),
+      aggregate,
+    ].sort((left, right) => left.applied_at.localeCompare(right.applied_at));
+  }
+
+  allocationsFor(payment: PaymentItem): PaymentAllocation[] {
+    return payment.asignaciones ?? [];
+  }
+
+  allocationComponentLabel(component: PaymentAllocation['component']): string {
+    const labels: Record<PaymentAllocation['component'], string> = {
+      SURCHARGE: 'Recargo',
+      INTEREST: 'Interés',
+      INSURANCE: 'Seguro',
+      LOAN_COMMISSION: 'Comisión MisVales',
+      CAPITAL: 'Capital',
+    };
+    return labels[component];
+  }
+
+  distributorProfit(relation: RelationView): number {
+    return (relation.partidas ?? []).reduce(
+      (total, item) => total + Number(item.snapshot['distributor_profit'] ?? 0),
+      0,
+    );
+  }
+
+  relationMoneyRoute(relation: RelationView): RelationMoneyRoute {
+    const inherited = Number(relation.carried_balance ?? 0);
+    const total = Number(relation.misvales_total ?? 0);
+    const applied = this.paymentsForRelation(relation).reduce(
+      (sum, payment) => sum + Number(payment.amount ?? 0),
+      0,
+    );
+    const inheritedPaid = Math.min(applied, inherited);
+
+    return {
+      inherited,
+      current: Math.max(0, total - inherited),
+      inheritedPaid,
+      currentPaid: Math.max(0, applied - inheritedPaid),
+      outstanding: Number(relation.balance ?? 0),
+      points: (relation.puntos_ganados ?? []).reduce(
+        (sum, movement) => sum + Number(movement.points ?? 0),
+        0,
+      ),
+    };
+  }
+
+  paidForInstallment(relation: RelationView, itemId: string): number {
+    return this.paymentsForRelation(relation).reduce(
+      (sum, payment) =>
+        sum +
+        this.allocationsFor(payment)
+          .filter((allocation) => allocation.relation_item_id === itemId)
+          .reduce((allocationSum, allocation) => allocationSum + Number(allocation.amount), 0),
+      0,
+    );
+  }
+
+  groupedInstallments(selected: RelationView): VoucherInstallmentGroup[] {
+    const selectedCutoff = new Date(selected.cutoff_at).getTime();
+    const selectedSettled = selected.financial_status === 'SETTLED';
+    const groups = new Map<string, VoucherInstallmentGroup>();
+
+    for (const relation of this.relations()) {
+      if (selected.distributor_id && relation.distributor_id !== selected.distributor_id) continue;
+      if (new Date(relation.cutoff_at).getTime() > selectedCutoff) continue;
+
+      for (const item of relation.partidas ?? []) {
+        const folio = String(item.snapshot['folio'] || 'Sin folio');
+        const number = Number(item.snapshot['installment'] || 0);
+        const key = `${folio}:${number}`;
+        let group = groups.get(folio);
+        if (!group) {
+          group = {
+            folio,
+            client: String(item.snapshot['client'] || 'Cliente sin dato'),
+            product: String(item.snapshot['product'] || 'Producto sin dato'),
+            totalInstallments: Number(item.snapshot['total_installments'] || 0),
+            installments: [],
+            clientTotal: 0,
+            paidTotal: 0,
+            overdueTotal: 0,
+            paidCount: 0,
+          };
+          groups.set(folio, group);
+        }
+        if (group.installments.some((installment) => installment.id === key)) continue;
+
+        const paid = this.paidForInstallment(relation, item.id);
+        const amount = Number(item.misvales_amount || 0);
+        const relationOverdue = this.isOverdue(relation.financial_status);
+        const status: InstallmentDisplayStatus =
+          relation.financial_status === 'SETTLED'
+            ? relationOverdue
+              ? 'LATE_PAID'
+              : 'PAID'
+            : paid > 0
+              ? 'PARTIAL'
+              : relationOverdue
+                ? selectedSettled && relation.cutoff_at !== selected.cutoff_at
+                  ? 'LATE_PAID'
+                  : 'OVERDUE'
+                : 'PENDING';
+
+        group.installments.push({
+          id: key,
+          number,
+          total: Number(item.snapshot['total_installments'] || 0),
+          clientAmount: Number(item.portfolio_amount || 0),
+          misvalesAmount: amount,
+          paid: status === 'LATE_PAID' && paid === 0 ? amount : paid,
+          status,
+        });
+      }
+    }
+
+    return [...groups.values()].map((group) => {
+      group.installments.sort((a, b) => a.number - b.number);
+      group.clientTotal = group.installments.reduce((sum, item) => sum + item.misvalesAmount, 0);
+      group.paidTotal = group.installments.reduce((sum, item) => sum + item.paid, 0);
+      group.overdueTotal = group.installments
+        .filter((item) => item.status === 'OVERDUE')
+        .reduce((sum, item) => sum + item.misvalesAmount, 0);
+      group.paidCount = group.installments.filter(
+        (item) => item.status === 'PAID' || item.status === 'LATE_PAID',
+      ).length;
+      return group;
+    });
+  }
+
+  installmentDisplayLabel(status: InstallmentDisplayStatus): string {
+    return {
+      PAID: 'Pagada',
+      LATE_PAID: 'Pagada vencida',
+      PARTIAL: 'Con abono',
+      OVERDUE: 'Vencida',
+      PENDING: 'Pendiente',
+    }[status];
+  }
+
   surplusForRelation(relationId: string): Surplus | null {
     return this.surpluses().find((item) => item.origin_relation_id === relationId) ?? null;
   }
 
-  openSurplusActions(surplus: Surplus): void {
+  surplusesForRelation(relationId: string): Surplus[] {
+    return this.surpluses().filter((item) => item.origin_relation_id === relationId);
+  }
+
+  surplusGroupForRelation(relationId: string): SurplusGroup | null {
+    return groupSurpluses(this.surplusesForRelation(relationId))[0] ?? null;
+  }
+
+  totalSurplusForRelation(relationId: string): number {
+    return this.surplusesForRelation(relationId).reduce(
+      (total, item) => total + Number(item.available_amount || 0),
+      0,
+    );
+  }
+
+  originalSurplusForRelation(relationId: string): number {
+    return this.surplusesForRelation(relationId).reduce(
+      (total, item) => total + Number(item.original_amount || 0),
+      0,
+    );
+  }
+
+  surplusDecisionLabel(status: string): string {
+    return (
+      (
+        {
+          PENDING_DECISION: 'Pendiente de decisión',
+          CREDIT_BALANCE: 'Elegido como saldo a favor',
+          PARTIALLY_APPLIED: 'Saldo a favor aplicado parcialmente',
+          CONSUMED: 'Saldo a favor aplicado',
+          REFUND_PENDING: 'Devolución solicitada',
+          REFUNDED: 'Devuelto',
+          MIXED: 'Con movimientos en distintos estados',
+        } as Record<string, string>
+      )[status] ?? status
+    );
+  }
+
+  paymentTransferred(payment: PaymentItem): number {
+    return Number(payment.bank_movement?.amount ?? payment.amount ?? 0);
+  }
+
+  paymentSurplus(payment: PaymentItem): number {
+    return Number(payment.bank_movement?.surplus_amount ?? 0);
+  }
+
+  surplusAvailable(surplus: Surplus): number {
+    return Number(surplus.available_amount || 0);
+  }
+
+  transferredRefundAmount(surplus: Surplus): number {
+    return (surplus.refund_requests ?? [])
+      .filter((refund) => refund.status === 'EXECUTED')
+      .reduce((total, refund) => total + Number(refund.execution_amount || refund.amount || 0), 0);
+  }
+
+  requestedRefundAmount(surplus: Surplus): number {
+    return (surplus.refund_requests ?? [])
+      .filter((refund) => ['PENDING', 'AUTHORIZED'].includes(refund.status))
+      .reduce((total, refund) => total + Number(refund.amount || 0), 0);
+  }
+
+  openSurplusActions(surplus: SurplusGroup): void {
     this.surplusAction.set(surplus);
     this.surplusSuccess.set('');
   }
@@ -321,7 +644,7 @@ export class PagosPageComponent implements OnDestroy {
     const surplus = this.surplusAction();
     if (!surplus || this.surplusBusy()) return;
     this.surplusBusy.set(true);
-    this.surplusesApi.credit(surplus.id).subscribe({
+    this.surplusesApi.creditMany(surplus.member_ids).subscribe({
       next: () => this.finishSurplusAction('El excedente quedó registrado como saldo a favor.'),
       error: (response: HttpErrorResponse) => this.failSurplusAction(response),
     });
@@ -331,7 +654,7 @@ export class PagosPageComponent implements OnDestroy {
     const surplus = this.surplusAction();
     if (!surplus || this.surplusBusy()) return;
     this.surplusBusy.set(true);
-    this.surplusesApi.refund(surplus.id).subscribe({
+    this.surplusesApi.refundMany(surplus.member_ids).subscribe({
       next: () =>
         this.finishSurplusAction('La solicitud de devolución quedó enviada para revisión.'),
       error: (response: HttpErrorResponse) => this.failSurplusAction(response),
@@ -384,9 +707,11 @@ export class PagosPageComponent implements OnDestroy {
 
   canRegisterPayment(): boolean {
     if (this.session.roles().includes('general_manager')) return false;
-    return this.session.permissions().some((permission) =>
-      ['bank_imports.create_branch', 'relations.view_own'].includes(permission),
-    );
+    return this.session
+      .permissions()
+      .some((permission) =>
+        ['bank_imports.create_branch', 'relations.view_own'].includes(permission),
+      );
   }
 
   isCashier(): boolean {

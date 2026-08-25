@@ -42,6 +42,8 @@ export interface VoucherFinancialConditions {
   interest_rate: string;
   insurance_amount: string;
   installment_count: number;
+  minimum_installment_count: number;
+  maximum_installment_count: number;
   category_rate: string;
   late_fee_amount: string;
 }
@@ -51,6 +53,8 @@ export interface VoucherFinancialContext {
     commission_rate: string;
     interest_rate: string;
     insurance_amount: string;
+    minimum_installment_count: number;
+    maximum_installment_count: number;
     late_fee_amount: string;
   };
 }
@@ -77,6 +81,7 @@ export interface VoucherPreview {
 export interface VoucherInstallment {
   number: number;
   client_payment: string;
+  due_at?: string | null;
   status: 'PENDING' | 'OVERDUE' | 'SETTLED' | 'PARTIALLY_PAID';
 }
 export interface VoucherView extends VoucherCalculation {
@@ -142,6 +147,15 @@ export class ValesApiService {
           product_version_id: productVersionId,
           installment_count: installmentCount,
         },
+        { headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }) },
+      )
+      .pipe(map((response) => response.data));
+  }
+  cancelar(id: string): Observable<VoucherView> {
+    return this.http
+      .post<{ data: VoucherView }>(
+        `${this.config.baseUrl}/vouchers/${id}/cancel`,
+        {},
         { headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }) },
       )
       .pipe(map((response) => response.data));

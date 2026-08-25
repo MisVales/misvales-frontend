@@ -15,6 +15,16 @@ export interface BankImport {
   created_at: string;
 }
 
+export interface PendingReconciliationPeriod {
+  process_run_id: string;
+  cutoff_at: string;
+  payment_deadline_at: string | null;
+  relations: number;
+  distributors: number;
+  pending_total: string;
+  status: 'PENDING_RECONCILIATION';
+}
+
 export interface ManualRequestSummary {
   id: string;
   status: string;
@@ -94,7 +104,7 @@ export interface SimulatedBankTransfer {
   amount: string;
   bank_folio: string;
   paid_at: string;
-  payment_type: 'TRANSFER' | 'ONLINE_BANKING' | 'COUNTER';
+  payment_type: 'TRANSFER' | 'ONLINE_BANKING' | 'COUNTER' | 'CREDIT_BALANCE';
   created_at: string;
 }
 
@@ -111,9 +121,10 @@ export class ConciliacionApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
 
-  upload(file: File): Observable<BankImport> {
+  upload(file: File, processRunId: string): Observable<BankImport> {
     const data = new FormData();
     data.append('file', file);
+    data.append('process_run_id', processRunId);
     return this.http
       .post<{ data: BankImport }>(`${this.config.baseUrl}/bank-imports`, data)
       .pipe(map((response) => response.data));
@@ -131,15 +142,18 @@ export class ConciliacionApiService {
       .pipe(map((response) => response.data));
   }
 
-  simulatedTransfers(): Observable<SimulatedBankTransfer[]> {
+  simulatedTransfers(processRunId: string): Observable<SimulatedBankTransfer[]> {
     return this.http
-      .get<{ data: SimulatedBankTransfer[] }>(`${this.config.baseUrl}/bank-simulations`)
+      .get<{ data: SimulatedBankTransfer[] }>(`${this.config.baseUrl}/bank-simulations`, {
+        params: { process_run_id: processRunId },
+      })
       .pipe(map((response) => response.data));
   }
 
-  exportSimulatedTransfers(): Observable<Blob> {
+  exportSimulatedTransfers(processRunId: string): Observable<Blob> {
     return this.http.get(`${this.config.baseUrl}/bank-simulations/export`, {
       responseType: 'blob',
+      params: { process_run_id: processRunId },
     });
   }
 
@@ -232,6 +246,12 @@ export class ConciliacionApiService {
         `${this.config.baseUrl}/manual-reconciliation-requests/${requestId}/execute`,
         {},
       )
+      .pipe(map((response) => response.data));
+  }
+
+  pendingPeriods(): Observable<PendingReconciliationPeriod[]> {
+    return this.http
+      .get<{ data: PendingReconciliationPeriod[] }>(`${this.config.baseUrl}/bank-reconciliation-periods`)
       .pipe(map((response) => response.data));
   }
 }

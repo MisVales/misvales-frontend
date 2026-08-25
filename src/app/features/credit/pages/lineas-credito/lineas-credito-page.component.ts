@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { finalize, forkJoin, map, Observable } from 'rxjs';
+import { finalize, forkJoin, map, Observable, of } from 'rxjs';
 import { SessionStore } from '../../../../core/session/session.store';
 import {
   CreditIncreaseView,
@@ -11,6 +11,10 @@ import {
 } from '../../data-access/credito-api.service';
 import { HistoryPageHeaderComponent } from '../../../../shared/components/history/history-page-header.component';
 import { HistoryFilterBarComponent } from '../../../../shared/components/history/history-filter-bar.component';
+import {
+  PointsBalanceSummary,
+  PuntosApiService,
+} from '../../../points/data-access/puntos-api.service';
 
 @Component({
   selector: 'app-lineas-credito-page',
@@ -122,6 +126,21 @@ import { HistoryFilterBarComponent } from '../../../../shared/components/history
               </dl>
               <div class="mt-4 h-2 overflow-hidden rounded-full bg-black/15"><div class="h-full rounded-full bg-white" [style.width.%]="usedPercent(line)"></div></div>
             </div>
+            @if (points(); as pointSummary) {
+              <section class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-slate-950" aria-labelledby="my-points-title">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-[.14em] text-amber-800">Recompensas</p>
+                    <h3 id="my-points-title" class="mt-1 text-lg font-bold">Mis puntos</h3>
+                    <p class="mt-1 text-sm text-slate-600">Generados por liquidaciones anticipadas.</p>
+                  </div>
+                  <div class="text-right">
+                    <strong class="block text-2xl font-black tabular-nums text-amber-900">{{ pointSummary.available_points }} pts</strong>
+                    <span class="text-sm text-slate-600">Equivalente disponible: {{ pointSummary.money_equivalent | currency: 'MXN' }}</span>
+                  </div>
+                </div>
+              </section>
+            }
           }
           <div class="border-b border-slate-100 p-5 sm:p-6">
             <div class="flex flex-wrap justify-between gap-4">
@@ -287,6 +306,7 @@ import { HistoryFilterBarComponent } from '../../../../shared/components/history
 export class LineasCreditoPageComponent implements OnInit {
   private readonly api = inject(CreditoApiService);
   private readonly session = inject(SessionStore);
+  private readonly pointsApi = inject(PuntosApiService);
   readonly lines = signal<CreditLineView[]>([]);
   readonly lineSearch = signal('');
   readonly filteredLines = computed(() => {
@@ -306,6 +326,7 @@ export class LineasCreditoPageComponent implements OnInit {
   readonly saving = signal(false);
   readonly error = signal('');
   readonly confirmation = signal('');
+  readonly points = signal<PointsBalanceSummary | null>(null);
   requestedAmount = '';
   requestReason = '';
   isDistributor(): boolean {
@@ -321,10 +342,12 @@ export class LineasCreditoPageComponent implements OnInit {
     const lines: Observable<CreditLineView[]> = this.session.roles().includes('distributor')
       ? this.api.consultarMiLinea().pipe(map((line) => [line]))
       : this.api.listarLineas();
-    forkJoin({ lines, requests: this.api.listarIncrementos() }).subscribe({
-      next: ({ lines, requests }) => {
+    const points = this.isDistributor() ? this.pointsApi.getBalance() : of(null);
+    forkJoin({ lines, requests: this.api.listarIncrementos(), points }).subscribe({
+      next: ({ lines, requests, points }) => {
         this.lines.set(lines);
         this.requests.set(requests.data);
+        this.points.set(points);
         this.loading.set(false);
         if (lines.length)
           this.selectLine(lines.find((line) => line.id === this.selectedLine()?.id) ?? lines[0]);

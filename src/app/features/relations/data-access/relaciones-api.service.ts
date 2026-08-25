@@ -9,6 +9,17 @@ export interface RelationItem {
   portfolio_amount: string;
   misvales_amount: string;
 }
+export type PaymentComponent =
+  'SURCHARGE' | 'INTEREST' | 'INSURANCE' | 'LOAN_COMMISSION' | 'CAPITAL';
+
+export interface PaymentAllocation {
+  id: string;
+  payment_id: string;
+  relation_item_id: string;
+  component: PaymentComponent;
+  amount: string;
+  partida_relacion?: RelationItem;
+}
 export interface CreditLineInfo {
   id?: string;
   total_authorized: string;
@@ -48,6 +59,7 @@ export interface PaymentItem {
   commission_applied: string;
   capital_applied: string;
   line_recovered: string;
+  asignaciones?: PaymentAllocation[];
   bank_movement?: {
     amount: string;
     applied_amount: string;
@@ -70,6 +82,15 @@ export interface RelationView {
   misvales_total: string;
   reconciled_total: string;
   surcharge_total: string;
+  previous_relation_id?: string | null;
+  rolled_forward_to_id?: string | null;
+  rolled_forward_amount?: string;
+  carried_balance?: string;
+  carried_surcharge?: string;
+  carried_interest?: string;
+  carried_insurance?: string;
+  carried_commission?: string;
+  carried_capital?: string;
   balance: string;
   distribuidora?: DistributorInfo;
   header_snapshot: {
@@ -92,6 +113,7 @@ export interface RelationView {
   settled_at?: string;
   temporal_classification?: string;
   pagos?: PaymentItem[];
+  puntos_ganados?: Array<{ id: string; points: number }>;
 }
 
 export interface RelationFilterParams {

@@ -5,6 +5,7 @@ import { SessionStore } from '../../../core/session/session.store';
 import {
   BankImport,
   ConciliacionApiService,
+  PendingReconciliationPeriod,
   SimulatedBankTransfer,
 } from '../data-access/conciliacion-api.service';
 import { HistoryPageHeaderComponent } from '../../../shared/components/history/history-page-header.component';
@@ -29,6 +30,8 @@ export class ArchivoBancarioPageComponent {
   readonly file = signal<File | null>(null);
   readonly result = signal<BankImport | null>(null);
   readonly imports = signal<BankImport[]>([]);
+  readonly pendingPeriods = signal<PendingReconciliationPeriod[]>([]);
+  readonly selectedProcessRunId = signal('');
   readonly importSearch = signal('');
   readonly importStatus = signal('');
   readonly filteredImports = computed(() => {
@@ -75,19 +78,22 @@ export class ArchivoBancarioPageComponent {
 
   upload(): void {
     const file = this.file();
-    if (!file || !this.reconciliationAvailable()) return;
+    const processRunId = this.selectedProcessRunId();
+    if (!file || !this.reconciliationAvailable() || !processRunId) return;
     this.busy.set(true);
     this.clearMessages();
-    this.api.upload(file).subscribe({
+    this.api.upload(file, processRunId).subscribe({
       next: (value) => {
         this.result.set(value);
         this.success.set(
           value.replayed
             ? 'Ese archivo ya había sido procesado.'
-            : 'El archivo se procesó correctamente.',
+            : value.row_count === 0
+              ? 'Periodo conciliado sin movimientos ni abonos.'
+              : 'El archivo se procesó correctamente.',
         );
         this.busy.set(false);
-        this.loadSimulations();
+        this.loadPendingPeriods();
       },
       error: (response: HttpErrorResponse) => {
         this.busy.set(false);
@@ -108,7 +114,9 @@ export class ArchivoBancarioPageComponent {
   exportSimulations(): void {
     this.exportBusy.set(true);
     this.clearMessages();
-    this.api.exportSimulatedTransfers().subscribe({
+    const processRunId = this.selectedProcessRunId();
+    if (!processRunId) return;
+    this.api.exportSimulatedTransfers(processRunId).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -148,7 +156,14 @@ export class ArchivoBancarioPageComponent {
       TRANSFER: 'Transferencia',
       ONLINE_BANKING: 'Banca en línea',
       COUNTER: 'Pago en ventanilla',
+      CREDIT_BALANCE: 'Saldo a favor',
     }[type];
+  }
+
+  selectPeriod(processRunId: string): void {
+    if (this.busy() || this.exportBusy()) return;
+    this.selectedProcessRunId.set(processRunId);
+    this.loadSimulations();
   }
 
   private clearMessages(): void {
@@ -159,11 +174,34 @@ export class ArchivoBancarioPageComponent {
 
   private load(): void {
     if (this.canUpload()) {
-      this.loadSimulations();
+      this.loadPendingPeriods();
     } else {
       this.loadImports();
       this.availabilityLoading.set(false);
     }
+  }
+
+  private loadPendingPeriods(): void {
+    this.api.pendingPeriods().subscribe({
+      next: (periods) => {
+        this.pendingPeriods.set(periods);
+        const selected = this.selectedProcessRunId();
+        const next = periods.some((period) => period.process_run_id === selected)
+          ? selected
+          : (periods[0]?.process_run_id ?? '');
+        this.selectedProcessRunId.set(next);
+        if (next) this.loadSimulations();
+        else {
+          this.reconciliationAvailable.set(false);
+          this.availabilityLoading.set(false);
+        }
+      },
+      error: () => {
+        this.pendingPeriods.set([]);
+        this.reconciliationAvailable.set(false);
+        this.availabilityLoading.set(false);
+      },
+    });
   }
 
   private loadImports(): void {
@@ -173,7 +211,9 @@ export class ArchivoBancarioPageComponent {
   }
 
   private loadSimulations(): void {
-    this.api.simulatedTransfers().subscribe({
+    const processRunId = this.selectedProcessRunId();
+    if (!processRunId) return;
+    this.api.simulatedTransfers(processRunId).subscribe({
       next: (value) => {
         this.simulatedTransfers.set(value);
         this.reconciliationAvailable.set(true);

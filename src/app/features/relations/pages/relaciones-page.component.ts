@@ -150,7 +150,7 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                 <th class="p-4 font-medium">Límite</th>
                 <th class="p-4 font-medium">Referencia</th>
                 <th class="p-4 font-medium">Parcialidades</th>
-                <th class="p-4 text-right font-medium">Total</th>
+                <th class="p-4 text-right font-medium">Neto a pagar</th>
                 <th class="p-4 text-right font-medium">Saldo</th>
                 <th class="p-4 font-medium">Estado</th>
                 <th class="p-4 text-right font-medium">Acción</th>
@@ -229,13 +229,22 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
             </div>
           </div>
 
-          <div class="grid gap-4 sm:grid-cols-3">
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-lg border bg-gray-50 p-4">
-              <span class="text-sm text-gray-600">Total cartera</span>
+              <span class="text-sm text-gray-600">Cobrado a clientes</span>
               <strong class="block text-xl">{{ item.portfolio_total | currency: 'MXN' }}</strong>
             </div>
+            <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
+              <span class="text-sm font-medium text-emerald-800">Tu ganancia retenida</span>
+              <strong class="block text-xl text-emerald-950">{{
+                relationDistributorProfit(item) | currency: 'MXN'
+              }}</strong>
+              <small class="mt-1 block text-emerald-800"
+                >No se incluye en tu pago a MisVales.</small
+              >
+            </div>
             <div class="rounded-lg border bg-blue-50 p-4">
-              <span class="text-sm text-blue-700 font-medium">Exigible MisVales</span>
+              <span class="text-sm text-blue-700 font-medium">Total neto a pagar a MisVales</span>
               <strong class="block text-xl text-blue-900">{{
                 item.misvales_total | currency: 'MXN'
               }}</strong>
@@ -337,13 +346,13 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                     <th class="p-3">Cliente</th>
                     <th class="p-3 text-center">Parcialidad</th>
                     <th class="p-3 text-right">Capital</th>
-                    <th class="p-3 text-right">Comisión</th>
+                    <th class="p-3 text-right">Comisión MisVales</th>
                     <th class="p-3 text-right">Interés</th>
                     <th class="p-3 text-right">Seguro</th>
-                    <th class="p-3 text-right">Ganancia</th>
+                    <th class="p-3 text-right">Tu ganancia</th>
                     <th class="p-3 text-right">Recargo</th>
-                    <th class="p-3 text-right">Pago cte.</th>
-                    <th class="p-3 text-right font-medium text-blue-800">Exigible MisVales</th>
+                    <th class="p-3 text-right">Cobro al cliente</th>
+                    <th class="p-3 text-right font-medium text-blue-800">Neto a MisVales</th>
                     <th class="p-3 text-right">Conciliado</th>
                     <th class="p-3 text-right">Saldo</th>
                     <th class="p-3 text-center">Estado</th>
@@ -374,7 +383,12 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                         {{ row.snapshot['insurance'] | currency: 'MXN' }}
                       </td>
                       <td class="p-3 text-right">
-                        {{ row.snapshot['distributor_profit'] | currency: 'MXN' }}
+                        <strong class="block text-emerald-800">{{
+                          row.snapshot['distributor_profit'] | currency: 'MXN'
+                        }}</strong>
+                        <small class="block text-gray-500">
+                          {{ row.snapshot['category_name'] || 'Categoría congelada del vale' }}
+                        </small>
                       </td>
                       <td class="p-3 text-right">
                         {{ row.snapshot['surcharge'] | currency: 'MXN' }}
@@ -447,7 +461,8 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                     Seguro: <strong>{{ payment.insurance_applied | currency: 'MXN' }}</strong>
                   </div>
                   <div>
-                    Comisión: <strong>{{ payment.commission_applied | currency: 'MXN' }}</strong>
+                    Comisión MisVales:
+                    <strong>{{ payment.commission_applied | currency: 'MXN' }}</strong>
                   </div>
                   <div>
                     Capital: <strong>{{ payment.capital_applied | currency: 'MXN' }}</strong>
@@ -455,6 +470,48 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                 </div>
                 <div class="mt-3 text-sm font-semibold text-blue-700">
                   Línea recuperada: {{ payment.line_recovered | currency: 'MXN' }}
+                </div>
+                <div class="mt-4 overflow-x-auto rounded-lg border border-gray-200 bg-white">
+                  <table class="w-full min-w-[680px] text-left text-xs">
+                    <thead class="bg-gray-100 text-gray-700">
+                      <tr>
+                        <th class="p-2 font-semibold">Vale y cliente</th>
+                        <th class="p-2 text-center font-semibold">Parcialidad</th>
+                        <th class="p-2 font-semibold">Concepto pagado</th>
+                        <th class="p-2 text-right font-semibold">Importe aplicado</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      @for (allocation of payment.asignaciones ?? []; track allocation.id) {
+                        <tr>
+                          <td class="p-2">
+                            <strong class="block font-mono text-gray-900">{{
+                              allocation.partida_relacion?.snapshot?.['folio'] || 'Sin folio'
+                            }}</strong>
+                            <span class="text-gray-600">{{
+                              allocation.partida_relacion?.snapshot?.['client'] ||
+                                'Cliente sin dato'
+                            }}</span>
+                          </td>
+                          <td class="p-2 text-center font-mono">
+                            {{ allocation.partida_relacion?.snapshot?.['installment'] || '—' }}/{{
+                              allocation.partida_relacion?.snapshot?.['total_installments'] || '—'
+                            }}
+                          </td>
+                          <td class="p-2">{{ paymentComponentLabel(allocation.component) }}</td>
+                          <td class="p-2 text-right font-bold tabular-nums">
+                            {{ allocation.amount | currency: 'MXN' }}
+                          </td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="4" class="p-3 text-center text-gray-500">
+                            Este pago no tiene desglose por parcialidad disponible.
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
                 </div>
               </div>
             }
@@ -617,6 +674,25 @@ export class RelacionesPageComponent {
 
     // If more than 4, take first 3 and add a suffix
     return `${uniqueFormatted.slice(0, 3).join(', ')} (+${uniqueFormatted.length - 3} más)`;
+  }
+
+  relationDistributorProfit(item: RelationView): number {
+    return (item.partidas ?? []).reduce(
+      (total, partida) => total + Number(partida.snapshot['distributor_profit'] ?? 0),
+      0,
+    );
+  }
+
+  paymentComponentLabel(component: string): string {
+    return (
+      {
+        SURCHARGE: 'Recargo',
+        INTEREST: 'Interés',
+        INSURANCE: 'Seguro',
+        LOAN_COMMISSION: 'Comisión MisVales',
+        CAPITAL: 'Capital',
+      }[component] ?? component
+    );
   }
 
   canDownload(): boolean {
