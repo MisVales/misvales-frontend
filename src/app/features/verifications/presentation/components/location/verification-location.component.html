@@ -1,0 +1,53 @@
+<button class="location-card" type="button" (click)="open()" aria-haspopup="dialog">
+  <span class="map-preview" aria-hidden="true">
+    <span class="map-road map-road-primary"></span>
+    <span class="map-road map-road-secondary"></span>
+    <span class="map-road map-road-tertiary"></span>
+    <span class="map-pin">
+      <verification-asset-icon fileName="icons8-google-maps-nuevo.svg" [size]="30" />
+    </span>
+  </span>
+  <span class="location-copy">
+    <small>Dirección de la visita</small>
+    <strong>{{ placeName }}</strong>
+    <span>{{ address }}</span>
+  </span>
+  <span class="map-action" aria-hidden="true">
+    <verification-asset-icon fileName="icons8-google-maps-nuevo.svg" [size]="24" />
+    <b>Ver mapa</b>
+  </span>
+</button>
+
+@if (modalOpen()) {
+  <div class="location-backdrop" (click)="close()">
+    <section
+      class="location-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="location-title"
+      (click)="$event.stopPropagation()"
+    >
+      <header>
+        <span class="dialog-icon">
+          <verification-asset-icon fileName="icons8-google-maps-nuevo.svg" [size]="34" />
+        </span>
+        <div>
+          <small>Ubicación de la visita</small>
+          <h2 id="location-title">{{ placeName }}</h2>
+          <p>{{ address }}</p>
+        </div>
+        <button class="close-button" type="button" aria-label="Cerrar mapa" (click)="close()">
+          ×
+        </button>
+      </header>
+      <div #mapContainer class="map-container" aria-label="Mapa de {{ placeName }}"></div>
+      <footer>
+        <span>Coordenadas: {{ latitude }}, {{ longitude }}</span>
+        <a [href]="googleMapsUrl()" target="_blank" rel="noopener noreferrer">
+          <verification-asset-icon fileName="icons8-google-maps-nuevo.svg" [size]="22" />
+          Abrir en Google Maps
+        </a>
+      </footer>
+    </section>
+  </div>
+}

@@ -1,5 +1,5 @@
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
-import { decimalStringValidator } from '../validators/decimal-string.validator';
+import { positiveDecimalStringValidator } from '../validators/decimal-string.validator';
 
 export class DomicilioFormFactory {
   static create(fb: FormBuilder): FormGroup {
@@ -17,9 +17,9 @@ export class DomicilioFormFactory {
       country: ['MX', [Validators.required]],
       housing_tenure: ['', [Validators.required]],
       financing_status: ['', [Validators.required]],
-      width_meters: ['', [Validators.required, decimalStringValidator()]],
-      length_meters: ['', [Validators.required, decimalStringValidator()]],
-      built_area_square_meters: ['', [Validators.required, decimalStringValidator()]],
+      width_meters: ['', [Validators.required, positiveDecimalStringValidator()]],
+      length_meters: ['', [Validators.required, positiveDecimalStringValidator()]],
+      built_area_square_meters: ['', [Validators.required, positiveDecimalStringValidator()]],
       details_payload: [null]
     });
   }

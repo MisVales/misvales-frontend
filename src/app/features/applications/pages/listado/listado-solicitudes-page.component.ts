@@ -1,66 +1,55 @@
-import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { Component, inject, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { LucideAngularModule } from 'lucide-angular';
+import { SessionStore } from '../../../../core/session/session.store';
+import { DistribuidorasStore } from '../../../distributors/state/distribuidoras.store';
+import { EstadoSolicitudComponent } from '../../../verifications/components/estado-solicitud/estado-solicitud.component';
 import { SolicitudesListadoStore } from '../../state/solicitudes-listado.store';
-import { firstValueFrom } from 'rxjs';
-import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
-import { Branch, PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
 
 @Component({
   selector: 'app-listado-solicitudes-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterLink],
+  imports: [CommonModule, RouterLink, LucideAngularModule, EstadoSolicitudComponent],
   templateUrl: './listado-solicitudes-page.component.html',
-  styleUrls: ['./listado-solicitudes-page.component.css']
+  styleUrls: ['./listado-solicitudes-page.component.css'],
 })
 export class ListadoSolicitudesPageComponent implements OnInit {
-  protected store = inject(SolicitudesListadoStore);
-  private fb = inject(FormBuilder);
-  private organizationApi = inject(OrganizationApiService);
+  protected readonly applicationsStore = inject(SolicitudesListadoStore);
+  protected readonly distributorsStore = inject(DistribuidorasStore);
+  private readonly sessionStore = inject(SessionStore);
 
-  branches: Branch[] = [];
-  coordinators: PersonnelAssignment[] = [];
-
-  filtrosForm = this.fb.group({
-    application_number: [''],
-    status: [''],
-    branch_id: [''],
-    coordinator_id: [''],
-    created_from: ['']
-  });
-
-  async ngOnInit() {
-    await this.cargarCatalogos();
-    this.store.listar();
-
-    this.filtrosForm.valueChanges.subscribe(() => {
-      this.store.listar(1, 10, this.getFiltrosVigentes());
-    });
+  ngOnInit(): void {
+    void this.distributorsStore.listar(1, 10);
+    void this.applicationsStore.listar(1, 5);
   }
 
-  private async cargarCatalogos(): Promise<void> {
-    const [branches, personnel] = await Promise.all([
-      firstValueFrom(this.organizationApi.getBranches({ per_page: 100, status: 'ACTIVE' })),
-      firstValueFrom(this.organizationApi.getPersonnel({ per_page: 100, assignment_status: 'ACTIVE' })),
-    ]);
-
-    this.branches = branches.data;
-    this.coordinators = personnel.data.filter((assignment) => assignment.role.code === 'coordinator');
+  canCreateApplication(): boolean {
+    return this.sessionStore.roles().includes('coordinator') &&
+      this.hasPermission('distributor_applications.create');
   }
 
-  getFiltrosVigentes(): Record<string, string> {
-    const val = this.filtrosForm.value;
-    const filtrosActivos: Record<string, string> = {};
-    Object.keys(val).forEach(key => {
-      const value = (val as any)[key];
-      if (value) filtrosActivos[key] = value;
-    });
-    return filtrosActivos;
+  distributorStatusLabel(status: string): string {
+    return ({ ACTIVE: 'Activa', PENDING_ACTIVATION: 'Pendiente de activación', DISABLED: 'Desactivada', BLOCKED: 'Bloqueada' } as Record<string, string>)[status] ?? 'Estado no disponible';
   }
 
-  getProgresoAncho(completadas: number, totales: number): string {
-    if (!totales) return '0%';
-    return `${(completadas / totales) * 100}%`;
+  accessStatusLabel(status: string): string {
+    return status === 'ACTIVE' ? 'Acceso permitido' : 'Acceso restringido';
+  }
+
+  applicantName(application: { solicitante: { nombreCompleto?: string; nombre: string; apellidoPaterno: string; apellidoMaterno: string } | null }): string {
+    const applicant = application.solicitante;
+    if (!applicant) return 'Datos por capturar';
+    return applicant.nombreCompleto || [applicant.nombre, applicant.apellidoPaterno, applicant.apellidoMaterno].filter(Boolean).join(' ');
+  }
+
+  changeDistributorPage(delta: number): void {
+    const pagination = this.distributorsStore.paginacion();
+    void this.distributorsStore.listar(pagination.paginaActiva + delta, pagination.porPagina, this.distributorsStore.filtros());
+  }
+
+  private hasPermission(permission: string): boolean {
+    const permissions = this.sessionStore.permissions();
+    return permissions.includes('all') || permissions.includes(permission);
   }
 }

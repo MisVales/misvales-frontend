@@ -4,14 +4,16 @@ import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { OrganizationApiService } from '../../data-access/organization-api.service';
 import { PersonnelAssignment } from '../../data-access/organization.dtos';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-staff-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, StatusLabelPipe, RefactorSelectComponent],
   templateUrl: './staff-list.html',
   styleUrls: ['./staff-list.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StaffList implements OnInit {
   private api = inject(OrganizationApiService);
@@ -19,7 +21,7 @@ export class StaffList implements OnInit {
   staff = signal<PersonnelAssignment[]>([]);
   isLoading = signal(false);
   total = signal(0);
-  
+
   filterSearch = signal('');
   filterStatus = signal('');
   filterRole = signal('');
@@ -39,14 +41,17 @@ export class StaffList implements OnInit {
       next: (res) => {
         const search = this.filterSearch().trim().toLowerCase();
         const staff = search
-          ? res.data.filter((assignment) => assignment.user.name.toLowerCase().includes(search)
-              || assignment.user.email.toLowerCase().includes(search))
+          ? res.data.filter(
+              (assignment) =>
+                assignment.user.name.toLowerCase().includes(search) ||
+                assignment.user.email.toLowerCase().includes(search),
+            )
           : res.data;
         this.staff.set(staff);
         this.total.set(res.meta.total);
         this.isLoading.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: () => this.isLoading.set(false),
     });
   }
 

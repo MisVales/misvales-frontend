@@ -5,11 +5,12 @@ import { LucideAngularModule } from 'lucide-angular';
 import { firstValueFrom } from 'rxjs';
 import { SecurityService } from '../../data-access/security.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
+import { ConfirmDialogComponent } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-recovery-codes',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule, ConfirmDialogComponent],
   templateUrl: './recovery-codes.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -24,6 +25,8 @@ export class RecoveryCodesComponent {
   error = signal('');
   currentPassword = signal('');
   isGenerating = signal(false);
+  leaveDialogOpen = signal(false);
+  private leaveResolver?: (allow: boolean) => void;
 
   startGeneration() {
     this.isGenerating.set(true);
@@ -40,7 +43,6 @@ export class RecoveryCodesComponent {
     this.error.set('');
 
     try {
-      // Si el backend requiere MFA, devolverá 403 y el interceptor abrirá el modal y agregará el totp_code
       const response = await firstValueFrom(
         this.securityService.regenerateRecoveryCodes({
           current_password: this.currentPassword()
@@ -67,11 +69,18 @@ export class RecoveryCodesComponent {
     }
   }
 
-  canLeave(): boolean {
+  canLeave(): boolean | Promise<boolean> {
     if (this.codes().length === 0 || this.hasConfirmedSaved()) {
       return true;
     }
-    return window.confirm('No has confirmado que guardaste los códigos. ¿Seguro que quieres salir? Si los pierdes, podrías perder acceso a tu cuenta de forma permanente.');
+    this.leaveDialogOpen.set(true);
+    return new Promise<boolean>((resolve) => { this.leaveResolver = resolve; });
+  }
+
+  resolveLeave(allow: boolean): void {
+    this.leaveDialogOpen.set(false);
+    this.leaveResolver?.(allow);
+    this.leaveResolver = undefined;
   }
 
   @HostListener('window:beforeunload', ['$event'])

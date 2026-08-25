@@ -1,59 +1,240 @@
 <div class="flex-1 flex flex-col h-full">
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-xl font-bold text-gray-900">Vehículos</h2>
-    <button *ngIf="store.detalle()?.estado === 'DRAFT'" (click)="agregarVehiculo()" class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+    <button
+      *ngIf="store.detalle()?.estado === 'DRAFT'"
+      (click)="agregarVehiculo()"
+      [disabled]="cargandoCatalogo || !!errorCatalogo"
+      class="bg-[#1A4D2E] hover:bg-[#133c23] disabled:cursor-not-allowed disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+        ></path>
+      </svg>
       Agregar Vehículo
     </button>
   </div>
 
   <div *ngIf="cargando" class="text-gray-500 py-8 text-center">Cargando vehículos...</div>
+  <p *ngIf="cargandoCatalogo" class="mb-4 text-sm text-gray-500">
+    Cargando catálogo de marcas y tipos de vehículo...
+  </p>
+  <p
+    *ngIf="errorCatalogo"
+    class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+  >
+    {{ errorCatalogo }}
+  </p>
 
-  <div *ngIf="!cargando && vehiculosArray.length === 0" class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50">
-    <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
-    <p class="text-sm text-gray-500 max-w-[250px]">No hay vehículos registrados en el expediente.</p>
+  <div
+    *ngIf="!cargando && vehiculosArray.length === 0"
+    class="border border-gray-200 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center bg-gray-50"
+  >
+    <svg class="w-10 h-10 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+      ></path>
+    </svg>
+    <p class="text-sm text-gray-500 max-w-[250px]">
+      No hay vehículos registrados en el expediente.
+    </p>
   </div>
 
   <div *ngIf="!cargando && vehiculosArray.length > 0" class="space-y-6">
-    <div *ngFor="let form of vehiculosGroups; let i = index" [formGroup]="form" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative">
-      
-      <div class="absolute right-4 top-4 flex gap-2" *ngIf="store.detalle()?.estado === 'DRAFT'">
-        <button (click)="guardarVehiculo(i)" [disabled]="form.pristine || form.invalid" class="text-[#1A4D2E] hover:text-[#133c23] p-1 disabled:opacity-50" title="Guardar">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
-        </button>
-        <button (click)="form.value.id ? eliminarVehiculoAPI(i, form.value.id) : removerVehiculoVisual(i)" class="text-red-500 hover:text-red-700 p-1" title="Eliminar">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+    <div
+      *ngFor="let form of vehiculosGroups; let i = index"
+      [formGroup]="form"
+      [appApplicationFormErrorState]="form"
+      [appAutosave]="form"
+      [saveFn]="getSaveFn(i)"
+      (statusChange)="autosaveStatuses[i] = $event"
+      class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 relative"
+    >
+      <div
+        class="absolute right-4 top-4 flex items-center gap-4"
+        *ngIf="store.detalle()?.estado === 'DRAFT'"
+      >
+        <!-- Indicador de Autosave -->
+        <div class="text-sm font-medium">
+          <span
+            *ngIf="autosaveStatuses[i] === 'saving'"
+            class="text-gray-500 flex items-center gap-1"
+          >
+            <svg
+              class="animate-spin h-4 w-4 text-gray-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+          </span>
+          <span
+            *ngIf="autosaveStatuses[i] === 'saved'"
+            class="text-green-600 flex items-center gap-1"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              ></path>
+            </svg>
+          </span>
+          <span
+            *ngIf="autosaveStatuses[i] === 'error'"
+            class="text-red-500 flex items-center gap-1"
+          >
+            Error
+          </span>
+        </div>
+
+        <button
+          (click)="form.value.id ? eliminarVehiculoAPI(i, form.value.id) : removerVehiculoVisual(i)"
+          class="text-red-500 hover:text-red-700 p-1"
+          title="Eliminar"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            ></path>
+          </svg>
         </button>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo de Vehículo <span class="text-red-500">*</span></label>
-          <input type="text" formControlName="vehicle_type" placeholder="Ej. Automóvil, Motocicleta" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <label class="block text-xs font-semibold text-gray-700 mb-1"
+            >Tipo de Vehículo <span class="text-red-500">*</span></label
+          >
+          <ng-select
+            [items]="tiposVehiculos"
+            formControlName="vehicle_type"
+            placeholder="Busca y selecciona el tipo"
+            [clearable]="true"
+            [loading]="cargandoCatalogo"
+            notFoundText="No se encontró un tipo de vehículo"
+            class="w-full text-sm"
+          ></ng-select>
+          <p class="mt-1 text-xs text-gray-500">
+            Selecciona el tipo del catálogo para evitar errores de captura.
+          </p>
+          <app-input-error
+            [control]="form.controls['vehicle_type']"
+            label="El tipo de vehículo"
+          ></app-input-error>
         </div>
         <div>
-          <label class="block text-xs font-semibold text-gray-700 mb-1">Estatus de Propiedad <span class="text-red-500">*</span></label>
-          <select formControlName="ownership_status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white">
+          <label class="block text-xs font-semibold text-gray-700 mb-1"
+            >Estatus de Propiedad <span class="text-red-500">*</span></label
+          >
+          <refactor-select
+            formControlName="ownership_status"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm bg-white"
+          >
             <option value="">Seleccionar...</option>
             <option value="OWNED">Propio</option>
             <option value="FINANCED">Financiado</option>
             <option value="COMPANY">De empresa</option>
             <option value="OTHER">Otro</option>
-          </select>
+          </refactor-select>
+          <app-input-error
+            [control]="form.controls['ownership_status']"
+            label="El estatus de propiedad"
+          ></app-input-error>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Marca</label>
-          <input type="text" formControlName="brand" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <ng-select
+            [items]="marcasVehiculos"
+            formControlName="brand"
+            placeholder="Busca y selecciona la marca"
+            [clearable]="true"
+            [loading]="cargandoCatalogo"
+            notFoundText="No se encontró una marca"
+            class="w-full text-sm"
+          ></ng-select>
+          <p class="mt-1 text-xs text-gray-500">Selecciona una marca del catálogo actualizado.</p>
+          <app-input-error [control]="form.controls['brand']" label="La marca"></app-input-error>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Modelo</label>
-          <input type="text" formControlName="model" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <input
+            type="text"
+            formControlName="model"
+            placeholder="Ej. Corolla, CR-V, F-150"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm"
+          />
+          <p class="mt-1 text-xs text-gray-500">Escribe únicamente el modelo del vehículo.</p>
+          <app-input-error [control]="form.controls['model']" label="El modelo"></app-input-error>
         </div>
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Año</label>
-          <input type="number" formControlName="model_year" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
-          <p *ngIf="form.controls['model_year'].invalid" class="text-red-500 text-xs mt-1">Año no razonable.</p>
+          <input
+            appStrictNumber
+            type="number"
+            formControlName="model_year"
+            placeholder="Ej. 2020"
+            [min]="minModelYear"
+            [max]="maxModelYear"
+            step="1"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm"
+          />
+          <p class="mt-1 text-xs text-gray-500">
+            Captura un año entre {{ minModelYear }} y {{ maxModelYear }}.
+          </p>
+          <app-input-error
+            [control]="form.controls['model_year']"
+            label="El año del vehículo"
+            [customMessages]="{
+              min: 'El año del vehículo debe ser 1990 o posterior.',
+              max: 'El año del vehículo no puede ser superior al año próximo.',
+            }"
+          ></app-input-error>
         </div>
+      </div>
+
+      <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+        <label class="block text-sm font-semibold text-gray-700">Evidencia del vehículo</label>
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          (change)="onEvidenceChange(form, $event)"
+          [disabled]="evidenceState(form).uploading || !form.value.id"
+          class="mt-2 block w-full text-sm"
+        />
+        <p *ngIf="!form.value.id" class="mt-1 text-xs text-amber-700">
+          Completa los datos y espera a que el vehículo quede guardado para adjuntar su evidencia.
+        </p>
+        <p *ngIf="evidenceState(form).uploading" class="mt-1 text-xs text-gray-500">
+          Subiendo evidencia...
+        </p>
+        <p *ngIf="evidenceState(form).uploaded" class="mt-1 text-xs text-green-600">
+          Evidencia cargada correctamente para este vehículo.
+        </p>
+        <p *ngIf="evidenceState(form).error" class="mt-1 text-xs text-red-600">
+          {{ evidenceState(form).error }}
+        </p>
+        <app-attachment-preview [file]="evidenceState(form).file"></app-attachment-preview>
       </div>
     </div>
   </div>

@@ -1,0 +1,86 @@
+<main class="min-h-screen bg-[#F8F9FA] flex items-center justify-center p-4">
+  <section class="bg-white shadow-xl rounded-2xl p-8 max-w-md w-full border border-gray-100" aria-labelledby="mfa-title">
+    <div class="flex items-center justify-between gap-4 mb-6">
+      <div>
+        <h1 id="mfa-title" class="text-2xl font-bold text-[#386641]">Verificación de seguridad</h1>
+        <p class="text-gray-600 text-sm mt-1">Completa el segundo factor para continuar.</p>
+      </div>
+      @if (timeLeftFormatted()) {
+        <span class="font-mono text-sm text-gray-600" aria-label="Tiempo restante">
+          {{ timeLeftFormatted() }}
+        </span>
+      }
+    </div>
+
+    @if (error()) {
+      <div class="mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200" role="alert">
+        {{ error() }}
+      </div>
+    }
+
+    @if (mfaStep() === 'passkey') {
+      <p class="text-sm text-gray-600 mb-5">El código fue validado. Confirma ahora con tu Passkey.</p>
+      <button
+        type="button"
+        (click)="usePasskey()"
+        [disabled]="isLoading() || expired()"
+        class="w-full bg-[#386641] hover:bg-[#6A994E] disabled:opacity-60 text-white font-medium py-3 px-4 rounded-xl"
+      >
+        {{ isLoading() ? 'Procesando…' : 'Verificar Passkey' }}
+      </button>
+    } @else {
+      <div class="grid grid-cols-2 gap-2 mb-5" role="group" aria-label="Método de verificación">
+        @if (availableMfa().includes('TOTP')) {
+          <button
+            type="button"
+            (click)="selectFactor('TOTP')"
+            [class.bg-[#386641]]="selectedFactor() === 'TOTP'"
+            [class.text-white]="selectedFactor() === 'TOTP'"
+            class="border rounded-lg px-3 py-2 text-sm"
+          >Aplicación TOTP</button>
+        }
+        @if (availableMfa().includes('RECOVERY_CODE')) {
+          <button
+            type="button"
+            (click)="selectFactor('RECOVERY_CODE')"
+            [class.bg-[#386641]]="selectedFactor() === 'RECOVERY_CODE'"
+            [class.text-white]="selectedFactor() === 'RECOVERY_CODE'"
+            class="border rounded-lg px-3 py-2 text-sm"
+          >Código de recuperación</button>
+        }
+      </div>
+
+      <form [formGroup]="mfaForm" (ngSubmit)="onSubmit()">
+        <label for="mfa-code" class="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-2">
+          {{ selectedFactor() === 'TOTP' ? 'Código de seis dígitos' : 'Código de recuperación' }}
+        </label>
+        <input
+          id="mfa-code"
+          type="text"
+          formControlName="code"
+          autocomplete="one-time-code"
+          [attr.inputmode]="selectedFactor() === 'TOTP' ? 'numeric' : 'text'"
+          [attr.maxlength]="selectedFactor() === 'TOTP' ? 6 : null"
+          placeholder="{{ selectedFactor() === 'TOTP' ? '123456' : 'Ingresa tu código de recuperación' }}"
+          class="block w-full px-4 py-3 border rounded-lg text-center tracking-widest font-mono"
+        />
+        <app-input-error
+          [control]="mfaForm.controls.code"
+          [label]="selectedFactor() === 'TOTP' ? 'El código' : 'El código de recuperación'"
+          [customMessages]="{
+            required: selectedFactor() === 'TOTP' ? 'Ingresa el código de 6 dígitos.' : 'Ingresa tu código de recuperación.',
+            pattern: 'Ingresa exactamente seis dígitos numéricos.'
+          }"
+        ></app-input-error>
+
+        <button
+          type="submit"
+          [disabled]="isLoading() || mfaForm.invalid || expired()"
+          class="mt-5 w-full bg-[#386641] hover:bg-[#6A994E] disabled:opacity-60 text-white font-medium py-3 px-4 rounded-xl"
+        >
+          {{ expired() ? 'Verificación expirada' : isLoading() ? 'Procesando…' : 'Verificar' }}
+        </button>
+      </form>
+    }
+  </section>
+</main>

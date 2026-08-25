@@ -1,103 +1,460 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 relative">
   <div class="flex items-center justify-between mb-6">
     <h2 class="text-xl font-bold text-gray-900">Datos Personales</h2>
+
+    <!-- Indicador de Autosave -->
+    <div class="text-sm font-medium">
+      <span *ngIf="autosaveStatus === 'saving'" class="text-gray-500 flex items-center gap-1">
+        <svg
+          class="animate-spin h-4 w-4 text-gray-400"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+        </svg>
+        Guardando...
+      </span>
+      <span *ngIf="autosaveStatus === 'saved'" class="text-green-600 flex items-center gap-1">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M5 13l4 4L19 7"
+          ></path>
+        </svg>
+        Guardado
+      </span>
+      <span *ngIf="autosaveStatus === 'error'" class="text-red-500 flex items-center gap-1">
+        No se pudo guardar ·
+        <button type="button" (click)="saveFn(form.value)" class="underline hover:text-red-600">
+          Reintentar
+        </button>
+      </span>
+    </div>
   </div>
 
-  <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
-    
+  <form
+    [formGroup]="form"
+    [appApplicationFormErrorState]="form"
+    [appAutosave]="form"
+    [saveFn]="saveFn"
+    (statusChange)="autosaveStatus = $event"
+    class="space-y-6"
+  >
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Nacionalidad -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Nacionalidad <span class="text-red-500">*</span></label
+        >
+        <refactor-select
+          formControlName="nationality"
+          [class.border-red-500]="mostrarError('nationality')"
+          [attr.aria-invalid]="mostrarError('nationality')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] bg-white"
+        >
+          <option value="MEXICAN">Mexicana</option>
+          <option value="FOREIGN">Extranjera</option>
+        </refactor-select>
+        <app-input-error
+          [control]="form.controls['nationality']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="La nacionalidad"
+        ></app-input-error>
+      </div>
+
       <!-- Nombre -->
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Nombre(s) <span class="text-red-500">*</span></label>
-        <input type="text" formControlName="first_name" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Nombre(s) <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="first_name"
+          [class.border-red-500]="mostrarError('first_name')"
+          [attr.aria-invalid]="mostrarError('first_name')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <app-input-error
+          [control]="form.controls['first_name']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El nombre"
+          [customMessages]="{ personName: 'El nombre sólo puede contener letras.' }"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Apellido Paterno <span class="text-red-500">*</span></label>
-        <input type="text" formControlName="first_last_name" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Apellido Paterno <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="first_last_name"
+          [class.border-red-500]="mostrarError('first_last_name')"
+          [attr.aria-invalid]="mostrarError('first_last_name')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <app-input-error
+          [control]="form.controls['first_last_name']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El apellido paterno"
+          [customMessages]="{ personName: 'El apellido paterno sólo puede contener letras.' }"
+        ></app-input-error>
       </div>
       <div>
         <label class="block text-xs font-semibold text-gray-700 mb-1">Apellido Materno</label>
-        <input type="text" formControlName="second_last_name" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <input
+          type="text"
+          formControlName="second_last_name"
+          [class.border-red-500]="mostrarError('second_last_name')"
+          [attr.aria-invalid]="mostrarError('second_last_name')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <app-input-error
+          [control]="form.controls['second_last_name']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El apellido materno"
+          [customMessages]="{ personName: 'El apellido materno sólo puede contener letras.' }"
+        ></app-input-error>
       </div>
 
       <!-- CURP -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">CURP <span class="text-red-500">*</span></label>
-        <div class="relative flex items-center">
-          <input type="text" formControlName="curp" [readonly]="isCurpMasked" [class.bg-gray-50]="isCurpMasked" [class.text-gray-500]="isCurpMasked" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase">
-          <button type="button" *ngIf="isCurpMasked" (click)="editarCurp()" class="absolute right-2 text-xs font-semibold text-[#1A4D2E] hover:underline bg-gray-50 px-2">Editar</button>
+      <div
+        *ngIf="
+          form.get('nationality')?.value === 'MEXICAN' ||
+          form.get('nationality')?.value === 'FOREIGN'
+        "
+      >
+        <div class="flex items-center gap-1 mb-1">
+          <label class="block text-xs font-semibold text-gray-700"
+            >CURP
+            <span *ngIf="form.get('nationality')?.value === 'MEXICAN'" class="text-red-500"
+              >*</span
+            ></label
+          >
+          <app-validation-tooltip
+            *ngIf="!isCurpMasked"
+            [control]="form.controls['curp']"
+            [rules]="curpRules"
+          ></app-validation-tooltip>
         </div>
-        <p *ngIf="form.controls['curp'].hasError('invalidCurp') && !isCurpMasked" class="text-red-500 text-xs mt-1">Formato de CURP inválido.</p>
+        <div class="relative flex items-center">
+          <input
+            type="text"
+            formControlName="curp"
+            maxlength="18"
+            [readonly]="isCurpMasked"
+            [class.bg-gray-50]="isCurpMasked"
+            [class.text-gray-500]="isCurpMasked"
+            [class.border-red-500]="mostrarError('curp')"
+            [attr.aria-invalid]="mostrarError('curp')"
+            class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase"
+          />
+          <button
+            type="button"
+            *ngIf="isCurpMasked"
+            (click)="editarCurp()"
+            class="absolute right-2 text-xs font-semibold text-[#1A4D2E] hover:underline bg-gray-50 px-2"
+          >
+            Editar
+          </button>
+        </div>
+        <app-input-error
+          *ngIf="!isCurpMasked"
+          [control]="form.controls['curp']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El CURP"
+          [customMessages]="{
+            invalidCurp: 'El formato de CURP es inválido.',
+            maxlength: 'La CURP debe tener exactamente 18 caracteres.',
+          }"
+        ></app-input-error>
       </div>
 
       <!-- RFC -->
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">RFC</label>
-        <input type="text" formControlName="rfc" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase">
-        <p *ngIf="form.controls['rfc'].hasError('invalidRfc')" class="text-red-500 text-xs mt-1">Formato de RFC inválido.</p>
+        <div class="flex items-center gap-1 mb-1">
+          <label class="block text-xs font-semibold text-gray-700">RFC</label>
+          <app-validation-tooltip
+            [control]="form.controls['rfc']"
+            [rules]="rfcRules"
+          ></app-validation-tooltip>
+        </div>
+        <input
+          type="text"
+          formControlName="rfc"
+          maxlength="15"
+          [class.border-red-500]="mostrarError('rfc')"
+          [attr.aria-invalid]="mostrarError('rfc')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase"
+        />
+        <app-input-error
+          [control]="form.controls['rfc']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El RFC"
+          [customMessages]="{
+            invalidRfc: 'El formato de RFC es inválido.',
+            maxlength: 'El RFC no puede exceder 15 caracteres.',
+          }"
+        ></app-input-error>
       </div>
 
       <!-- Fecha Nacimiento -->
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Fecha de Nacimiento <span class="text-red-500">*</span></label>
-        <input type="date" formControlName="birth_date" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Fecha de Nacimiento <span class="text-red-500">*</span></label
+        >
+        <input
+          type="date"
+          formControlName="birth_date"
+          [min]="minBirthDate"
+          [max]="maxAdultDate"
+          [class.border-red-500]="mostrarError('birth_date')"
+          [attr.aria-invalid]="mostrarError('birth_date')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <app-input-error
+          [control]="form.controls['birth_date']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="La fecha de nacimiento"
+          [customMessages]="{
+            mustBeAdult: 'Debe ser mayor de edad.',
+            required: 'Obligatorio.',
+            birthDateTooEarly: 'Fecha inválida.',
+          }"
+        ></app-input-error>
       </div>
 
-      <!-- Lugar Nacimiento -->
-      <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Lugar de Nacimiento</label>
-        <input type="text" formControlName="birth_place" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+      <!-- País Nacimiento -->
+      <div *ngIf="form.get('nationality')?.value === 'FOREIGN'">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >País de Nacimiento <span class="text-red-500">*</span></label
+        >
+        <refactor-select
+          formControlName="birth_country"
+          [class.border-red-500]="mostrarError('birth_country')"
+          [attr.aria-invalid]="mostrarError('birth_country')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] bg-white"
+        >
+          <option value="">Selecciona un país</option>
+          @for (country of countries; track country.code) {
+            <option [value]="country.code">{{ country.name }}</option>
+          }
+        </refactor-select>
+        <app-input-error
+          [control]="form.controls['birth_country']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El país de nacimiento"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Estado de Nacimiento</label>
-        <input type="text" formControlName="birth_state" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Estado de Nacimiento <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="birth_state"
+          [class.border-red-500]="mostrarError('birth_state')"
+          [attr.aria-invalid]="mostrarError('birth_state')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <app-input-error
+          [control]="form.controls['birth_state']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El estado de nacimiento"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Ciudad de Nacimiento</label>
-        <input type="text" formControlName="birth_city" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Ciudad de Nacimiento <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="birth_city"
+          [class.border-red-500]="mostrarError('birth_city')"
+          [attr.aria-invalid]="mostrarError('birth_city')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <app-input-error
+          [control]="form.controls['birth_city']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="La ciudad de nacimiento"
+        ></app-input-error>
       </div>
 
       <!-- Contacto -->
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Correo Electrónico <span class="text-red-500">*</span></label>
-        <input type="email" formControlName="email" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
-        <p *ngIf="form.controls['email'].invalid && form.controls['email'].touched" class="text-red-500 text-xs mt-1">Correo inválido.</p>
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Correo Electrónico <span class="text-red-500">*</span></label
+        >
+        <input
+          type="email"
+          formControlName="email"
+          [class.border-red-500]="mostrarError('email')"
+          [attr.aria-invalid]="mostrarError('email')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <app-input-error
+          [control]="form.controls['email']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El correo electrónico"
+          [customMessages]="{
+            email: 'El formato es incorrecto, debe ser del tipo usuario@ejemplo.com',
+          }"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Teléfono <span class="text-red-500">*</span></label>
-        <input type="tel" formControlName="phone_number" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
-        <p *ngIf="form.controls['phone_number'].invalid && form.controls['phone_number'].touched" class="text-red-500 text-xs mt-1">Teléfono a 10 dígitos requerido.</p>
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Teléfono <span class="text-red-500">*</span></label
+        >
+        <app-phone-input formControlName="phone_number"></app-phone-input>
+        <app-input-error
+          [control]="form.controls['phone_number']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El teléfono"
+          [customMessages]="{
+            invalidPhone: 'Debe contener un número de teléfono válido para el país seleccionado.',
+          }"
+        ></app-input-error>
       </div>
     </div>
 
     <!-- Identificación -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+      <div *ngIf="form.get('nationality')?.value === 'FOREIGN'">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >País Emisor de Identificación <span class="text-red-500">*</span></label
+        >
+        <refactor-select
+          formControlName="identification_country"
+          [class.border-red-500]="mostrarError('identification_country')"
+          [attr.aria-invalid]="mostrarError('identification_country')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] bg-white"
+        >
+          <option value="">Selecciona un país</option>
+          @for (country of countries; track country.code) {
+            <option [value]="country.code">{{ country.name }}</option>
+          }
+        </refactor-select>
+        <app-input-error
+          [control]="form.controls['identification_country']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El país emisor de identificación"
+        ></app-input-error>
+      </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Tipo de Identificación Oficial <span class="text-red-500">*</span></label>
-        <select formControlName="official_id_type" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] bg-white">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Tipo de Identificación Oficial <span class="text-red-500">*</span></label
+        >
+        <refactor-select
+          formControlName="official_id_type"
+          [class.border-red-500]="mostrarError('official_id_type')"
+          [attr.aria-invalid]="mostrarError('official_id_type')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] bg-white"
+        >
           <option value="">Seleccionar...</option>
           <option value="INE">INE</option>
           <option value="PASSPORT">Pasaporte</option>
           <option value="PROFESSIONAL_LICENSE">Cédula Profesional</option>
           <option value="OTHER">Otro</option>
-        </select>
+        </refactor-select>
+        <app-input-error
+          [control]="form.controls['official_id_type']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El tipo de identificación"
+        ></app-input-error>
       </div>
       <div>
-        <label class="block text-xs font-semibold text-gray-700 mb-1">Número de Identificación <span class="text-red-500">*</span></label>
-        <input type="text" formControlName="official_id_number" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]">
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Número de Identificación <span class="text-red-500">*</span></label
+        >
+        <input
+          type="text"
+          formControlName="official_id_number"
+          maxlength="25"
+          [class.border-red-500]="mostrarError('official_id_number')"
+          [attr.aria-invalid]="mostrarError('official_id_number')"
+          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
+        />
+        <p class="mt-1 text-xs text-gray-500">Máximo 25 caracteres.</p>
+        <app-input-error
+          [control]="form.controls['official_id_number']"
+          [forceShow]="mostrarErroresDeValidacion"
+          label="El número de identificación"
+        ></app-input-error>
+      </div>
+
+      <!-- Evidencia -->
+      <div>
+        <label class="block text-xs font-semibold text-gray-700 mb-1"
+          >Subir Evidencia de Identificación <span class="text-red-500">*</span></label
+        >
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          (change)="onFileChange($event)"
+          [class.border-red-500]="mostrarError('evidence_uploaded')"
+          [attr.aria-invalid]="mostrarError('evidence_uploaded')"
+          class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm"
+        />
+
+        <div *ngIf="uploadingEvidence" class="text-blue-600 text-xs mt-1 flex items-center gap-1">
+          <svg
+            class="animate-spin h-3 w-3"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          Subiendo evidencia...
+        </div>
+        <div *ngIf="evidenceError" class="text-red-500 text-xs mt-1">{{ evidenceError }}</div>
+        <div *ngIf="mostrarError('evidence_uploaded')" class="text-red-600 text-xs mt-1">
+          Debe subir una evidencia de identificación.
+        </div>
+        <div
+          *ngIf="form.get('evidence_uploaded')?.value === true"
+          class="text-green-600 text-xs mt-1 flex items-center gap-1"
+        >
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M5 13l4 4L19 7"
+            ></path>
+          </svg>
+          Evidencia subida correctamente.
+        </div>
+
+        <app-attachment-preview [file]="currentEvidenceFile"></app-attachment-preview>
       </div>
     </div>
 
     <!-- Acciones -->
-    <div class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
-      <div *ngIf="guardadoExitoso && !form.dirty" class="text-xs text-gray-400 mr-auto flex items-center gap-1">
-        <svg class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Guardado
-      </div>
-      <button type="submit" [disabled]="!form.dirty || store.guardandoSeccion() || store.detalle()?.estado !== 'DRAFT'" class="px-5 py-2.5 bg-[#1A4D2E] hover:bg-[#133c23] text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-        <span *ngIf="store.guardandoSeccion()">Guardando...</span>
-        <span *ngIf="!store.guardandoSeccion()">Guardar Sección</span>
-      </button>
+    <div
+      *ngIf="store.errorConcurrencia()"
+      class="mt-8 pt-4 border-t border-gray-100 flex items-center justify-between gap-3"
+    >
+      <span class="text-red-500 text-sm font-medium">{{ store.error() }}</span>
     </div>
-
   </form>
 </div>

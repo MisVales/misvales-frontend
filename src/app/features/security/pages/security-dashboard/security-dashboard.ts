@@ -8,14 +8,15 @@ import { LucideAngularModule } from 'lucide-angular';
   standalone: true,
   imports: [CommonModule, RouterOutlet, RouterLink, RouterLinkActive, LucideAngularModule],
   templateUrl: './security-dashboard.html',
+  styleUrl: './security-dashboard.css',
 })
 export class SecurityDashboard {
   tabs = [
     { title: 'Perfil', icon: 'user', route: 'profile' },
     { title: 'Contraseña', icon: 'key', route: 'password' },
-    { title: 'MFA (Factores de autenticidad)', icon: 'shield-check', route: 'mfa' },
+    { title: 'Autenticación', icon: 'shield-check', route: 'mfa' },
     { title: 'Códigos de rescate', icon: 'shield-alert', route: 'recovery-codes' },
     { title: 'Sesiones activas', icon: 'monitor-smartphone', route: 'sessions' },
-    { title: 'Historial', icon: 'history', route: 'history' },
+    { title: 'Actividad', icon: 'history', route: 'history' },
   ];
 }

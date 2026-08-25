@@ -1,0 +1,50 @@
+<main class="mx-auto max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
+  <header class="flex flex-col gap-4 border-b border-[var(--mv-border)] pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <p class="text-xs font-bold uppercase tracking-[.12em] text-[var(--mv-primary-700)]">Catálogo global</p>
+      <h1 class="mt-2 text-3xl font-bold tracking-tight text-[var(--mv-text)]">Productos</h1>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Cada producto representa solamente un importe que puede entregarse. Las condiciones financieras se aplican al otorgar el vale, nunca al crear este catálogo.</p>
+    </div>
+    @if (canManageCatalogs()) {
+      <div class="flex flex-wrap gap-3">
+        <a routerLink="/configuraciones" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--mv-primary-600)] px-4 text-sm font-semibold text-[var(--mv-primary-800)]">Condiciones financieras</a>
+        <a routerLink="nuevo" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--mv-primary-700)] px-4 text-sm font-semibold text-white">Crear producto</a>
+      </div>
+    }
+  </header>
+
+  @if (actionError()) { <div class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800" role="alert">{{ actionError() }}</div> }
+
+  @if (store.estadoCarga()) {
+    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Cargando productos">
+      @for (item of [1, 2, 3]; track item) { <div class="h-40 animate-pulse rounded-xl border border-[var(--mv-border)] bg-white"></div> }
+    </div>
+  } @else if (store.error()) {
+    <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">{{ store.error() }}</div>
+  } @else if (!store.datos().length) {
+    <section class="rounded-xl border border-dashed border-[var(--mv-border-strong)] bg-white p-10 text-center">
+      <h2 class="text-lg font-bold text-[var(--mv-text)]">Aún no hay importes publicados</h2>
+      <p class="mx-auto mt-2 max-w-lg text-sm leading-6 text-[var(--mv-text-muted)]">Crea el primer producto para que las distribuidoras puedan elegir un importe al otorgar un vale.</p>
+    </section>
+  } @else {
+    <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3" aria-label="Productos disponibles">
+      @for (prod of store.datos(); track prod.id) {
+        <article class="flex min-h-44 flex-col rounded-xl border border-[var(--mv-border)] bg-white p-5 shadow-sm">
+          <div class="flex items-start justify-between gap-3">
+            <div><p class="text-xs font-semibold uppercase tracking-wide text-[var(--mv-text-muted)]">{{ prod.sku }}</p><h2 class="mt-2 text-lg font-bold text-[var(--mv-text)]">{{ prod.nombre }}</h2></div>
+            <span class="rounded-full bg-[var(--mv-primary-100)] px-2.5 py-1 text-xs font-bold text-[var(--mv-primary-800)]">{{ estadoProducto(prod.estado) }}</span>
+          </div>
+          <p class="mt-3 text-sm leading-5 text-[var(--mv-text-muted)]">{{ prod.descripcion || 'Importe disponible para otorgamiento.' }}</p>
+          <div class="mt-auto flex items-end justify-between gap-3 border-t border-[var(--mv-border)] pt-4">
+            <div><p class="text-xs text-[var(--mv-text-muted)]">Capital a entregar</p><p class="mt-1 text-xl font-bold tabular-nums text-[var(--mv-text)]">{{ prod.precioBase | currency:'MXN':'symbol-narrow':'1.2-2' }}</p></div>
+            <div class="text-right"><p class="text-xs text-[var(--mv-text-muted)]">{{ estadoEdicion(prod.estadoVersion) }}</p>@if (isGeneralManager()) { <a [routerLink]="[prod.id]" class="mt-1 inline-flex min-h-9 items-center text-sm font-semibold text-[var(--mv-primary-800)] underline underline-offset-4">Ver producto</a> }</div>
+          </div>
+          @if (canManageCatalogs() && prod.estadoVersion === 'DRAFT') {
+            <button type="button" class="mt-4 min-h-10 rounded-lg border border-[var(--mv-primary-600)] px-3 text-sm font-semibold text-[var(--mv-primary-800)]" (click)="requestPublication(prod.versionId, prod.versionRegistro)">Publicar producto</button>
+          }
+        </article>
+      }
+    </section>
+  }
+</main>
+<app-reason-action-dialog [open]="!!pendingPublication()" title="Publicar producto" message="Este importe quedará disponible para la operación. Las condiciones financieras se resolverán al otorgar cada vale." confirmLabel="Publicar" [reason]="publicationReason()" (reasonChange)="publicationReason.set($event)" [busy]="actionLoading()" dialogId="publish-product" (confirm)="confirmPublication()" (cancel)="closePublication()"></app-reason-action-dialog>

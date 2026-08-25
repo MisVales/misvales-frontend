@@ -1,0 +1,66 @@
+<div class="modal-backdrop" (click)="close()">
+  <div
+    class="preview-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="preview-file-name"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="preview-heading">
+      <div>
+        <strong id="preview-file-name">{{ imageName }}</strong
+        ><span>{{ imageSize }} · {{ imageType }}</span>
+      </div>
+      <span class="preview-count">{{ imageIndex + 1 }} de {{ totalImages }}</span>
+      <button class="modal-close" type="button" aria-label="Cerrar vista previa" (click)="close()">
+        ×
+      </button>
+    </div>
+    <div
+      class="hero-preview"
+      (wheel)="onWheel($event)"
+      (pointerdown)="onPointerDown($event)"
+      (pointermove)="onPointerMove($event)"
+      (pointerup)="onPointerUp()"
+      (pointercancel)="onPointerUp()"
+    >
+      <img
+        class="facade-image"
+        [src]="imageUrl"
+        [alt]="imageName"
+        draggable="false"
+        [style.transform]="
+          'translate(' + panX() + 'px, ' + panY() + 'px) scale(' + zoom() / 100 + ')'
+        "
+      />
+      <button
+        class="preview-nav previous"
+        type="button"
+        aria-label="Imagen anterior"
+        (click)="previous.emit()"
+      >
+        ‹
+      </button>
+      <button
+        class="preview-nav next"
+        type="button"
+        aria-label="Imagen siguiente"
+        (click)="next.emit()"
+      >
+        ›
+      </button>
+    </div>
+    <div class="preview-footer">
+      @if (!readOnly) {
+        <button class="button secondary icon-label-button" type="button">
+          <refactor-attachment-animation type="download" [size]="20" /> Descargar
+        </button>
+      }
+      <div class="zoom-control" aria-label="Control de zoom">
+        <button type="button" aria-label="Alejar" (click)="zoomOut()">−</button>
+        <span>{{ zoom() }}%</span>
+        <button type="button" aria-label="Acercar" (click)="zoomIn()">+</button>
+      </div>
+    </div>
+  </div>
+</div>

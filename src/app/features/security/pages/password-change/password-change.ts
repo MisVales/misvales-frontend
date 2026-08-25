@@ -1,8 +1,10 @@
 import { Component, inject, signal, computed } from '@angular/core';
+import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
-import { AuthFacade } from '../../../auth/state/auth.facade';
+import { AuthTokenStore } from '../../../../core/session/auth-token.store';
+import { SessionStore } from '../../../../core/session/session.store';
 import { firstValueFrom } from 'rxjs';
 import { SecurityService } from '../../data-access/security.service';
 import { apiErrorMessage } from '../../../../core/api/api-error';
@@ -15,11 +17,14 @@ import { apiErrorMessage } from '../../../../core/api/api-error';
 })
 export class PasswordChange {
   private securityService = inject(SecurityService);
-  private authFacade = inject(AuthFacade);
+  private router = inject(Router);
+  private tokenStore = inject(AuthTokenStore);
+  private sessionStore = inject(SessionStore);
 
   currentPassword = signal('');
   newPassword = signal('');
   confirmPassword = signal('');
+  touched = signal(false);
 
   passwordCriteria = computed(() => {
     const pw = this.newPassword();
@@ -32,24 +37,30 @@ export class PasswordChange {
     };
   });
 
+  isPasswordValid = computed(() => {
+    const c = this.passwordCriteria();
+    return c.length && c.uppercase && c.lowercase && c.number && c.symbol;
+  });
+
+  passwordsMismatch = computed(() => {
+    return !!this.confirmPassword() && this.newPassword() !== this.confirmPassword();
+  });
+
   loading = signal(false);
   success = signal(false);
   error = signal('');
 
   async submit() {
-    if (this.newPassword() !== this.confirmPassword()) {
-      this.error.set('Las contraseñas nuevas no coinciden.');
+    this.touched.set(true);
+    if (!this.currentPassword()) {
       return;
     }
 
-    const pw = this.newPassword();
-    if (pw.length < 12) {
-      this.error.set('La nueva contraseña debe tener al menos 12 caracteres.');
+    if (!this.isPasswordValid()) {
       return;
     }
 
-    if (!/[A-Z]/.test(pw) || !/[a-z]/.test(pw) || !/\d/.test(pw) || !/[@$!%*?&_\-#.+]/.test(pw)) {
-      this.error.set('La contraseña debe incluir al menos una mayúscula, una minúscula, un número y un símbolo especial.');
+    if (this.passwordsMismatch()) {
       return;
     }
 
@@ -58,7 +69,6 @@ export class PasswordChange {
     this.success.set(false);
 
     try {
-      // Si el backend requiere MFA, devolverá 403 y el interceptor abrirá el modal, agregando el totp_code
       await firstValueFrom(
         this.securityService.changePassword({
           current_password: this.currentPassword(),
@@ -71,10 +81,9 @@ export class PasswordChange {
       this.newPassword.set('');
       this.confirmPassword.set('');
       
-      // Cerramos sesión después de 3 segundos para obligarlo a loguearse de nuevo
-      setTimeout(() => {
-        this.authFacade.logout();
-      }, 3000);
+      this.tokenStore.clear();
+      this.sessionStore.clearSession();
+      await this.router.navigate(['/auth/login'], { replaceUrl: true });
     } catch (error: unknown) {
       this.error.set(apiErrorMessage(error, 'No fue posible cambiar la contraseña. Revise su contraseña actual.'));
     } finally {

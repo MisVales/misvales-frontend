@@ -9,6 +9,9 @@ export interface InvitationRes {
   user_id?: string;
   user_email: string;
   user_name: string;
+  role_name?: string;
+  branch_name?: string;
+  inviter_name?: string;
   state: 'ACTIVE' | 'PREPARED' | 'CONSUMED' | 'EXPIRED' | 'REVOKED';
   expires_at: string;
   inspected_at?: string;
@@ -42,7 +45,10 @@ export class InvitationService {
   }
 
   sendInvitation(data: UserCreateReq): Observable<UserCreateRes> {
-    // Note: Creating a user with send_invitation: true is how we send invitations according to backend docs
     return this.http.post<UserCreateRes>(this.usersUrl, data);
+  }
+
+  revokeInvitation(id: string, reason: string): Observable<{ data: InvitationRes }> {
+    return this.http.post<{ data: InvitationRes }>(`${this.baseUrl}/${id}/revoke`, { reason });
   }
 }

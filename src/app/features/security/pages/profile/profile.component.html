@@ -1,7 +1,7 @@
-<div class="max-w-4xl mx-auto space-y-8 mt-6">
+<div class="max-w-4xl mx-auto space-y-6 mt-6">
   <div>
     <h2 class="text-xl font-bold text-gray-900 mb-6">Información del Perfil</h2>
-    
+
     <div class="bg-white border border-gray-200 rounded-xl p-6">
       <div class="flex items-start gap-4">
         <div class="p-4 bg-gray-50 rounded-full flex-shrink-0">
@@ -14,4 +14,76 @@
       </div>
     </div>
   </div>
+
+  <section aria-labelledby="account-status-title">
+    <div class="flex items-center justify-between gap-3 mb-3">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-wider text-[#386641]">Cuenta</p>
+        <h2 id="account-status-title" class="text-xl font-bold text-gray-900">Estado y alertas</h2>
+      </div>
+      <lucide-icon
+        name="shield-check"
+        class="w-6 h-6 text-[#386641]"
+        aria-hidden="true"
+      ></lucide-icon>
+    </div>
+    @if (accountStatusLoading()) {
+      <div
+        class="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600"
+        role="status"
+      >
+        Consultando el estado de tu cuenta…
+      </div>
+    } @else if (accountStatus(); as status) {
+      <div
+        class="rounded-xl border p-5"
+        [class.border-red-200]="status.blocked"
+        [class.bg-red-50]="status.blocked"
+        [class.border-emerald-200]="!status.blocked"
+        [class.bg-emerald-50]="!status.blocked"
+      >
+        <div class="flex items-start gap-3">
+          <div class="grid min-h-11 min-w-11 place-items-center rounded-full bg-white">
+            <lucide-icon
+              [name]="status.blocked ? 'shield-alert' : 'circle-check'"
+              class="w-6 h-6"
+              [class.text-red-700]="status.blocked"
+              [class.text-emerald-700]="!status.blocked"
+              aria-hidden="true"
+            ></lucide-icon>
+          </div>
+          <div>
+            <h3
+              class="font-bold"
+              [class.text-red-900]="status.blocked"
+              [class.text-emerald-900]="!status.blocked"
+            >
+              {{ status.blocked ? 'Cuenta con restricción por morosidad' : 'Cuenta operativa' }}
+            </h3>
+            <p
+              class="mt-1 text-sm leading-6"
+              [class.text-red-800]="status.blocked"
+              [class.text-emerald-800]="!status.blocked"
+            >
+              {{ status.reason || 'No tienes alertas activas de morosidad.' }}
+            </p>
+          </div>
+        </div>
+        <div class="mt-4 grid grid-cols-2 gap-2 text-sm">
+          <div class="rounded-lg bg-white/80 p-3">
+            <span class="block text-gray-500">Pagos</span
+            ><strong class="text-gray-900">Disponibles</strong>
+          </div>
+          <div class="rounded-lg bg-white/80 p-3">
+            <span class="block text-gray-500">Aclaraciones</span
+            ><strong class="text-gray-900">Disponibles</strong>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="rounded-xl border border-gray-200 bg-gray-50 p-5 text-sm text-gray-600">
+        El estado de cuenta no está disponible en este momento.
+      </div>
+    }
+  </section>
 </div>

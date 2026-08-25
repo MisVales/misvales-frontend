@@ -1,0 +1,239 @@
+<div class="page-container" [class.inbox-page]="isInbox()">
+  @if (isInbox()) {
+    <header class="inbox-header">
+      <div>
+        <p class="inbox-eyebrow">Validación gerencial</p>
+        <h1>Solicitudes por autorizar</h1>
+        <p>Revisa los expedientes listos para una decisión dentro de tu alcance.</p>
+      </div>
+      <button type="button" class="refresh-button" (click)="refreshInbox()" [disabled]="facade.isLoading()">
+        <lucide-icon name="refresh-cw" [size]="17" aria-hidden="true" />
+        Actualizar
+      </button>
+    </header>
+
+    <section class="summary-grid" aria-label="Resumen de autorizaciones">
+      <article><span class="summary-icon"><lucide-icon name="shield-check" [size]="22" /></span><div><strong>{{ facade.totalSolicitudes() }}</strong><small>Pendientes por autorizar</small></div></article>
+      <article><span class="summary-icon"><lucide-icon name="list-checks" [size]="22" /></span><div><strong>{{ filteredApplications().length }}</strong><small>Visibles en esta página</small></div></article>
+      <article><span class="summary-icon"><lucide-icon name="building-2" [size]="22" /></span><div><strong class="summary-scope">{{ scopeLabel() }}</strong><small>Alcance aplicado</small></div></article>
+    </section>
+  }
+
+  @if (facade.isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando información...</p>
+    </div>
+  }
+
+  @if (facade.error()) {
+    <div class="alert alert-danger">
+      {{ facade.error() }}
+      <button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">
+        Cerrar
+      </button>
+    </div>
+  }
+
+  @if (isInbox() && !facade.isLoading() && !facade.error()) {
+    <section class="authorization-panel" aria-labelledby="authorization-list-title">
+      <div class="panel-heading">
+        <div>
+          <h2 id="authorization-list-title">Expedientes pendientes</h2>
+          <p>Solo aparecen solicitudes que ya completaron la revisión previa.</p>
+        </div>
+        <span class="count-pill">{{ facade.totalSolicitudes() }} pendientes</span>
+      </div>
+
+      <label class="search-field">
+        <span class="sr-only">Buscar por aspirante, folio o sucursal</span>
+        <lucide-icon name="search" [size]="18" aria-hidden="true" />
+        <input type="search" placeholder="Buscar aspirante, folio o sucursal..." [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        @if (search()) { <button type="button" (click)="search.set('')">Limpiar</button> }
+      </label>
+
+      @if (facade.solicitudes().length === 0) {
+        <div class="illustrated-empty">
+          <img src="/no-found-1.png" alt="" />
+          <h3>No hay solicitudes por autorizar</h3>
+          <p>Cuando un expediente llegue a la decisión gerencial aparecerá aquí.</p>
+          <button type="button" class="outline-action" (click)="refreshInbox()"><lucide-icon name="refresh-cw" [size]="16" />Actualizar bandeja</button>
+        </div>
+      } @else if (filteredApplications().length === 0) {
+        <div class="illustrated-empty">
+          <img src="/no-found-2.png" alt="" />
+          <h3>No encontramos coincidencias</h3>
+          <p>Prueba con otro nombre, folio o sucursal.</p>
+          <button type="button" class="outline-action" (click)="search.set('')">Limpiar búsqueda</button>
+        </div>
+      } @else {
+        <div class="authorization-table-wrap" tabindex="0" aria-label="Solicitudes por autorizar; desplázate horizontalmente si es necesario">
+          <table class="authorization-table">
+          <thead>
+            <tr><th>Folio</th><th>Aspirante</th><th>Sucursal</th><th>Estado</th><th>Enviada</th><th>Acción</th></tr>
+          </thead>
+          <tbody>
+            @for (solicitud of filteredApplications(); track solicitud.id) {
+              <tr>
+                <td><span class="folio">{{ solicitud.folio }}</span></td>
+                <td><div class="applicant"><span>{{ solicitud.aspirante.nombreCompleto.charAt(0) || 'S' }}</span><strong>{{ solicitud.aspirante.nombreCompleto || 'Sin nombre' }}</strong></div></td>
+                <td><span class="branch-name"><lucide-icon name="building-2" [size]="15" />{{ solicitud.sucursal.nombre }}</span></td>
+                <td><app-estado-solicitud [estado]="solicitud.estado" /></td>
+                <td>{{ solicitud.fechaEnvio | date:'mediumDate' }}</td>
+                <td><a class="review-action" [routerLink]="['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id, 'autorizacion']">Revisar expediente<lucide-icon name="arrow-right" [size]="16" /></a></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        </div>
+      }
+
+      <footer class="panel-footer">
+        <p>Mostrando {{ filteredApplications().length }} de {{ facade.totalSolicitudes() }} solicitudes</p>
+        <div class="pagination">
+          <button type="button" aria-label="Página anterior" [disabled]="facade.pageSolicitudes() === 1" (click)="onPageChange(facade.pageSolicitudes() - 1)"><lucide-icon name="chevron-left" [size]="18" /></button>
+          <span>Página {{ facade.pageSolicitudes() }}</span>
+          <button type="button" aria-label="Página siguiente" [disabled]="facade.pageSolicitudes() * facade.perPageSolicitudes() >= facade.totalSolicitudes()" (click)="onPageChange(facade.pageSolicitudes() + 1)"><lucide-icon name="chevron-right" [size]="18" /></button>
+        </div>
+      </footer>
+    </section>
+  }
+
+  @if (!isInbox() && facade.solicitudSeleccionada(); as solicitud) {
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Autorización Gerencial Definitiva</h2>
+        <p class="card-subtitle">
+          Solicitud: {{ solicitud.folio }} - {{ solicitud.aspirante.nombreCompleto }}
+        </p>
+      </div>
+
+      <div class="card-body">
+        <div class="info-panel mb-4">
+          <h4>Dictamen Previos</h4>
+          <div class="grid-2">
+            <div>
+              <p class="label">Visita Física</p>
+              <span
+                class="badge"
+                [class.badge-success]="solicitud.visitas[0]?.resultadoFisico === 'FAVORABLE'"
+                [class.badge-danger]="solicitud.visitas[0]?.resultadoFisico === 'UNFAVORABLE'"
+              >
+                {{ solicitud.visitas[0]?.resultadoFisico || 'No registrado' }}
+              </span>
+            </div>
+            <div>
+              <p class="label">Evaluación Coordinación</p>
+              <span
+                class="badge"
+                [class.badge-success]="solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES'"
+                [class.badge-danger]="solicitud.ultimaEvaluacion?.dictamen === 'DOES_NOT_COMPLY'"
+              >
+                {{ solicitud.ultimaEvaluacion?.dictamen === 'COMPLIES' ? 'Cumple' : 'No Cumple' }}
+              </span>
+            </div>
+          </div>
+          @if (solicitud.ultimaEvaluacion?.motivo) {
+            <p class="mt-2 text-sm">
+              <strong>Motivo Coordinador:</strong> {{ solicitud.ultimaEvaluacion?.motivo }}
+            </p>
+          }
+        </div>
+
+        @if (decision() === 'APPROVED') {
+          <div class="form-group mt-4">
+            <label for="initial-credit-line">Línea inicial autorizada</label>
+            <input
+              id="initial-credit-line"
+              class="form-control"
+              appStrictNumber type="number"
+              inputmode="decimal"
+              min="0.0001"
+              step="0.0001"
+              required
+              placeholder="0.0000"
+              [ngModel]="lineaInicial()"
+              (ngModelChange)="lineaInicial.set($event)"
+              [disabled]="facade.isLoading()"
+              aria-describedby="initial-credit-line-help"
+            />
+            <p id="initial-credit-line-help" class="field-help">
+              Este importe se utilizará para crear la línea de crédito inicial.
+            </p>
+          </div>
+        }
+
+        <div class="form-group mt-4">
+          <label>Decisión Gerencial *</label>
+          <div class="radio-group authorization-radios">
+            <label class="radio-label auth-approved">
+              <input
+                type="radio"
+                name="decision"
+                value="APPROVED"
+                [ngModel]="decision()"
+                (ngModelChange)="decision.set($event)"
+                [disabled]="facade.isLoading()"
+              />
+              <div class="radio-content">
+                <span class="auth-title">Aprobar Solicitud</span>
+                <span class="auth-desc">El aspirante será dado de alta como distribuidora.</span>
+              </div>
+            </label>
+            <label class="radio-label auth-rejected">
+              <input
+                type="radio"
+                name="decision"
+                value="REJECTED"
+                [ngModel]="decision()"
+                (ngModelChange)="decision.set($event)"
+                [disabled]="facade.isLoading()"
+              />
+              <div class="radio-content">
+                <span class="auth-title">Rechazar Solicitud</span>
+                <span class="auth-desc">La solicitud será denegada de forma permanente.</span>
+              </div>
+            </label>
+          </div>
+          @if (submitted() && !decision()) {
+            <p class="text-sm text-danger mt-1">Debes seleccionar una decisión gerencial (Aprobar o Rechazar).</p>
+          }
+        </div>
+
+        <div class="form-group mt-4">
+          <label>Comentarios Adicionales {{ decision() === 'REJECTED' ? '*' : '(Opcional)' }}</label>
+          <textarea
+            class="form-control"
+            rows="4"
+            placeholder="Observaciones de la gerencia..."
+            [ngModel]="comentarios()"
+            (ngModelChange)="comentarios.set($event)"
+            [disabled]="facade.isLoading()"
+          ></textarea>
+          @if (submitted() && decision() === 'REJECTED' && !comentarios()) {
+            <p class="text-sm text-danger mt-1">Es obligatorio proporcionar un motivo o comentarios para el rechazo.</p>
+          }
+        </div>
+      </div>
+
+      <div class="card-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onCancel()"
+          [disabled]="facade.isLoading()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-lg"
+          (click)="onAuthorize()"
+          [disabled]="facade.isLoading()"
+        >
+          Emitir Dictamen Final
+        </button>
+      </div>
+    </div>
+  }
+</div>

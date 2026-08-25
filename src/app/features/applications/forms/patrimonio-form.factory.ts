@@ -7,6 +7,7 @@ export class PatrimonioFormFactory {
       id: [null],
       entry_type: ['', [Validators.required]], // ASSET, LIABILITY, ACTIVE_COMMITMENT
       name: ['', [Validators.required, Validators.maxLength(100)]],
+      other_description: ['', [Validators.maxLength(180)]], // Sólo se requiere cuando se elige "Otro".
       amount: ['', [Validators.required, decimalStringValidator()]], // Captured as decimal string
       outstanding_balance: ['', [decimalStringValidator()]], // Optional
       monthly_payment: ['', [decimalStringValidator()]], // Optional

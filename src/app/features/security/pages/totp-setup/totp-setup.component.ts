@@ -6,11 +6,12 @@ import * as QRCode from 'qrcode';
 import { firstValueFrom } from 'rxjs';
 import { apiErrorMessage } from '../../../../core/api/api-error';
 import { SecurityService } from '../../data-access/security.service';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
 
 @Component({
   selector: 'app-totp-setup',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, InputErrorComponent],
   templateUrl: './totp-setup.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,0 +1,147 @@
+<div class="bg-[#F8FAF9] p-4 lg:p-8 min-h-screen">
+  <div class="max-w-7xl mx-auto">
+    
+    <!-- HEADER & FILTROS -->
+    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 tracking-tight">Listado de Clientes</h1>
+        <p class="text-sm text-gray-500 mt-1">Gestiona y consulta la información de los clientes.</p>
+      </div>
+
+      <div class="flex flex-col sm:flex-row items-end gap-3 w-full lg:w-auto">
+        @if (!isMobileRole()) {
+        <app-filtros-clientes class="flex-1 w-full lg:w-auto"></app-filtros-clientes>
+        }
+
+        @if (canCreate()) {
+        <a routerLink="/clientes/nuevo" class="w-full sm:w-auto px-5 py-2.5 bg-[#386641] hover:bg-[#2b4f32] text-white text-sm font-semibold rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+          Registrar Cliente
+        </a>
+        }
+      </div>
+    </div>
+
+    <!-- STATES -->
+    @if (store.cargandoListado()) {
+    <div class="py-20 text-center text-gray-500">
+      <svg class="animate-spin h-8 w-8 text-[#386641] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      Cargando clientes...
+    </div>
+    }
+
+    @if (!store.cargandoListado() && store.listado().length === 0) {
+    <div class="py-20 text-center text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
+      No se encontraron clientes.
+    </div>
+    }
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    @if (!store.cargandoListado() && store.listado().length > 0) {
+    <div>
+      
+      <!-- VISTA MÓVIL (Tarjetas) -->
+      <div class="grid grid-cols-1 gap-4 lg:hidden">
+        @for (cliente of store.listado(); track cliente.id) {
+        <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100 flex flex-col gap-3">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="text-sm font-bold text-gray-900 line-clamp-1">{{ cliente.nombreCompleto }}</h3>
+              <p class="text-xs text-gray-500 mt-0.5">Número de cliente: {{ cliente.numero }}</p>
+            </div>
+            <!-- Badges -->
+            @switch (cliente.estado) {
+              @case ('PAID') {
+                <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-[#DCE8B4] text-[#386641]">PAGADO</span>
+              }
+              @case ('PENDING') {
+                <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-red-100 text-red-700">PENDIENTE</span>
+              }
+              @case ('PARTIALLY_PAID') {
+                <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-700">PAGO PARCIAL</span>
+              }
+              @case ('NO_RECORDS') {
+                <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-gray-200 text-gray-600">SIN MOVIMIENTOS</span>
+              }
+            }
+          </div>
+          
+
+          
+          <div class="flex justify-between items-center border-t border-gray-100 pt-3 mt-1">
+            <div>
+              <p class="text-[10px] font-bold text-gray-500 uppercase">Saldo</p>
+              <p class="text-sm font-bold text-gray-900" [class.text-red-600]="cliente.resumenCartera.saldoActual !== '0.00' && cliente.estado === 'PENDING'">${{ cliente.resumenCartera.saldoActual }}</p>
+            </div>
+            <a [routerLink]="['/clientes', cliente.id, 'cartera']" class="w-8 h-8 rounded-full bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-600 transition-colors">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+            </a>
+          </div>
+        </div>
+        }
+      </div>
+
+      <!-- VISTA ESCRITORIO (Tabla) -->
+      <div class="hidden lg:block bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="w-full text-left text-sm whitespace-nowrap">
+          <thead>
+            <tr class="bg-gray-50/50 border-b border-gray-200 text-gray-500">
+              <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider">Número Cliente</th>
+              <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider">Nombre</th>
+              <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider">Saldo Info</th>
+              <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider text-center">Estado</th>
+              <th class="px-6 py-4 font-semibold text-[11px] uppercase tracking-wider text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            @for (cliente of store.listado(); track cliente.id) {
+            <tr class="hover:bg-gray-50/50 transition-colors">
+              <td class="px-6 py-4 font-mono text-xs text-gray-500">
+                {{ cliente.numero }}
+              </td>
+              <td class="px-6 py-4 font-bold text-gray-900">
+                {{ cliente.nombreCompleto }}
+              </td>
+              <td class="px-6 py-4 font-bold text-gray-900" [class.text-red-600]="cliente.resumenCartera.saldoActual !== '0.00' && cliente.estado === 'PENDING'">
+                ${{ cliente.resumenCartera.saldoActual }}
+              </td>
+              <td class="px-6 py-4 text-center">
+                @switch (cliente.estado) {
+                  @case ('PAID') {
+                    <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-[#DCE8B4] text-[#386641]">PAGADO</span>
+                  }
+                  @case ('PENDING') {
+                    <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-red-100 text-red-700">PENDIENTE</span>
+                  }
+                  @case ('PARTIALLY_PAID') {
+                    <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-700">PAGO PARCIAL</span>
+                  }
+                  @case ('NO_RECORDS') {
+                    <span class="px-3 py-1 text-[10px] font-bold uppercase rounded-full bg-gray-200 text-gray-600">SIN MOVIMIENTOS</span>
+                  }
+                }
+              </td>
+              <td class="px-6 py-4 text-right">
+                <a [routerLink]="['/clientes', cliente.id, 'cartera']" class="text-sm font-semibold text-[#386641] hover:underline">Ver detalle</a>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+        
+        <div class="px-6 py-4 border-t border-gray-100 bg-gray-50/50 flex justify-between items-center text-xs text-gray-500">
+          <span class="text-sm text-gray-600 font-medium">Página {{ store.paginacion().page }} de {{ totalPages() }} · {{ store.paginacion().total }} clientes</span>
+          <div class="flex items-center gap-2">
+            <button type="button" [disabled]="store.paginacion().page <= 1" (click)="store.cambiarPagina(store.paginacion().page - 1)" class="p-1 hover:bg-gray-200 rounded disabled:text-gray-300 disabled:cursor-not-allowed"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg></button>
+            <button type="button" [disabled]="store.paginacion().page >= totalPages()" (click)="store.cambiarPagina(store.paginacion().page + 1)" class="p-1 hover:bg-gray-200 rounded disabled:text-gray-300 disabled:cursor-not-allowed"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg></button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+    }
+  </div>
+</div>

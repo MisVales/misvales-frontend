@@ -1,0 +1,17 @@
+{
+  "name": "MisVales",
+  "short_name": "MisVales",
+  "theme_color": "#17351f",
+  "background_color": "#f8faf8",
+  "display": "standalone",
+  "scope": "./",
+  "start_url": "./",
+  "icons": [
+    {
+      "src": "imagotipo-vales.png",
+      "sizes": "1504x1209",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

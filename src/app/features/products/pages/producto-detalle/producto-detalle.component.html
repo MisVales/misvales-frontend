@@ -1,0 +1,57 @@
+<main class="mx-auto max-w-3xl p-4 md:p-6">
+  <a routerLink="/productos" class="inline-flex min-h-11 items-center text-sm font-semibold text-[var(--mv-primary-800)] underline underline-offset-4">
+    Volver a productos
+  </a>
+
+  <header class="mt-5 border-b border-[var(--mv-border)] pb-5">
+    <p class="text-xs font-bold uppercase tracking-[.12em] text-[var(--mv-primary-700)]">Catálogo de importes</p>
+    <h1 class="mt-2 text-2xl font-bold tracking-tight text-[var(--mv-text)]">{{ isNew() ? 'Crear producto' : 'Crear nueva edición del producto' }}</h1>
+    <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Define únicamente el importe disponible. Las condiciones financieras se capturan al otorgar cada vale.</p>
+  </header>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="mt-6 grid gap-5 rounded-2xl border border-[var(--mv-border)] bg-white p-5 shadow-sm md:grid-cols-2 md:p-7">
+    <div>
+      <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Clave del producto <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="code" placeholder="Ej. VALE-5000" autocomplete="off" (focus)="marcarCampoAlEnfocar('code')">
+      <app-input-error [control]="form.controls.code" label="La clave" [forceShow]="mostrarError('code')"></app-input-error>
+    </div>
+
+    <div>
+      <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Nombre para operación <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="name" placeholder="Ej. Vale de $5,000" (focus)="marcarCampoAlEnfocar('name')">
+      <app-input-error [control]="form.controls.name" label="El nombre" [forceShow]="mostrarError('name')"></app-input-error>
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Descripción</label>
+      <textarea class="w-full resize-none rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="description" rows="2" placeholder="Una breve referencia para quien elige el importe."></textarea>
+      <app-input-error [control]="form.controls.description" label="La descripción"></app-input-error>
+    </div>
+
+    <div class="md:col-span-2 rounded-xl border border-[var(--mv-primary-100)] bg-[var(--mv-primary-50)] p-4">
+      <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Importe nominal a entregar <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <input appMoneyInput class="w-full max-w-sm rounded-lg border border-[var(--mv-border-strong)] bg-white px-3 py-2.5 text-lg font-semibold tabular-nums" type="text" inputmode="decimal" formControlName="nominal_amount" placeholder="Ej. 5,000" (focus)="marcarCampoAlEnfocar('nominal_amount')">
+      <p class="mt-2 text-xs leading-5 text-[var(--mv-text-muted)]">Debe ser múltiplo de $100. Este es el capital del vale, no el total que pagará la persona.</p>
+      <app-input-error [control]="form.controls.nominal_amount" label="El importe nominal" [forceShow]="mostrarError('nominal_amount')" [customMessages]="{ min: 'El importe mínimo es de $100.00.' }"></app-input-error>
+    </div>
+
+    <div class="md:col-span-2">
+      <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Motivo del alta o cambio <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <textarea class="w-full resize-none rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="reason" rows="2" placeholder="Explica por qué se crea o ajusta este importe" (focus)="marcarCampoAlEnfocar('reason')"></textarea>
+      <app-input-error [control]="form.controls.reason" label="El motivo" [forceShow]="mostrarError('reason')"></app-input-error>
+    </div>
+
+    @if (error()) {
+      <p class="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800 md:col-span-2" role="alert">{{ error() }}</p>
+    }
+
+    @if (canWrite()) {
+      <div class="flex flex-col gap-3 border-t border-[var(--mv-border)] pt-5 md:col-span-2 sm:flex-row sm:items-center sm:justify-between">
+        <p class="text-xs leading-5 text-[var(--mv-text-muted)]">Al guardar se crea un borrador. Publícalo desde el catálogo cuando esté listo para usarse.</p>
+        <button class="min-h-11 rounded-lg bg-[var(--mv-primary-700)] px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50" [disabled]="saving()">
+          {{ saving() ? 'Guardando…' : (isNew() ? 'Guardar producto' : 'Guardar edición') }}
+        </button>
+      </div>
+    }
+  </form>
+</main>

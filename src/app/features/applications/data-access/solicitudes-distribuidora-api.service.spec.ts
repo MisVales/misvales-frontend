@@ -35,4 +35,26 @@ describe('SolicitudesDistribuidoraApiService', () => {
     request.flush(null, { status: 204, statusText: 'No Content' });
     expect(completed).toBe(true);
   });
+
+  it('desenvuelve el familiar creado para conservar su identificador en el autosave', () => {
+    let result: any;
+    service.crearFamiliar('a1', { relationship: 'CHILD' }, 2).subscribe((value) => result = value);
+    const request = http.expectOne('/api/v1/distributor-applications/a1/family-members');
+    expect(request.request.body).toEqual({ relationship: 'CHILD', lock_version: 2 });
+    expect(request.request.headers.get('X-Autosave')).toBe('true');
+    request.flush({ data: { id: 'f1', relationship: 'CHILD' } });
+
+    expect(result).toEqual({ id: 'f1', relationship: 'CHILD' });
+  });
+
+  it('desenvuelve el domicilio creado y lo marca como autosave', () => {
+    let result: any;
+    service.crearDomicilio('a1', { street: 'Av. Reforma' }, 4).subscribe((value) => result = value);
+    const request = http.expectOne('/api/v1/distributor-applications/a1/residences');
+    expect(request.request.headers.get('X-Autosave')).toBe('true');
+    expect(request.request.body).toEqual({ street: 'Av. Reforma', lock_version: 4 });
+    request.flush({ data: { id: 'r1', street: 'Av. Reforma' } });
+
+    expect(result).toEqual({ id: 'r1', street: 'Av. Reforma' });
+  });
 });

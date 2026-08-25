@@ -1,0 +1,50 @@
+:host {
+  display: inline-grid;
+  flex: 0 0 auto;
+  height: var(--animation-size);
+  place-items: center;
+  width: var(--animation-size);
+}
+
+.animation-shell,
+.lottie-container,
+.fallback {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.lottie-container {
+  line-height: 0;
+  overflow: hidden;
+}
+
+.lottie-container > svg {
+  transform: scale(var(--animation-scale));
+  transform-origin: center;
+}
+
+:host(.lottie-transparent-background) .lottie-container > svg > g[clip-path] > g:first-child {
+  display: none !important;
+}
+
+.lottie-container:empty {
+  display: none;
+}
+
+.fallback {
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}

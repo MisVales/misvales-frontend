@@ -1,0 +1,133 @@
+.gallery {
+  background: var(--gg-canvas);
+  display: grid;
+  gap: 18px;
+  min-height: 100vh;
+  min-width: 0;
+  padding: clamp(18px, 4vw, 44px);
+}
+.catalog-section,
+verification-section-card,
+verification-data-table {
+  max-width: 100%;
+  min-width: 0;
+}
+.intro,
+.catalog-section {
+  background: #fff;
+  border: 1px solid var(--gg-line);
+  border-radius: 16px;
+  padding: clamp(16px, 2.4vw, 28px);
+}
+.intro > span {
+  color: var(--gg-green);
+  display: block;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  margin-bottom: 10px;
+}
+.section-copy {
+  align-items: start;
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.section-copy > span {
+  color: var(--gg-green);
+  font-size: 11px;
+  font-weight: 800;
+  padding-top: 4px;
+}
+.section-copy h2 {
+  font-size: 17px;
+  margin: 0;
+}
+.section-copy p {
+  color: var(--gg-muted);
+  font-size: 12px;
+  margin: 5px 0 0;
+}
+.sidebar-variants,
+.filter-row,
+.metric-grid,
+.summary-grid,
+.health-grid {
+  display: grid;
+  gap: 14px;
+}
+.sidebar-variants {
+  align-items: start;
+  grid-template-columns: minmax(0, 250px) 74px;
+}
+.filter-row {
+  grid-template-columns: repeat(2, minmax(0, 280px));
+}
+.metric-grid {
+  align-items: stretch;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.summary-grid {
+  border: 1px solid var(--gg-line);
+  border-radius: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: hidden;
+}
+.health-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.two-columns {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 1fr;
+}
+.chart-blocked {
+  align-items: center;
+  background: #f7f9fa;
+  border: 1px dashed #bcc6cc;
+  border-radius: 12px;
+  color: var(--gg-muted);
+  display: flex;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 18px;
+}
+.chart-blocked strong {
+  color: var(--gg-ink);
+  font-size: 12px;
+}
+.chart-blocked p {
+  font-size: 11px;
+  margin: 4px 0 0;
+}
+@media (max-width: 1050px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .two-columns {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 760px) {
+  .summary-grid,
+  .health-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .gallery {
+    padding: 10px;
+  }
+  .filter-row,
+  .metric-grid,
+  .summary-grid,
+  .health-grid {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-variants {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-variants gg-admin-sidebar:last-child {
+    display: none;
+  }
+}

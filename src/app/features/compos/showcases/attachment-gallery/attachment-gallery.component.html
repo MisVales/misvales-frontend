@@ -1,0 +1,261 @@
+<main class="gallery-page">
+  @if (!readOnly) {
+    <section class="panel dropzone-panel" aria-labelledby="dropzones-title">
+      <h2 id="dropzones-title"><span>1.</span> Áreas de carga / Dropzones</h2>
+      <div class="dropzone-grid">
+        <article class="state-card">
+          <h3>Predeterminado</h3>
+          <div
+            class="dropzone dashed"
+            [class.active]="dragging()"
+            (mouseenter)="dropzoneHovered.set(true)"
+            (mouseleave)="dropzoneHovered.set(false)"
+            (dragenter)="dragging.set(true)"
+            (dragleave)="dragging.set(false)"
+            (drop)="dragging.set(false)"
+          >
+            <refactor-attachment-animation
+              type="upload"
+              [size]="56"
+              [playing]="dropzoneHovered()"
+            />
+            <strong>{{ dragging() ? 'Suelta el archivo' : 'Carga tu archivo' }}</strong>
+            <span>{{ dragging() ? 'para cargarlo' : 'o suelta tu archivo aquí' }}</span>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <h3>Subiendo / Cargando</h3>
+          <div class="dropzone compact">
+            <refactor-attachment-animation type="loading" [size]="48" />
+            <strong>comprobante_2026.pdf</strong>
+            <span>{{ uploadedMegabytes() }} MB de 8.0 MB</span>
+            <div
+              class="progress-track"
+              role="progressbar"
+              aria-label="Subiendo comprobante_2026.pdf"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              [attr.aria-valuenow]="uploadProgress()"
+            >
+              <span [style.width.%]="uploadProgress()"></span>
+            </div>
+            <b class="success-text">{{ uploadProgress() }}%</b>
+          </div>
+        </article>
+
+        <article class="state-card">
+          <h3>Éxito</h3>
+          <div class="dropzone compact success-state">
+            <span class="status-mark success" aria-hidden="true">✓</span>
+            <strong>comprobante_2026.pdf</strong>
+            <span>8.0 MB</span>
+            <button class="button success-outline" type="button">Ver archivo</button>
+          </div>
+          <button class="button secondary" type="button">↻&nbsp; Subir otro archivo</button>
+        </article>
+
+        <article class="state-card">
+          <h3>Error</h3>
+          <div class="dropzone compact error-state">
+            <refactor-attachment-animation
+              class="danger"
+              type="pdf"
+              [size]="48"
+              [transparentBackground]="true"
+            />
+            <strong>comprobante_2026.pdf</strong>
+            <span>8.0 MB</span>
+            <b class="error-text">Tipo de archivo no permitido.<br />Solo se permiten PDF y JPG.</b>
+          </div>
+          <button class="button secondary" type="button">↻&nbsp; Reintentar</button>
+        </article>
+      </div>
+    </section>
+  }
+
+  <div class="content-grid">
+    <section class="panel files-panel" aria-labelledby="files-title">
+      <h2 id="files-title"><span>2.</span> Ítems de archivos adjuntos</h2>
+      <div class="file-list">
+        @for (file of files(); track file.name; let index = $index) {
+          <article
+            class="file-row"
+            (mouseenter)="hoveredFile.set(file.name)"
+            (mouseleave)="hoveredFile.set(null)"
+          >
+            <refactor-attachment-animation
+              [type]="file.kind"
+              [size]="file.kind === 'excel' ? 56 : 40"
+              [scale]="file.kind === 'excel' ? 2 : 1"
+              [transparentBackground]="file.kind === 'pdf'"
+              [playing]="hoveredFile() === file.name"
+            />
+            <div class="file-copy">
+              <strong>{{ file.name }}</strong
+              ><span>{{ file.meta }}</span>
+            </div>
+            @if (!readOnly) {
+              <button
+                class="row-action download"
+                type="button"
+                [attr.aria-label]="'Descargar ' + file.name"
+              >
+                <refactor-attachment-animation
+                  type="download"
+                  [size]="24"
+                  [playing]="hoveredFile() === file.name"
+                />
+              </button>
+              <button
+                class="row-action delete"
+                type="button"
+                [attr.aria-label]="'Eliminar ' + file.name"
+                (click)="removeFile(index)"
+              >
+                <refactor-attachment-animation
+                  type="delete"
+                  [size]="24"
+                  [playing]="hoveredFile() === file.name"
+                />
+              </button>
+            }
+          </article>
+        }
+      </div>
+      @if (!readOnly) {
+        <div class="action-row">
+          <button class="button secondary" type="button">⌕&nbsp; Seleccionar archivo</button>
+          <button class="button primary" type="button">↑&nbsp; Subir</button>
+          <button class="button danger-outline icon-label-button" type="button">
+            <refactor-attachment-animation type="delete" [size]="20" /> Eliminar seleccionados
+          </button>
+        </div>
+      }
+    </section>
+
+    <section class="panel thumbnails-panel" aria-labelledby="images-title">
+      <h2 id="images-title"><span>3.</span> Galería de imágenes (miniaturas)</h2>
+      <div class="tabs" role="tablist" aria-label="Tipo de archivo">
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === 'images'"
+          (click)="selectTab('images')"
+        >
+          Imágenes
+        </button>
+        <button
+          type="button"
+          role="tab"
+          [attr.aria-selected]="activeTab() === 'documents'"
+          (click)="selectTab('documents')"
+        >
+          Documentos
+        </button>
+      </div>
+      @if (activeTab() === 'images') {
+        <div class="thumbnail-grid">
+          @for (image of images(); track image.name; let index = $index) {
+            <button
+              class="thumbnail"
+              type="button"
+              (mouseenter)="hoveredImage.set(image.name)"
+              (mouseleave)="hoveredImage.set(null)"
+              (click)="openPreview(index)"
+              [attr.aria-label]="'Ver ' + image.name"
+            >
+              <span class="thumbnail-media">
+                <span class="facade-image" role="img" [attr.aria-label]="image.name"></span>
+                <span class="thumbnail-eye" aria-hidden="true">
+                  <refactor-attachment-animation
+                    type="view"
+                    [size]="58"
+                    [playing]="hoveredImage() === image.name"
+                  />
+                </span>
+              </span>
+              <span class="thumbnail-name">{{ image.name }} <b aria-hidden="true">⋮</b></span>
+              <small>{{ image.size }}</small>
+            </button>
+          }
+        </div>
+      } @else {
+        <div class="empty-documents">
+          <refactor-attachment-animation type="pdf" [size]="54" [transparentBackground]="true" />
+          <strong>Sin documentos en esta muestra</strong>
+          <span>Selecciona archivos PDF o Excel para verlos aquí.</span>
+        </div>
+      }
+      @if (!readOnly) {
+        <div class="gallery-actions">
+          <button class="button secondary" type="button">⌕&nbsp; Seleccionar imágenes</button>
+          <span>Arrastra o selecciona varias imágenes</span>
+          <button class="button primary" type="button">↑&nbsp; Subir</button>
+        </div>
+      }
+    </section>
+  </div>
+
+  <section class="panel support-panel" aria-labelledby="support-title">
+    <h2 id="support-title"><span>5.</span> Controles y etiquetas de apoyo</h2>
+    <div class="support-grid">
+      @if (!readOnly) {
+        <div>
+          <h3>Botones</h3>
+          <div class="support-items">
+            <button class="button primary" type="button">↑&nbsp; Subir</button
+            ><button class="button success-outline" type="button">
+              ⌕&nbsp; Seleccionar archivo</button
+            ><button class="button secondary" type="button">◉&nbsp; Ver</button
+            ><button class="button danger-outline icon-label-button" type="button">
+              <refactor-attachment-animation type="delete" [size]="20" /> Eliminar
+            </button>
+          </div>
+        </div>
+      }
+      <div>
+        <h3>Estados de etiquetas</h3>
+        <div class="support-items">
+          <refactor-status-badge label="Cargado" tone="green" icon="●" />
+          <refactor-status-badge label="Subiendo" tone="blue" icon="●" />
+          <refactor-status-badge label="Pendiente" tone="orange" icon="●" />
+          <refactor-status-badge label="Error" tone="red" icon="●" />
+        </div>
+      </div>
+      <div>
+        <h3>Tipos de archivo soportados</h3>
+        <div class="support-items file-types">
+          <span
+            ><refactor-attachment-animation type="pdf" [size]="20" [transparentBackground]="true" />
+            PDF</span
+          ><span><refactor-attachment-animation type="image" [size]="20" /> JPG</span
+          ><span><refactor-attachment-animation type="image" [size]="20" /> PNG</span
+          ><span><refactor-attachment-animation type="excel" [size]="28" [scale]="2" /> XLSX</span>
+        </div>
+      </div>
+      <div>
+        <h3>Notas y recomendaciones</h3>
+        <ul>
+          <li>Tamaño máximo por archivo: 10 MB</li>
+          <li>Formatos recomendados: PDF, JPG, PNG</li>
+          <li>Verifica la calidad antes de subir</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  @if (modalOpen()) {
+    <refactor-attachment-preview-modal
+      [imageUrl]="images()[selectedImage()].url"
+      [imageName]="images()[selectedImage()].name"
+      [imageSize]="images()[selectedImage()].size"
+      [imageIndex]="selectedImage()"
+      [totalImages]="images().length"
+      [readOnly]="readOnly"
+      (closed)="closePreview()"
+      (previous)="previousImage()"
+      (next)="nextImage()"
+    />
+  }
+</main>

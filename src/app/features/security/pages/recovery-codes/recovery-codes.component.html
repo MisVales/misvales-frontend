@@ -108,3 +108,14 @@
     </div>
   }
 </div>
+
+<app-confirm-dialog
+  [open]="leaveDialogOpen()"
+  title="Códigos aún no confirmados"
+  message="No has confirmado que guardaste los códigos. Si sales ahora y los pierdes, podrías perder el acceso a tu cuenta."
+  confirmLabel="Salir de todos modos"
+  tone="danger"
+  dialogId="leave-recovery-codes"
+  (confirm)="resolveLeave(true)"
+  (cancel)="resolveLeave(false)"
+></app-confirm-dialog>

@@ -1,0 +1,108 @@
+<section class="cycle" aria-labelledby="payment-cycle-title">
+  <div class="cycle__heading">
+    <div>
+      <p class="cycle__eyebrow">Acción operativa</p>
+      <h2 id="payment-cycle-title">Ciclo de corte y pago</h2>
+      <p>Avanza cada etapa con las fechas configuradas, sin cambiar el reloj del sistema.</p>
+    </div>
+    <button
+      class="cycle__action"
+      type="button"
+      (click)="primaryAction()"
+      [disabled]="loading() || processing()"
+      [attr.aria-busy]="loading() || processing()"
+    >
+      <lucide-icon
+        [name]="!summary() && !loading() ? 'refresh-cw' : 'calendar-clock'"
+        [size]="19"
+        aria-hidden="true"
+      ></lucide-icon>
+      {{ actionLabel() }}
+    </button>
+  </div>
+
+  @if (loading()) {
+    <div class="cycle__loading" role="status">Consultando el estado actual del ciclo…</div>
+  } @else if (summary(); as current) {
+    <ol class="cycle__steps" aria-label="Progreso del ciclo de pago">
+      <li [class.cycle__step--current]="action() === 'CUTOFF'">
+        <span>1</span>
+        <div><strong>Fecha de corte</strong><small>Genera relaciones y referencias</small></div>
+      </li>
+      <li [class.cycle__step--current]="action() === 'DEADLINE'">
+        <span>2</span>
+        <div><strong>Fecha límite</strong><small>Conserva pagos puntuales</small></div>
+      </li>
+      <li [class.cycle__step--current]="action() === 'EXPIRE'">
+        <span>3</span>
+        <div><strong>Vencimiento</strong><small>Evalúa atrasos y recargos</small></div>
+      </li>
+    </ol>
+
+    <dl class="cycle__summary">
+      <div>
+        <dt>Próxima fecha</dt>
+        <dd>
+          {{
+            current.payment_period?.payment_deadline_at || current.period.projected_end
+              | date: 'medium'
+          }}
+        </dd>
+      </div>
+      <div>
+        <dt>Parcialidades</dt>
+        <dd>{{ current.payment_period?.summary?.operations ?? current.summary.operations }}</dd>
+      </div>
+      <div>
+        <dt>Total del periodo</dt>
+        <dd>
+          {{ current.payment_period?.summary?.total ?? current.summary.total | currency: 'MXN' }}
+        </dd>
+      </div>
+    </dl>
+  }
+
+  @if (error()) {
+    <p class="cycle__error" role="alert">{{ error() }}</p>
+  }
+
+  @if (modalOpen()) {
+    <div class="cycle-modal" (click)="closeConfirmation()">
+      <div
+        class="cycle-modal__card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cycle-modal-title"
+        (click)="$event.stopPropagation()"
+      >
+        <div class="cycle-modal__icon">
+          <lucide-icon name="calendar-clock" [size]="22" aria-hidden="true"></lucide-icon>
+        </div>
+        <h3 id="cycle-modal-title">{{ actionLabel() }}</h3>
+        <p>Esta acción avanzará el ciclo a la siguiente fecha operativa configurada.</p>
+        <label for="cycle-reason">Motivo (opcional)</label>
+        <input
+          id="cycle-reason"
+          [(ngModel)]="motivo"
+          placeholder="Ej. Avance solicitado por Gerencia"
+        />
+        @if (error()) {
+          <p class="cycle__error" role="alert">{{ error() }}</p>
+        }
+        <div class="cycle-modal__actions">
+          <button
+            type="button"
+            class="cycle-modal__cancel"
+            (click)="closeConfirmation()"
+            [disabled]="processing()"
+          >
+            Cancelar
+          </button>
+          <button type="button" class="cycle__action" (click)="execute()" [disabled]="processing()">
+            {{ processing() ? 'Procesando…' : 'Confirmar' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</section>

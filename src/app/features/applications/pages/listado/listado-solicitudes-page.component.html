@@ -1,131 +1,84 @@
-<div class="min-h-screen bg-[#F8F9F5] p-6 lg:p-8">
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+<main class="distributors-hub">
+  <header class="hub-header">
     <div>
-      <h1 class="text-3xl font-bold text-gray-900">Solicitudes de Distribuidoras</h1>
-      <p class="text-gray-600 mt-1">Gestiona y revisa las solicitudes en proceso.</p>
+      <p class="eyebrow">Organización</p>
+      <h1>Distribuidoras</h1>
+      <p>Consulta primero las distribuidoras incorporadas y, a un lado, las solicitudes en proceso.</p>
     </div>
-    <a routerLink="nueva" class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-lg font-medium flex items-center gap-2 transition-colors">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-      </svg>
-      Nueva Solicitud
-    </a>
-  </div>
+    @if (canCreateApplication()) {
+      <a routerLink="nueva" class="primary-action"><lucide-icon name="plus" [size]="18" aria-hidden="true" />Nueva solicitud</a>
+    }
+  </header>
 
-  <!-- Filtros -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
-    <form [formGroup]="filtrosForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Folio</label>
-        <input type="text" formControlName="application_number" placeholder="Ej. SOL-001" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent">
+  <div class="hub-layout">
+    <section class="directory-panel" aria-labelledby="directory-title">
+      <div class="panel-heading">
+        <div><p class="kicker">Directorio operativo</p><h2 id="directory-title">Distribuidoras registradas</h2><small>Activas y demás estados dentro de tu alcance.</small></div>
+        <span>{{ distributorsStore.paginacion().total }} en total</span>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Estado</label>
-        <select formControlName="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent bg-white">
-          <option value="">Todos</option>
-          <option value="DRAFT">En Captura</option>
-          <option value="ACTIVE">Aprobada</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Sucursal</label>
-        <select formControlName="branch_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent bg-white">
-          <option value="">Todas</option>
-          <option *ngFor="let branch of branches" [value]="branch.id">{{ branch.name }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Coordinador</label>
-        <select formControlName="coordinator_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent bg-white">
-          <option value="">Todos</option>
-          <option *ngFor="let coordinator of coordinators" [value]="coordinator.user.id">{{ coordinator.user.name }}</option>
-        </select>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Fechas</label>
-          <input type="date" formControlName="created_from" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] focus:border-transparent">
-      </div>
-    </form>
-  </div>
 
-  <!-- Tabla -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-left border-collapse">
-        <thead>
-          <tr class="border-b border-gray-100">
-            <th class="px-6 py-4 text-sm font-semibold text-gray-900">Folio</th>
-            <th class="px-6 py-4 text-sm font-semibold text-gray-900">Nombre (CURP)</th>
-            <th class="px-6 py-4 text-sm font-semibold text-gray-900">Estado</th>
-            <th class="px-6 py-4 text-sm font-semibold text-gray-900">Sucursal</th>
-            <th class="px-6 py-4 text-sm font-semibold text-gray-900">Avance</th>
-            <th class="px-6 py-4 text-sm font-semibold text-gray-900">Fecha</th>
-            <th class="px-6 py-4 text-sm font-semibold text-gray-900 text-center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <tr *ngIf="store.estadoCarga()">
-            <td colspan="7" class="px-6 py-8 text-center text-gray-500">Cargando solicitudes...</td>
-          </tr>
-          <tr *ngIf="!store.estadoCarga() && store.datos().length === 0">
-            <td colspan="7" class="px-6 py-8 text-center text-gray-500">No se encontraron solicitudes.</td>
-          </tr>
-          <tr *ngFor="let sol of store.datos()" class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 text-sm font-bold text-gray-900">{{ sol.folio }}</td>
-            <td class="px-6 py-4">
-              <div class="text-sm font-medium text-gray-900">
-                <ng-container *ngIf="sol.solicitante">{{ sol.solicitante.nombreCompleto || (sol.solicitante.nombre + ' ' + sol.solicitante.apellidoPaterno + ' ' + sol.solicitante.apellidoMaterno) }}</ng-container>
-                <ng-container *ngIf="!sol.solicitante">Sin capturar</ng-container>
-              </div>
-              <div class="text-xs text-gray-500 mt-0.5">{{ sol.solicitante?.curpEnmascarada || 'N/A' }}</div>
-            </td>
-            <td class="px-6 py-4">
-              <span *ngIf="sol.estado === 'DRAFT'" class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">En Captura</span>
-              <span *ngIf="sol.estado === 'ACTIVE'" class="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-[#E8F3E8] text-[#1A4D2E]">Aprobada</span>
-              <!-- Más estados aquí -->
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-700">{{ sol.sucursal?.nombre || sol.sucursalId }}</td>
-            <td class="px-6 py-4">
-              <div class="flex items-center gap-3">
-                <span class="text-xs font-medium text-gray-700 w-12">{{ sol.avance.seccionesCompletadas }} de {{ sol.avance.seccionesTotales }}</span>
-                <div class="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-[#1A4D2E] rounded-full" [style.width]="getProgresoAncho(sol.avance.seccionesCompletadas, sol.avance.seccionesTotales)"></div>
-                </div>
-              </div>
-            </td>
-            <td class="px-6 py-4">
-              <div class="text-sm text-gray-700">{{ sol.creadaEn | date:'dd MMM yyyy' }}</div>
-            </td>
-            <td class="px-6 py-4 text-center">
-              <div class="flex items-center justify-center gap-2">
-                <a [routerLink]="[sol.id]" class="p-1.5 text-gray-400 hover:text-[#1A4D2E] rounded transition-colors" title="Ver detalle">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </a>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+      @if (distributorsStore.cargandoListado()) {
+        <div class="panel-state"><span class="spinner"></span><strong>Cargando distribuidoras</strong><small>Preparando el directorio autorizado.</small></div>
+      } @else if (distributorsStore.error()) {
+        <div class="panel-state error"><lucide-icon name="triangle-alert" [size]="22" /><strong>No fue posible cargar las distribuidoras</strong><small>{{ distributorsStore.error() }}</small></div>
+      } @else if (distributorsStore.listado().length === 0) {
+        <div class="panel-state"><lucide-icon name="store" [size]="24" /><strong>No hay distribuidoras registradas</strong><small>Las distribuidoras activadas aparecerán aquí.</small></div>
+      } @else {
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Distribuidora</th><th>Categoría</th><th>Sucursal</th><th>Coordinación</th><th>Línea inicial</th><th>Estado</th><th><span class="sr-only">Abrir</span></th></tr></thead>
+            <tbody>
+              @for (distributor of distributorsStore.listado(); track distributor.id) {
+                <tr>
+                  <td><a [routerLink]="['/distribuidoras', distributor.id]" class="distributor-name"><span class="avatar">{{ distributor.nombreCompleto.charAt(0) || 'D' }}</span><span><strong>{{ distributor.nombreCompleto || 'Sin nombre' }}</strong></span></a></td>
+                  <td>
+                    @if (distributor.categoria; as categoria) {
+                      {{ categoria.nombre }} · {{ (+categoria.porcentajeGanancia * 100) | number:'1.0-2' }}%
+                    } @else {
+                      Sin categoría
+                    }
+                  </td>
+                  <td>{{ distributor.sucursal.nombre }}</td>
+                  <td>{{ distributor.coordinador?.nombreCompleto || 'Sin asignar' }}</td>
+                  <td class="money">{{ (distributor.lineaInicial || 0) | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}</td>
+                  <td><div class="status-stack"><span class="status-badge" [attr.data-status]="distributor.estado">{{ distributorStatusLabel(distributor.estado) }}</span><small>{{ accessStatusLabel(distributor.estadoAcceso) }}</small></div></td>
+                  <td><a [routerLink]="['/distribuidoras', distributor.id]" class="open-detail" [attr.aria-label]="'Ver ' + distributor.nombreCompleto"><lucide-icon name="chevron-right" [size]="19" /></a></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer class="directory-footer">
+          <p>Página {{ distributorsStore.paginacion().paginaActiva }} de {{ distributorsStore.paginacion().ultimaPagina }}</p>
+          <div>
+            <button type="button" aria-label="Página anterior" [disabled]="distributorsStore.paginacion().paginaActiva === 1" (click)="changeDistributorPage(-1)"><lucide-icon name="chevron-left" [size]="18" /></button>
+            <button type="button" aria-label="Página siguiente" [disabled]="distributorsStore.paginacion().paginaActiva === distributorsStore.paginacion().ultimaPagina" (click)="changeDistributorPage(1)"><lucide-icon name="chevron-right" [size]="18" /></button>
+          </div>
+        </footer>
+      }
+    </section>
 
-    <!-- Paginación -->
-    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
-      <p class="text-sm text-gray-500">Mostrando {{ store.datos().length }} de {{ store.paginacion().total }} resultados</p>
-      <div class="flex items-center gap-1">
-        <button class="p-1 rounded text-gray-400 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50" [disabled]="store.paginacion().paginaActiva === 1" (click)="store.listar(store.paginacion().paginaActiva - 1, store.paginacion().porPagina, getFiltrosVigentes())">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-          </svg>
-        </button>
-        <button class="p-1 rounded text-gray-400 hover:bg-gray-50 hover:text-gray-700 disabled:opacity-50" [disabled]="store.paginacion().paginaActiva === store.paginacion().ultimaPagina" (click)="store.listar(store.paginacion().paginaActiva + 1, store.paginacion().porPagina, getFiltrosVigentes())">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
-    </div>
+    <aside class="applications-panel" aria-labelledby="applications-title">
+      <div class="applications-heading"><div><p class="kicker">En proceso</p><h2 id="applications-title">Solicitudes</h2></div><span>{{ applicationsStore.paginacion().total }}</span></div>
+      @if (applicationsStore.estadoCarga()) {
+        <div class="compact-state">Cargando solicitudes...</div>
+      } @else if (applicationsStore.error()) {
+        <div class="compact-state error">{{ applicationsStore.error() }}</div>
+      } @else if (applicationsStore.datos().length === 0) {
+        <div class="compact-state">No hay solicitudes para mostrar.</div>
+      } @else {
+        <div class="application-list">
+          @for (application of applicationsStore.datos(); track application.id) {
+            <a [routerLink]="[application.id]" class="application-card">
+              <div class="card-topline"><span>{{ application.folio }}</span><lucide-icon name="chevron-right" [size]="15" /></div>
+              <strong>{{ applicantName(application) }}</strong>
+              <app-estado-solicitud [estado]="application.estado" />
+              <div class="card-meta"><span>{{ application.sucursal?.nombre || 'Sucursal sin dato' }}</span><span>{{ application.creadaEn | date: 'dd MMM' }}</span></div>
+            </a>
+          }
+        </div>
+      }
+      <a routerLink="/verificacion-distribuidoras/solicitudes-distribuidora/revision" class="all-link">Revisar todas las solicitudes <lucide-icon name="chevron-right" [size]="17" /></a>
+    </aside>
   </div>
-</div>
+</main>

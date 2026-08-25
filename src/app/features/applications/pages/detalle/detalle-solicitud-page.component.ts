@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
@@ -10,6 +10,8 @@ import { PatrimonioFormComponent } from '../../components/patrimonio-form/patrim
 import { EmpleosFormComponent } from '../../components/empleos-form/empleos-form.component';
 import { CreditosComercialesFormComponent } from '../../components/creditos-comerciales-form/creditos-comerciales-form.component';
 import { ResumenEnvioComponent } from '../../components/resumen-envio/resumen-envio.component';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 
 type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' | 'patrimonio' | 'empleos' | 'creditos' | 'resumen';
 
@@ -25,7 +27,8 @@ type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' |
     PatrimonioFormComponent,
     EmpleosFormComponent,
     CreditosComercialesFormComponent,
-    ResumenEnvioComponent
+    ResumenEnvioComponent,
+    StatusLabelPipe,
   ],
   templateUrl: './detalle-solicitud-page.component.html',
   styleUrls: ['./detalle-solicitud-page.component.css']
@@ -33,8 +36,30 @@ type StepName = 'datos-personales' | 'familiares' | 'domicilios' | 'vehiculos' |
 export class DetalleSolicitudPageComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private route = inject(ActivatedRoute);
+  private alerts = inject(AlertService);
 
   pasoActual: StepName = 'datos-personales';
+
+  @ViewChild(DatosPersonalesFormComponent)
+  private datosPersonalesForm?: DatosPersonalesFormComponent;
+
+  @ViewChild(FamiliaresFormComponent)
+  private familiaresForm?: FamiliaresFormComponent;
+
+  @ViewChild(DomiciliosFormComponent)
+  private domiciliosForm?: DomiciliosFormComponent;
+
+  @ViewChild(VehiculosFormComponent)
+  private vehiculosForm?: VehiculosFormComponent;
+
+  @ViewChild(PatrimonioFormComponent)
+  private patrimonioForm?: PatrimonioFormComponent;
+
+  @ViewChild(EmpleosFormComponent)
+  private empleosForm?: EmpleosFormComponent;
+
+  @ViewChild(CreditosComercialesFormComponent)
+  private creditosForm?: CreditosComercialesFormComponent;
 
   pasos: { id: StepName; label: string }[] = [
     { id: 'datos-personales', label: 'Datos Personales' },
@@ -57,23 +82,59 @@ export class DetalleSolicitudPageComponent implements OnInit {
   }
 
   cambiarPaso(paso: StepName) {
+    if (paso !== this.pasoActual) {
+      const seccionActual = this.obtenerSeccionActual();
+      if (seccionActual && !seccionActual.puedeCambiarDePaso()) {
+        this.alerts.showAlert(
+          seccionActual.mensajeBloqueoCambio ?? 'Corrige los campos marcados antes de cambiar de pestaña.',
+          'warning',
+        );
+        return;
+      }
+    }
+
+    this.alerts.clear();
     this.pasoActual = paso;
   }
 
+  private obtenerSeccionActual(): SeccionValidable | undefined {
+    return {
+      'datos-personales': this.datosPersonalesForm,
+      familiares: this.familiaresForm,
+      domicilios: this.domiciliosForm,
+      vehiculos: this.vehiculosForm,
+      patrimonio: this.patrimonioForm,
+      empleos: this.empleosForm,
+      creditos: this.creditosForm,
+      resumen: undefined,
+    }[this.pasoActual];
+  }
+
   getPasoCompletado(pasoId: StepName): boolean {
-    const decl = this.store.detalle()?.declaracionesSeccion;
+    const detalle = this.store.detalle();
+    const decl = detalle?.declaracionesSeccion;
     if (!decl) return false;
-    const map: Record<StepName, string | undefined> = {
-      'datos-personales': decl.datosPersonales,
-      'familiares': decl.referenciasFamiliares,
-      'domicilios': decl.domicilios,
-      'vehiculos': decl.vehiculos,
-      'patrimonio': decl.bienes,
-      'empleos': decl.empleos,
-      'creditos': decl.creditosComerciales,
-      'resumen': undefined,
-    };
-    return map[pasoId] === 'COMPLETED';
+
+    switch (pasoId) {
+      case 'datos-personales':
+        return decl.datosPersonales === 'COMPLETED';
+      case 'familiares':
+        return decl.referenciasFamiliares === 'COMPLETED' || decl.hijos === 'COMPLETED' || decl.pareja === 'COMPLETED';
+      case 'domicilios':
+        return decl.domicilios === 'COMPLETED';
+      case 'vehiculos':
+        return decl.vehiculos === 'COMPLETED';
+      case 'patrimonio':
+        return decl.bienes === 'COMPLETED' || decl.pasivos === 'COMPLETED';
+      case 'empleos':
+        return decl.empleos === 'COMPLETED';
+      case 'creditos':
+        return decl.creditosComerciales === 'COMPLETED';
+      case 'resumen':
+        return detalle?.estado !== 'DRAFT';
+      default:
+        return false;
+    }
   }
 
   getProgresoAncho(): string {
@@ -87,4 +148,13 @@ export class DetalleSolicitudPageComponent implements OnInit {
     if (!avance || !avance.seccionesTotales) return 0;
     return Math.round((avance.seccionesCompletadas / avance.seccionesTotales) * 100);
   }
+
+  isEditable(): boolean {
+    return this.store.detalle()?.estado === 'DRAFT';
+  }
+}
+
+interface SeccionValidable {
+  mensajeBloqueoCambio?: string;
+  puedeCambiarDePaso(): boolean;
 }

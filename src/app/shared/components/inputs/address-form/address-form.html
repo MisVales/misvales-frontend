@@ -1,0 +1,101 @@
+<form [formGroup]="form" class="space-y-4" autocomplete="off">
+  <!-- Estado y Municipio -->
+  <div class="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Estado <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <ng-select [items]="states"
+                 bindLabel="name"
+                 bindValue="id"
+                 formControlName="state"
+                 placeholder="Selecciona un estado..."
+                 (focus)="marcarCampoAlEnfocar('state')"
+                 (open)="marcarCampoAlEnfocar('state')"
+                 [class.app-application-control-invalid]="mostrarError('state')"
+                 [attr.aria-invalid]="mostrarError('state')"
+                 class="w-full text-sm">
+      </ng-select>
+      <app-input-error [control]="form.get('state')" label="El estado" [forceShow]="mostrarMensajeError('state')"></app-input-error>
+    </div>
+    <div>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Municipio <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <ng-select [items]="municipalities"
+                 bindLabel="name"
+                 bindValue="id"
+                 formControlName="municipality"
+                 placeholder="Selecciona un municipio..."
+                 (focus)="marcarCampoAlEnfocar('municipality')"
+                 (open)="marcarCampoAlEnfocar('municipality')"
+                 [class.app-application-control-invalid]="mostrarError('municipality')"
+                 [attr.aria-invalid]="mostrarError('municipality')"
+                 class="w-full text-sm">
+      </ng-select>
+      <app-input-error [control]="form.get('municipality')" label="El municipio" [forceShow]="mostrarMensajeError('municipality')"></app-input-error>
+    </div>
+  </div>
+
+  <!-- CP y Colonia -->
+  <div class="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
+    <div>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Código Postal <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <input type="text" formControlName="zipCode" placeholder="Ej. 27000" inputmode="numeric" maxlength="5" autocomplete="off" (focus)="marcarCampoAlEnfocar('zipCode')"
+        [class.app-application-control-invalid]="mostrarError('zipCode')" [attr.aria-invalid]="mostrarError('zipCode')"
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border">
+      <app-input-error [control]="form.get('zipCode')" label="El código postal" [forceShow]="mostrarMensajeError('zipCode')" [customMessages]="{ pattern: 'El código postal debe tener exactamente 5 dígitos numéricos.' }"></app-input-error>
+    </div>
+    <div>
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Colonia <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <ng-select [items]="colonies"
+                 bindLabel="name"
+                 bindValue="id"
+                 formControlName="colony"
+                 placeholder="Selecciona una colonia..."
+                 (focus)="marcarCampoAlEnfocar('colony')"
+                 (open)="marcarCampoAlEnfocar('colony')"
+                 [class.app-application-control-invalid]="mostrarError('colony')"
+                 [attr.aria-invalid]="mostrarError('colony')"
+                 class="w-full text-sm">
+      </ng-select>
+      <app-input-error [control]="form.get('colony')" label="La colonia" [forceShow]="mostrarMensajeError('colony')"></app-input-error>
+    </div>
+  </div>
+
+  <!-- Calle (Autocomplete) y Números -->
+  <div class="grid grid-cols-1 items-start gap-4 md:grid-cols-12">
+    <div class="md:col-span-8 relative">
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">Calle <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <input type="text" formControlName="street" placeholder="Ej. Av. Morelos" maxlength="100" autocomplete="off"
+        (focus)="marcarCampoAlEnfocar('street')"
+        (blur)="onStreetBlur()"
+        (keydown.escape)="streetSuggestions = []"
+        [class.app-application-control-invalid]="mostrarError('street')" [attr.aria-invalid]="mostrarError('street')"
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+      <app-input-error [control]="form.get('street')" label="La calle" [forceShow]="mostrarMensajeError('street')"></app-input-error>
+      
+      <!-- Autocomplete Dropdown -->
+      <ul *ngIf="streetSuggestions.length > 0" class="absolute z-10 mt-1 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+        <li *ngFor="let suggestion of streetSuggestions">
+          <button
+            type="button"
+            (click)="selectSuggestion(suggestion)"
+            class="block w-full px-4 py-2 text-left text-sm hover:bg-green-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#386641]"
+          >
+            {{ suggestion.properties.formatted }}
+          </button>
+        </li>
+      </ul>
+    </div>
+    <div class="md:col-span-2">
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Ext <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
+      <input type="text" formControlName="exteriorNumber" autocomplete="off" maxlength="20" placeholder="Ej. 123"
+        (focus)="marcarCampoAlEnfocar('exteriorNumber')"
+        [class.app-application-control-invalid]="mostrarError('exteriorNumber')" [attr.aria-invalid]="mostrarError('exteriorNumber')"
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+      <app-input-error [control]="form.get('exteriorNumber')" label="El número exterior" [forceShow]="mostrarMensajeError('exteriorNumber')"></app-input-error>
+    </div>
+    <div class="md:col-span-2">
+      <label class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">No. Int</label>
+      <input type="text" formControlName="interiorNumber" placeholder="Opcional" maxlength="20" autocomplete="off"
+        class="w-full rounded-md border-gray-300 shadow-sm focus:border-[#386641] focus:ring-[#386641] p-2 border disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed">
+    </div>
+  </div>
+</form>

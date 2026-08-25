@@ -1,0 +1,258 @@
+<section class="reports-home" aria-labelledby="reports-title">
+  <header class="reports-heading">
+    <div>
+      <p class="reports-heading__eyebrow">Inicio</p>
+      <h1 id="reports-title">Reportes</h1>
+      <p>Consulta financiera y operativa de tu sucursal.</p>
+    </div>
+    @if (data()?.generated_at; as generatedAt) {
+      <span class="updated-at">Actualizado {{ formatDate(generatedAt) }}</span>
+    }
+  </header>
+
+  @if (error()) {
+    <div class="report-error" role="alert">
+      <lucide-icon name="circle-alert" [size]="20" aria-hidden="true" />
+      <span>{{ error() }}</span>
+      <button type="button" (click)="load()">Reintentar</button>
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="metric-grid" aria-label="Cargando resumen" aria-busy="true">
+      @for (item of [1, 2, 3, 4]; track item) {
+        <div class="metric-card metric-card--skeleton">
+          <span></span>
+          <div></div>
+        </div>
+      }
+    </div>
+    <div class="loading-panel" role="status">Cargando reportes de la sucursal…</div>
+  } @else if (data(); as report) {
+    <section class="metric-grid" aria-label="Resumen de reportes">
+      <article class="metric-card metric-card--danger">
+        <span class="metric-card__icon"><lucide-icon name="triangle-alert" [size]="31" /></span>
+        <div>
+          <p>Distribuidoras morosas</p>
+          <strong>{{ formatNumber(report.delinquency.total) }}</strong>
+          <small>{{ formatCurrency(report.delinquency.overdue_balance) }} de saldo vencido</small>
+        </div>
+      </article>
+      <article class="metric-card metric-card--purple">
+        <span class="metric-card__icon"><lucide-icon name="file-chart-column" [size]="29" /></span>
+        <div>
+          <p>Saldo de cortes</p>
+          <strong>{{ formatCurrency(report.cutoffs.total_balance) }}</strong>
+          <small>{{ formatNumber(report.cutoffs.active_count) }} cortes con saldo</small>
+        </div>
+      </article>
+      <article class="metric-card metric-card--success">
+        <span class="metric-card__icon"><lucide-icon name="star" [size]="31" /></span>
+        <div>
+          <p>Puntos disponibles</p>
+          <strong>{{ formatNumber(report.points.available_points) }} <em>pts</em></strong>
+          <small>{{ formatNumber(report.points.distributors) }} distribuidoras</small>
+        </div>
+      </article>
+      <article class="metric-card metric-card--blue">
+        <span class="metric-card__icon"><lucide-icon name="clipboard-list" [size]="29" /></span>
+        <div>
+          <p>Presolicitudes</p>
+          <strong>{{ formatNumber(report.applications.total) }}</strong>
+          <small
+            >{{ report.applications.pending }} pendientes ·
+            {{ report.applications.validated }} avanzadas</small
+          >
+        </div>
+      </article>
+    </section>
+
+    <div class="report-grid report-grid--top">
+      <article class="report-panel">
+        <header class="report-panel__header">
+          <h2><lucide-icon name="building-2" [size]="20" /> Distribuidoras morosas y saldos</h2>
+          <a routerLink="/riesgo">Ver reporte</a>
+        </header>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Distribuidora</th>
+                <th>Sucursal</th>
+                <th>Cortes vencidos</th>
+                <th>Saldo vencido</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of report.delinquency.rows; track row.distributor_number) {
+                <tr>
+                  <td>
+                    <strong>{{ row.distributor_name || row.distributor_number }}</strong
+                    ><small>{{ row.distributor_number }}</small>
+                  </td>
+                  <td>{{ row.branch_name }}</td>
+                  <td class="numeric">{{ row.overdue_relations }}</td>
+                  <td class="numeric">{{ formatCurrency(row.overdue_balance) }}</td>
+                  <td><refactor-status-badge label="Atención" tone="orange" /></td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty-row">Sin distribuidoras con morosidad vigente.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer>{{ report.delinquency.rows.length }} de {{ report.delinquency.total }}</footer>
+      </article>
+
+      <article class="report-panel">
+        <header class="report-panel__header">
+          <h2><lucide-icon name="file-spreadsheet" [size]="20" /> Saldo de cortes</h2>
+          <a routerLink="/relaciones-pagos/relaciones">Ver reporte</a>
+        </header>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha de corte</th>
+                <th>Sucursal</th>
+                <th>Distribuidoras</th>
+                <th>Saldo total</th>
+                <th>Fecha límite</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of report.cutoffs.rows; track row.cutoff_at + row.branch_name) {
+                <tr>
+                  <td>
+                    <strong>{{ formatDate(row.cutoff_at) }}</strong>
+                  </td>
+                  <td>{{ row.branch_name }}</td>
+                  <td class="numeric">{{ row.distributors }}</td>
+                  <td class="numeric">{{ formatCurrency(row.total_balance) }}</td>
+                  <td>{{ formatDate(row.payment_deadline_at) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty-row">Sin cortes con saldo pendiente.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer>{{ report.cutoffs.rows.length }} cortes recientes</footer>
+      </article>
+    </div>
+
+    <div class="report-grid report-grid--bottom">
+      <article class="report-panel points-panel">
+        <header class="report-panel__header">
+          <h2>
+            <lucide-icon name="chart-no-axes-combined" [size]="20" /> Movimiento de puntos por mes
+          </h2>
+          <a routerLink="/puntos">Ver reporte</a>
+        </header>
+        <div class="points-chart">
+          <div class="points-total">
+            <span>Total disponible</span
+            ><strong>{{ formatNumber(report.points.available_points) }} pts</strong>
+          </div>
+          <div class="chart-wrap">
+            <svg
+              viewBox="0 0 560 130"
+              role="img"
+              aria-label="Movimiento de puntos de los últimos seis meses"
+            >
+              <line x1="0" y1="118" x2="560" y2="118" />
+              <line x1="0" y1="65" x2="560" y2="65" />
+              <line x1="0" y1="12" x2="560" y2="12" />
+              @if (chart().area) {
+                <polygon [attr.points]="chart().area" />
+              }
+              @if (chart().points) {
+                <polyline [attr.points]="chart().points" />
+              }
+              @for (item of report.points.trend; track item.period; let index = $index) {
+                @if (chart().points.split(' ')[index]; as point) {
+                  <circle [attr.cx]="point.split(',')[0]" [attr.cy]="point.split(',')[1]" r="4" />
+                }
+              }
+            </svg>
+            <div class="chart-labels">
+              @for (item of report.points.trend; track item.period) {
+                <span>{{ formatMonth(item.period) }}</span>
+              }
+            </div>
+          </div>
+        </div>
+        <div class="points-stats">
+          <div>
+            <span>Distribuidoras con puntos</span><strong>{{ report.points.distributors }}</strong>
+          </div>
+          <div>
+            <span>Movimiento máximo mensual</span
+            ><strong>{{ formatNumber(chart().max) }} pts</strong>
+          </div>
+          <div>
+            <span>Meses consultados</span><strong>{{ report.points.trend.length }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="report-panel applications-panel">
+        <header class="report-panel__header">
+          <h2>
+            <lucide-icon name="clipboard-check" [size]="20" /> Presolicitudes pendientes y validadas
+          </h2>
+          <a routerLink="/solicitudes-distribuidoras">Ver reporte</a>
+        </header>
+        <div class="application-tabs" aria-label="Resumen de presolicitudes">
+          <span
+            >Pendientes <b>{{ report.applications.pending }}</b></span
+          >
+          <span
+            >Avanzadas <b>{{ report.applications.validated }}</b></span
+          >
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Folio</th>
+                <th>Solicitante</th>
+                <th>Sucursal</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (row of report.applications.rows; track row.application_number) {
+                <tr>
+                  <td>
+                    <strong>{{ row.application_number }}</strong>
+                  </td>
+                  <td>{{ row.applicant_name || 'Sin dato' }}</td>
+                  <td>{{ row.branch_name }}</td>
+                  <td>
+                    <refactor-status-badge
+                      [label]="applicationStatusLabel(row.status)"
+                      [tone]="applicationStatusTone(row.status)"
+                    />
+                  </td>
+                  <td>{{ formatDate(row.created_at) }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty-row">Sin presolicitudes registradas.</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <footer>{{ report.applications.rows.length }} de {{ report.applications.total }}</footer>
+      </article>
+    </div>
+  }
+</section>

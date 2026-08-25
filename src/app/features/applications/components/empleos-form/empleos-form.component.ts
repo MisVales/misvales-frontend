@@ -1,15 +1,20 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
+import { firstValueFrom, from, Observable } from 'rxjs';
+import { Component, inject, OnInit, ChangeDetectorRef, QueryList, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { EmpleoFormFactory } from '../../forms/empleo-form.factory';
 import { SolicitudesDistribuidoraApiService } from '../../data-access/solicitudes-distribuidora-api.service';
-import { firstValueFrom } from 'rxjs';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
+import { AutosaveDirective, AutosaveStatus } from '../../../../shared/forms/autosave.directive';
+import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
 
 @Component({
   selector: 'app-empleos-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, InputErrorComponent, AutosaveDirective, ApplicationFormErrorStateDirective],
   templateUrl: './empleos-form.component.html',
   styleUrls: ['./empleos-form.component.css']
 })
@@ -18,12 +23,63 @@ export class EmpleosFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private api = inject(SolicitudesDistribuidoraApiService);
   private cdr = inject(ChangeDetectorRef);
+  private alerts = inject(AlertService);
+  private confirmation = inject(ConfirmationService);
 
   empleosArray: FormArray = EmpleoFormFactory.createArray(this.fb);
   cargando = false;
+  
+  autosaveStatuses: Record<number, AutosaveStatus> = {};
+  mensajeBloqueoCambio?: string;
+  readonly today = new Date().toISOString().slice(0, 10);
+
+  @ViewChildren(AutosaveDirective)
+  private autoguardados!: QueryList<AutosaveDirective>;
 
   get empleosGroups(): FormGroup[] {
     return this.empleosArray.controls as FormGroup[];
+  }
+
+  puedeCambiarDePaso(): boolean {
+    this.empleosGroups.forEach((form) => form.markAllAsTouched());
+    this.cdr.markForCheck();
+    if (!this.empleosGroups.every((form) => form.valid)) {
+      this.mensajeBloqueoCambio = 'Corrige los campos marcados antes de cambiar de pestaña.';
+      return false;
+    }
+
+    if (this.autoguardados.some((autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving')) {
+      this.mensajeBloqueoCambio = 'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
+      this.autoguardados.forEach((autosave) => autosave.flush());
+      return false;
+    }
+
+    this.mensajeBloqueoCambio = undefined;
+    return true;
+  }
+
+  getSaveFn(index: number) {
+    return (rawValue: any): Observable<any> => from(this.store.ejecutarGuardado(async () => {
+      const detalle = this.store.detalle();
+      const idSolicitud = detalle?.id;
+      if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
+
+      const payload = { ...rawValue };
+      const idRegistro = payload.id;
+      delete payload.id;
+
+      const request$ = idRegistro
+        ? this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, detalle.versionBloqueo)
+        : this.api.crearEmpleo(idSolicitud, payload, detalle.versionBloqueo);
+
+      return firstValueFrom(request$).then(res => {
+        if (!idRegistro && res && res.id) {
+           this.empleosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+        }
+        this.store.registrarAutoguardado(res);
+        return res;
+      });
+    }));
   }
 
   async ngOnInit() {
@@ -58,9 +114,7 @@ export class EmpleosFormComponent implements OnInit {
         form.patchValue(item);
         this.empleosArray.push(form);
       });
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cargando = false;
       this.cdr.markForCheck();
     }
@@ -73,57 +127,24 @@ export class EmpleosFormComponent implements OnInit {
 
   removerEmpleoVisual(index: number) {
     this.empleosArray.removeAt(index);
+    delete this.autosaveStatuses[index];
     this.cdr.markForCheck();
   }
 
-  async guardarEmpleo(index: number) {
-    const formGroup = this.empleosGroups[index];
-    if (formGroup.invalid) {
-      formGroup.markAllAsTouched();
-      this.cdr.markForCheck();
-      return;
-    }
-
-    const idSolicitud = this.store.detalle()?.id;
-    if (!idSolicitud) return;
-
-    const payload = { ...formGroup.value };
-    const idRegistro = payload.id;
-    delete payload.id;
-
-    try {
-      if (idRegistro) {
-        await firstValueFrom(this.api.actualizarEmpleo(idSolicitud, idRegistro, payload, this.store.detalle()!.versionBloqueo));
-      } else {
-        await firstValueFrom(this.api.crearEmpleo(idSolicitud, payload, this.store.detalle()!.versionBloqueo));
-      }
-      await this.store.cargarDetalle(idSolicitud);
-      await this.cargarEmpleos();
-    } catch (e: any) {
-      if (e?.status === 409) {
-        await this.store.cargarDetalle(idSolicitud);
-        alert('Versión desactualizada. Se recargó la información. Intenta guardar de nuevo.');
-      }
-    } finally {
-      this.cdr.markForCheck();
-    }
-  }
-
   async eliminarEmpleoAPI(index: number, idRegistro: string) {
-    const confirmacion = confirm('¿Estás seguro de que deseas eliminar este registro de empleo?');
+    const confirmacion = await this.confirmation.confirm({ title: 'Eliminar empleo', message: 'El registro laboral se eliminará del expediente. Esta acción no se puede deshacer.', confirmLabel: 'Sí, eliminar', tone: 'danger' });
     if (!confirmacion) return;
 
     const idSolicitud = this.store.detalle()?.id;
     if (!idSolicitud) return;
 
     try {
-      await firstValueFrom(this.api.eliminarEmpleo(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo));
+      await this.api.eliminarEmpleo(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo).toPromise();
       this.removerEmpleoVisual(index);
       await this.store.cargarDetalle(idSolicitud);
-    } catch (e) {
-      console.error(e);
-    } finally {
+    } catch {} finally {
       this.cdr.markForCheck();
     }
   }
 }
+

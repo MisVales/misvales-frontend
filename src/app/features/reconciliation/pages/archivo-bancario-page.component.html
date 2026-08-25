@@ -1,0 +1,232 @@
+<section class="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+  <app-history-page-header
+    eyebrow="Conciliación"
+    title="Historial de archivos bancarios"
+    description="Consulta las importaciones procesadas. La carga operativa sólo aparece para los perfiles responsables."
+  />
+
+  @if (error()) {
+    <div role="alert" class="rounded-xl border border-red-200 bg-red-50 p-4 text-base text-red-800">
+      <strong class="block">No fue posible completar la operación</strong><span>{{ error() }}</span>
+      @if (errorDetails().length) {
+        <ul class="mt-2 list-disc space-y-1 pl-5">
+          @for (detail of errorDetails(); track detail) {
+            <li>{{ detail }}</li>
+          }
+        </ul>
+      }
+    </div>
+  }
+  @if (success()) {
+    <div
+      role="status"
+      class="rounded-xl border border-green-200 bg-green-50 p-4 text-base text-green-800"
+    >
+      {{ success() }}
+    </div>
+  }
+
+  @if (canUpload() && !availabilityLoading() && !reconciliationAvailable()) {
+    <section
+      class="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-950 sm:p-6"
+      role="status"
+    >
+      <h2 class="text-xl font-bold">Conciliación pendiente</h2>
+      <p class="mt-2 text-base">{{ availabilityMessage() }}</p>
+      <p class="mt-1 text-sm text-blue-800">
+        Caja puede seguir registrando pagos en ventanilla. El Excel y la carga del archivo se
+        habilitarán al vencer el corte.
+      </p>
+    </section>
+  }
+
+  @if (canUpload() && reconciliationAvailable() && simulatedTransfers().length) {
+    <section
+      class="rounded-2xl bg-emerald-950 p-5 text-white sm:p-6"
+      aria-labelledby="simulations-title"
+    >
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 id="simulations-title" class="text-xl font-bold">
+            Movimientos simulados de la sucursal
+          </h2>
+          <p class="mt-1 text-base text-emerald-100">
+            Las transferencias se registran desde el detalle de cada relación.
+          </p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="rounded-full bg-white/10 px-3 py-1 text-sm font-semibold"
+            >{{ simulatedTransfers().length }} guardados</span
+          ><button
+            type="button"
+            class="min-h-11 rounded-lg bg-white px-5 font-bold text-emerald-900 hover:bg-emerald-50 disabled:opacity-50"
+            [disabled]="exportBusy() || !simulatedTransfers().length"
+            (click)="exportSimulations()"
+          >
+            {{ exportBusy() ? 'Preparando…' : 'Descargar Excel' }}
+          </button>
+        </div>
+      </div>
+    </section>
+
+    @if (simulatedTransfers().length) {
+      <details class="group rounded-xl border border-gray-200 bg-white">
+        <summary
+          class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 font-bold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700"
+        >
+          Movimientos guardados
+          <span aria-hidden="true" class="text-xl transition group-open:rotate-45">+</span>
+        </summary>
+        <div class="overflow-x-auto border-t border-gray-200">
+          <table class="w-full min-w-[720px] text-sm">
+            <thead class="bg-gray-50 text-left text-gray-700">
+              <tr>
+                <th class="px-4 py-3">Referencia</th>
+                <th class="px-4 py-3">Concepto</th>
+                <th class="px-4 py-3 text-right">Pago</th>
+                <th class="px-4 py-3">Fecha</th>
+                <th class="px-4 py-3">Tipo</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @for (movement of simulatedTransfers(); track movement.id) {
+                <tr>
+                  <td class="px-4 py-3 font-mono">{{ movement.payment_reference }}</td>
+                  <td class="px-4 py-3">{{ movement.concept }}</td>
+                  <td class="px-4 py-3 text-right font-semibold">
+                    {{ movement.amount | currency: 'MXN' }}
+                  </td>
+                  <td class="px-4 py-3">{{ movement.paid_at | date: 'short' }}</td>
+                  <td class="px-4 py-3">{{ paymentTypeLabel(movement.payment_type) }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </details>
+    }
+  }
+
+  @if (canUpload() && reconciliationAvailable()) {
+    <section
+      class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
+      aria-labelledby="upload-title"
+    >
+      <p class="text-sm font-semibold text-emerald-700">Conciliación</p>
+      <h2 id="upload-title" class="text-xl font-bold text-gray-950">
+        Cargar archivo para conciliar
+      </h2>
+      <p class="mt-1 text-base text-gray-600">
+        Acepta el Excel descargado aquí y también el formato del banco con: Concepto, Referencia,
+        Pago, Folio de pago, Fecha de pago, Hora y tipo de pago.
+      </p>
+      <label
+        for="bank-file"
+        class="mt-5 block rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-5 font-semibold text-gray-900 hover:border-emerald-400"
+        ><span>Selecciona un archivo XLSX</span
+        ><input
+          id="bank-file"
+          class="mt-3 block w-full text-sm font-normal"
+          type="file"
+          accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          (change)="select($event)"
+      /></label>
+      @if (file()) {
+        <div
+          class="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-gray-100 p-3"
+        >
+          <div>
+            <strong class="block text-sm">{{ file()?.name }}</strong
+            ><span class="text-xs text-gray-600">{{ file()?.size | number }} bytes</span>
+          </div>
+          <button
+            type="button"
+            class="min-h-11 rounded-lg bg-emerald-700 px-5 font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
+            [disabled]="busy()"
+            (click)="upload()"
+          >
+            {{ busy() ? 'Procesando…' : 'Validar y procesar' }}
+          </button>
+        </div>
+      }
+    </section>
+  }
+
+  @if (result(); as item) {
+    <section
+      class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm"
+      aria-labelledby="processing-result"
+    >
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 id="processing-result" class="font-bold text-gray-950">
+            Resultado de la importación
+          </h2>
+          <p class="text-sm text-gray-600">{{ item.original_name }} · {{ item.row_count }} filas</p>
+        </div>
+        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-800">{{
+          item.replayed ? 'YA PROCESADO' : item.status
+        }}</span>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-x-8 gap-y-3">
+        @for (entry of entries(item.summary); track entry[0]) {
+          <p>
+            <span class="block text-sm text-gray-600">{{ summaryLabel(entry[0]) }}</span
+            ><strong class="text-xl text-gray-950">{{ entry[1] }}</strong>
+          </p>
+        }
+      </div>
+    </section>
+  }
+
+  @if (!canUpload() || reconciliationAvailable()) {
+    <app-history-filter-bar label="Filtros del historial de archivos bancarios">
+      <input
+        type="search"
+        class="min-h-11 rounded-lg border border-gray-300 bg-white px-3"
+        placeholder="Buscar archivo"
+        [value]="importSearch()"
+        (input)="importSearch.set($any($event.target).value)"
+      />
+      <refactor-select
+        class="min-h-11 rounded-lg border border-gray-300 bg-white px-3"
+        [value]="importStatus()"
+        (change)="importStatus.set($any($event.target).value)"
+      >
+        <option value="">Todos los estados</option>
+        <option value="PROCESSED">Procesados</option>
+        <option value="REJECTED">Rechazados</option>
+      </refactor-select>
+    </app-history-filter-bar>
+    <details class="group rounded-xl border border-gray-200 bg-white">
+      <summary
+        class="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 font-bold text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-emerald-700"
+      >
+        Importaciones recientes
+        <span aria-hidden="true" class="text-xl transition group-open:rotate-45">+</span>
+      </summary>
+      <div class="border-t border-gray-200">
+        @for (item of filteredImports(); track item.id) {
+          <article
+            class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-100 p-4 last:border-0"
+          >
+            <div>
+              <strong class="block text-sm">{{ item.original_name || 'Archivo bancario' }}</strong
+              ><span class="text-xs text-gray-600"
+                >{{ item.created_at | date: 'medium' }} · {{ item.row_count }} filas</span
+              >
+            </div>
+            <span
+              class="text-sm font-semibold"
+              [class.text-green-700]="item.status === 'PROCESSED'"
+              [class.text-red-700]="item.status === 'REJECTED'"
+              >{{ item.status }}</span
+            >
+          </article>
+        } @empty {
+          <p class="p-6 text-center text-base text-gray-600">No hay importaciones visibles.</p>
+        }
+      </div>
+    </details>
+  }
+</section>

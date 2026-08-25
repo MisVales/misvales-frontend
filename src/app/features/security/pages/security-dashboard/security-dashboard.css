@@ -1,0 +1,130 @@
+.security-shell {
+  width: 100%;
+  max-width: 72rem;
+  margin-inline: auto;
+}
+.security-heading {
+  margin-bottom: 1rem;
+}
+.security-heading p {
+  margin: 0 0 0.2rem;
+  color: #386641;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.security-heading h1 {
+  margin: 0;
+  color: #172019;
+  font-size: clamp(1.45rem, 5vw, 2rem);
+  line-height: 1.15;
+}
+.security-heading span {
+  display: block;
+  margin-top: 0.4rem;
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+.security-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-bottom: 0.85rem;
+}
+.security-tab {
+  min-width: 0;
+  min-height: 3.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  color: #475569;
+  background: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.15;
+  text-decoration: none;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease;
+}
+.security-tab span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.security-tab:hover {
+  border-color: #a7c4ac;
+  background: #f3f8f4;
+  color: #274e31;
+}
+.security-tab--active {
+  border-color: #386641;
+  color: #fff;
+  background: #386641;
+  box-shadow: 0 0.35rem 0.85rem rgb(56 102 65 / 18%);
+}
+.security-tab:focus-visible {
+  outline: 3px solid rgb(56 102 65 / 35%);
+  outline-offset: 2px;
+}
+.security-content {
+  min-width: 0;
+  min-height: 22rem;
+  padding: 1rem;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 0.35rem 1.2rem rgb(15 23 42 / 5%);
+}
+@media (min-width: 48rem) {
+  .security-shell {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    column-gap: 2rem;
+  }
+  .security-heading {
+    grid-column: 1 / -1;
+    margin-bottom: 1.5rem;
+  }
+  .security-tabs {
+    grid-template-columns: 1fr;
+    align-content: start;
+    margin: 0;
+  }
+  .security-content {
+    padding: 2rem;
+  }
+}
+@media (max-width: 22rem) {
+  .security-tabs {
+    grid-template-columns: 1fr;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .security-tab {
+    transition: none;
+  }
+}
+
+/* The distributor experience stays mobile-sized even on a desktop viewport. */
+:host-context(.distributor-mobile) .security-shell {
+  display: block;
+  width: 100%;
+}
+:host-context(.distributor-mobile) .security-heading {
+  margin-bottom: 1rem;
+}
+:host-context(.distributor-mobile) .security-tabs {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 0.85rem;
+}
+:host-context(.distributor-mobile) .security-content {
+  padding: 1rem;
+}

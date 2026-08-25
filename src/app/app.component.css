@@ -1,0 +1,40 @@
+:host {
+  display: block;
+}
+
+.activity-track {
+  pointer-events: none;
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 1000;
+  height: 3px;
+  overflow: hidden;
+  opacity: 0;
+  background: color-mix(in srgb, var(--mv-primary-100) 86%, transparent);
+  transition: opacity 160ms ease;
+}
+
+.activity-track--visible {
+  opacity: 1;
+}
+
+.activity-bar {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--mv-primary-500), var(--mv-primary-700));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--mv-primary-600) 45%, transparent);
+  animation: mv-loading-progress 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  transform: translateX(-110%);
+}
+
+@keyframes mv-loading-progress {
+  0% { transform: translateX(-110%); }
+  100% { transform: translateX(340%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .activity-track { transition: none; }
+  .activity-bar { width: 100%; animation: none; transform: none; }
+}

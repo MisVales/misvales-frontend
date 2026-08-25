@@ -1,0 +1,56 @@
+<div class="page-container" [class.page-container--calendar]="view === 'calendar'">
+  @if (view !== 'calendar') {
+    <header class="page-header">
+      <div><span class="page-kicker">Agenda operativa</span><h1 class="page-title">Mis visitas</h1><p class="page-desc">Consulta lo próximo y el historial completo desde un solo lugar.</p></div>
+      <div class="page-summary" aria-label="Resumen de visitas"><span><strong>{{ upcomingVisits().length }}</strong> próximas</span><span><strong>{{ historyVisits().length }}</strong> históricas</span></div>
+    </header>
+  }
+
+  @if (facade.error()) {
+    <div class="alert alert-danger" role="alert">{{ facade.error() }}<button class="btn btn-sm btn-outline-danger ml-auto" (click)="facade.clearError()">Cerrar</button></div>
+  }
+
+  @if (facade.isLoading()) {
+    <div class="loading-state"><div class="spinner"></div><p>Cargando visitas...</p></div>
+  } @else if (view === 'calendar') {
+    <app-full-screen-calendar [events]="calendarEvents()" emptyMessage="No tienes visitas programadas para este día." (eventSelected)="abrirEventoCalendario($event)" />
+  } @else {
+    <section class="schedule-section" aria-labelledby="upcoming-title">
+      <div class="section-heading"><div><span class="section-kicker">Por día</span><h2 id="upcoming-title">Próximas visitas</h2></div><p>Desplázate dentro de cada día para revisar todas sus visitas.</p></div>
+      @if (visitDays().length) {
+        <div class="day-board" aria-label="Visitas próximas agrupadas por día">
+          @for (day of visitDays(); track day.key) {
+            <section class="day-column" [attr.aria-label]="day.fullLabel">
+              <header class="day-header"><div><span>{{ day.label }}</span><small>{{ day.fullLabel }}</small></div><strong>{{ day.visits.length }}</strong></header>
+              <div class="day-list" tabindex="0" [attr.aria-label]="'Visitas del ' + day.fullLabel">
+                @for (visita of day.visits; track visita.id) {
+                  <article class="visita-card">
+                    <div class="card-header"><div><span class="visit-time">{{ visita.fechaProgramada | date: 'h:mm a' }}</span><h3 class="solicitud-id">{{ identificadorSolicitud(visita.solicitudNombre) }}</h3></div><span class="badge" [class.badge-info]="visita.estado === 'ASSIGNED'" [class.badge-warning]="visita.estado === 'IN_PROGRESS'">{{ visita.estado | statusLabel }}</span></div>
+                    <div class="card-body">
+                      <p class="detail"><strong>Avance</strong><span>{{ visita.evidencias.length }} evidencias · {{ visita.diferencias.length }} diferencias</span></p>
+                      @if (visita.fechaInicio) { <p class="detail"><strong>Iniciada</strong><span>{{ visita.fechaInicio | date: 'dd/MM/yyyy, h:mm a' }}</span></p> }
+                    </div>
+                    <div class="card-footer"><button type="button" class="btn btn-primary btn-block" (click)="abrirVisita(visita)" [disabled]="visita.estado === 'ASSIGNED' && !puedeIniciar(visita.fechaProgramada)"><span style="display: inline; color: #fff !important">{{ visita.estado === 'ASSIGNED' ? (puedeIniciar(visita.fechaProgramada) ? 'Iniciar visita' : 'Pendiente de horario') : 'Continuar visita' }}</span></button></div>
+                  </article>
+                }
+              </div>
+            </section>
+          }
+        </div>
+      } @else { <div class="empty-state compact"><p>No tienes visitas próximas en este momento.</p></div> }
+    </section>
+
+    <section class="history-section" aria-labelledby="history-title">
+      <div class="section-heading"><div><span class="section-kicker">Consulta</span><h2 id="history-title">Historial de visitas</h2></div><p>{{ historyVisits().length }} visitas terminadas</p></div>
+      @if (pagedHistory().length) {
+        <div class="table-shell"><table>
+          <thead><tr><th>Solicitud</th><th>Programada</th><th>Terminada</th><th>Resultado</th><th>Resumen</th><th><span class="sr-only">Acción</span></th></tr></thead>
+          <tbody>@for (visita of pagedHistory(); track visita.id) { <tr>
+            <td data-label="Solicitud"><strong>{{ identificadorSolicitud(visita.solicitudNombre) }}</strong></td><td data-label="Programada">{{ visita.fechaProgramada | date: 'dd/MM/yyyy, h:mm a' }}</td><td data-label="Terminada">{{ visita.fechaFin | date: 'dd/MM/yyyy, h:mm a' }}</td><td data-label="Resultado"><span class="badge badge-success">{{ visita.resultadoFisico || 'Terminada' }}</span></td><td data-label="Resumen">{{ visita.evidencias.length }} evidencias · {{ visita.diferencias.length }} diferencias</td><td class="table-action"><button type="button" class="btn btn-secondary btn-sm" (click)="abrirVisita(visita)">Ver detalle</button></td>
+          </tr> }</tbody>
+        </table></div>
+        <nav class="pagination" aria-label="Paginación del historial"><button class="btn btn-sm btn-secondary" [disabled]="historyPage() === 1" (click)="onHistoryPageChange(historyPage() - 1)">Anterior</button><span class="page-info">Página {{ historyPage() }} de {{ historyTotalPages() }}</span><button class="btn btn-sm btn-secondary" [disabled]="historyPage() === historyTotalPages()" (click)="onHistoryPageChange(historyPage() + 1)">Siguiente</button></nav>
+      } @else { <div class="empty-state compact"><p>Aún no hay visitas terminadas.</p></div> }
+    </section>
+  }
+</div>

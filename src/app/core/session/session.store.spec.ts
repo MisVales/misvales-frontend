@@ -15,6 +15,7 @@ describe('SessionStore', () => {
     expect(store.user()).toBeNull();
     expect(store.roles()).toEqual([]);
     expect(store.permissions()).toEqual([]);
+    expect(store.scopes()).toEqual([]);
     expect(store.activeBranch()).toBeNull();
     expect(store.isAuthenticated()).toBe(false);
   });
@@ -24,12 +25,21 @@ describe('SessionStore', () => {
     const roles = ['admin'];
     const permissions = ['manage_users'];
     const activeBranch = 'branch-123';
+    const scopes = [
+      {
+        role: 'admin',
+        roleName: 'Administrador',
+        branchId: null,
+        permissions,
+      },
+    ];
 
-    store.setSession(user, roles, permissions, activeBranch);
+    store.setSession(user, roles, permissions, activeBranch, scopes);
 
     expect(store.user()).toEqual(user);
     expect(store.roles()).toEqual(roles);
     expect(store.permissions()).toEqual(permissions);
+    expect(store.scopes()).toEqual(scopes);
     expect(store.activeBranch()).toEqual(activeBranch);
     expect(store.isAuthenticated()).toBe(true);
   });

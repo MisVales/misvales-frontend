@@ -1,0 +1,33 @@
+<span class="animation-shell" [class.reduced-motion]="reducedMotion()">
+  <span #animationContainer class="lottie-container" data-renderer="lottie-web"></span>
+
+  @if (loadState() === 'fallback') {
+    <svg class="fallback" viewBox="0 0 48 48" focusable="false">
+      @switch (type) {
+        @case ('pdf') {
+          <path d="M12 5h16l9 9v29H12Zm16 0v10h9M17 26h14M17 32h10" />
+        }
+        @case ('excel') {
+          <path d="M13 5h22v38H13ZM20 15h10M20 22h10M20 29h10M25 11v29" />
+        }
+        @case ('image') {
+          <path d="M6 8h36v32H6Zm3 28 10-11 7 7 5-5 8 9M31 18h.01" />
+        }
+        @case ('download') {
+          <path d="M24 7v24m-9-9 9 9 9-9M9 38h30" />
+        }
+        @case ('delete') {
+          <path d="M10 13h28m-18-5h8m-14 5 2 28h16l2-28M21 20v14m6-14v14" />
+        }
+        @case ('view') {
+          <path
+            d="M4 24s7-11 20-11 20 11 20 11-7 11-20 11S4 24 4 24Zm20-5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z"
+          />
+        }
+        @default {
+          <path d="M24 7v25m-8-8 8 8 8-8M9 40h30" />
+        }
+      }
+    </svg>
+  }
+</span>

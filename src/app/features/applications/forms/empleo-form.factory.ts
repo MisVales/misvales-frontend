@@ -1,5 +1,6 @@
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { rangoFechasValidator } from '../validators/rango-fechas.validator';
+import { notFutureDateValidator } from '../validators/not-future-date.validator';
 
 export class EmpleoFormFactory {
   static create(fb: FormBuilder): FormGroup {
@@ -7,7 +8,7 @@ export class EmpleoFormFactory {
       id: [null],
       employer_name: ['', [Validators.required, Validators.maxLength(150)]],
       job_title: ['', [Validators.required, Validators.maxLength(100)]],
-      started_at: ['', [Validators.required]],
+      started_at: ['', [Validators.required, notFutureDateValidator]],
       ended_at: [''],
       is_current: [false],
       reference_payload: [null],

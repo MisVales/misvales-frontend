@@ -1,0 +1,147 @@
+<main class="gallery">
+  <header class="intro">
+    <span>LABORATORIO AISLADO · GERENTE GENERAL</span>
+    <verification-page-context-header
+      title="Galería ejecutiva"
+      subtitle="Componentes reutilizables para supervisión global; no es el dashboard final."
+    />
+  </header>
+
+  <section class="catalog-section">
+    <div class="section-copy">
+      <span>01</span>
+      <div>
+        <h2>Navegación administrativa</h2>
+        <p>Configuración plana, selección desacoplada y modo colapsado.</p>
+      </div>
+    </div>
+    <div class="sidebar-variants">
+      <gg-admin-sidebar [groups]="navigation" /><gg-admin-sidebar
+        [groups]="navigation"
+        [collapsed]="true"
+      />
+    </div>
+  </section>
+
+  <section class="catalog-section">
+    <div class="section-copy">
+      <span>02</span>
+      <div>
+        <h2>Filtros globales</h2>
+        <p>El selector existente se reutiliza sin conectar consultas.</p>
+      </div>
+    </div>
+    <div class="filter-row">
+      <refactor-select
+        label="Período"
+        [options]="periods"
+        [(ngModel)]="period"
+        leadingIcon="calendar-range"
+      />
+    </div>
+  </section>
+
+  <section class="catalog-section">
+    <div class="section-copy">
+      <span>03</span>
+      <div>
+        <h2>KPIs ejecutivos</h2>
+        <p>Tarjetas compactas con icono, cifra y contexto alineados.</p>
+      </div>
+    </div>
+    <div class="metric-grid">
+      @for (metric of metrics; track metric.id) {
+        <gg-executive-metric-card [metric]="metric" />
+      }
+    </div>
+  </section>
+
+  <section class="catalog-section">
+    <div class="section-copy">
+      <span>04</span>
+      <div>
+        <h2>Estado por sucursal</h2>
+        <p>Composición con la tabla de solo lectura del Verificador.</p>
+      </div>
+    </div>
+    <verification-section-card title="Panorama por sucursal"
+      ><verification-data-table [columns]="branchColumns" [rows]="branchRows"
+    /></verification-section-card>
+  </section>
+
+  <section class="catalog-section">
+    <div class="section-copy">
+      <span>05</span>
+      <div>
+        <h2>Resumen financiero</h2>
+        <p>Ítems compactos listos para componerse con la gráfica cuando ECharts sea aprobado.</p>
+      </div>
+    </div>
+    <div class="summary-grid">
+      @for (metric of financialMetrics; track metric.id) {
+        <gg-metric-summary-item [metric]="metric" />
+      }
+    </div>
+    <aside class="chart-blocked">
+      <lucide-icon name="chart-no-axes-combined" [size]="24" />
+      <div>
+        <strong>Gráfica pendiente de dependencia</strong>
+        <p>
+          Apache ECharts no está instalado y requiere aprobación antes de agregar la dependencia.
+        </p>
+      </div>
+    </aside>
+  </section>
+
+  <section class="catalog-section two-columns">
+    <div>
+      <div class="section-copy">
+        <span>06</span>
+        <div>
+          <h2>Configuración global</h2>
+          <p>SectionCard + DetailGrid existentes.</p>
+        </div>
+      </div>
+      <verification-section-card title="Configuración vigente"
+        ><verification-detail-grid [items]="configuration" [columns]="1"
+      /></verification-section-card>
+    </div>
+    <div>
+      <div class="section-copy">
+        <span>07</span>
+        <div>
+          <h2>Alertas</h2>
+          <p>Lista reusable con severidad, contador y tiempo.</p>
+        </div>
+      </div>
+      <verification-section-card title="Alertas importantes"
+        ><gg-alert-list [alerts]="alerts"
+      /></verification-section-card>
+    </div>
+  </section>
+
+  <section class="catalog-section">
+    <div class="section-copy">
+      <span>08</span>
+      <div>
+        <h2>Salud del sistema</h2>
+        <p>Variantes con texto e icono, no solamente color.</p>
+      </div>
+    </div>
+    <div class="health-grid">
+      <gg-system-health-card /><gg-system-health-card
+        status="warning"
+        title="Operación degradada"
+        description="Un servicio requiere seguimiento"
+        statusLabel="Advertencia"
+        icon="shield-alert"
+      /><gg-system-health-card
+        status="critical"
+        title="Atención requerida"
+        description="Hay procesos detenidos"
+        statusLabel="Crítico"
+        icon="octagon-alert"
+      />
+    </div>
+  </section>
+</main>

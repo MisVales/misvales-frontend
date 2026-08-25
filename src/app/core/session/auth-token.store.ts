@@ -2,42 +2,31 @@ import { Injectable, signal } from '@angular/core';
 
 export interface AuthTokens {
   accessToken: string;
-  refreshToken: string;
   expiresAt: number;
 }
 
-const STORAGE_KEY = 'auth_tokens';
-
-/** Tokens mantenidos en memoria y localStorage para persistencia entre recargas. */
+/** El access token vive solo en memoria; el refresh token es una cookie HttpOnly. */
 @Injectable({ providedIn: 'root' })
 export class AuthTokenStore {
-  private readonly tokensState = signal<AuthTokens | null>(this.loadFromStorage());
+  private readonly tokensState = signal<AuthTokens | null>(null);
 
   readonly tokens = this.tokensState.asReadonly();
 
-  private loadFromStorage(): AuthTokens | null {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (!stored) return null;
-    try {
-      const parsed = JSON.parse(stored) as AuthTokens;
-      if (parsed.expiresAt <= Date.now()) {
-        localStorage.removeItem(STORAGE_KEY);
-        return null;
-      }
-      return parsed;
-    } catch {
-      return null;
+  constructor() {
+    // Los tokens no se persisten. La guardia adicional permite ejecutar la
+    // aplicación y sus pruebas en entornos donde localStorage es un shim.
+    const storage = globalThis.localStorage;
+    if (typeof storage?.removeItem === 'function') {
+      storage.removeItem('auth_tokens');
     }
   }
 
-  set(accessToken: string, refreshToken: string, expiresInSeconds: number): void {
+  set(accessToken: string, expiresInSeconds: number): void {
     const tokens: AuthTokens = {
       accessToken,
-      refreshToken,
       expiresAt: Date.now() + expiresInSeconds * 1000,
     };
     this.tokensState.set(tokens);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
   }
 
   accessToken(): string | null {
@@ -51,6 +40,5 @@ export class AuthTokenStore {
 
   clear(): void {
     this.tokensState.set(null);
-    localStorage.removeItem(STORAGE_KEY);
   }
 }

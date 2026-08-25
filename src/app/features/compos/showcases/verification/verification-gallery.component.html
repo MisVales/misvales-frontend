@@ -1,0 +1,378 @@
+<main class="gallery-shell">
+  <verification-top-header />
+  <header class="gallery-intro">
+    <span class="eyebrow">Laboratorio aislado · Verificador</span>
+    <verification-page-context-header
+      title="Galería de componentes"
+      subtitle="Catálogo reusable para expedientes, visitas, evidencias y resultados."
+      icon="✓"
+    />
+    <nav class="catalog-index" aria-label="Categorías del catálogo">
+      @for (
+        label of [
+          'Navegación',
+          'Estados',
+          'Contenedores',
+          'Datos',
+          'Tablas',
+          'Progreso',
+          'Formularios',
+          'Evidencias',
+          'Resultados',
+          'Acciones',
+        ];
+        track label;
+        let index = $index
+      ) {
+        <a [href]="'#section-' + (index + 1)"
+          ><span>{{ index + 1 }}</span
+          >{{ label }}</a
+        >
+      }
+    </nav>
+  </header>
+
+  <section class="catalog-section" id="section-1">
+    <div class="section-copy">
+      <span>01</span>
+      <div>
+        <h2>Navegación y encabezados</h2>
+        <p>Contexto de rol, identidad y jerarquía de página sin depender de sesión real.</p>
+      </div>
+    </div>
+    <div class="demo-stack">
+      <verification-page-context-header
+        title="Expediente de solicitud"
+        subtitle="Consulta la información declarada antes de iniciar la visita."
+        folio="SOL-2026-0847"
+        status="pending"
+      /><verification-process-stepper [steps]="steps" />
+    </div>
+  </section>
+
+  <section class="catalog-section" id="section-2">
+    <div class="section-copy">
+      <span>02</span>
+      <div>
+        <h2>Estados y badges</h2>
+        <p>Una sola API para estados operativos y filtros seleccionables.</p>
+      </div>
+    </div>
+    <div class="demo-stack">
+      <div class="badge-cloud">
+        @for (status of statuses; track status) {
+          <verification-status-badge [status]="status" />
+        }
+      </div>
+      <div class="filter-grid">
+        @for (filter of filters; track filter.label) {
+          <verification-filter-pill
+            [label]="filter.label"
+            [icon]="filter.icon || ''"
+            [animationType]="filter.animationType"
+            [count]="filter.count"
+            [selected]="activeFilter() === filter.label"
+            (chosen)="activeFilter.set(filter.label)"
+          />
+        }
+      </div>
+      <div class="stat-grid">
+        <verification-stat-card
+          label="Total asignadas"
+          value="24"
+          description="Hoy"
+          icon="☷"
+        /><verification-stat-card
+          label="Pendientes"
+          value="7"
+          description="29% del total"
+          animationType="clock"
+          tone="orange"
+        /><verification-stat-card
+          label="Con evidencia"
+          value="6"
+          description="25% del total"
+          animationType="folder"
+        /><verification-stat-card
+          label="Con diferencias"
+          value="3"
+          description="13% del total"
+          icon="⚠"
+          tone="red"
+        />
+      </div>
+    </div>
+  </section>
+
+  <section class="catalog-section" id="section-3">
+    <div class="section-copy">
+      <span>03</span>
+      <div>
+        <h2>Cards y contenedores</h2>
+        <p>Proyección de contenido para no amarrar una sección a un único tipo de datos.</p>
+      </div>
+    </div>
+    <div class="section-grid">
+      <verification-section-card [number]="1" title="Datos personales" status="required"
+        ><verification-detail-grid
+          [items]="personalDetails"
+          [columns]="2" /></verification-section-card
+      ><verification-section-card
+        [number]="4"
+        title="Vehículos"
+        status="not-applicable"
+        [disabled]="true"
+        ><verification-empty-state iconAsset="car.png" description="No declaró vehículos."
+      /></verification-section-card>
+    </div>
+    <verification-info-banner
+      title="Alcance del verificador"
+      message="Compara lo declarado con lo observado durante la visita; el expediente original permanece sin cambios."
+    />
+    <div class="context-grid context-grid-five" aria-label="Secciones del expediente">
+      <verification-context-tile
+        icon="vehicle.svg"
+        label="Vehículos"
+        value="Información vehicular declarada"
+      />
+      <verification-context-tile
+        icon="icons8-cuenta-comercial.svg"
+        label="Créditos comerciales"
+        value="Relaciones y cuentas del negocio"
+      />
+      <verification-context-tile
+        icon="icons8-bienes.svg"
+        label="Patrimonio"
+        value="Bienes y obligaciones declaradas"
+      />
+      <verification-context-tile
+        icon="icons8-documento.svg"
+        label="Documentos"
+        value="Comprobantes del expediente"
+      />
+      <verification-context-tile
+        icon="icons8-bandera-2.svg"
+        label="Seguimiento"
+        value="Estado actual de la verificación"
+      />
+    </div>
+  </section>
+
+  <section class="catalog-section" id="section-4">
+    <div class="section-copy">
+      <span>04</span>
+      <div>
+        <h2>Datos del expediente</h2>
+        <p>Resumen adaptable del solicitante, visita y datos declarados.</p>
+      </div>
+    </div>
+    <div class="demo-stack">
+      <verification-applicant-summary
+        name="María González López"
+        phone="55 3456 7890"
+        status="pending"
+        [details]="personalDetails.slice(0, 4)"
+      /><verification-visit-summary
+        folio="MV-2025-02184"
+        applicant="María González López"
+        phone="55 3456 7890"
+        address="Av. Insurgentes Sur 1234, Del Valle, CDMX"
+        duration="45 min"
+        date="21/05/2025, 10:35 a. m."
+      />
+      <article class="demo-card">
+        <h3>Resumen de datos declarados</h3>
+        <verification-declared-summary [items]="declaredData" />
+      </article>
+      <div class="context-grid" aria-label="Datos de contacto y actividad">
+        <verification-context-tile
+          icon="icons8-nombre.svg"
+          label="Solicitante"
+          value="María González López"
+        />
+        <verification-context-tile
+          icon="icons8-telefono.svg"
+          label="Teléfono"
+          value="55 3456 7890"
+        />
+        <verification-context-tile
+          icon="icons8-negocio.svg"
+          label="Actividad"
+          value="Comercio minorista"
+        />
+        <verification-context-tile
+          icon="icons8-robo-de-identidad.svg"
+          label="Identidad"
+          value="Documentación consultable"
+        />
+      </div>
+      <verification-location
+        placeName="Universidad Tecnológica de Torreón"
+        address="Carretera Torreón Matamoros 9275, Torreón, Coahuila"
+        [latitude]="25.532861"
+        [longitude]="-103.322991"
+      />
+    </div>
+  </section>
+
+  <section class="catalog-section" id="section-5">
+    <div class="section-copy">
+      <span>05</span>
+      <div>
+        <h2>Tablas y listas</h2>
+        <p>Definiciones de columnas y filas mock sin tablas específicas por sección.</p>
+      </div>
+    </div>
+    <div class="demo-stack">
+      <article class="demo-card">
+        <div class="toolbar">
+          <verification-search-input
+            placeholder="Buscar por folio, solicitante o dirección…"
+            [value]="search()"
+            (valueChange)="search.set($event)"
+          /><verification-filter-button
+            [options]="requestStatusOptions"
+            [value]="requestStatus()"
+            (valueChange)="requestStatus.set($event)"
+          />
+        </div>
+        <verification-request-table
+          [requests]="visibleRequests()"
+          [selectedFolio]="selectedRequest().folio"
+          (selected)="selectedRequest.set($event)"
+        />
+      </article>
+      <verification-request-detail-card
+        [request]="selectedRequest()"
+        [declaredItems]="declaredData"
+      />
+      <article class="demo-card">
+        <h3>Tabla de familiares</h3>
+        <verification-data-table [columns]="columns" [rows]="rows" />
+      </article>
+    </div>
+  </section>
+
+  <section class="catalog-section" id="section-6">
+    <div class="section-copy">
+      <span>06</span>
+      <div>
+        <h2>Progreso de verificación</h2>
+        <p>Stepper y accordion genéricos con secciones configurables.</p>
+      </div>
+    </div>
+    <article class="demo-card">
+      <div class="accordion-tools"><h3>Verificación por sección</h3></div>
+      <verification-accordion [sections]="accordion" [initialOpen]="['home']" [multiple]="false" />
+    </article>
+  </section>
+
+  <section class="catalog-section" id="section-7">
+    <div class="section-copy">
+      <span>07</span>
+      <div>
+        <h2>Formularios de verificación</h2>
+        <p>Comparación accesible, registro de diferencias y observaciones con contador.</p>
+      </div>
+    </div>
+    <div class="forms-grid">
+      <article class="demo-card">
+        <h3>Input con reglas contextuales</h3>
+        <refactor-input
+          label="Clave de elector (INE)"
+          placeholder="Ej. ABCDEF12345678A1B2"
+          leadingIcon="file-text"
+          hint="Captura la clave como aparece en la credencial."
+          [maxLength]="18"
+          [validationRules]="ineRules"
+          validationTitle="La clave debe cumplir"
+          [ngModel]="ine()"
+          [ngModelOptions]="{ standalone: true }"
+          (ngModelChange)="ine.set($event)"
+          [readonly]="true"
+        />
+      </article>
+      <article class="demo-card">
+        <h3>Fila de comparación</h3>
+        <verification-field-row [field]="sampleField()" (changed)="selectField($event)" />
+      </article>
+      <verification-difference-form
+        [readOnly]="false"
+        [sectionOptions]="['Domicilios / Tipo de vivienda', 'Domicilios / Dirección']"
+        [recordOptions]="['Domicilio actual']"
+        declaredValue="Propia"
+      /><verification-observation-panel />
+    </div>
+  </section>
+
+  <section class="catalog-section" id="section-8">
+    <div class="section-copy">
+      <span>08</span>
+      <div>
+        <h2>Evidencias</h2>
+        <p>Wrapper contextual que reutiliza los iconos Lottie y el modal multimedia aprobado.</p>
+      </div>
+    </div>
+    <verification-evidence-gallery
+      title="Evidencias capturadas en la visita"
+      subtitle="Fotografías o documentos que respaldan lo observado."
+      [items]="evidences"
+      [showDropzone]="true"
+    />
+  </section>
+
+  <section class="catalog-section" id="section-9">
+    <div class="section-copy">
+      <span>09</span>
+      <div>
+        <h2>Resultados</h2>
+        <p>Decisiones extensibles, diferencias resumidas y validación contextual.</p>
+      </div>
+    </div>
+    <div class="demo-stack">
+      <verification-difference-list [items]="differences" />
+      <article class="demo-card">
+        <h3>Selecciona el resultado de la verificación física</h3>
+        <verification-decision-group
+          [options]="decisions"
+          [value]="decision()"
+          (valueChange)="decision.set($event)"
+        />
+      </article>
+      @if (decision() === 'unfavorable') {
+        <verification-validation-message
+          title="Las observaciones son obligatorias cuando el resultado es Desfavorable."
+          description="Proporciona detalles claros y específicos de los hallazgos."
+        />
+      }
+    </div>
+  </section>
+
+  <section class="catalog-section" id="section-10">
+    <div class="section-copy">
+      <span>10</span>
+      <div>
+        <h2>Botones y acciones</h2>
+        <p>Acciones configurables, menús desacoplados y barra inferior opcional.</p>
+      </div>
+    </div>
+    <div class="demo-stack">
+      <article class="demo-card button-showcase">
+        <verification-app-button [readOnly]="true">Continuar</verification-app-button
+        ><verification-app-button [readOnly]="true" variant="outline"
+          >Guardar avance</verification-app-button
+        ><verification-app-button [readOnly]="true" variant="danger"
+          >Cancelar visita</verification-app-button
+        ><verification-app-button [readOnly]="true" [loading]="true"
+          >Guardando</verification-app-button
+        >
+      </article>
+      <verification-user-menu
+        [items]="[
+          { id: 'profile', label: 'Mi perfil', icon: '♙' },
+          { id: 'logout', label: 'Cerrar sesión', icon: '↪' },
+        ]"
+      /><verification-action-footer [actions]="actions" />
+    </div>
+  </section>
+</main>

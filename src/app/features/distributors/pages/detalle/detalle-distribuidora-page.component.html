@@ -1,0 +1,374 @@
+<main class="dossier">
+  @if (store.cargandoDetalle()) {
+    <div class="loading-state" role="status">
+      <lucide-icon name="loader-2" class="spin" aria-hidden="true" />
+      <span>Integrando expediente operativo…</span>
+    </div>
+  } @else if (store.error()) {
+    <div class="error-state" role="alert">
+      <strong>No fue posible abrir el expediente</strong>
+      <span>{{ store.error() }}</span>
+      <button type="button" (click)="volver()">Volver a distribuidoras</button>
+    </div>
+  } @else if (store.detalle(); as distributor) {
+    <app-breadcrumbs [items]="breadcrumbs()" />
+
+    <div class="page-workspace-nav">
+      <app-distributor-workspace-nav
+        [distributorId]="distributor.id"
+        [distributorNumber]="distributor.numero"
+        [active]="workspaceSection()"
+        [backRoute]="distributorDirectoryRoute()"
+      />
+    </div>
+
+    <header class="dossier-masthead">
+      <div class="identity">
+        <span class="identity__mark" aria-hidden="true">{{
+          distributor.nombreCompleto.charAt(0)
+        }}</span>
+        <div>
+          <p>Expediente {{ distributor.numero }}</p>
+          <h1>{{ distributor.nombreCompleto }}</h1>
+          <div class="identity__meta">
+            <span
+              ><lucide-icon name="map-pin" [size]="15" aria-hidden="true" />{{
+                distributor.sucursal.nombre
+              }}</span
+            >
+            <span
+              ><lucide-icon name="user-round" [size]="15" aria-hidden="true" />{{
+                distributor.coordinador?.nombreCompleto || 'Sin coordinación asignada'
+              }}</span
+            >
+          </div>
+        </div>
+      </div>
+      <div class="identity-status">
+        <span class="status-dot"></span>
+        <div>
+          <small>Estado operativo</small><strong>{{ distributor.estado | statusLabel }}</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="ledger-strip" aria-label="Resumen financiero y operativo">
+      <div>
+        <span>Línea autorizada</span
+        ><strong>{{ money(creditLine()?.total_authorized || distributor.lineaInicial) }}</strong>
+      </div>
+      <div>
+        <span>Saldo utilizado</span><strong>{{ money(creditLine()?.used_balance) }}</strong>
+      </div>
+      <div class="ledger-strip__accent">
+        <span>Disponible</span
+        ><strong>{{ money(availableBalance(distributor.lineaInicial)) }}</strong>
+      </div>
+      <div>
+        <span>Relaciones</span><strong>{{ relations().length }}</strong>
+      </div>
+      <div [class.ledger-strip__alert]="riskAlerts().length">
+        <span>Alertas abiertas</span><strong>{{ riskAlerts().length }}</strong>
+      </div>
+    </section>
+
+    @if (activeSection() === 'informacion') {
+      <section class="section-layout">
+        <div class="section-main">
+          <header class="section-heading">
+            <div>
+              <p>Contexto vigente</p>
+              <h2>Información operativa</h2>
+            </div>
+            <span>Actualizado desde el expediente autorizado</span>
+          </header>
+          <dl class="fact-sheet">
+            <div>
+              <dt>Número</dt>
+              <dd>{{ distributor.numero }}</dd>
+            </div>
+            <div>
+              <dt>Sucursal responsable</dt>
+              <dd>{{ distributor.sucursal.nombre }}</dd>
+            </div>
+            <div>
+              <dt>Coordinador</dt>
+              <dd>{{ distributor.coordinador?.nombreCompleto || 'Sin asignar' }}</dd>
+            </div>
+            <div>
+              <dt>Categoría</dt>
+              <dd>{{ distributor.categoria?.nombre || 'Sin categoría' }}</dd>
+            </div>
+            <div>
+              <dt>Acceso</dt>
+              <dd>{{ distributor.estadoAcceso | statusLabel }}</dd>
+            </div>
+            <div>
+              <dt>Activación</dt>
+              <dd>
+                {{
+                  distributor.activadaEn ? (distributor.activadaEn | date: 'longDate') : 'Pendiente'
+                }}
+              </dd>
+            </div>
+          </dl>
+
+          <section class="relations-ledger">
+            <header>
+              <div>
+                <p>Comportamiento de pago</p>
+                <h2>Relaciones recientes</h2>
+              </div>
+              <strong>{{ relations().length }} registros</strong>
+            </header>
+            @if (relations().length) {
+              <div class="table-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Referencia</th>
+                      <th>Vencimiento</th>
+                      <th>Estado</th>
+                      <th>Saldo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (relation of relations().slice(0, 6); track relation.id) {
+                      <tr>
+                        <td>
+                          <strong>{{ relation.payment_reference }}</strong
+                          ><small>Corte {{ relation.cutoff_at | date: 'mediumDate' }}</small>
+                        </td>
+                        <td>{{ relation.payment_deadline_at | date: 'mediumDate' }}</td>
+                        <td>
+                          <span
+                            class="text-status"
+                            [attr.data-status]="relation.financial_status"
+                            >{{ relationStatus(relation.financial_status) }}</span
+                          >
+                        </td>
+                        <td class="money">{{ money(relation.balance) }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            } @else {
+              <app-empty-state
+                [compact]="true"
+                [priority]="true"
+                [variant]="2"
+                title="Sin relaciones generadas"
+                message="Cuando exista un corte, su seguimiento aparecerá dentro de este expediente."
+              />
+            }
+          </section>
+        </div>
+        <aside class="monitor-rail">
+          <div class="rail-heading"><span>Monitor</span><strong>Situación actual</strong></div>
+          <div class="rail-item">
+            <lucide-icon name="shield-alert" [size]="20" aria-hidden="true" />
+            <div>
+              <span>Riesgo</span
+              ><strong>{{
+                riskAlerts().length
+                  ? riskAlerts().length + ' alerta(s) abierta(s)'
+                  : 'Sin alertas abiertas'
+              }}</strong>
+            </div>
+          </div>
+          <div class="rail-item">
+            <lucide-icon name="badge-dollar-sign" [size]="20" aria-hidden="true" />
+            <div>
+              <span>Uso de línea</span><strong>{{ usedPercent() }}% utilizado</strong>
+            </div>
+          </div>
+          <div class="usage-track"><span [style.width.%]="usedPercent()"></span></div>
+          <div class="rail-item">
+            <lucide-icon name="receipt-text" [size]="20" aria-hidden="true" />
+            <div>
+              <span>Saldo en relaciones</span><strong>{{ money(relations()[0]?.balance) }}</strong>
+            </div>
+          </div>
+          <div class="rail-item">
+            <lucide-icon name="calendar-range" [size]="20" aria-hidden="true" />
+            <div>
+              <span>Expediente creado</span
+              ><strong>{{
+                distributor.creadaEn
+                  ? (distributor.creadaEn | date: 'mediumDate')
+                  : 'Sin fecha disponible'
+              }}</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+    }
+
+    @if (activeSection() === 'credito') {
+      <section class="credit-workspace">
+        <div class="credit-balance">
+          <div>
+            <p>Capacidad disponible</p>
+            <strong>{{ money(availableBalance(distributor.lineaInicial)) }}</strong
+            ><span
+              >de
+              {{ money(creditLine()?.total_authorized || distributor.lineaInicial) }}
+              autorizados</span
+            >
+          </div>
+          <div class="credit-gauge" aria-label="{{ usedPercent() }} por ciento utilizado">
+            <span [style.width.%]="usedPercent()"></span>
+          </div>
+          <dl>
+            <div>
+              <dt>Utilizado</dt>
+              <dd>{{ money(creditLine()?.used_balance) }}</dd>
+            </div>
+            <div>
+              <dt>Disponibilidad</dt>
+              <dd>{{ 100 - usedPercent() }}%</dd>
+            </div>
+            <div>
+              <dt>Restricción</dt>
+              <dd>
+                {{
+                  creditLine()?.restriction?.restriction_status ||
+                    (distributor.restriccionInicialActiva ? 'Activa' : 'Sin restricción')
+                }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="credit-columns">
+          <section class="flat-section">
+            <header>
+              <div>
+                <p>Solicitudes</p>
+                <h2>Incrementos de línea</h2>
+              </div>
+              <span>{{ increases().length }} en historial</span>
+            </header>
+            @if (increases().length) {
+              <ol class="request-list">
+                @for (request of increases(); track request.id) {
+                  <li>
+                    <span class="request-marker"></span>
+                    <div>
+                      <strong>{{ request.request_number }}</strong
+                      ><small>{{ request.requested_at | date: 'medium' }}</small>
+                    </div>
+                    <span class="text-status">{{ increaseStatus(request.status) }}</span
+                    ><b>{{
+                      money(
+                        request.requested_amount ||
+                          request.recommended_amount ||
+                          request.authorized_amount
+                      )
+                    }}</b>
+                  </li>
+                }
+              </ol>
+            } @else {
+              <app-empty-state
+                [compact]="true"
+                [variant]="1"
+                title="Sin solicitudes de incremento"
+                message="La línea conserva su importe autorizado actual."
+              />
+            }
+          </section>
+          <section class="flat-section">
+            <header>
+              <div>
+                <p>Trazabilidad</p>
+                <h2>Movimientos de crédito</h2>
+              </div>
+              <span>{{ movements().length }} movimientos</span>
+            </header>
+            @if (movements().length) {
+              <ol class="movement-list">
+                @for (movement of movements().slice(0, 10); track movement.id) {
+                  <li>
+                    <time>{{ movement.occurred_at | date: 'dd MMM, HH:mm' }}</time>
+                    <div>
+                      <strong>{{ movement.type.replaceAll('_', ' ') }}</strong
+                      ><small>{{ movement.performed_by?.name || 'Proceso del sistema' }}</small>
+                    </div>
+                    <b>{{ money(movement.amount) }}</b>
+                  </li>
+                }
+              </ol>
+            } @else {
+              <app-empty-state
+                [compact]="true"
+                [variant]="2"
+                title="Sin movimientos confirmados"
+                message="Los cambios de saldo y línea aparecerán en orden cronológico."
+              />
+            }
+          </section>
+        </div>
+      </section>
+    }
+
+    @if (activeSection() === 'historial') {
+      <section class="history-workspace">
+        <header class="section-heading">
+          <div>
+            <p>Registro permanente</p>
+            <h2>Historial del expediente</h2>
+          </div>
+          <span>Cambios conservados por fecha y responsable</span>
+        </header>
+        <app-historial-categorias [distribuidoraId]="distributor.id" />
+        <section class="flat-section relation-history">
+          <header>
+            <div>
+              <p>Finanzas</p>
+              <h2>Historial de relaciones</h2>
+            </div>
+            <span>{{ relations().length }} registros</span>
+          </header>
+          @if (relations().length) {
+            <ol class="movement-list">
+              @for (relation of relations(); track relation.id) {
+                <li>
+                  <time>{{ relation.cutoff_at | date: 'mediumDate' }}</time>
+                  <div>
+                    <strong>{{ relation.payment_reference }}</strong
+                    ><small>Vence {{ relation.payment_deadline_at | date: 'mediumDate' }}</small>
+                  </div>
+                  <span class="text-status" [attr.data-status]="relation.financial_status">{{
+                    relationStatus(relation.financial_status)
+                  }}</span
+                  ><b>{{ money(relation.balance) }}</b>
+                </li>
+              }
+            </ol>
+          } @else {
+            <app-empty-state
+              [compact]="true"
+              [variant]="2"
+              title="Sin historial financiero"
+              message="Aún no existen relaciones para esta distribuidora."
+            />
+          }
+        </section>
+      </section>
+    }
+
+    <app-asignar-categoria-dialog
+      *ngIf="mostrarModalCategoria"
+      [categoriaActualId]="distributor.categoria?.id || undefined"
+      (cancelar)="cerrarModalCategoria()"
+      (confirmar)="guardarCategoria($event)"
+    />
+    <app-reenviar-invitacion-dialog
+      *ngIf="mostrarModalReenvio"
+      (cancelar)="cerrarModalReenvio()"
+      (confirmar)="reenviarInvitacion($event)"
+    />
+  }
+</main>

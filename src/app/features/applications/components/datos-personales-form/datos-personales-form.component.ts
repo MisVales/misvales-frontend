@@ -1,81 +1,104 @@
-import { Component, inject, OnInit, Input, effect, ChangeDetectorRef } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  effect,
+  ChangeDetectorRef,
+  QueryList,
+  ViewChildren,
+  ViewChild,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { SolicitudDetalleStore } from '../../state/solicitud-detalle.store';
 import { DatosPersonalesFormFactory } from '../../forms/datos-personales-form.factory';
+import { curpValidator } from '../../validators/curp.validator';
 import { ResumenSolicitante } from '../../models/solicitud-distribuidora.model';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
+import { AutosaveDirective, AutosaveStatus } from '../../../../shared/forms/autosave.directive';
+import { from, Observable } from 'rxjs';
+import { MediaApiService } from '../../../../core/api/media/media-api.service';
+import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
+import { ISO_COUNTRIES } from '../../../../shared/utils/data/iso-countries';
+import { ApplicationFormErrorStateDirective } from '../../directives/application-form-error-state.directive';
+import { maxAdultBirthDate, MIN_BIRTH_DATE } from '../../validators/adult-birth-date.validator';
+import {
+  ValidationTooltipComponent,
+  ValidationRule,
+} from '../../../../shared/components/inputs/validation-tooltip/validation-tooltip.component';
+import { PhoneInputComponent } from '../../../../shared/components/inputs/phone-input/phone-input.component';
+import { AttachmentPreviewComponent } from '../../../../shared/components/media/attachment-preview/attachment-preview.component';
+import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
 @Component({
   selector: 'app-datos-personales-form',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    InputErrorComponent,
+    AutosaveDirective,
+    ApplicationFormErrorStateDirective,
+    ValidationTooltipComponent,
+    PhoneInputComponent,
+    AttachmentPreviewComponent,
+    RefactorSelectComponent,
+  ],
   templateUrl: './datos-personales-form.component.html',
-  styleUrls: ['./datos-personales-form.component.css']
+  styleUrls: ['./datos-personales-form.component.css'],
 })
 export class DatosPersonalesFormComponent implements OnInit {
   protected store = inject(SolicitudDetalleStore);
   private fb = inject(FormBuilder);
 
   private cdr = inject(ChangeDetectorRef);
+  private mediaApi = inject(MediaApiService);
 
   form: FormGroup = DatosPersonalesFormFactory.create(this.fb);
-  
+
   // View states
+  autosaveStatus: AutosaveStatus = 'idle';
+  uploadingEvidence = false;
+  evidenceError: string | null = null;
   isCurpMasked = false;
   isRfcMasked = false;
-  guardadoExitoso = false;
+  private datosInicialesCargados = false;
 
-  constructor() {
-    // Escuchar los cambios en detalle() para reaccionar asíncronamente
-    effect(() => {
-      const detalle = this.store.detalle();
-      if (detalle && detalle.solicitante) {
-        this.cargarDatosActuales(detalle.solicitante);
-        this.cdr.markForCheck();
-      }
-    });
-  }
+  mensajeBloqueoCambio?: string;
+  mostrarErroresDeValidacion = false;
+  readonly countries = ISO_COUNTRIES;
+  readonly minBirthDate = MIN_BIRTH_DATE;
+  readonly maxAdultDate = maxAdultBirthDate();
 
-  ngOnInit() {
-    // Removido, ahora se hace por medio de effect()
-  }
+  // Archivo local actual
+  currentEvidenceFile?: File;
 
-  cargarDatosActuales(solicitante: ResumenSolicitante) {
-    this.form.patchValue({
-      first_name: solicitante.nombre,
-      first_last_name: solicitante.apellidoPaterno,
-      second_last_name: solicitante.apellidoMaterno,
-      curp: solicitante.curpEnmascarada
-    }, { emitEvent: false });
-    
-    if (solicitante.curpEnmascarada && solicitante.curpEnmascarada.includes('*')) {
-       this.isCurpMasked = true;
-    }
-    
-    // Si ya tiene curp, probablemente ya se guardó una vez (borrador parcial)
-    if (solicitante.curpEnmascarada) {
-      this.guardadoExitoso = true;
-    }
-    
-    // Al parchear valores desde un effect asíncrono, si estamos zoneless, 
-    // cdr.markForCheck() podría ser necesario dependiendo de cómo se actualice la vista.
-  }
+  curpRules: ValidationRule[] = [
+    { label: 'Tener exactamente 18 caracteres', test: (v) => v?.length === 18 },
+    { label: 'Sólo letras y números permitidos', test: (v) => /^[A-Z0-9]+$/i.test(v) },
+  ];
 
-  editarCurp() {
-    this.isCurpMasked = false;
-    this.form.get('curp')?.setValue('');
-  }
+  rfcRules: ValidationRule[] = [
+    { label: '3 o 4 letras iniciales', test: (v) => /^([A-ZÑ&]{3,4})/i.test(v) },
+    {
+      label: '6 dígitos de fecha (AAMMDD)',
+      test: (v) => /^([A-ZÑ&]{3,4}) ?(?:- ?)?(\d{6})/i.test(v),
+    },
+    {
+      label: '3 caracteres de homoclave final',
+      test: (v) => /^([A-ZÑ&]{3,4}) ?(?:- ?)?(\d{6}) ?(?:- ?)?([A-Z\d]{2})([A\d])$/i.test(v),
+    },
+  ];
 
-  async onSubmit() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
-    }
+  @ViewChildren(AutosaveDirective)
+  private autoguardados!: QueryList<AutosaveDirective>;
 
-    // Preparar payload, omitir curp si está enmascarada
-    const rawValue = this.form.value;
+  saveFn = (rawValue: any): Observable<any> => {
     const payload: any = { ...rawValue };
-    
+
+    // Remove local view tracking props
+    delete payload.evidence_uploaded;
+
     if (this.isCurpMasked) {
       delete payload.curp;
     }
@@ -83,22 +106,173 @@ export class DatosPersonalesFormComponent implements OnInit {
       delete payload.rfc;
     }
 
-    // Normalizar espacios antes de enviar (regla de negocio del documento)
-    Object.keys(payload).forEach(key => {
+    Object.keys(payload).forEach((key) => {
       if (typeof payload[key] === 'string') {
         payload[key] = payload[key].trim().replace(/\s+/g, ' ');
       }
     });
 
-    try {
-      await this.store.guardarDatosPersonales(payload);
-      this.form.markAsPristine();
-      this.guardadoExitoso = true;
-    } catch (e) {
-      // Error handled by store
-    } finally {
+    return from(this.store.guardarDatosPersonales(payload));
+  };
+
+  constructor() {
+    // Escuchar los cambios en detalle() para reaccionar asíncronamente
+    effect(() => {
+      const detalle = this.store.detalle();
+      if (detalle && detalle.datosPersonales && !this.datosInicialesCargados && !this.form.dirty) {
+        this.cargarDatosActuales(detalle.datosPersonales);
+        this.datosInicialesCargados = true;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  ngOnInit() {
+    this.form.controls['nationality'].valueChanges.subscribe((nationality) => {
+      this.configurarValidacionCurp(nationality);
+      this.configurarValidacionPaisIdentificacion(nationality);
+
+      if (nationality === 'FOREIGN') {
+        this.form.patchValue({ birth_country: '', identification_country: '' });
+      } else if (nationality === 'MEXICAN') {
+        this.form.patchValue({ birth_country: 'MX', identification_country: 'MX' });
+      }
+    });
+  }
+
+  cargarDatosActuales(solicitante: ResumenSolicitante | any) {
+    const nationality = solicitante.nationality ?? 'MEXICAN';
+
+    this.form.patchValue(
+      {
+        nationality,
+        first_name: solicitante.first_name ?? solicitante.nombre,
+        first_last_name: solicitante.first_last_name ?? solicitante.apellidoPaterno,
+        second_last_name: solicitante.second_last_name ?? solicitante.apellidoMaterno,
+        curp: solicitante.curp ?? solicitante.curp_masked ?? solicitante.curpEnmascarada,
+        rfc: solicitante.rfc ?? '',
+        birth_country: solicitante.birth_country ?? 'MX',
+        birth_date: solicitante.birth_date ?? '',
+        birth_state: solicitante.birth_state ?? '',
+        birth_city: solicitante.birth_city ?? '',
+        email: solicitante.email ?? '',
+        phone_number: solicitante.phone_number ?? '',
+        // El API deja este dato en null para mexicanos y el campo está oculto.
+        // Conservarlo así evita invalidar un formulario ya completo.
+        identification_country: solicitante.identification_country ?? null,
+        official_id_type: solicitante.official_id_type ?? '',
+        official_id_number: solicitante.official_id_number ?? '',
+        evidence_uploaded: solicitante.has_identification_evidence === true,
+      },
+      { emitEvent: false },
+    );
+    this.configurarValidacionCurp(nationality);
+    this.configurarValidacionPaisIdentificacion(nationality);
+
+    const curpEnmascarada = solicitante.curp_masked ?? solicitante.curpEnmascarada;
+    this.isCurpMasked = typeof curpEnmascarada === 'string' && curpEnmascarada.includes('*');
+    this.isRfcMasked =
+      typeof solicitante.rfc_masked === 'string' && solicitante.rfc_masked.includes('*');
+  }
+
+  editarCurp() {
+    this.isCurpMasked = false;
+    this.form.get('curp')?.setValue('');
+  }
+
+  /** Evita desmontar la sección mientras hay datos inválidos o un archivo en carga. */
+  puedeCambiarDePaso(): boolean {
+    if (this.uploadingEvidence) {
+      this.mensajeBloqueoCambio =
+        'Espere a que termine de subir la evidencia antes de cambiar de pestaña.';
+      this.evidenceError =
+        'Espere a que termine de subir la evidencia antes de cambiar de pestaña.';
       this.cdr.markForCheck();
+      return false;
+    }
+
+    if (this.form.invalid) {
+      this.mensajeBloqueoCambio = 'Corrige los campos marcados antes de cambiar de pestaña.';
+      this.mostrarErroresDeValidacion = true;
+      this.form.markAllAsTouched();
+      this.cdr.markForCheck();
+      return false;
+    }
+
+    if (
+      this.autoguardados.some(
+        (autosave) => autosave.hasUnsavedChanges || autosave.currentStatus === 'saving',
+      )
+    ) {
+      this.mensajeBloqueoCambio =
+        'Guardando los cambios. Espera a que aparezca “Guardado” antes de cambiar de pestaña.';
+      this.autoguardados.forEach((autosave) => autosave.flush());
+      return false;
+    }
+
+    this.mensajeBloqueoCambio = undefined;
+    return true;
+  }
+
+  mostrarError(campo: string): boolean {
+    const control = this.form.get(campo);
+    return !!control && control.invalid && (control.touched || this.mostrarErroresDeValidacion);
+  }
+
+  private configurarValidacionCurp(nationality: string): void {
+    const curp = this.form.controls['curp'];
+    curp.setValidators(
+      nationality === 'MEXICAN' ? [Validators.required, curpValidator()] : [curpValidator()],
+    );
+    curp.updateValueAndValidity({ emitEvent: false });
+  }
+
+  private configurarValidacionPaisIdentificacion(nationality: string): void {
+    const identificationCountry = this.form.controls['identification_country'];
+    const validators = [Validators.maxLength(2)];
+
+    if (nationality === 'FOREIGN') {
+      validators.unshift(Validators.required);
+    }
+
+    identificationCountry.setValidators(validators);
+    identificationCountry.updateValueAndValidity({ emitEvent: false });
+  }
+
+  onFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      const applicationId = this.store.detalle()?.id;
+      if (!applicationId) return;
+
+      this.currentEvidenceFile = file;
+      this.uploadingEvidence = true;
+      this.evidenceError = null;
+      this.cdr.markForCheck();
+
+      this.mediaApi
+        .upload({
+          file: file,
+          owner_type: 'distributor_application',
+          owner_id: applicationId,
+          purpose: 'IDENTIFICATION',
+        })
+        .subscribe({
+          next: () => {
+            this.uploadingEvidence = false;
+            this.form.get('evidence_uploaded')?.setValue(true);
+            this.cdr.markForCheck();
+          },
+          error: (err: any) => {
+            this.uploadingEvidence = false;
+            this.evidenceError =
+              apiValidationErrors(err)['file']?.[0] ??
+              apiErrorMessage(err, 'No fue posible subir la evidencia.');
+            this.form.get('evidence_uploaded')?.setValue(false);
+            this.cdr.markForCheck();
+          },
+        });
     }
   }
 }
-

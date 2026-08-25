@@ -1,0 +1,67 @@
+<div class="min-h-screen bg-[#2D2D2D] p-4 lg:p-8 flex justify-center pb-20 font-sans">
+  <div class="w-full max-w-4xl bg-[#FDFDF9] rounded-[24px] shadow-xl overflow-hidden flex flex-col p-6 lg:p-10">
+    
+    <!-- HEADER -->
+    <div class="flex justify-between items-center mb-8 border-b border-gray-100 pb-4">
+      <div class="flex items-center gap-3">
+        <a routerLink="/clientes" class="text-gray-900 hover:text-gray-600 p-1 -ml-1 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        </a>
+        <h1 class="text-lg font-bold text-gray-900">Detalle del Cliente</h1>
+      </div>
+    </div>
+
+    <!-- LOADING STATE -->
+    @if (store.cargandoDetalle()) {
+    <div class="py-20 text-center text-gray-500">
+      <svg class="animate-spin h-8 w-8 text-[#386641] mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+      Cargando detalle...
+    </div>
+    }
+
+    <!-- CONTENIDO -->
+    @if (!store.cargandoDetalle() && store.detalle()) {
+    <div class="space-y-6">
+      
+      <!-- PERFIL RÁPIDO -->
+      <div class="flex items-center gap-4 mb-8">
+        <div class="w-16 h-16 rounded-full bg-[#386641] text-white flex items-center justify-center text-2xl font-bold">
+          {{ store.detalle()!.nombreCompleto.charAt(0) }}
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-gray-900">{{ store.detalle()!.nombreCompleto }}</h2>
+          <div class="flex items-center gap-3 mt-1">
+            @switch (store.detalle()!.estado) {
+              @case ('PAID') {
+                <span class="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-[#DCE8B4] text-[#386641]">PAGADO</span>
+              }
+              @case ('PENDING') {
+                <span class="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-red-100 text-red-700">PENDIENTE</span>
+              }
+              @case ('PARTIALLY_PAID') {
+                <span class="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-amber-100 text-amber-700">PAGO PARCIAL</span>
+              }
+              @case ('NO_RECORDS') {
+                <span class="px-3 py-0.5 text-[10px] font-bold uppercase rounded-full bg-gray-200 text-gray-600">SIN MOVIMIENTOS</span>
+              }
+            }
+            <span class="text-xs text-gray-500 tracking-wider">Número de cliente: {{ store.detalle()!.numero }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOTÓN VER CARTERA -->
+      <div class="flex justify-end mt-8">
+        <a [routerLink]="['/clientes', store.detalle()!.id, 'cartera']" class="px-6 py-3 bg-[#2D452F] hover:bg-[#1a2f20] text-white text-sm font-bold rounded-lg shadow-md transition-colors flex items-center gap-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+          Ver cartera informativa
+        </a>
+      </div>
+
+    </div>
+    }
+  </div>
+</div>
