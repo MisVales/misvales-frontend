@@ -20,6 +20,8 @@ export interface SessionState {
   scopes: SessionScope[];
   activeBranch: string | null;
   isAuthenticated: boolean;
+  vpn: boolean;
+  managerActions: boolean;
 }
 
 const initialState: SessionState = {
@@ -29,6 +31,8 @@ const initialState: SessionState = {
   scopes: [],
   activeBranch: null,
   isAuthenticated: false,
+  vpn: false,
+  managerActions: false,
 };
 
 export const SessionStore = signalStore(
@@ -41,6 +45,8 @@ export const SessionStore = signalStore(
       permissions: string[],
       activeBranch: string | null,
       scopes: SessionScope[] = [],
+      vpn = false,
+      managerActions = false,
     ) {
       patchState(store, {
         user,
@@ -49,6 +55,8 @@ export const SessionStore = signalStore(
         scopes,
         activeBranch,
         isAuthenticated: true,
+        vpn,
+        managerActions,
       });
     },
     clearSession() {
@@ -56,6 +64,9 @@ export const SessionStore = signalStore(
     },
     setActiveBranch(branchId: string) {
       patchState(store, { activeBranch: branchId });
+    },
+    setManagerAccess(vpn: boolean, managerActions: boolean) {
+      patchState(store, { vpn, managerActions });
     },
   })),
 );

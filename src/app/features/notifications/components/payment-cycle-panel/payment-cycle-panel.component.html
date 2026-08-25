@@ -8,6 +8,7 @@
     <button
       class="cycle__action"
       type="button"
+      data-manager-action
       (click)="primaryAction()"
       [disabled]="loading() || processing()"
       [attr.aria-busy]="loading() || processing()"
@@ -102,7 +103,7 @@
           >
             Cancelar
           </button>
-          <button type="button" class="cycle__action" (click)="execute()" [disabled]="processing()">
+          <button data-manager-action type="button" class="cycle__action" (click)="execute()" [disabled]="processing()">
             {{ processing() ? 'Procesando…' : 'Confirmar' }}
           </button>
         </div>

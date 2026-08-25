@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { roleWriteGuard } from '../../core/guards/role-write.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
+import { managerVpnGuard } from '../../core/guards/manager-vpn.guard';
 
 export const PRODUCTOS_ROUTES: Routes = [
   {
@@ -9,7 +10,7 @@ export const PRODUCTOS_ROUTES: Routes = [
   },
   {
     path: 'nuevo',
-    canActivate: [roleWriteGuard],
+    canActivate: [roleWriteGuard, managerVpnGuard],
     loadComponent: () => import('./pages/producto-detalle/producto-detalle.component').then(m => m.ProductoDetalleComponent)
   },
   {

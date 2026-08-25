@@ -25,8 +25,7 @@ export class ListadoSolicitudesPageComponent implements OnInit {
   }
 
   canCreateApplication(): boolean {
-    return this.sessionStore.roles().includes('coordinator') &&
-      this.hasPermission('distributor_applications.create');
+    return this.hasPermission('distributor_applications.create');
   }
 
   distributorStatusLabel(status: string): string {

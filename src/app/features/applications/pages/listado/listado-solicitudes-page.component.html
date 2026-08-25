@@ -6,7 +6,7 @@
       <p>Consulta primero las distribuidoras incorporadas y, a un lado, las solicitudes en proceso.</p>
     </div>
     @if (canCreateApplication()) {
-      <a routerLink="nueva" class="primary-action"><lucide-icon name="plus" [size]="18" aria-hidden="true" />Nueva solicitud</a>
+      <a routerLink="nueva" class="primary-action" data-manager-action><lucide-icon name="plus" [size]="18" aria-hidden="true" />Nueva solicitud</a>
     }
   </header>
 

@@ -173,6 +173,7 @@
                   <button
                     class="button button--reject"
                     [disabled]="savingId() === transfer.id || !decisionReasons[transfer.id]?.trim()"
+                    data-manager-action
                     (click)="decide(transfer, false)"
                   >
                     Rechazar salida
@@ -180,6 +181,7 @@
                   <button
                     class="button button--approve"
                     [disabled]="savingId() === transfer.id || !decisionReasons[transfer.id]?.trim()"
+                    data-manager-action
                     (click)="decide(transfer, true)"
                   >
                     {{ savingId() === transfer.id ? 'Guardando…' : 'Autorizar salida' }}

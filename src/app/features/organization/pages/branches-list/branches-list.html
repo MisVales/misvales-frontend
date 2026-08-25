@@ -7,7 +7,7 @@
       : 'Consulta cada centro operativo, su ubicación y el equipo que trabaja en él.'"
   >
     @if (canManage()) {
-      <a routerLink="nueva" class="primary-action">
+      <a routerLink="nueva" class="primary-action" data-manager-action>
         <lucide-icon name="plus" [size]="18" aria-hidden="true" />
         Nueva sucursal
       </a>

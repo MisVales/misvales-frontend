@@ -215,6 +215,7 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                         class="rounded-lg border border-red-300 px-4 py-2 text-red-700"
                         [disabled]="saving()"
                         type="button"
+                        data-manager-action
                         (click)="reject(item)"
                       >
                         Rechazar
@@ -224,7 +225,7 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                 </form>
               }
               @if (item.capabilities?.can_decide) {
-                <form class="space-y-3" (ngSubmit)="decide(item)">
+                <form data-manager-action class="space-y-3" (ngSubmit)="decide(item)">
                   <label class="block text-sm"
                     >Decisión<refactor-select
                       class="mt-1 w-full rounded-lg border border-slate-200 p-2"

@@ -18,6 +18,8 @@ describe('SessionStore', () => {
     expect(store.scopes()).toEqual([]);
     expect(store.activeBranch()).toBeNull();
     expect(store.isAuthenticated()).toBe(false);
+    expect(store.vpn()).toBe(false);
+    expect(store.managerActions()).toBe(false);
   });
 
   it('should set session correctly', () => {
@@ -34,7 +36,7 @@ describe('SessionStore', () => {
       },
     ];
 
-    store.setSession(user, roles, permissions, activeBranch, scopes);
+    store.setSession(user, roles, permissions, activeBranch, scopes, true, true);
 
     expect(store.user()).toEqual(user);
     expect(store.roles()).toEqual(roles);
@@ -42,6 +44,8 @@ describe('SessionStore', () => {
     expect(store.scopes()).toEqual(scopes);
     expect(store.activeBranch()).toEqual(activeBranch);
     expect(store.isAuthenticated()).toBe(true);
+    expect(store.vpn()).toBe(true);
+    expect(store.managerActions()).toBe(true);
   });
 
   it('should clear session correctly', () => {

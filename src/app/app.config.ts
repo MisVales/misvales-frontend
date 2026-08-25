@@ -20,6 +20,8 @@ import { errorHandlingInterceptor } from '@core/interceptors/error-handling.inte
 import { requestActivityInterceptor } from '@core/interceptors/request-activity.interceptor';
 import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
 import { GlobalErrorHandler } from '@core/error-handling/global-error-handler';
+import { AuthConfigurationService } from '@core/auth/data-access/auth-configuration.service';
+import { AccessContextRefreshService } from '@core/auth/services/access-context-refresh.service';
 import {
   LucideAngularModule,
   Activity,
@@ -146,6 +148,8 @@ export const appConfig: ApplicationConfig = {
         window.setTimeout(() => void navigator.serviceWorker.register('/ngsw-worker.js'), 30_000);
       }
     }),
+    provideAppInitializer(() => inject(AuthConfigurationService).load()),
+    provideAppInitializer(() => inject(AccessContextRefreshService).start()),
     provideRouter(
       routes,
       withComponentInputBinding(),

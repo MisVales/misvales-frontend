@@ -29,6 +29,8 @@ export class MeService {
           response.effective_permissions,
           activeBranch,
           scopes,
+          response.access_context.vpn,
+          response.capabilities.manager_actions,
         );
       }),
     );

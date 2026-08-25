@@ -271,6 +271,7 @@ import { PaymentCyclePanelComponent } from './components/payment-cycle-panel/pay
               @if (cutoffState() === 'OPEN' && summary.has_open_cutoff) {
                 <button
                   class="mt-4 min-h-11 rounded-lg bg-blue-700 px-4 py-2 font-bold text-white shadow-sm hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2"
+                  data-manager-action
                   (click)="openForceCutoffModal()"
                 >
                   Forzar fecha de corte
@@ -363,6 +364,7 @@ import { PaymentCyclePanelComponent } from './components/payment-cycle-panel/pay
                 ) {
                   <button
                     class="mt-4 min-h-11 rounded-lg bg-amber-700 px-4 py-2 font-bold text-white shadow-sm hover:bg-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-50"
+                    data-manager-action
                     (click)="openForceDeadlineModal()"
                     [disabled]="deadlineState() === 'PROCESSING'"
                   >
@@ -430,6 +432,7 @@ import { PaymentCyclePanelComponent } from './components/payment-cycle-panel/pay
               </button>
               <button
                 class="min-h-11 rounded bg-blue-700 px-4 py-2 font-bold text-white hover:bg-blue-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 focus-visible:ring-offset-2 disabled:opacity-50"
+                data-manager-action
                 (click)="executeForceCutoff()"
                 [disabled]="cutoffState() === 'PROCESANDO'"
               >
@@ -496,6 +499,7 @@ import { PaymentCyclePanelComponent } from './components/payment-cycle-panel/pay
               </button>
               <button
                 class="min-h-11 rounded bg-amber-700 px-4 py-2 font-bold text-white hover:bg-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-700 focus-visible:ring-offset-2 disabled:opacity-50"
+                data-manager-action
                 (click)="executeForcePaymentDeadline()"
                 [disabled]="deadlineState() === 'PROCESSING'"
               >

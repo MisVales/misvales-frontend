@@ -9,6 +9,7 @@ import { SessionStore } from '@core/session/session.store';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import { MeService } from '@core/auth/data-access/me.service';
 import { AlertService } from '../../../shared/components/alerts/alert.service';
+import { AuthConfigurationService } from '../data-access/auth-configuration.service';
 import {
   apiErrorCode,
   apiErrorMessage,
@@ -86,6 +87,7 @@ export const AuthFacade = signalStore(
     const meService = inject(MeService);
     const router = inject(Router);
     const alerts = inject(AlertService);
+    const diagnostics = inject(AuthConfigurationService);
 
     async function establishSession(): Promise<void> {
       await firstValueFrom(meService.fetchMe());
@@ -271,6 +273,7 @@ export const AuthFacade = signalStore(
           activationMfaBypass: false,
         });
         try {
+          diagnostics.log('INVITATION_INSPECTION_STARTED', { tokenPresent: Boolean(token) });
           const response = await firstValueFrom(authService.inspectInvitation({ token }));
           patchState(store, {
             isLoading: false,
@@ -282,7 +285,12 @@ export const AuthFacade = signalStore(
               response.totp_setup?.secret ?? response.totp_setup?.secret_key ?? null,
             activationMfaBypass: Boolean(response.development_mfa_bypass),
           });
+          diagnostics.log('INVITATION_INSPECTION_COMPLETED', { step: response.step ?? 'setup' });
         } catch (error: unknown) {
+          diagnostics.log('INVITATION_INSPECTION_FAILED', {
+            code: apiErrorCode(error, 'UNEXPECTED_ERROR'),
+            message: apiErrorMessage(error, 'No fue posible validar la invitación.'),
+          });
           fail(error, 'La invitación no es válida o ha expirado.');
         }
       },

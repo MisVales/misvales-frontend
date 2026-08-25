@@ -13,6 +13,7 @@ import { AuthFacade } from '../../state/auth.facade';
 import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
 import * as QRCode from 'qrcode';
 import { ConfirmDialogComponent } from '../../../../shared/dialogs/confirm-dialog/confirm-dialog.component';
+import { AuthConfigurationService } from '../../data-access/auth-configuration.service';
 
 @Component({
   selector: 'app-activate-account',
@@ -32,6 +33,7 @@ export class ActivateAccount implements OnInit, OnDestroy {
   private authFacade = inject(AuthFacade);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  private diagnostics = inject(AuthConfigurationService);
 
   fieldError(field: string): string | null {
     return this.authFacade.validationErrors()[field]?.[0] ?? null;
@@ -117,6 +119,7 @@ export class ActivateAccount implements OnInit, OnDestroy {
 
   ngOnInit() {
     const token = this.route.snapshot.queryParamMap.get('token');
+    this.diagnostics.log('ACCOUNT_ACTIVATION_ENTERED', { tokenPresent: Boolean(token) });
     if (token) {
       void this.router.navigate([], {
         relativeTo: this.route,

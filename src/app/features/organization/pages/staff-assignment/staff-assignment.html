@@ -154,6 +154,7 @@
         <button
           class="bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/50 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm"
           [disabled]="!isFormValid() || isSubmitting()"
+          data-manager-action
           (click)="openConfirmModal()"
         >
           Guardar Asignación
@@ -206,6 +207,7 @@
           Cancelar
         </button>
         <button
+          data-manager-action
           (click)="submitAssignment()"
           [disabled]="isSubmitting()"
           class="flex-1 flex justify-center items-center gap-2 px-4 py-2 bg-[#386641] hover:bg-[#6A994E] text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50"

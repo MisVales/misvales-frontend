@@ -266,6 +266,7 @@
           </div>
           <div class="pt-5">
             <button
+              data-manager-action
               (click)="assignPersonnel()"
               [disabled]="actionLoading() || !selectedPersonnelRole()"
               class="w-full rounded-lg bg-[#386641] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
@@ -341,6 +342,7 @@
                   @if (canManagePersonnel() && assignment.assignment_status === 'ACTIVE') {
                     <button
                       class="text-red-600 hover:underline"
+                      data-manager-action
                       (click)="requestEndPersonnel(assignment)"
                     >
                       Retirar
@@ -393,6 +395,7 @@
             class="rounded-lg border border-gray-300 px-3 py-2 text-sm"
           />
           <button
+            data-manager-action
             (click)="assignDistributor()"
             [disabled]="actionLoading()"
             class="rounded-lg bg-[#386641] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
@@ -440,6 +443,7 @@
                   @if (canManageDistributors() && assignment.status === 'ACTIVE') {
                     <button
                       class="text-red-600 hover:underline"
+                      data-manager-action
                       (click)="requestEndDistributor(assignment)"
                       [title]="
                         assignment.distributor?.status === 'ACTIVE'
@@ -516,6 +520,7 @@
           </button>
           <button
             type="button"
+            data-manager-action
             (click)="confirmWithdrawal()"
             [disabled]="actionLoading() || !withdrawalReason().trim()"
             class="rounded-lg bg-red-700 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
