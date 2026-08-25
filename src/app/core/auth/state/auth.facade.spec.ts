@@ -8,6 +8,7 @@ import { SessionStore } from '@core/session/session.store';
 import { MeService } from '@core/auth/data-access/me.service';
 import { AlertService } from '../../../shared/components/alerts/alert.service';
 import { AuthService } from '../data-access/auth.service';
+import { AuthConfigurationService } from '../data-access/auth-configuration.service';
 import { AuthFacade } from './auth.facade';
 
 describe('AuthFacade', () => {
@@ -20,6 +21,7 @@ describe('AuthFacade', () => {
   const sessionStore = { clearSession: vi.fn() };
   const tokenStore = { clear: vi.fn() };
   const alerts = { showAlert: vi.fn() };
+  const diagnostics = { log: vi.fn() };
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,6 +33,7 @@ describe('AuthFacade', () => {
         { provide: SessionStore, useValue: sessionStore },
         { provide: AuthTokenStore, useValue: tokenStore },
         { provide: AlertService, useValue: alerts },
+        { provide: AuthConfigurationService, useValue: diagnostics },
       ],
     });
   });

@@ -292,6 +292,7 @@
                   <button
                     type="button"
                     class="btn-action btn-authorize"
+                    data-manager-action
                     (click)="authorize(item.id)"
                   >
                     Autorizar Canje
@@ -408,10 +409,10 @@
           >
             Cerrar
           </button>
-          <button type="button" class="btn-action btn-reject" (click)="openRejectModal(target)">
+          <button data-manager-action type="button" class="btn-action btn-reject" (click)="openRejectModal(target)">
             Rechazar
           </button>
-          <button type="button" class="btn-action btn-authorize" (click)="authorize(target.id)">
+          <button data-manager-action type="button" class="btn-action btn-authorize" (click)="authorize(target.id)">
             Autorizar
           </button>
         </div>
@@ -494,7 +495,7 @@
           >
             Cancelar
           </button>
-          <button type="button" class="btn-action btn-deliver" (click)="confirmDeliver()">
+          <button data-manager-action type="button" class="btn-action btn-deliver" (click)="confirmDeliver()">
             Confirmar Entrega y Completar Canje
           </button>
         </div>

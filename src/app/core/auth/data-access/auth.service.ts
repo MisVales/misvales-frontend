@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpXsrfTokenExtractor } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_CONFIG } from '@core/api/api.config';
 import { Observable, switchMap, tap } from 'rxjs';
@@ -16,13 +16,14 @@ export class AuthService {
   private http = inject(HttpClient);
   private apiConfig = inject(API_CONFIG);
   private tokenStore = inject(AuthTokenStore);
+  private xsrfTokenExtractor = inject(HttpXsrfTokenExtractor);
 
   private get baseUrl() {
     return `${this.apiConfig.baseUrl}/auth`;
   }
 
   getCsrfCookie(): Observable<unknown> {
-    return this.http.get('/sanctum/csrf-cookie', { withCredentials: true });
+    return this.http.get(this.csrfCookieUrl, { withCredentials: true });
   }
 
   login(credentials: LoginReq): Observable<LoginRes> {
@@ -97,6 +98,17 @@ export class AuthService {
   }
 
   private postWithCsrf<T>(url: string, body: unknown): Observable<T> {
-    return this.getCsrfCookie().pipe(switchMap(() => this.http.post<T>(url, body)));
+    return this.getCsrfCookie().pipe(
+      switchMap(() => {
+        const token = this.xsrfTokenExtractor.getToken();
+        const headers = token ? new HttpHeaders({ 'X-XSRF-TOKEN': token }) : undefined;
+
+        return this.http.post<T>(url, body, { headers, withCredentials: true });
+      }),
+    );
+  }
+
+  private get csrfCookieUrl(): string {
+    return `${this.apiConfig.baseUrl.replace(/\/api\/v1\/?$/, '')}/sanctum/csrf-cookie`;
   }
 }

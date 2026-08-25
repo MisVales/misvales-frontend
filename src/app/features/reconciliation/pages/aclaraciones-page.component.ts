@@ -93,9 +93,9 @@ interface QueueItem {
                   } @else if (item.kind === 'unreconciled') {
                     <a routerLink="/relaciones-pagos/conciliacion" class="inline-flex min-h-11 items-center rounded-lg border border-blue-200 px-3 text-xs font-semibold text-blue-800">Investigar y vincular</a>
                   } @else if (item.kind === 'manual' && item.manual?.status === 'AUTHORIZED') {
-                    <button type="button" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white disabled:opacity-50" (click)="executeManual(item.manual!)">Aplicar</button>
+                    <button data-manager-action type="button" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white disabled:opacity-50" (click)="executeManual(item.manual!)">Aplicar</button>
                   } @else if (item.kind === 'refund' && item.refund?.status === 'AUTHORIZED') {
-                    <button type="button" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white disabled:opacity-50" (click)="openRefund(item.refund!)">Registrar devolución</button>
+                    <button data-manager-action type="button" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-700 px-3 text-xs font-semibold text-white disabled:opacity-50" (click)="openRefund(item.refund!)">Registrar devolución</button>
                   } @else {
                     <span class="text-xs text-slate-500">Consulta e historial</span>
                   }
@@ -120,7 +120,7 @@ interface QueueItem {
           </div>
           <label class="block text-sm font-semibold">Comprobante privado<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" class="mt-1 block w-full text-sm font-normal" (change)="onEvidence($event)" /></label>
           <label class="block text-sm font-semibold">Observaciones<textarea rows="3" maxlength="2000" class="mt-1 w-full rounded-lg border border-slate-200 p-3 font-normal" [(ngModel)]="observations"></textarea></label>
-          <div class="flex justify-end gap-3"><button type="button" class="min-h-11 rounded-lg border border-slate-200 px-4" (click)="closeRefund()">Cancelar</button><button type="button" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-white disabled:opacity-50" (click)="executeRefund(refund)">{{ busy() ? 'Registrando…' : 'Registrar devolución' }}</button></div>
+          <div class="flex justify-end gap-3"><button type="button" class="min-h-11 rounded-lg border border-slate-200 px-4" (click)="closeRefund()">Cancelar</button><button data-manager-action type="button" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-white disabled:opacity-50" (click)="executeRefund(refund)">{{ busy() ? 'Registrando…' : 'Registrar devolución' }}</button></div>
         </section>
       </div>
     }

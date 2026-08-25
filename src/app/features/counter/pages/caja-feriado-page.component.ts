@@ -166,6 +166,7 @@ interface CorrectionAddress extends Record<string, string> {
               <button
                 class="rounded-lg bg-blue-700 px-3 py-2 text-white disabled:opacity-50"
                 [disabled]="!decisionReasons[item.id] || !item.requested_changes"
+                data-manager-action
                 (click)="decide(item, 'AUTHORIZE')"
               >
                 Autorizar y generar token
@@ -173,6 +174,7 @@ interface CorrectionAddress extends Record<string, string> {
               <button
                 class="rounded-lg border border-red-300 px-3 py-2 text-red-700 disabled:opacity-50"
                 [disabled]="!decisionReasons[item.id]"
+                data-manager-action
                 (click)="decide(item, 'REJECT')"
               >
                 Rechazar

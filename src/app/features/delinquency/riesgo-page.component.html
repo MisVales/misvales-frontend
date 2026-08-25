@@ -165,6 +165,7 @@
                       <button
                         type="button"
                         class="btn-action btn-do-not-apply"
+                        data-manager-action
                         (click)="openRemovalDecisionModal(request, 'REJECT')"
                       >
                         Rechazar
@@ -172,6 +173,7 @@
                       <button
                         type="button"
                         class="btn-action btn-apply"
+                        data-manager-action
                         (click)="openRemovalDecisionModal(request, 'AUTHORIZE')"
                       >
                         Autorizar retiro
@@ -197,6 +199,7 @@
                   <button
                     type="button"
                     class="btn-action btn-do-not-apply"
+                    data-manager-action
                     (click)="openDecisionModal(alert, 'DO_NOT_APPLY')"
                   >
                     No aplicar morosidad
@@ -204,6 +207,7 @@
                   <button
                     type="button"
                     class="btn-action btn-apply"
+                    data-manager-action
                     (click)="openDecisionModal(alert, 'APPLY')"
                   >
                     Aplicar morosidad
@@ -436,6 +440,7 @@
                   <button
                     type="button"
                     class="btn-action btn-reject flex items-center gap-1"
+                    data-manager-action
                     (click)="openRemovalDecisionModal(removal, 'REJECT')"
                   >
                     <lucide-icon name="x-circle" class="w-4 h-4"></lucide-icon>
@@ -444,6 +449,7 @@
                   <button
                     type="button"
                     class="btn-action btn-authorize flex items-center gap-1"
+                    data-manager-action
                     (click)="openRemovalDecisionModal(removal, 'AUTHORIZE')"
                   >
                     <lucide-icon name="check-circle-2" class="w-4 h-4"></lucide-icon>
@@ -507,6 +513,7 @@
             [class.btn-apply]="selectedDecision() === 'APPLY'"
             [class.btn-authorize]="selectedDecision() === 'DO_NOT_APPLY'"
             [disabled]="!decisionReason().trim() || isSubmitting()"
+            data-manager-action
             (click)="confirmAlertDecision()"
           >
             Confirmar Decisión
@@ -603,6 +610,7 @@
             [class.btn-authorize]="selectedRemovalDecision() === 'AUTHORIZE'"
             [class.btn-reject]="selectedRemovalDecision() === 'REJECT'"
             [disabled]="!decisionReason().trim() || isSubmitting()"
+            data-manager-action
             (click)="confirmRemovalDecision()"
           >
             Confirmar Resolución

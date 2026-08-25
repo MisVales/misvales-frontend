@@ -878,3 +878,6 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+body.manager-actions-disabled [data-manager-action] {
+  display: none !important;
+}

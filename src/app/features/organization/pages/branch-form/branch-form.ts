@@ -42,7 +42,7 @@ import { AlertService } from '../../../../shared/components/alerts/alert.service
           </p>
         </div>
 
-        <form [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
+        <form data-manager-action [formGroup]="form" (ngSubmit)="onSubmit()" class="space-y-6">
           <div>
             <label for="branch-name" class="mb-2 block text-xs font-semibold uppercase tracking-wider text-gray-700">
               Nombre de la sucursal <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span>

@@ -9,7 +9,7 @@
     <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Define únicamente el importe disponible. Las condiciones financieras se capturan al otorgar cada vale.</p>
   </header>
 
-  <form [formGroup]="form" (ngSubmit)="guardar()" class="mt-6 grid gap-5 rounded-2xl border border-[var(--mv-border)] bg-white p-5 shadow-sm md:grid-cols-2 md:p-7">
+  <form data-manager-action [formGroup]="form" (ngSubmit)="guardar()" class="mt-6 grid gap-5 rounded-2xl border border-[var(--mv-border)] bg-white p-5 shadow-sm md:grid-cols-2 md:p-7">
     <div>
       <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Clave del producto <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
       <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="code" placeholder="Ej. VALE-5000" autocomplete="off" (focus)="marcarCampoAlEnfocar('code')">

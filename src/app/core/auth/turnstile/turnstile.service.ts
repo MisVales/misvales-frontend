@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { environment } from '../../../../environments/environment';
 import { TurnstileInstance, TurnstileRenderOptions } from './turnstile.types';
+import { AuthConfigurationService } from '../data-access/auth-configuration.service';
 
 const TURNSTILE_SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
 
@@ -10,15 +10,15 @@ const TURNSTILE_SCRIPT_URL = 'https://challenges.cloudflare.com/turnstile/v0/api
 })
 export class TurnstileService {
   private readonly document = inject(DOCUMENT);
+  private readonly configuration = inject(AuthConfigurationService);
   private scriptLoadingPromise: Promise<TurnstileInstance> | null = null;
 
   get isEnabled(): boolean {
-    const key = environment.turnstileSiteKey;
-    return typeof key === 'string' && key.trim().length > 0;
+    return this.configuration.turnstileConfiguration().enabled;
   }
 
   get siteKey(): string {
-    return (environment.turnstileSiteKey as string) || '';
+    return this.configuration.turnstileConfiguration().siteKey;
   }
 
   loadScript(): Promise<TurnstileInstance> {
