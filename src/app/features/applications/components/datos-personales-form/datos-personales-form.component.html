@@ -81,6 +81,7 @@
         <input
           type="text"
           formControlName="first_name"
+          placeholder="Ej. María Elena"
           [class.border-red-500]="mostrarError('first_name')"
           [attr.aria-invalid]="mostrarError('first_name')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
@@ -99,6 +100,7 @@
         <input
           type="text"
           formControlName="first_last_name"
+          placeholder="Ej. González"
           [class.border-red-500]="mostrarError('first_last_name')"
           [attr.aria-invalid]="mostrarError('first_last_name')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
@@ -115,6 +117,7 @@
         <input
           type="text"
           formControlName="second_last_name"
+          placeholder="Ej. Hernández"
           [class.border-red-500]="mostrarError('second_last_name')"
           [attr.aria-invalid]="mostrarError('second_last_name')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
@@ -152,6 +155,7 @@
             type="text"
             formControlName="curp"
             maxlength="18"
+            placeholder="Ej. GOHM850101HMCNRN01"
             [readonly]="isCurpMasked"
             [class.bg-gray-50]="isCurpMasked"
             [class.text-gray-500]="isCurpMasked"
@@ -193,6 +197,7 @@
           type="text"
           formControlName="rfc"
           maxlength="15"
+          placeholder="Ej. GOHM8501011A2"
           [class.border-red-500]="mostrarError('rfc')"
           [attr.aria-invalid]="mostrarError('rfc')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] uppercase"
@@ -263,6 +268,7 @@
         <input
           type="text"
           formControlName="birth_state"
+          placeholder="Ej. Coahuila"
           [class.border-red-500]="mostrarError('birth_state')"
           [attr.aria-invalid]="mostrarError('birth_state')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
@@ -280,6 +286,7 @@
         <input
           type="text"
           formControlName="birth_city"
+          placeholder="Ej. Torreón"
           [class.border-red-500]="mostrarError('birth_city')"
           [attr.aria-invalid]="mostrarError('birth_city')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
@@ -299,6 +306,7 @@
         <input
           type="email"
           formControlName="email"
+          placeholder="ejemplo@correo.com"
           [class.border-red-500]="mostrarError('email')"
           [attr.aria-invalid]="mostrarError('email')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"
@@ -381,6 +389,7 @@
           type="text"
           formControlName="official_id_number"
           maxlength="25"
+          placeholder="Ej. 0123456789012"
           [class.border-red-500]="mostrarError('official_id_number')"
           [attr.aria-invalid]="mostrarError('official_id_number')"
           class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E]"

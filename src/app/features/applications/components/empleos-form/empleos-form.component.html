@@ -39,13 +39,13 @@
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div class="md:col-span-2">
           <label class="block text-xs font-semibold text-gray-700 mb-1">Empresa / Patrón <span class="text-red-500">*</span></label>
-          <input type="text" formControlName="employer_name" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <input type="text" formControlName="employer_name" placeholder="Ej. Comercializadora del Norte S.A. de C.V." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
           <app-input-error [control]="form.controls['employer_name']" label="El nombre de la empresa"></app-input-error>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-gray-700 mb-1">Puesto <span class="text-red-500">*</span></label>
-          <input type="text" formControlName="job_title" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
+          <input type="text" formControlName="job_title" placeholder="Ej. Vendedor / Gerente de Tienda" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1A4D2E] text-sm">
           <app-input-error [control]="form.controls['job_title']" label="El puesto"></app-input-error>
         </div>
         
