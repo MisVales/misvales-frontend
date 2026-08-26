@@ -288,10 +288,12 @@
   flex-direction: column;
 }
 
-.sticky-card {
-  position: sticky;
-  top: 1.5rem;
-  z-index: 10;
+@media (min-width: 1024px) {
+  .sticky-card {
+    position: sticky;
+    top: 1.5rem;
+    z-index: 10;
+  }
 }
 
 .card {

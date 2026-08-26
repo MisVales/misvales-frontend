@@ -309,9 +309,15 @@
             }
           </section>
         }
+
+        <!-- Línea de Tiempo del Expediente -->
+        <section class="content-section">
+          <h2 class="section-title">Historial del Proceso</h2>
+          <app-linea-tiempo-solicitud [solicitud]="solicitud"></app-linea-tiempo-solicitud>
+        </section>
       </div>
 
-      <!-- Columna Lateral: Decisión Gerencial & Línea de Tiempo -->
+      <!-- Columna Lateral: Decisión Gerencial -->
       <aside class="sidebar-content">
         <!-- Formulario de Decisión Gerencial -->
         <div class="card decision-card sticky-card">
@@ -420,12 +426,6 @@
             </button>
           </div>
         </div>
-
-        <!-- Línea de Tiempo del Expediente -->
-        <section class="content-section mt-4">
-          <h2 class="section-title">Historial del Proceso</h2>
-          <app-linea-tiempo-solicitud [solicitud]="solicitud"></app-linea-tiempo-solicitud>
-        </section>
       </aside>
     </div>
   }
