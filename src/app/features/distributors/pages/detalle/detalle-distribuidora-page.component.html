@@ -105,7 +105,35 @@
             </div>
             <div>
               <dt>Categoría</dt>
-              <dd>{{ distributor.categoria?.nombre || 'Sin categoría' }}</dd>
+              <dd class="category-fact">
+                @if (canAssignCategory()) {
+                  <div class="category-select-wrap">
+                    <select
+                      class="category-select"
+                      [disabled]="changingCategory() || !availableCategories().length"
+                      [value]="selectedCategoryVersionId()"
+                      (change)="onCategoriaSelectChange($event)"
+                      aria-label="Cambiar categoría de la distribuidora"
+                    >
+                      @if (!selectedCategoryVersionId()) {
+                        <option value="" disabled selected>
+                          {{ distributor.categoria?.nombre || 'Selecciona una categoría' }}
+                        </option>
+                      }
+                      @for (cat of availableCategories(); track cat.version_id) {
+                        <option [value]="cat.version_id" [selected]="cat.version_id === selectedCategoryVersionId()">
+                          {{ cat.name }} ({{ +cat.profit_margin * 100 | number: '1.0-2' }}%)
+                        </option>
+                      }
+                    </select>
+                    @if (changingCategory()) {
+                      <lucide-icon name="loader-2" class="spin category-spin" [size]="14" aria-hidden="true" />
+                    }
+                  </div>
+                } @else {
+                  <span>{{ distributor.categoria?.nombre || 'Sin categoría' }}</span>
+                }
+              </dd>
             </div>
             <div>
               <dt>Acceso</dt>
