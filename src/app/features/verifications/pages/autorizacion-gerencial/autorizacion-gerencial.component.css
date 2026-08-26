@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
 .page-container {
   padding: 1.5rem;
   max-width: 1400px;
@@ -6,6 +11,7 @@
 
 .page-container.inbox-page {
   max-width: 1400px;
+  width: 100%;
   padding: clamp(1rem, 2vw, 2rem);
   color: #14213d;
 }
