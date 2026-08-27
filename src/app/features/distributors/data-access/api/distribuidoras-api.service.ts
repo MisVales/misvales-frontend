@@ -12,6 +12,7 @@ import { AssignDistributorCategoryRequestDto } from '../dtos/assign-distributor-
 import { ActivateDistributorRequestDto } from '../dtos/activate-distributor-request.dto';
 import { ResendDistributorInvitationRequestDto } from '../dtos/resend-distributor-invitation-request.dto';
 import { API_CONFIG } from '@core/api/api.config';
+import { CategoryDto } from '../../../categories/data-access/categorias.dtos';
 
 interface Pagina<T> {
   datos: T[];
@@ -66,6 +67,33 @@ export class DistribuidorasApiService {
     );
   }
 
+  categoriasDisponiblesParaActivacion(): Observable<CategoryDto[]> {
+    return this.http
+      .get<{ data: Array<{
+        category_id: string;
+        category_version_id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        profit_percentage: string;
+        effective_from: string;
+      }> }>(`${this.apiConfig.baseUrl}/distributor-activation/categories`)
+      .pipe(map(({ data }) => data.map((category) => ({
+        id: category.category_id,
+        version_id: category.category_version_id,
+        code: category.code,
+        name: category.name,
+        description: category.description,
+        status: 'ACTIVE' as const,
+        profit_margin: category.profit_percentage,
+        version_status: 'PUBLISHED' as const,
+        effective_from: category.effective_from,
+        reason: '',
+        created_at: category.effective_from,
+        lock_version: 0,
+      }))));
+  }
+
   asignarCategoria(distribuidoraId: string, versionBloqueo: number, entrada: AssignDistributorCategoryRequestDto): Observable<CategoriaDistribuidora> {
     return this.http.post<any>(`${this.apiUrl}/${distribuidoraId}/category-assignments`, { ...entrada, lock_version: versionBloqueo }).pipe(
       map(dto => DistribuidoraMapper.mapCategoria(dto.data))
@@ -83,4 +111,3 @@ export class DistribuidorasApiService {
     return this.http.post<void>(`${this.apiUrl}/${distribuidoraId}/activation-invitations/resend`, entrada);
   }
 }
-
