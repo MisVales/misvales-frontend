@@ -39,3 +39,7 @@ export function esConfiguracionDePago(clave: string): boolean {
 export function esHorarioVerificacionDomicilio(clave: string): boolean {
   return HORARIOS_VERIFICACION_DOMICILIO.has(clave);
 }
+
+export function esHorarioDeVerificacion(clave: string): boolean {
+  return HORARIOS_VERIFICACION_DOMICILIO.has(clave);
+}

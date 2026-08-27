@@ -52,6 +52,12 @@ export class ConfiguracionesListaComponent implements OnInit {
     ),
   );
 
+  protected nombreConfiguracion(definition: ConfiguracionDefinicion): string {
+    if (definition.clave === 'VERIFICATION_START_TIME') return 'Hora inicio de visitas';
+    if (definition.clave === 'VERIFICATION_MAX_START_TIME') return 'Hora final de visitas';
+    return definition.nombre;
+  }
+
   ngOnInit(): void {
     void this.store.listar();
   }
