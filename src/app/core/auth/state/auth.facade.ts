@@ -16,7 +16,6 @@ import {
 import { SessionStore } from '@core/session/session.store';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import { MeService } from '@core/auth/data-access/me.service';
-import type { MeRes } from '@core/api/models/me.dtos';
 import { AlertService } from '../../../shared/components/alerts/alert.service';
 import { AuthConfigurationService } from '../data-access/auth-configuration.service';
 import {
@@ -98,18 +97,8 @@ export const AuthFacade = signalStore(
     const alerts = inject(AlertService);
     const diagnostics = inject(AuthConfigurationService);
 
-    async function establishSession(response?: LoginRes): Promise<void> {
-      if (
-        response?.user?.state &&
-        response.scopes &&
-        response.effective_permissions &&
-        response.access_context &&
-        response.capabilities
-      ) {
-        meService.hydrateSession(response as MeRes);
-      } else {
-        await firstValueFrom(meService.fetchMe());
-      }
+    async function establishSession(): Promise<void> {
+      await firstValueFrom(meService.fetchMe());
       patchState(store, {
         isLoading: false,
         error: null,
@@ -171,7 +160,7 @@ export const AuthFacade = signalStore(
             await router.navigate(['/auth/totp']);
             return;
           }
-          if (response.access_token) await establishSession(response);
+          if (response.access_token) await establishSession();
         } catch (error: unknown) {
           fail(error, 'Error al iniciar sesión.');
         }
@@ -201,7 +190,7 @@ export const AuthFacade = signalStore(
             });
             return;
           }
-          if (response.access_token) await establishSession(response);
+          if (response.access_token) await establishSession();
         } catch (error: unknown) {
           if (apiErrorCode(error, '') === 'EXPIRED_MFA_CHALLENGE') {
             patchState(store, initialAuthState);
@@ -251,13 +240,29 @@ export const AuthFacade = signalStore(
         tokenStore.set(response.access_token, response.expires_in ?? 300);
 
         try {
-          await establishSession(response);
+          await establishSession();
         } catch {
+          if (!response.user) {
+            patchState(store, {
+              isLoading: false,
+              error: 'La Passkey fue verificada, pero no fue posible cargar la sesión.',
+            });
+            return;
+          }
+
+          sessionStore.setSession({ ...response.user, id: String(response.user.id) }, [], [], null);
           patchState(store, {
             isLoading: false,
-            error:
-              'La Passkey fue verificada, pero no fue posible cargar los permisos de la sesión.',
+            error: null,
+            mfaChallengeToken: null,
+            availableMfa: [],
+            mfaExpiresAt: null,
           });
+          alerts.showAlert(
+            'Inicio de sesión completado. Algunos permisos se actualizarán al recargar.',
+            'success',
+          );
+          await router.navigate(['/inicio']);
         }
       },
 

@@ -19,19 +19,7 @@ export interface LoginRes {
     email: string;
     roles?: string[];
     permissions?: string[];
-    state?: string;
   };
-  scopes?: Array<{
-    branch_id: string | null;
-    branch_name?: string | null;
-    branch_code?: string | null;
-    role_name: string;
-    role: string;
-    permissions: string[];
-  }>;
-  effective_permissions?: string[];
-  access_context?: { vpn: boolean };
-  capabilities?: { manager_actions: boolean };
 }
 
 export interface MfaReq {
