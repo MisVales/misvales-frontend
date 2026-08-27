@@ -459,6 +459,8 @@ html {
 }
 body {
   margin: 0;
+  min-width: 0;
+  overflow-x: hidden;
   background: var(--mv-canvas);
   color: var(--mv-text);
   font-family: var(--mv-font-body);
@@ -547,6 +549,20 @@ table {
   border-spacing: 0;
   font-variant-numeric: tabular-nums;
 }
+
+/* Contención responsiva transversal para contenido dinámico y archivos multimedia. */
+:where(app-root, router-outlet, main, section, article, form, fieldset, .content-wrapper) {
+  min-width: 0;
+  max-width: 100%;
+}
+:where(img, svg, video, canvas, iframe) {
+  max-width: 100%;
+}
+:where(.overflow-x-auto, .table-responsive, [class*='table-wrap']) {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
 thead {
   background: var(--mv-surface-muted);
 }
@@ -581,6 +597,12 @@ tbody tr:hover {
   transform: translateY(0);
 }
 @media (max-width: 767px) {
+  :where(.grid) {
+    min-width: 0;
+  }
+  :where(.flex) {
+    min-width: 0;
+  }
   app-mobile-layout.distributor-mobile main {
     padding: 12px;
     background: linear-gradient(180deg, #f8fbf8 0%, var(--mv-canvas) 12rem);

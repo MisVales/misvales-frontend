@@ -55,6 +55,13 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       {
+        path: 'dispositivo-no-compatible',
+        loadComponent: () =>
+          import('./features/experience/pages/device-unsupported/device-unsupported.component').then(
+            (m) => m.DeviceUnsupportedComponent,
+          ),
+      },
+      {
         path: 'acceso-denegado',
         data: { statusPage: 'forbidden' },
         loadComponent: () =>

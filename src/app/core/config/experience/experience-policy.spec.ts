@@ -32,25 +32,26 @@ function context(detectedClass: DeviceClass): DeviceContext {
 
 describe('evaluateExperiencePolicy', () => {
   it.each(MATRIX)(
-    'loads the role experience for %s on %s without a device block',
+    'only allows the device assigned to %s when detected as %s',
     (role, device) => {
       const decision = evaluateExperiencePolicy([role], context(device));
-      expect(decision).toMatchObject({
-        kind: 'allowed',
-        requiredExperience: ROLE_EXPERIENCE_MAP[role],
-      });
+      expect(decision).toMatchObject(
+        device === ROLE_EXPERIENCE_MAP[role]
+          ? { kind: 'allowed', requiredExperience: ROLE_EXPERIENCE_MAP[role] }
+          : { kind: 'unsupported', requiredExperience: ROLE_EXPERIENCE_MAP[role], reason: 'device_mismatch' },
+      );
     },
   );
 
-  it('keeps the role experience when its viewport is not viable', () => {
+  it('blocks the assigned experience when its viewport is not viable', () => {
     const device = context('desktop');
     device.viewportViability.desktop = false;
 
-    expect(evaluateExperiencePolicy(['admin'], device)).toMatchObject({ kind: 'allowed', requiredExperience: 'desktop' satisfies ExperienceType });
+    expect(evaluateExperiencePolicy(['admin'], device)).toMatchObject({ kind: 'unsupported', reason: 'viewport_incompatible', requiredExperience: 'desktop' satisfies ExperienceType });
   });
 
   it('keeps unknown devices separate from role-context denial', () => {
-    expect(evaluateExperiencePolicy(['admin'], context('unknown'))).toMatchObject({ kind: 'allowed', requiredExperience: 'desktop' });
+    expect(evaluateExperiencePolicy(['admin'], context('unknown'))).toMatchObject({ kind: 'unsupported', reason: 'unknown_device', requiredExperience: 'desktop' });
     expect(evaluateExperiencePolicy(['admin', 'coordinator'], context('desktop'))).toEqual({
       kind: 'denied',
       reason: 'mixed_experiences',

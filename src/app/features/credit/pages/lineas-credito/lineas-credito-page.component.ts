@@ -488,6 +488,8 @@ export class LineasCreditoPageComponent implements OnInit {
         {
           INITIAL_AUTHORIZATION: 'Línea inicial autorizada',
           INCREASE: 'Incremento autorizado',
+          VOUCHER_ISSUED: 'Capital comprometido al emitir vale',
+          VOUCHER_CANCELLED: 'Capital devuelto por cancelación',
           VOUCHER_CASHED: 'Capital aplicado a vale',
           PAYMENT_RECOVERY: 'Capital recuperado por pago',
         } as Record<string, string>

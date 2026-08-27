@@ -27,7 +27,8 @@ import { TabletNavigationComponent } from './navigation/tablet-navigation.compon
     :host {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr) auto;
-      width: 100vw;
+      width: 100%;
+      max-width: 100vw;
       height: 100dvh;
       overflow: hidden;
       color: var(--mv-text);

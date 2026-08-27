@@ -11,5 +11,19 @@ export function evaluateExperiencePolicy(
     return { kind: 'denied', reason: roleResolution.reason, device };
   }
 
-  return { kind: 'allowed', requiredExperience: roleResolution.experience, device };
+  const requiredExperience = roleResolution.experience;
+
+  if (device.detectedClass === 'unknown' || device.confidence === 'low') {
+    return { kind: 'unsupported', requiredExperience, reason: 'unknown_device', device };
+  }
+
+  if (device.detectedClass !== requiredExperience) {
+    return { kind: 'unsupported', requiredExperience, reason: 'device_mismatch', device };
+  }
+
+  if (!device.viewportViability[requiredExperience]) {
+    return { kind: 'unsupported', requiredExperience, reason: 'viewport_incompatible', device };
+  }
+
+  return { kind: 'allowed', requiredExperience, device };
 }
