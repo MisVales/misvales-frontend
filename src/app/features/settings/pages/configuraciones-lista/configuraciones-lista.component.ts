@@ -10,6 +10,7 @@ import {
   esConfiguracionDePago,
   esConfiguracionEditable,
   esConfiguracionVisible,
+  esHorarioDeVerificacion,
 } from '../../data-access/configuraciones-visibilidad';
 import { ConfiguracionesStore } from '../../estado/configuraciones.store';
 
@@ -39,11 +40,23 @@ export class ConfiguracionesListaComponent implements OnInit {
   protected readonly configuracionesDePago = computed(() =>
     this.definicionesFiltradas().filter((item) => esConfiguracionDePago(item.clave)),
   );
+  protected readonly horariosDeVerificacion = computed(() =>
+    this.definicionesFiltradas().filter((item) => esHorarioDeVerificacion(item.clave)),
+  );
   protected readonly configuracionesOperativas = computed(() =>
     this.definicionesFiltradas().filter(
-      (item) => !esCondicionFinancieraVale(item.clave) && !esConfiguracionDePago(item.clave),
+      (item) =>
+        !esCondicionFinancieraVale(item.clave) &&
+        !esConfiguracionDePago(item.clave) &&
+        !esHorarioDeVerificacion(item.clave),
     ),
   );
+
+  protected nombreConfiguracion(definition: ConfiguracionDefinicion): string {
+    if (definition.clave === 'VERIFICATION_START_TIME') return 'Hora verificador mínima';
+    if (definition.clave === 'VERIFICATION_MAX_START_TIME') return 'Hora verificador máxima';
+    return definition.nombre;
+  }
 
   ngOnInit(): void {
     void this.store.listar();

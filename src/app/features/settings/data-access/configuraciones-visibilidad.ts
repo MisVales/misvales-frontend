@@ -6,6 +6,11 @@ const CLAVES_RETIRADAS = new Set([
 
 const CONFIGURACIONES_DE_PAGO = new Set(['RELATION_PAYMENT_BANK']);
 
+const HORARIOS_DE_VERIFICACION = new Set([
+  'VERIFICATION_START_TIME',
+  'VERIFICATION_MAX_START_TIME',
+]);
+
 const CONDICIONES_FINANCIERAS_VALE = new Set([
   'LOAN_COMMISSION_PERCENTAGE',
   'INTEREST_RATE_PER_FORTNIGHT',
@@ -29,4 +34,8 @@ export function esCondicionFinancieraVale(clave: string): boolean {
 
 export function esConfiguracionDePago(clave: string): boolean {
   return CONFIGURACIONES_DE_PAGO.has(clave);
+}
+
+export function esHorarioDeVerificacion(clave: string): boolean {
+  return HORARIOS_DE_VERIFICACION.has(clave);
 }
