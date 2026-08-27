@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { FiltroDistribuidoras } from '../../models/filtro-distribuidoras.model';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
-import { CategoriasService } from '../../../categories/data-access/categorias.service';
+import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 import { firstValueFrom } from 'rxjs';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
@@ -19,7 +19,7 @@ export class FiltrosDistribuidorasComponent implements OnInit {
 
   filtrosForm: FormGroup;
   private readonly organizationApi = inject(OrganizationApiService);
-  private readonly categoriesApi = inject(CategoriasService);
+  private readonly distributorsApi = inject(DistribuidorasApiService);
   branches: Array<{ id: string; name: string }> = [];
   coordinators: Array<{ id: string; name: string }> = [];
   categories: Array<{ id: string; name: string }> = [];
@@ -40,13 +40,13 @@ export class FiltrosDistribuidorasComponent implements OnInit {
       firstValueFrom(
         this.organizationApi.getPersonnel({ per_page: 100, assignment_status: 'ACTIVE' }),
       ),
-      firstValueFrom(this.categoriesApi.listar(1, 100)),
+      firstValueFrom(this.distributorsApi.categoriasDisponiblesParaActivacion()),
     ]);
     this.branches = branches.data.map((branch) => ({ id: branch.id, name: branch.name }));
     this.coordinators = personnel.data
       .filter((assignment) => assignment.role.code === 'coordinator')
       .map((assignment) => ({ id: assignment.user.id, name: assignment.user.name }));
-    this.categories = categories.data.map((category) => ({ id: category.id, name: category.name }));
+    this.categories = categories.map((category) => ({ id: category.id, name: category.name }));
   }
 
   aplicarFiltros() {

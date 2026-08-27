@@ -2,7 +2,7 @@ import { Component, Output, EventEmitter, Input, OnInit, inject, signal } from '
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AssignDistributorCategoryRequestDto } from '../../data-access/dtos/assign-distributor-category-request.dto';
-import { CategoriasService } from '../../../categories/data-access/categorias.service';
+import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
 import { CategoryDto } from '../../../categories/data-access/categorias.dtos';
 import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
@@ -20,7 +20,7 @@ export class AsignarCategoriaDialogComponent implements OnInit {
   @Output() cancelar = new EventEmitter<void>();
 
   form: FormGroup;
-  private categoriesApi = inject(CategoriasService);
+  private distributorsApi = inject(DistribuidorasApiService);
   categorias = signal<CategoryDto[]>([]);
   cargandoCategorias = signal(true);
   errorCategorias = signal<string | null>(null);
@@ -33,10 +33,10 @@ export class AsignarCategoriaDialogComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.categoriesApi.listar(1, 100).subscribe({
-      next: (response) => {
+    this.distributorsApi.categoriasDisponiblesParaActivacion().subscribe({
+      next: (categories) => {
         this.categorias.set(
-          response.data.filter(
+          categories.filter(
             (category) =>
               category.status === 'ACTIVE' &&
               category.version_status === 'PUBLISHED' &&
