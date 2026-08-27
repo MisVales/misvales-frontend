@@ -4,7 +4,6 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
-import { CategoriasService } from '../../../categories/data-access/categorias.service';
 import { CategoryDto } from '../../../categories/data-access/categorias.dtos';
 import { VerificacionDistribuidorasApiService } from '../../../verifications/data-access/api/verificacion-distribuidoras-api.service';
 import { SolicitudDistribuidoraResponseDto } from '../../../verifications/data-access/dtos/verificacion-distribuidoras.dtos';
@@ -29,7 +28,6 @@ export class ActivacionDistribuidoraPageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private api = inject(DistribuidorasApiService);
-  private categoriesApi = inject(CategoriasService);
   private applicationsApi = inject(VerificacionDistribuidorasApiService);
   private fb = inject(FormBuilder);
 
@@ -49,11 +47,11 @@ export class ActivacionDistribuidoraPageComponent implements OnInit {
     try {
       const [application, categories] = await Promise.all([
         firstValueFrom(this.applicationsApi.consultarSolicitud(id)),
-        firstValueFrom(this.categoriesApi.listar(1, 100)),
+        firstValueFrom(this.api.categoriasDisponiblesParaActivacion()),
       ]);
       this.solicitud.set(application);
       this.categorias.set(
-        categories.data.filter(
+        categories.filter(
           (categoria) =>
             categoria.status === 'ACTIVE' &&
             categoria.version_status === 'PUBLISHED' &&
