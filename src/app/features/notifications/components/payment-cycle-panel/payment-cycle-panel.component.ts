@@ -30,7 +30,6 @@ export class PaymentCyclePanelComponent {
   readonly result = signal<ForcePaymentDeadlineResponse | null>(null);
   readonly modalOpen = signal(false);
   motivo = '';
-  simulatedCutoffAt = '';
 
   constructor() {
     this.load();
@@ -57,9 +56,6 @@ export class PaymentCyclePanelComponent {
 
   openConfirmation(): void {
     this.motivo = '';
-    this.simulatedCutoffAt = this.action() === 'CUTOFF'
-      ? this.toLocalDateTimeInput(this.summary()?.period.projected_end)
-      : '';
     this.error.set('');
     this.notice.set('');
     this.modalOpen.set(true);
@@ -83,11 +79,7 @@ export class PaymentCyclePanelComponent {
     this.error.set('');
     const request: Observable<ForceCutoffResponse | ForcePaymentDeadlineResponse> =
       this.action() === 'CUTOFF'
-        ? this.api.forceCutoff(
-            this.motivo,
-            crypto.randomUUID(),
-            this.simulatedCutoffAt ? new Date(this.simulatedCutoffAt).toISOString() : undefined,
-          )
+        ? this.api.forceCutoff(this.motivo, crypto.randomUUID())
         : this.api.forcePaymentDeadline(this.motivo, crypto.randomUUID());
 
     request.subscribe({
@@ -127,10 +119,4 @@ export class PaymentCyclePanelComponent {
     });
   }
 
-  private toLocalDateTimeInput(value?: string): string {
-    if (!value) return '';
-    const date = new Date(value);
-    const offset = date.getTimezoneOffset() * 60_000;
-    return new Date(date.getTime() - offset).toISOString().slice(0, 16);
-  }
 }

@@ -155,6 +155,8 @@ export class PagosPageComponent implements OnDestroy {
   readonly removalBusy = signal(false);
   readonly removalSuccess = signal('');
   readonly relationPdfBusy = signal(false);
+  readonly accountStatementBusy = signal(false);
+  readonly isOwnDistributor = computed(() => this.session.roles().includes('distributor'));
   readonly reportFile = signal<File | null>(null);
   readonly reportReason = signal('');
   readonly reportBusy = signal(false);
@@ -542,6 +544,27 @@ export class PagosPageComponent implements OnDestroy {
     }
 
     return [...groups.values()].map((group) => {
+      const scheduleSource = this.relations()
+        .flatMap((relation) => relation.partidas ?? [])
+        .find((item) => String(item.snapshot['folio'] || 'Sin folio') === group.folio)
+        ?.snapshot['installment_schedule'];
+      if (Array.isArray(scheduleSource)) {
+        for (const scheduled of scheduleSource as Array<Record<string, unknown>>) {
+          const number = Number(scheduled['number'] ?? 0);
+          if (!number || group.installments.some((installment) => installment.number === number)) {
+            continue;
+          }
+          group.installments.push({
+            id: `${group.folio}:${number}`,
+            number,
+            total: group.totalInstallments,
+            clientAmount: Number(scheduled['client_payment'] ?? 0),
+            misvalesAmount: Number(scheduled['misvales_payment'] ?? 0),
+            paid: 0,
+            status: 'PENDING',
+          });
+        }
+      }
       group.installments.sort((a, b) => a.number - b.number);
       group.clientTotal = group.installments.reduce((sum, item) => sum + item.misvalesAmount, 0);
       group.paidTotal = group.installments.reduce((sum, item) => sum + item.paid, 0);
@@ -798,6 +821,28 @@ export class PagosPageComponent implements OnDestroy {
       error: () => {
         this.relationPdfBusy.set(false);
         this.error.set('No fue posible descargar el PDF de la relación. Intenta nuevamente.');
+      },
+    });
+  }
+
+  downloadOwnAccountStatement(): void {
+    const distributorId = this.contextDistributorId() ?? this.relations()[0]?.distributor_id;
+    if (!distributorId || this.accountStatementBusy()) return;
+    this.accountStatementBusy.set(true);
+    this.error.set('');
+    this.api.downloadAccountStatement(distributorId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `estado-de-cuenta-${this.contextDistributorNumber() || 'distribuidora'}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.accountStatementBusy.set(false);
+      },
+      error: () => {
+        this.accountStatementBusy.set(false);
+        this.error.set('No fue posible descargar tu estado de cuenta. Intenta nuevamente.');
       },
     });
   }

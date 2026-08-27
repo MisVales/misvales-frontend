@@ -84,17 +84,7 @@
           <lucide-icon name="calendar-clock" [size]="22" aria-hidden="true"></lucide-icon>
         </div>
         <h3 id="cycle-modal-title">{{ actionLabel() }}</h3>
-        <p>Esta acción avanzará el ciclo a la fecha operativa seleccionada.</p>
-        @if (action() === 'CUTOFF') {
-          <label for="simulated-cutoff-at">Fecha de corte simulada</label>
-          <input
-            id="simulated-cutoff-at"
-            type="datetime-local"
-            [(ngModel)]="simulatedCutoffAt"
-            required
-          />
-          <small>No puede ser anterior al último corte. Se utilizará el mismo generador normal de relaciones.</small>
-        }
+        <p>Esta acción avanzará automáticamente al siguiente corte y tomará una parcialidad pendiente por cada vale activo.</p>
         <label for="cycle-reason">Motivo (opcional)</label>
         <input
           id="cycle-reason"
@@ -113,7 +103,7 @@
           >
             Cancelar
           </button>
-          <button data-manager-action type="button" class="cycle__action" (click)="execute()" [disabled]="processing() || (action() === 'CUTOFF' && !simulatedCutoffAt)">
+          <button data-manager-action type="button" class="cycle__action" (click)="execute()" [disabled]="processing()">
             {{ processing() ? 'Procesando…' : 'Confirmar' }}
           </button>
         </div>

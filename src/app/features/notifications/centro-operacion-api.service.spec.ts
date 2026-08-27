@@ -51,14 +51,4 @@ describe('CentroOperacionApiService', () => {
       },
     });
   });
-  it('permite seleccionar la fecha del corte usando el mismo endpoint idempotente', () => {
-    service.forceCutoff('Escenario controlado', 'cutoff-key', '2026-09-01T06:05:00.000Z').subscribe();
-    const request = http.expectOne((item) => item.url.endsWith('/operations/force-cutoff'));
-    expect(request.request.headers.get('Idempotency-Key')).toBe('cutoff-key');
-    expect(request.request.body).toEqual({
-      motivo: 'Escenario controlado',
-      simulated_cutoff_at: '2026-09-01T06:05:00.000Z',
-    });
-    request.flush({ data: { success: true, relations_generated: 1 } });
-  });
 });

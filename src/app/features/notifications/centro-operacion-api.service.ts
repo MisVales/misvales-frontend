@@ -127,15 +127,11 @@ export class CentroOperacionApiService {
       .pipe(map((response) => response.data));
   }
 
-  forceCutoff(
-    motivo: string,
-    idempotencyKey: string,
-    simulatedCutoffAt?: string,
-  ): Observable<ForceCutoffResponse> {
+  forceCutoff(motivo: string, idempotencyKey: string): Observable<ForceCutoffResponse> {
     return this.http
       .post<{ data: ForceCutoffResponse }>(
         `${this.config.baseUrl}/operations/force-cutoff`, 
-        { motivo, ...(simulatedCutoffAt ? { simulated_cutoff_at: simulatedCutoffAt } : {}) },
+        { motivo },
         { headers: { 'Idempotency-Key': idempotencyKey } }
       )
       .pipe(map((response) => response.data));
