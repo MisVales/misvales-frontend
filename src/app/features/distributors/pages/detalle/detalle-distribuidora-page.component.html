@@ -44,11 +44,32 @@
           </div>
         </div>
       </div>
-      <div class="identity-status">
-        <span class="status-dot"></span>
-        <div>
-          <small>Estado operativo</small><strong>{{ distributor.estado | statusLabel }}</strong>
+      <div class="masthead-actions">
+        <div class="identity-status">
+          <span class="status-dot"></span>
+          <div>
+            <small>Estado operativo</small><strong>{{ distributor.estado | statusLabel }}</strong>
+          </div>
         </div>
+        @if (canResendActivation()) {
+          <button
+            type="button"
+            class="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/30 bg-emerald-50 px-3 py-2 text-xs font-extrabold text-emerald-950 transition-colors hover:bg-emerald-100 disabled:cursor-wait disabled:opacity-70 max-[620px]:w-full"
+            [disabled]="resendingInvitation()"
+            (click)="abrirModalReenvio()"
+          >
+            <lucide-icon
+              [name]="resendingInvitation() ? 'loader-2' : 'mail-plus'"
+              [class.spin]="resendingInvitation()"
+              [size]="17"
+              aria-hidden="true"
+            />
+            {{ resendingInvitation() ? 'Reenviando…' : 'Reenviar correo de activación' }}
+          </button>
+          <p class="activation-tip">
+            Vuelve a enviar el correo para que la persona pueda activar su cuenta.
+          </p>
+        }
       </div>
     </header>
 
@@ -96,7 +117,12 @@
               <dd class="coordinator-fact">
                 <span>{{ distributor.coordinador?.nombreCompleto || 'Sin asignar' }}</span>
                 @if (canTransfer() && !transferOpen()) {
-                  <button data-manager-action type="button" class="transfer-trigger" (click)="abrirTransferencia()">
+                  <button
+                    data-manager-action
+                    type="button"
+                    class="transfer-trigger"
+                    (click)="abrirTransferencia()"
+                  >
                     <lucide-icon name="arrow-right-left" [size]="16" aria-hidden="true" />
                     Transferir
                   </button>
@@ -121,13 +147,21 @@
                         </option>
                       }
                       @for (cat of availableCategories(); track cat.version_id) {
-                        <option [value]="cat.version_id" [selected]="cat.version_id === selectedCategoryVersionId()">
+                        <option
+                          [value]="cat.version_id"
+                          [selected]="cat.version_id === selectedCategoryVersionId()"
+                        >
                           {{ cat.name }} ({{ +cat.profit_margin * 100 | number: '1.0-2' }}%)
                         </option>
                       }
                     </select>
                     @if (changingCategory()) {
-                      <lucide-icon name="loader-2" class="spin category-spin" [size]="14" aria-hidden="true" />
+                      <lucide-icon
+                        name="loader-2"
+                        class="spin category-spin"
+                        [size]="14"
+                        aria-hidden="true"
+                      />
                     }
                   </div>
                 } @else {

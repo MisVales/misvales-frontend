@@ -1,10 +1,12 @@
-<section class="w-full max-w-2xl mx-auto space-y-6 rounded-2xl border border-gray-200 bg-white p-5 sm:p-6 shadow-sm">
+<section class="w-full mx-auto space-y-5 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
     <div>
       <h2 class="text-xl font-bold text-gray-900">Llaves de Acceso (Passkeys)</h2>
-      <p class="text-sm text-gray-500 mt-1">Inicia sesión de forma segura usando tu huella dactilar, rostro o PIN del dispositivo.</p>
+      <p class="text-sm text-gray-500 mt-1">
+        Inicia sesión de forma segura usando tu huella dactilar, rostro o PIN del dispositivo.
+      </p>
     </div>
-    <button 
+    <button
       (click)="registerPasskey()"
       [disabled]="isRegistering() || loading()"
       class="text-sm font-medium text-white bg-[#386641] hover:bg-[#2c5234] px-4 py-2 rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -19,7 +21,12 @@
   </div>
 
   @if (success()) {
-    <div class="p-4 text-sm text-green-800 rounded-lg bg-green-50 border border-green-200" role="status">{{ success() }}</div>
+    <div
+      class="p-4 text-sm text-green-800 rounded-lg bg-green-50 border border-green-200"
+      role="status"
+    >
+      {{ success() }}
+    </div>
   }
 
   @if (loading()) {
@@ -27,37 +34,43 @@
       <lucide-icon name="loader-2" class="w-8 h-8 animate-spin text-[#386641]"></lucide-icon>
     </div>
   } @else if (error()) {
-    <div class="p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2">
+    <div
+      class="p-4 mb-6 text-sm text-red-800 rounded-lg bg-red-50 border border-red-200 flex items-center gap-2"
+    >
       <lucide-icon name="alert-triangle" class="w-5 h-5 flex-shrink-0"></lucide-icon>
       {{ error() }}
     </div>
   } @else {
     <div class="space-y-4">
       @for (passkey of passkeys(); track passkey.id) {
-        <div class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:shadow-md">
+        <div
+          class="bg-white border border-gray-200 rounded-xl p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all hover:shadow-md"
+        >
           <div class="flex items-start gap-4">
             <div class="p-3 bg-gray-50 rounded-full">
               <lucide-icon name="key" class="w-6 h-6 text-[#386641]"></lucide-icon>
             </div>
             <div>
               <h3 class="font-bold text-gray-900">Passkey</h3>
-              <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500 mt-1">
+              <div
+                class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-sm text-gray-500 mt-1"
+              >
                 <span class="flex items-center gap-1">
                   <lucide-icon name="calendar-clock" class="w-3.5 h-3.5"></lucide-icon>
-                  Creado el {{ passkey.created_at | date:'mediumDate' }}
+                  Creado el {{ passkey.created_at | date: 'mediumDate' }}
                 </span>
                 @if (passkey.last_used_at) {
                   <span class="hidden sm:inline">•</span>
                   <span class="flex items-center gap-1">
                     <lucide-icon name="clock" class="w-3.5 h-3.5"></lucide-icon>
-                    Último uso el {{ passkey.last_used_at | date:'mediumDate' }}
+                    Último uso el {{ passkey.last_used_at | date: 'mediumDate' }}
                   </span>
                 }
               </div>
             </div>
           </div>
-          
-          <button 
+
+          <button
             (click)="deletePasskey(passkey.id)"
             class="text-sm font-medium text-gray-600 hover:text-red-600 px-4 py-2 rounded-lg border border-gray-200 hover:border-red-200 hover:bg-red-50 transition-colors w-full sm:w-auto"
             title="Eliminar llave de acceso"
@@ -69,7 +82,9 @@
         <div class="text-center py-10 bg-gray-50 rounded-xl border border-dashed border-gray-300">
           <lucide-icon name="key-round" class="w-12 h-12 text-gray-400 mx-auto mb-3"></lucide-icon>
           <h3 class="text-lg font-medium text-gray-900 mb-1">Aún no tienes Passkeys</h3>
-          <p class="text-sm text-gray-500">Agrega un Passkey para iniciar sesión rápidamente y de forma segura.</p>
+          <p class="text-sm text-gray-500">
+            Agrega un Passkey para iniciar sesión rápidamente y de forma segura.
+          </p>
         </div>
       }
     </div>
@@ -79,26 +94,31 @@
   @if (showAuthPrompt()) {
     <div class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+        <div
+          class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50"
+        >
           <h3 class="text-lg font-bold text-gray-900">
             {{ authAction() === 'register' ? 'Agregar Passkey' : 'Eliminar Passkey' }}
           </h3>
-          <button (click)="cancelAuth()" class="text-gray-400 hover:text-gray-600 transition-colors">
+          <button
+            (click)="cancelAuth()"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
             <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
           </button>
         </div>
-        
+
         <form (submit)="confirmAuth(); $event.preventDefault()" class="p-6">
           <p class="text-sm text-gray-600 mb-4">
             Por tu seguridad, confirma tu identidad antes de continuar.
           </p>
-          
+
           @if (authError()) {
             <div class="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg border border-red-200">
               {{ authError() }}
             </div>
           }
-          
+
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Contraseña Actual</label>
@@ -112,7 +132,7 @@
                 required
               />
             </div>
-            
+
             <div>
               <label class="block text-sm font-medium text-gray-700 mb-1">Código TOTP (App)</label>
               <input
@@ -129,7 +149,7 @@
               />
             </div>
           </div>
-          
+
           <div class="mt-6 flex justify-end gap-3">
             <button
               type="button"

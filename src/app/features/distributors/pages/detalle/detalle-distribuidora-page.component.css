@@ -143,6 +143,25 @@
   border-radius: 0.75rem;
   background: rgb(5 35 24 / 40%);
 }
+.masthead-actions {
+  z-index: 1;
+  align-self: end;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-items: end;
+  column-gap: 0.65rem;
+  gap: 0.55rem;
+}
+.activation-tip {
+  grid-column: 1 / -1;
+  max-width: 27rem;
+  margin: 0;
+  color: var(--mv-text-muted);
+  font-size: 0.66rem;
+  line-height: 1.35;
+  text-align: right;
+}
 .status-dot {
   width: 0.55rem;
   height: 0.55rem;
@@ -803,6 +822,10 @@ td small {
   color: var(--mv-text-muted);
 }
 
+.masthead-actions .identity-status {
+  grid-column: auto;
+}
+
 .ledger-strip {
   border-radius: 0 0 1rem 1rem;
   background: color-mix(in srgb, var(--mv-surface) 82%, var(--mv-canvas));
@@ -820,8 +843,20 @@ td small {
     border-radius: 0.85rem 0.85rem 0 0;
   }
 
-  .identity-status {
+  .masthead-actions {
     grid-column: 1;
+    grid-template-columns: 1fr;
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .masthead-actions .identity-status {
     justify-self: stretch;
+  }
+
+  .activation-tip {
+    grid-column: 1;
+    max-width: none;
+    text-align: left;
   }
 }

@@ -86,6 +86,17 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   readonly coordinators = signal<PersonnelAssignment[]>([]);
   readonly availableCategories = signal<CategoryDto[]>([]);
   readonly changingCategory = signal(false);
+  readonly resendingInvitation = signal(false);
+
+  readonly canResendActivation = computed(() => {
+    const distributor = this.store.detalle();
+
+    return (
+      !!distributor &&
+      (distributor.estado === 'PENDING_ACTIVATION' ||
+        distributor.estadoAcceso === 'PENDING_ACTIVATION')
+    );
+  });
 
   readonly canAssignCategory = computed(() => {
     const permissions = this.session.permissions();
@@ -196,9 +207,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
         this.availableCategories.set(
           categories.filter(
             (cat) =>
-              cat.status === 'ACTIVE' &&
-              cat.version_status === 'PUBLISHED' &&
-              !!cat.version_id,
+              cat.status === 'ACTIVE' && cat.version_status === 'PUBLISHED' && !!cat.version_id,
           ),
         );
       },
@@ -267,6 +276,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   }
 
   abrirModalReenvio(): void {
+    if (!this.canResendActivation() || this.resendingInvitation()) return;
     this.mostrarModalReenvio = true;
   }
 
@@ -276,16 +286,21 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
 
   async reenviarInvitacion(event: any): Promise<void> {
     const distributor = this.store.detalle();
-    if (!distributor) return;
+    if (!distributor || !this.canResendActivation() || this.resendingInvitation()) return;
+    this.resendingInvitation.set(true);
     try {
       await firstValueFrom(this.api.reenviarInvitacion(distributor.id, event));
       this.cerrarModalReenvio();
-      this.alerts.showAlert('Invitación reenviada.', 'success');
+      this.alerts.showAlert('Correo de activación reenviado correctamente.', 'success');
     } catch (error: any) {
       this.alerts.showAlert(
-        error?.error?.message || 'No fue posible reenviar la invitación.',
+        error?.error?.error?.message ??
+          error?.error?.message ??
+          'No fue posible reenviar el correo de activación.',
         'error',
       );
+    } finally {
+      this.resendingInvitation.set(false);
     }
   }
 
