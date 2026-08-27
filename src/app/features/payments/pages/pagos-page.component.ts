@@ -44,6 +44,9 @@ interface PaymentPercentages {
 interface RelationMoneyRoute {
   inherited: number;
   current: number;
+  currentClientCollection: number;
+  currentDistributorProfit: number;
+  accumulatedSurcharges: number;
   inheritedPaid: number;
   currentPaid: number;
   outstanding: number;
@@ -69,6 +72,8 @@ interface VoucherInstallmentGroup {
   totalInstallments: number;
   installments: VoucherInstallmentTimeline[];
   clientTotal: number;
+  misvalesTotal: number;
+  distributorProfit: number;
   paidTotal: number;
   overdueTotal: number;
   paidCount: number;
@@ -447,7 +452,8 @@ export class PagosPageComponent implements OnDestroy {
 
   distributorProfit(relation: RelationView): number {
     return (relation.partidas ?? []).reduce(
-      (total, item) => total + Number(item.snapshot['distributor_profit'] ?? 0),
+      (total, item) =>
+        total + Number(item.portfolio_amount ?? 0) - Number(item.misvales_amount ?? 0),
       0,
     );
   }
@@ -460,10 +466,18 @@ export class PagosPageComponent implements OnDestroy {
       0,
     );
     const inheritedPaid = Math.min(applied, inherited);
+    const currentClientCollection = (relation.partidas ?? []).reduce(
+      (sum, item) => sum + Number(item.portfolio_amount ?? 0),
+      0,
+    );
+    const currentDistributorProfit = this.distributorProfit(relation);
 
     return {
       inherited,
       current: Math.max(0, total - inherited),
+      currentClientCollection,
+      currentDistributorProfit,
+      accumulatedSurcharges: Number(relation.surcharge_total ?? 0),
       inheritedPaid,
       currentPaid: Math.max(0, applied - inheritedPaid),
       outstanding: Number(relation.balance ?? 0),
@@ -507,6 +521,8 @@ export class PagosPageComponent implements OnDestroy {
             totalInstallments: Number(item.snapshot['total_installments'] || 0),
             installments: [],
             clientTotal: 0,
+            misvalesTotal: 0,
+            distributorProfit: 0,
             paidTotal: 0,
             overdueTotal: 0,
             paidCount: 0,
@@ -545,7 +561,12 @@ export class PagosPageComponent implements OnDestroy {
 
     return [...groups.values()].map((group) => {
       group.installments.sort((a, b) => a.number - b.number);
-      group.clientTotal = group.installments.reduce((sum, item) => sum + item.misvalesAmount, 0);
+      group.clientTotal = group.installments.reduce((sum, item) => sum + item.clientAmount, 0);
+      group.misvalesTotal = group.installments.reduce(
+        (sum, item) => sum + item.misvalesAmount,
+        0,
+      );
+      group.distributorProfit = group.clientTotal - group.misvalesTotal;
       group.paidTotal = group.installments.reduce((sum, item) => sum + item.paid, 0);
       group.overdueTotal = group.installments
         .filter((item) => item.status === 'OVERDUE')

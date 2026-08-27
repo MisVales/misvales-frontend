@@ -109,10 +109,41 @@ describe('PagosPageComponent surplus presentation', () => {
     expect(component.relationMoneyRoute(relation)).toEqual({
       inherited: 8415,
       current: 1232,
+      currentClientCollection: 0,
+      currentDistributorProfit: 0,
+      accumulatedSurcharges: 0,
       inheritedPaid: 8415,
       currentPaid: 1232,
       outstanding: 0,
       points: 15,
+    });
+  });
+
+  it('explica el total del sexto corte con neto, ganancia y recargos separados', () => {
+    const relation = {
+      id: 'relation-six',
+      cutoff_at: '2026-12-26T00:05:00Z',
+      financial_status: 'OVERDUE',
+      misvales_total: '24132.0000',
+      carried_balance: '18696.0000',
+      reconciled_total: '0.0000',
+      balance: '24432.0000',
+      surcharge_total: '1800.0000',
+      partidas: [
+        { portfolio_amount: '1887.0000', misvales_amount: '1812.0000', snapshot: {} },
+        { portfolio_amount: '2825.0000', misvales_amount: '2712.0000', snapshot: {} },
+        { portfolio_amount: '950.0000', misvales_amount: '912.0000', snapshot: {} },
+      ],
+      pagos: [],
+    } as never;
+
+    expect(component.relationMoneyRoute(relation)).toMatchObject({
+      inherited: 18696,
+      current: 5436,
+      currentClientCollection: 5662,
+      currentDistributorProfit: 226,
+      accumulatedSurcharges: 1800,
+      outstanding: 24432,
     });
   });
 

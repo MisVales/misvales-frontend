@@ -360,9 +360,13 @@
               <article class="money-route__step">
                 <span class="money-route__index">2</span>
                 <div>
-                  <small>Parcialidades agregadas en este corte</small>
+                  <small>Neto a pagar a MisVales por este corte</small>
                   <strong>{{ route.current | currency: 'MXN' }}</strong>
-                  <p>{{ relation.partidas?.length || 0 }} parcialidades nuevas.</p>
+                  <p>
+                    {{ relation.partidas?.length || 0 }} parcialidades nuevas · clientes pagan
+                    {{ route.currentClientCollection | currency: 'MXN' }} · conservas
+                    {{ route.currentDistributorProfit | currency: 'MXN' }} de ganancia.
+                  </p>
                 </div>
               </article>
               <article class="money-route__step is-payment">
@@ -387,7 +391,8 @@
                     } @else if (relation.temporal_classification === 'EARLY') {
                       Pago anticipado sin un bloque completo de capital para puntos.
                     } @else {
-                      {{ relationStatusLabel(relation.financial_status) }}.
+                      {{ relationStatusLabel(relation.financial_status) }} · incluye
+                      {{ route.accumulatedSurcharges | currency: 'MXN' }} de recargos acumulados.
                     }
                   </p>
                 </div>
@@ -553,7 +558,11 @@
                   </div>
                   <div class="voucher-ledger__totals">
                     <strong>{{ voucher.paidTotal | currency: 'MXN' }}</strong>
-                    <span>pagado de {{ voucher.clientTotal | currency: 'MXN' }}</span>
+                    <span>pagado a MisVales de {{ voucher.misvalesTotal | currency: 'MXN' }}</span>
+                    <small>
+                      Cobro a clientes {{ voucher.clientTotal | currency: 'MXN' }} · ganancia
+                      {{ voucher.distributorProfit | currency: 'MXN' }}
+                    </small>
                   </div>
                 </header>
 
