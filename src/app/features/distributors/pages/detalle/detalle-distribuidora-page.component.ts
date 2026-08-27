@@ -32,7 +32,6 @@ import { apiErrorMessage } from '../../../../core/api/api-error';
 import { RefactorSelectComponent } from '../../../../shared/components/inputs/refactor-select/refactor-select.component';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import type { PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
-import { CategoriasService } from '../../../categories/data-access/categorias.service';
 import { CategoryDto } from '../../../categories/data-access/categorias.dtos';
 import { DistributorWorkspaceContextService } from '../../../../shared/components/navigation/distributor-workspace-nav/distributor-workspace-context.service';
 import {
@@ -64,7 +63,6 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(DistribuidorasApiService);
-  private readonly categoriesApi = inject(CategoriasService);
   private readonly alerts = inject(AlertService);
   private readonly credit = inject(CreditoApiService);
   private readonly relationsApi = inject(RelacionesApiService);
@@ -193,10 +191,10 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   }
 
   private loadAvailableCategories(): void {
-    this.categoriesApi.listar(1, 100).subscribe({
-      next: (response) => {
+    this.api.categoriasDisponiblesParaActivacion().subscribe({
+      next: (categories) => {
         this.availableCategories.set(
-          response.data.filter(
+          categories.filter(
             (cat) =>
               cat.status === 'ACTIVE' &&
               cat.version_status === 'PUBLISHED' &&
