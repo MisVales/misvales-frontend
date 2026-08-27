@@ -120,6 +120,19 @@ export class VerificacionDistribuidorasApiService {
       .pipe(map((response) => response.data));
   }
 
+  consultarPoliticaHorario(): Observable<{
+    start_time: string;
+    max_start_time: string;
+    timezone: string;
+    slot_minutes: number;
+  }> {
+    return this.http
+      .get<{ data: { start_time: string; max_start_time: string; timezone: string; slot_minutes: number } }>(
+        `${this.apiUrl}/verification-schedule-policy`,
+      )
+      .pipe(map((response) => response.data));
+  }
+
   // ---------------------------------------------------------
   // VISITAS Y EVIDENCIAS
   // ---------------------------------------------------------

@@ -143,6 +143,17 @@
                     <lucide-icon name="eye" class="h-4 w-4"></lucide-icon>
                     Ver
                   </a>
+                  @if (canInviteUsers() && (user.state === 'INVITED' || user.state === 'PENDING_ACTIVATION')) {
+                    <button
+                      type="button"
+                      class="text-[#386641] hover:text-[#2c5234] font-medium text-sm transition-colors flex items-center gap-1 disabled:opacity-50"
+                      [disabled]="isActionLoading() !== null"
+                      (click)="resendInvitation(user)"
+                    >
+                      <lucide-icon name="mail" class="h-4 w-4"></lucide-icon>
+                      {{ isActionLoading() === 'resend-' + user.id ? 'Reenviando…' : 'Reenviar correo' }}
+                    </button>
+                  }
                 </div>
               </td>
             </tr>
