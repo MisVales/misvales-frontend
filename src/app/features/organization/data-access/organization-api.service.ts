@@ -22,7 +22,7 @@ export class OrganizationApiService {
   private readonly apiConfig = inject(API_CONFIG);
   private readonly baseUrl = this.apiConfig.baseUrl;
 
-  getBranches(filters: { page?: number; per_page?: number; search?: string; status?: string } = {}): Observable<PaginatedRes<Branch>> {
+  getBranches(filters: { page?: number; per_page?: number; search?: string; status?: string; eligible_for_manager?: boolean } = {}): Observable<PaginatedRes<Branch>> {
     let params = new HttpParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== '') params = params.set(key, String(value));

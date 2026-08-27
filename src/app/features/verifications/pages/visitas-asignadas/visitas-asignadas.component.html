@@ -25,10 +25,10 @@
               <div class="day-list" tabindex="0" [attr.aria-label]="'Visitas del ' + day.fullLabel">
                 @for (visita of day.visits; track visita.id) {
                   <article class="visita-card">
-                    <div class="card-header"><div><span class="visit-time">{{ visita.fechaProgramada | date: 'h:mm a' }}</span><h3 class="solicitud-id">{{ identificadorSolicitud(visita.solicitudNombre) }}</h3></div><span class="badge" [class.badge-info]="visita.estado === 'ASSIGNED'" [class.badge-warning]="visita.estado === 'IN_PROGRESS'">{{ visita.estado | statusLabel }}</span></div>
+                    <div class="card-header"><div><span class="visit-time">{{ formatVisitDateTime(visita.fechaProgramada) }}</span><h3 class="solicitud-id">{{ identificadorSolicitud(visita.solicitudNombre) }}</h3></div><span class="badge" [class.badge-info]="visita.estado === 'ASSIGNED'" [class.badge-warning]="visita.estado === 'IN_PROGRESS'">{{ visita.estado | statusLabel }}</span></div>
                     <div class="card-body">
                       <p class="detail"><strong>Avance</strong><span>{{ visita.evidencias.length }} evidencias · {{ visita.diferencias.length }} diferencias</span></p>
-                      @if (visita.fechaInicio) { <p class="detail"><strong>Iniciada</strong><span>{{ visita.fechaInicio | date: 'dd/MM/yyyy, h:mm a' }}</span></p> }
+                      @if (visita.fechaInicio) { <p class="detail"><strong>Iniciada</strong><span>{{ formatVisitDateTime(visita.fechaInicio) }}</span></p> }
                     </div>
                     <div class="card-footer"><button type="button" class="btn btn-primary btn-block" (click)="abrirVisita(visita)" [disabled]="visita.estado === 'ASSIGNED' && !puedeIniciar(visita.fechaProgramada)"><span style="display: inline; color: #fff !important">{{ visita.estado === 'ASSIGNED' ? (puedeIniciar(visita.fechaProgramada) ? 'Iniciar visita' : 'Pendiente de horario') : 'Continuar visita' }}</span></button></div>
                   </article>
@@ -46,7 +46,7 @@
         <div class="table-shell"><table>
           <thead><tr><th>Solicitud</th><th>Programada</th><th>Terminada</th><th>Resultado</th><th>Resumen</th><th><span class="sr-only">Acción</span></th></tr></thead>
           <tbody>@for (visita of pagedHistory(); track visita.id) { <tr>
-            <td data-label="Solicitud"><strong>{{ identificadorSolicitud(visita.solicitudNombre) }}</strong></td><td data-label="Programada">{{ visita.fechaProgramada | date: 'dd/MM/yyyy, h:mm a' }}</td><td data-label="Terminada">{{ visita.fechaFin | date: 'dd/MM/yyyy, h:mm a' }}</td><td data-label="Resultado"><span class="badge badge-success">{{ visita.resultadoFisico || 'Terminada' }}</span></td><td data-label="Resumen">{{ visita.evidencias.length }} evidencias · {{ visita.diferencias.length }} diferencias</td><td class="table-action"><button type="button" class="btn btn-secondary btn-sm" (click)="abrirVisita(visita)">Ver detalle</button></td>
+            <td data-label="Solicitud"><strong>{{ identificadorSolicitud(visita.solicitudNombre) }}</strong></td><td data-label="Programada">{{ formatVisitDateTime(visita.fechaProgramada) }}</td><td data-label="Terminada">{{ formatVisitDateTime(visita.fechaFin) }}</td><td data-label="Resultado"><span class="badge badge-success">{{ visita.resultadoFisico || 'Terminada' }}</span></td><td data-label="Resumen">{{ visita.evidencias.length }} evidencias · {{ visita.diferencias.length }} diferencias</td><td class="table-action"><button type="button" class="btn btn-secondary btn-sm" (click)="abrirVisita(visita)">Ver detalle</button></td>
           </tr> }</tbody>
         </table></div>
         <nav class="pagination" aria-label="Paginación del historial"><button class="btn btn-sm btn-secondary" [disabled]="historyPage() === 1" (click)="onHistoryPageChange(historyPage() - 1)">Anterior</button><span class="page-info">Página {{ historyPage() }} de {{ historyTotalPages() }}</span><button class="btn btn-sm btn-secondary" [disabled]="historyPage() === historyTotalPages()" (click)="onHistoryPageChange(historyPage() + 1)">Siguiente</button></nav>

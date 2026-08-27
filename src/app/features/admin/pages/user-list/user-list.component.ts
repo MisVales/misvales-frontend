@@ -281,7 +281,7 @@ export class UserListComponent implements OnInit, OnDestroy {
           this.organizationApi.getBranches({
             per_page: 100,
             eligible_for_manager: true,
-          } as any),
+          }),
         );
         this.eligibleBranchesForManager.set(response.data);
       } catch (error: unknown) {

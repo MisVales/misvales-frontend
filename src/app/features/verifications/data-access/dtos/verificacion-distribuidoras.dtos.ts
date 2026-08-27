@@ -102,7 +102,7 @@ export interface VisitaVerificacionResponseDto {
   started_at: string | null;
   completed_at: string | null;
   differences_payload: { items?: any[] } | null;
-  media_files: EvidenciaVerificacionResponseDto[];
+  media_files?: EvidenciaVerificacionResponseDto[];
   declared_media_files?: EvidenciaVerificacionResponseDto[];
   lock_version: number;
   application?: SolicitudDistribuidoraResponseDto;

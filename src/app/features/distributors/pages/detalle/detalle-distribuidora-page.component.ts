@@ -32,6 +32,8 @@ import { apiErrorMessage } from '../../../../core/api/api-error';
 import { RefactorSelectComponent } from '../../../../shared/components/inputs/refactor-select/refactor-select.component';
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import type { PersonnelAssignment } from '../../../organization/data-access/organization.dtos';
+import { CategoriasService } from '../../../categories/data-access/categorias.service';
+import { CategoryDto } from '../../../categories/data-access/categorias.dtos';
 import { DistributorWorkspaceContextService } from '../../../../shared/components/navigation/distributor-workspace-nav/distributor-workspace-context.service';
 import {
   BreadcrumbsComponent,
@@ -62,6 +64,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(DistribuidorasApiService);
+  private readonly categoriesApi = inject(CategoriasService);
   private readonly alerts = inject(AlertService);
   private readonly credit = inject(CreditoApiService);
   private readonly relationsApi = inject(RelacionesApiService);
@@ -83,6 +86,30 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   readonly transferError = signal('');
   readonly selectedCoordinatorId = signal('');
   readonly coordinators = signal<PersonnelAssignment[]>([]);
+  readonly availableCategories = signal<CategoryDto[]>([]);
+  readonly changingCategory = signal(false);
+
+  readonly canAssignCategory = computed(() => {
+    const permissions = this.session.permissions();
+    const roles = this.session.roles();
+    return (
+      permissions.includes('distributors.assign_category') ||
+      permissions.includes('all') ||
+      roles.includes('general_manager') ||
+      roles.includes('branch_manager') ||
+      roles.includes('admin')
+    );
+  });
+
+  readonly selectedCategoryVersionId = computed(() => {
+    const currentName = this.store.detalle()?.categoria?.nombre?.trim().toLowerCase();
+    if (!currentName) return '';
+    const match = this.availableCategories().find(
+      (cat) => cat.name.trim().toLowerCase() === currentName,
+    );
+    return match?.version_id ?? '';
+  });
+
   readonly canTransfer = computed(() => {
     const permissions = this.session.permissions();
     return permissions.includes('assignments.manage') || permissions.includes('all');
@@ -142,6 +169,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   mostrarModalReenvio = false;
 
   ngOnInit(): void {
+    this.loadAvailableCategories();
     this.route.queryParamMap.subscribe((params) => {
       const requestedSection = params.get('section');
       this.activeSection.set(
@@ -162,6 +190,57 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.workspaceContext.clear(this.workspaceOwner);
     this.store.limpiarDetalle();
+  }
+
+  private loadAvailableCategories(): void {
+    this.categoriesApi.listar(1, 100).subscribe({
+      next: (response) => {
+        this.availableCategories.set(
+          response.data.filter(
+            (cat) =>
+              cat.status === 'ACTIVE' &&
+              cat.version_status === 'PUBLISHED' &&
+              !!cat.version_id,
+          ),
+        );
+      },
+      error: () => {},
+    });
+  }
+
+  async onCategoriaSelectChange(event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const newVersionId = select.value;
+    const distributor = this.store.detalle();
+    if (!distributor || !newVersionId || this.changingCategory()) return;
+
+    const currentVersionId = this.selectedCategoryVersionId();
+    if (newVersionId === currentVersionId) return;
+
+    const targetCategory = this.availableCategories().find((c) => c.version_id === newVersionId);
+    const targetName = targetCategory?.name ?? 'nueva categoría';
+
+    this.changingCategory.set(true);
+    try {
+      await firstValueFrom(
+        this.api.asignarCategoria(distributor.id, distributor.versionBloqueo, {
+          category_version_id: newVersionId,
+          reason: 'Reasignación directa desde expediente de distribuidora',
+        }),
+      );
+      await this.store.cargarDetalle(distributor.id);
+      this.alerts.showAlert(`Categoría actualizada a ${targetName}.`, 'success');
+    } catch (error: any) {
+      this.alerts.showAlert(
+        error?.error?.error?.message ??
+          error?.error?.message ??
+          'No fue posible cambiar la categoría.',
+        'error',
+      );
+      select.value = currentVersionId;
+    } finally {
+      this.changingCategory.set(false);
+    }
   }
 
   abrirModalCategoria(): void {

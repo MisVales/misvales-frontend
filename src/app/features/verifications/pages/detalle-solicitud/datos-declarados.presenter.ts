@@ -7,6 +7,8 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
   first_name: 'Nombre(s)',
   first_last_name: 'Apellido paterno',
   second_last_name: 'Apellido materno',
+  nationality: 'Nacionalidad',
+  birth_country: 'País de nacimiento',
   curp_masked: 'CURP',
   curp: 'CURP',
   rfc_masked: 'RFC',
@@ -17,6 +19,7 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
   birth_city: 'Ciudad de nacimiento',
   email: 'Correo electrónico',
   phone_number: 'Teléfono',
+  identification_country: 'País de identificación',
   official_id_type: 'Tipo de identificación',
   official_id_number_masked: 'Número de identificación',
   official_id_number: 'Número de identificación',
@@ -63,6 +66,7 @@ const CAMPOS_TECNICOS = new Set([
   'updated_at',
   'details_payload',
   'reference_payload',
+  'has_identification_evidence',
 ]);
 
 const CAMPOS_MONETARIOS = new Set([
@@ -74,9 +78,17 @@ const CAMPOS_MONETARIOS = new Set([
 
 const ETIQUETAS_CATALOGO: Record<string, string> = {
   'entry_type:ASSET': 'Bien',
+  'entry_type:LIABILITY': 'Compromiso / Pasivo',
+  'nationality:MEXICAN': 'Mexicana',
   'relationship:PARTNER': 'Pareja',
+  'relationship:SIBLING': 'Hermano(a)',
+  'relationship:CHILD': 'Hijo(a)',
+  'relationship:PARENT': 'Padre/Madre',
+  'relationship:OTHER': 'Otro',
   'official_id_type:INE': 'INE',
   'country:MX': 'México',
+  'birth_country:MX': 'México',
+  'identification_country:MX': 'México',
   'housing_tenure:OWNED': 'Propia',
   'financing_status:PAID': 'Pagada',
   'ownership_status:OWNED': 'Propio',

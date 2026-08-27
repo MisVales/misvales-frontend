@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
@@ -13,7 +12,7 @@ import { canStartScheduledVisit } from '../../utils/visit-schedule-policy';
 @Component({
   selector: 'app-visitas-asignadas',
   standalone: true,
-  imports: [DatePipe, StatusLabelPipe, FullScreenCalendarComponent],
+  imports: [StatusLabelPipe, FullScreenCalendarComponent],
   templateUrl: './visitas-asignadas.component.html',
   styleUrl: './visitas-asignadas.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -42,7 +41,7 @@ export class VisitasAsignadasComponent implements OnInit {
   protected readonly visitDays = computed(() => {
     const groups = new Map<string, VisitaVerificacion[]>();
     for (const visit of this.upcomingVisits()) {
-      const key = visit.fechaProgramada?.slice(0, 10) ?? 'sin-fecha';
+      const key = visit.fechaProgramada ? businessDateKey(visit.fechaProgramada) : 'sin-fecha';
       groups.set(key, [...(groups.get(key) ?? []), visit]);
     }
     return [...groups.entries()].map(([key, visits]) => ({
@@ -78,7 +77,7 @@ export class VisitasAsignadasComponent implements OnInit {
         datetime: visit.fechaProgramada,
         title: visit.solicitudNombre || 'Solicitud asignada',
         subtitle: `${visit.evidencias.length} evidencias · ${visit.diferencias.length} diferencias`,
-        time: new Intl.DateTimeFormat('es-MX', { hour: 'numeric', minute: '2-digit' }).format(
+        time: new Intl.DateTimeFormat('es-MX', { timeZone: BUSINESS_TIME_ZONE, hour: 'numeric', minute: '2-digit' }).format(
           new Date(visit.fechaProgramada),
         ),
         status: this.etiquetaEstado(visit.estado),
@@ -131,6 +130,20 @@ export class VisitasAsignadasComponent implements OnInit {
     return normalizado ? `Solicitud-${normalizado}` : 'Solicitud';
   }
 
+  formatVisitDateTime(value: string | null): string {
+    if (!value) return 'Sin horario';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Sin horario';
+    return new Intl.DateTimeFormat('es-MX', {
+      timeZone: BUSINESS_TIME_ZONE,
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(date);
+  }
+
   protected abrirEventoCalendario(event: FullScreenCalendarEvent): void {
     const visit = this.visits().find((item) => item.id === event.id);
     if (visit) void this.abrirVisita(visit);
@@ -145,4 +158,18 @@ export class VisitasAsignadasComponent implements OnInit {
 
 function timestamp(value: string | null): number {
   return value ? new Date(value).getTime() : Number.MAX_SAFE_INTEGER;
+}
+
+const BUSINESS_TIME_ZONE = 'America/Monterrey';
+
+function businessDateKey(value: string): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: BUSINESS_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(value));
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((candidate) => candidate.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
 }

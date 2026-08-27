@@ -13,11 +13,17 @@ import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
 import { StrictNumberInputDirective } from '../../../../shared/directives/strict-number-input.directive';
-import { DatePipe } from '@angular/common';
+import { DatePipe, KeyValuePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { EstadoSolicitudComponent } from '../../components/estado-solicitud/estado-solicitud.component';
+import { LineaTiempoSolicitudComponent } from '../../components/linea-tiempo-solicitud/linea-tiempo-solicitud.component';
+import { GaleriaEvidenciasComponent } from '../../components/galeria-evidencias/galeria-evidencias.component';
+import { StatusLabelPipe } from '../../../../shared/pipes/status-label.pipe';
 import { LucideAngularModule } from 'lucide-angular';
 import { SessionStore } from '../../../../core/session/session.store';
+import { MediaApiService } from '../../../../core/api/media/media-api.service';
+import { firstValueFrom } from 'rxjs';
+import { presentarRegistrosDeclarados } from '../detalle-solicitud/datos-declarados.presenter';
 
 @Component({
   selector: 'app-autorizacion-gerencial',
@@ -26,8 +32,12 @@ import { SessionStore } from '../../../../core/session/session.store';
     FormsModule,
     StrictNumberInputDirective,
     DatePipe,
+    KeyValuePipe,
     RouterLink,
     EstadoSolicitudComponent,
+    LineaTiempoSolicitudComponent,
+    GaleriaEvidenciasComponent,
+    StatusLabelPipe,
     LucideAngularModule,
   ],
   templateUrl: './autorizacion-gerencial.component.html',
@@ -41,6 +51,25 @@ export class AutorizacionGerencialComponent implements OnInit, OnDestroy {
   private readonly alerts = inject(AlertService);
   private readonly confirmation = inject(ConfirmationService);
   private readonly sessionStore = inject(SessionStore);
+  private readonly mediaApi = inject(MediaApiService);
+
+  readonly tiposEvidenciaDeclarada = [
+    { id: 'IDENTIFICATION', label: 'Identificación oficial' },
+    { id: 'ADDRESS_PROOF', label: 'Comprobante de domicilio' },
+    { id: 'VEHICLE_EVIDENCE', label: 'Evidencia de vehículo' },
+    { id: 'ASSET_EVIDENCE', label: 'Evidencia patrimonial' },
+    { id: 'COMMERCIAL_EVIDENCE', label: 'Evidencia de crédito comercial' },
+  ];
+
+  private readonly etiquetasSeccion: Record<string, string> = {
+    personal_data: 'Datos personales',
+    family_members: 'Familiares y referencias',
+    residences: 'Domicilios',
+    vehicles: 'Vehículos',
+    assets_liabilities: 'Bienes y compromisos',
+    employments: 'Empleos',
+    commercial_credits: 'Créditos comerciales',
+  };
 
   decision = signal<'APPROVED' | 'REJECTED' | null>(null);
   comentarios = signal<string>('');
@@ -63,6 +92,40 @@ export class AutorizacionGerencialComponent implements OnInit, OnDestroy {
 
   // Simulated manager credentials for double auth in a real world scenario
   password = signal<string>('');
+
+  etiquetaSeccion(seccion: string): string {
+    return this.etiquetasSeccion[seccion] ?? seccion.replaceAll('_', ' ');
+  }
+
+  registrosSeccion(valor: unknown) {
+    return presentarRegistrosDeclarados(valor);
+  }
+
+  async descargarEvidencia(visitaId: string, evidenciaId: string) {
+    const blob = await this.facade.descargarEvidenciaBlob(visitaId, evidenciaId);
+    if (!blob) return;
+
+    const url = URL.createObjectURL(blob);
+    const enlace = document.createElement('a');
+    enlace.href = url;
+    enlace.download = `evidencia-${evidenciaId}`;
+    enlace.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async descargarEvidenciaDeclarada(evidenciaId: string) {
+    try {
+      const blob = await firstValueFrom(this.mediaApi.download(evidenciaId));
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = url;
+      enlace.download = `evidencia-declarada-${evidenciaId}`;
+      enlace.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      this.alerts.showAlert('No fue posible descargar la evidencia declarada.', 'error');
+    }
+  }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');

@@ -18,10 +18,11 @@ interface TimelineEvent {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LineaTiempoSolicitudComponent {
-  solicitud = input.required<SolicitudDistribuidora>();
+  solicitud = input<SolicitudDistribuidora | null>(null);
 
   eventos = computed<TimelineEvent[]>(() => {
     const s = this.solicitud();
+    if (!s) return [];
     const events: TimelineEvent[] = [];
 
     // 1. Envío

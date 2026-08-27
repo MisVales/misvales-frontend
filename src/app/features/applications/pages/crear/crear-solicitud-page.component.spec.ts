@@ -67,6 +67,10 @@ describe('CrearSolicitudPageComponent catalogs', () => {
       ['coordinator'],
       ['distributor_applications.create'],
       'branch-a',
+      [{
+        role: 'coordinator', roleName: 'Coordinador', branchId: 'branch-a',
+        branchName: 'Sucursal Matamoros', branchCode: 'MAT', permissions: ['distributor_applications.create'],
+      }],
     );
     const component = TestBed.runInInjectionContext(() => new CrearSolicitudPageComponent());
 
@@ -80,6 +84,7 @@ describe('CrearSolicitudPageComponent catalogs', () => {
     });
     expect(organizationApi.getBranchAssignments).not.toHaveBeenCalled();
     expect(component.catalogError()).toBeNull();
+    expect(component.activeBranchName()).toBe('Sucursal Matamoros');
   });
 
   it('loads only the active branch assignments for a branch manager', async () => {

@@ -3,13 +3,13 @@
     <div>
       <p class="eyebrow">Administración · Referencia operativa</p>
       <h1>Diccionario de errores</h1>
-      <p class="subtitle">Encuentra el código recibido y confirma el mensaje exacto que puede ver el cliente.</p>
+      <p class="subtitle">Consulta qué significa cada código para clientes, personal interno y soporte técnico.</p>
     </div>
     <div class="total" aria-label="Total de códigos"><strong>{{ items().length }}</strong><span>códigos documentados</span></div>
   </header>
 
   <section class="filters" aria-label="Filtros del diccionario">
-    <label class="search"><lucide-icon name="search" [size]="18" aria-hidden="true" /><span class="sr-only">Buscar</span><input type="search" placeholder="Buscar código o mensaje para cliente…" [ngModel]="query()" (ngModelChange)="setQuery($event)" /></label>
+    <label class="search"><lucide-icon name="search" [size]="18" aria-hidden="true" /><span class="sr-only">Buscar</span><input type="search" placeholder="Buscar código, definición o fuente…" [ngModel]="query()" (ngModelChange)="setQuery($event)" /></label>
     <label><span class="sr-only">Estado HTTP</span><select [ngModel]="status()" (ngModelChange)="setStatus($event)"><option value="">Todos los estados HTTP</option>@for (value of statuses(); track value) { <option [value]="value">HTTP {{ value }}</option> }</select></label>
     <span class="results">{{ filtered().length }} resultados</span>
   </section>
@@ -20,16 +20,17 @@
   @else {
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Código</th><th>Mensaje mostrado al cliente</th><th>Respuesta</th><th><span class="sr-only">Detalle</span></th></tr></thead>
+        <thead><tr><th>Código</th><th>Cliente</th><th>Interno</th><th>Admin · Técnico</th><th><span class="sr-only">Detalle</span></th></tr></thead>
         <tbody>
           @for (item of filtered(); track item.code) {
             <tr>
               <td><code>{{ item.code }}</code><div class="statuses">@for (http of item.http_statuses; track http) { <span>HTTP {{ http }}</span> }</div></td>
-              <td class="client-message">{{ item.client_message }}</td>
-              <td><div class="statuses">@if (!item.http_statuses.length) { <span>HTTP variable</span> } @for (http of item.http_statuses; track http) { <span [attr.data-tone]="statusTone(http)">HTTP {{ http }}</span> }</div></td>
-              <td><button type="button" class="detail-button" (click)="toggle(item.code)" [attr.aria-expanded]="expanded() === item.code" [attr.aria-label]="'Ver mensajes asociados a ' + item.code"><lucide-icon name="chevron-down" [size]="18" /></button></td>
+              <td>{{ item.client_definition }}</td>
+              <td>{{ item.internal_definition }}</td>
+              <td>{{ item.admin_definition }}</td>
+              <td><button type="button" class="detail-button" (click)="toggle(item.code)" [attr.aria-expanded]="expanded() === item.code" [attr.aria-label]="'Ver fuentes de ' + item.code"><lucide-icon name="chevron-down" [size]="18" /></button></td>
             </tr>
-            @if (expanded() === item.code) { <tr class="detail"><td colspan="4"><strong>Mensajes asociados</strong><ul>@for (message of item.client_messages; track message) { <li>{{ message }}</li> }</ul></td></tr> }
+            @if (expanded() === item.code) { <tr class="detail"><td colspan="5"><strong>Fuentes ({{ item.occurrences }} apariciones)</strong><ul>@for (source of item.sources; track source) { <li><code>{{ source }}</code></li> }</ul></td></tr> }
           }
         </tbody>
       </table>

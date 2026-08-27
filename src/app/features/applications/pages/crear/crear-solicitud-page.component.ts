@@ -49,7 +49,8 @@ export class CrearSolicitudPageComponent {
   activeBranchName = computed(() => {
     const branchId = this.session.activeBranch();
     const branch = this.branches().find((b) => b.id === branchId);
-    return branch ? branch.name : 'Sucursal asignada a su sesión';
+    const sessionBranch = this.session.scopes().find((scope) => scope.branchId === branchId);
+    return branch?.name ?? sessionBranch?.branchName ?? 'Sucursal asignada a su sesión';
   });
 
   crearForm = this.fb.group({

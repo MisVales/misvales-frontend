@@ -81,6 +81,37 @@ describe('VerifierHomeComponent', () => {
     expect(root.querySelector('.pending-panel table')).toBeNull();
     expect(root.querySelector('.activity-panel .activity-list')).toBeNull();
   });
+
+  it('tolera visitas sin media_files y muestra la hora de negocio', async () => {
+    const visitWithoutMedia = {
+      ...visit,
+      scheduled_for: '2026-08-25T21:00:00.000Z',
+      media_files: undefined,
+    };
+    await TestBed.configureTestingModule({
+      imports: [
+        VerifierHomeComponent,
+        LucideAngularModule.pick({ ArrowRight, Bell, CalendarCheck, Check, Circle, CircleCheck, CirclePlay, ClipboardCheck, ClipboardList, FileText, Hourglass, Play, RefreshCw, TriangleAlert, Users }),
+      ],
+      providers: [
+        provideRouter([]),
+        {
+          provide: VerificacionDistribuidorasApiService,
+          useValue: {
+            listarVisitasAsignadas: () => of({ data: [visitWithoutMedia], total: 1, page: 1, perPage: 100 }),
+          },
+        },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(VerifierHomeComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('25/08/2026, 3:00 p.m.');
+    expect(() => fixture.componentInstance.pendingLabel(visitWithoutMedia)).not.toThrow();
+  });
 });
 
 const visit = {
