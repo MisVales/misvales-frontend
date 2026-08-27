@@ -544,27 +544,6 @@ export class PagosPageComponent implements OnDestroy {
     }
 
     return [...groups.values()].map((group) => {
-      const scheduleSource = this.relations()
-        .flatMap((relation) => relation.partidas ?? [])
-        .find((item) => String(item.snapshot['folio'] || 'Sin folio') === group.folio)
-        ?.snapshot['installment_schedule'];
-      if (Array.isArray(scheduleSource)) {
-        for (const scheduled of scheduleSource as Array<Record<string, unknown>>) {
-          const number = Number(scheduled['number'] ?? 0);
-          if (!number || group.installments.some((installment) => installment.number === number)) {
-            continue;
-          }
-          group.installments.push({
-            id: `${group.folio}:${number}`,
-            number,
-            total: group.totalInstallments,
-            clientAmount: Number(scheduled['client_payment'] ?? 0),
-            misvalesAmount: Number(scheduled['misvales_payment'] ?? 0),
-            paid: 0,
-            status: 'PENDING',
-          });
-        }
-      }
       group.installments.sort((a, b) => a.number - b.number);
       group.clientTotal = group.installments.reduce((sum, item) => sum + item.misvalesAmount, 0);
       group.paidTotal = group.installments.reduce((sum, item) => sum + item.paid, 0);
