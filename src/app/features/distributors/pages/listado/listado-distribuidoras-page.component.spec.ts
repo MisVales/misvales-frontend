@@ -8,9 +8,12 @@ import { CategoriasService } from '../../../categories/data-access/categorias.se
 import { OrganizationApiService } from '../../../organization/data-access/organization-api.service';
 import { DistribuidorasStore } from '../../state/distribuidoras.store';
 import { ListadoDistribuidorasPageComponent } from './listado-distribuidoras-page.component';
+import { DistribuidorasApiService } from '../../data-access/api/distribuidoras-api.service';
+import { AlertService } from '../../../../shared/components/alerts/alert.service';
 
 describe('ListadoDistribuidorasPageComponent tablet cards', () => {
   it('renders each coordinator card as a native link to its detail', async () => {
+    const api = { reenviarInvitacion: vi.fn(() => of(undefined)) };
     const store = {
       listado: signal([
         {
@@ -40,6 +43,8 @@ describe('ListadoDistribuidorasPageComponent tablet cards', () => {
         provideRouter([]),
         { provide: DistribuidorasStore, useValue: store },
         { provide: SessionStore, useValue: { roles: () => ['coordinator'] } },
+        { provide: DistribuidorasApiService, useValue: api },
+        { provide: AlertService, useValue: { showAlert: vi.fn() } },
         {
           provide: OrganizationApiService,
           useValue: {
