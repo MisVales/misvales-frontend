@@ -120,19 +120,20 @@
               [disabled]="!verifierId || scheduleLoading()"
             >
               <option value="">Selecciona una hora</option>
-              @for (time of timeSlots; track time) {
+              @for (time of timeSlots(); track time) {
                 <option [value]="time" [disabled]="slotDisabled(time)">
                   {{ time }}{{ slotDisabled(time) ? ' · no disponible' : '' }}
                 </option>
               }
             </select>
             <p id="scheduler-help" class="schedule-help">
-              Para hoy, el primer horario disponible es el siguiente bloque de 15 minutos.
+              Horario global vigente: {{ schedulePolicy().start_time }}–{{ schedulePolicy().max_start_time }}
+              ({{ schedulePolicy().timezone }}). Para hoy, el primer horario disponible es el siguiente bloque.
               Cada visita reserva 15 min antes, 30 min de visita y 30 min para validación y
               traslado. Debe haber 75 min entre inicios.
             </p>
             @if (submitted && !isValidSchedule()) {
-              <p class="field-error">Elige un horario disponible entre 08:00 y 23:45 (11:59 p.m.).</p>
+              <p class="field-error">Elige un horario disponible entre {{ schedulePolicy().start_time }} y {{ schedulePolicy().max_start_time }}.</p>
             }
           </section>
         </div>

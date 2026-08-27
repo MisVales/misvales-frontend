@@ -41,17 +41,26 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   protected readonly scheduleLoading = signal(false);
   protected readonly schedule = signal<AgendaVerificadorDto[]>([]);
   protected readonly visibleMonth = signal(startOfMonth(new Date()));
+  protected readonly schedulePolicy = signal({
+    start_time: '08:00',
+    max_start_time: '23:45',
+    timezone: 'America/Monterrey',
+    slot_minutes: 15,
+  });
   protected readonly calendarDays = computed(() => calendarGrid(this.visibleMonth()));
   protected readonly monthLabel = computed(() =>
     this.visibleMonth().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }),
   );
-  protected readonly timeSlots = quarterHourSlots();
+  protected readonly timeSlots = computed(() => scheduleSlots(this.schedulePolicy()));
 
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
-      await this.facade.cargarSolicitud(id);
-      await this.facade.cargarVerificadoresDisponibles(id);
+      await Promise.all([
+        this.facade.cargarSolicitud(id),
+        this.facade.cargarVerificadoresDisponibles(id),
+        this.loadSchedulePolicy(),
+      ]);
     }
   }
 
@@ -96,9 +105,9 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
     if (!value) return false;
     return (
       value >= nextAssignableSlot(this.currentTime()) &&
-      value.getHours() >= 8 &&
-      value.getHours() <= 23 &&
-      value.getMinutes() % 15 === 0 &&
+      localTimeKey(value) >= this.schedulePolicy().start_time &&
+      localTimeKey(value) <= this.schedulePolicy().max_start_time &&
+      value.getMinutes() % this.schedulePolicy().slot_minutes === 0 &&
       !this.hasConflict(value)
     );
   }
@@ -171,6 +180,14 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
     }
   }
 
+  private async loadSchedulePolicy(): Promise<void> {
+    try {
+      this.schedulePolicy.set(await firstValueFrom(this.api.consultarPoliticaHorario()));
+    } catch {
+      this.alerts.showAlert('No fue posible consultar el horario global de verificaciones.', 'error');
+    }
+  }
+
   private scheduledDateTime(): Date | null {
     return dateTimeFromLocal(this.selectedDate, this.selectedTime);
   }
@@ -230,12 +247,20 @@ function calendarGrid(month: Date): (Date | null)[] {
   ];
 }
 
-function quarterHourSlots(): string[] {
+function localTimeKey(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+function scheduleSlots(policy: { start_time: string; max_start_time: string; slot_minutes: number }): string[] {
   const slots: string[] = [];
-  for (let hour = 8; hour <= 23; hour += 1) {
-    for (const minute of [0, 15, 30, 45]) {
-      slots.push(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
-    }
+  const [startHour, startMinute] = policy.start_time.split(':').map(Number);
+  const [maxHour, maxMinute] = policy.max_start_time.split(':').map(Number);
+  for (
+    let minutes = startHour * 60 + startMinute;
+    minutes <= maxHour * 60 + maxMinute;
+    minutes += policy.slot_minutes
+  ) {
+    slots.push(`${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`);
   }
   return slots;
 }
