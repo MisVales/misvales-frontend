@@ -79,7 +79,16 @@
         ><strong>{{ money(creditLine()?.total_authorized || distributor.lineaInicial) }}</strong>
       </div>
       <div>
-        <span>Saldo utilizado</span><strong>{{ money(creditLine()?.used_balance) }}</strong>
+        <span>Saldo utilizado</span><strong>{{ money(effectiveUsedBalance()) }}</strong>
+        <button
+          type="button"
+          class="mt-2 inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-emerald-800 disabled:opacity-60"
+          [disabled]="downloadingStatement() || !relations().length"
+          (click)="downloadAccountStatement()"
+        >
+          <lucide-icon [name]="downloadingStatement() ? 'loader-2' : 'download'" [class.spin]="downloadingStatement()" [size]="13" aria-hidden="true" />
+          {{ downloadingStatement() ? 'Preparando…' : 'Descargar estado de cuenta' }}
+        </button>
       </div>
       <div class="ledger-strip__accent">
         <span>Disponible</span
@@ -273,7 +282,7 @@
                             >{{ relationStatus(relation.financial_status) }}</span
                           >
                         </td>
-                        <td class="money">{{ money(relation.balance) }}</td>
+                        <td class="money">{{ money(relation.financial_status === 'ROLLED_FORWARD' ? relation.rolled_forward_amount : relation.balance) }}</td>
                       </tr>
                     }
                   </tbody>
@@ -313,7 +322,7 @@
           <div class="rail-item">
             <lucide-icon name="receipt-text" [size]="20" aria-hidden="true" />
             <div>
-              <span>Saldo en relaciones</span><strong>{{ money(relations()[0]?.balance) }}</strong>
+              <span>Saldo exigible vigente</span><strong>{{ money(currentRelationBalance()) }}</strong>
             </div>
           </div>
           <div class="rail-item">
@@ -349,7 +358,7 @@
           <dl>
             <div>
               <dt>Utilizado</dt>
-              <dd>{{ money(creditLine()?.used_balance) }}</dd>
+              <dd>{{ money(effectiveUsedBalance()) }}</dd>
             </div>
             <div>
               <dt>Disponibilidad</dt>

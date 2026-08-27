@@ -87,6 +87,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   readonly availableCategories = signal<CategoryDto[]>([]);
   readonly changingCategory = signal(false);
   readonly resendingInvitation = signal(false);
+  readonly downloadingStatement = signal(false);
 
   readonly canResendActivation = computed(() => {
     const distributor = this.store.detalle();
@@ -383,8 +384,17 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
     if (!line || Number(line.total_authorized) <= 0) return 0;
     return Math.min(
       100,
-      Math.round((Number(line.used_balance) / Number(line.total_authorized)) * 100),
+      Math.round((this.effectiveUsedBalance() / Number(line.total_authorized)) * 100),
     );
+  }
+
+  effectiveUsedBalance(): number {
+    return Math.max(Number(this.creditLine()?.used_balance ?? 0), this.currentRelationBalance());
+  }
+
+  currentRelationBalance(): number {
+    const current = this.relations().find((relation) => relation.financial_status !== 'ROLLED_FORWARD');
+    return Number(current?.balance ?? 0);
   }
 
   availableBalance(fallbackAuthorized: string | number | null = 0): number {
@@ -392,10 +402,10 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
     if (!line) return Math.max(0, Number(fallbackAuthorized ?? 0));
 
     const authorized = Number(line.total_authorized ?? 0);
-    const used = Number(line.used_balance ?? 0);
+    const used = this.effectiveUsedBalance();
     const reported = Number(line.available_balance ?? 0);
 
-    if (reported > 0 || authorized <= used || line.restriction) return Math.max(0, reported);
+    if (line.restriction && reported <= authorized - used) return Math.max(0, reported);
     return Math.max(0, authorized - used);
   }
 
@@ -406,8 +416,28 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
         PARTIALLY_PAID: 'Con abonos',
         PENDING: 'Pendiente',
         OVERDUE: 'Vencida',
+        ROLLED_FORWARD: 'Adeudo trasladado',
       }[status] ?? status.replaceAll('_', ' ')
     );
+  }
+
+  async downloadAccountStatement(): Promise<void> {
+    const distributor = this.store.detalle();
+    if (!distributor || this.downloadingStatement()) return;
+    this.downloadingStatement.set(true);
+    try {
+      const blob = await firstValueFrom(this.relationsApi.downloadAccountStatement(distributor.id));
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `estado-de-cuenta-${distributor.numero}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error: unknown) {
+      this.alerts.showAlert(apiErrorMessage(error, 'No fue posible descargar el estado de cuenta.'), 'error');
+    } finally {
+      this.downloadingStatement.set(false);
+    }
   }
 
   increaseStatus(status: string): string {
