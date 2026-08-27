@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { roleWriteGuard } from '../../core/guards/role-write.guard';
 import { permissionGuard } from '../../core/guards/permission.guard';
+import { managerVpnGuard } from '../../core/guards/manager-vpn.guard';
 
 export const CATEGORIAS_ROUTES: Routes = [
   {
@@ -9,7 +10,7 @@ export const CATEGORIAS_ROUTES: Routes = [
   },
   {
     path: 'nueva',
-    canActivate: [roleWriteGuard],
+    canActivate: [roleWriteGuard, managerVpnGuard],
     loadComponent: () => import('./pages/categoria-detalle/categoria-detalle.component').then(m => m.CategoriaDetalleComponent)
   },
   {

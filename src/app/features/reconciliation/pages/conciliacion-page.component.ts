@@ -361,12 +361,14 @@ import { BankReconciliationActionsComponent } from '../components/bank-reconcili
                       <button
                         class="min-h-11 rounded-lg bg-green-700 px-3 text-xs font-semibold text-white"
                         [disabled]="busy()"
+                        data-manager-action
                         (click)="decide(item, 'AUTHORIZE')"
                       >
                         Autorizar</button
                       ><button
                         class="min-h-11 rounded-lg border border-red-300 px-3 text-xs font-semibold text-red-800 disabled:opacity-50"
                         [disabled]="busy() || !decisionReason().trim()"
+                        data-manager-action
                         (click)="decide(item, 'REJECT')"
                       >
                         Rechazar

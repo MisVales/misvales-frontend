@@ -96,7 +96,7 @@
               <dd class="coordinator-fact">
                 <span>{{ distributor.coordinador?.nombreCompleto || 'Sin asignar' }}</span>
                 @if (canTransfer() && !transferOpen()) {
-                  <button type="button" class="transfer-trigger" (click)="abrirTransferencia()">
+                  <button data-manager-action type="button" class="transfer-trigger" (click)="abrirTransferencia()">
                     <lucide-icon name="arrow-right-left" [size]="16" aria-hidden="true" />
                     Transferir
                   </button>
@@ -182,6 +182,7 @@
                     type="button"
                     class="primary-action"
                     [disabled]="!selectedCoordinatorId() || transferLoading()"
+                    data-manager-action
                     (click)="transferirDistribuidora()"
                   >
                     @if (transferLoading()) {

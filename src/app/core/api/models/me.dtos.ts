@@ -14,4 +14,6 @@ export interface MeRes {
   };
   scopes: Scope[];
   effective_permissions: string[];
+  access_context: { vpn: boolean };
+  capabilities: { manager_actions: boolean };
 }

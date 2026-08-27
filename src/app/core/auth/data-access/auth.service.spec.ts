@@ -2,9 +2,12 @@ import { provideHttpClient, withXsrfConfiguration } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { firstValueFrom } from 'rxjs';
-import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
+import { API_CONFIG } from '@core/api/api.config';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import { AuthService } from './auth.service';
+
+const apiConfig = { baseUrl: 'https://api.safeacces.lat/api/v1' };
+const csrfUrl = 'https://api.safeacces.lat/sanctum/csrf-cookie';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -22,7 +25,7 @@ describe('AuthService', () => {
         ),
         provideHttpClientTesting(),
         AuthService,
-        { provide: API_CONFIG, useValue: defaultApiConfig },
+        { provide: API_CONFIG, useValue: apiConfig },
       ],
     });
     service = TestBed.inject(AuthService);
@@ -38,7 +41,7 @@ describe('AuthService', () => {
 
   it('solicita la cookie CSRF sin exponer secretos', () => {
     service.getCsrfCookie().subscribe();
-    const request = http.expectOne('/sanctum/csrf-cookie');
+    const request = http.expectOne(csrfUrl);
     expect(request.request.method).toBe('GET');
     expect(request.request.withCredentials).toBe(true);
     request.flush({});
@@ -49,10 +52,11 @@ describe('AuthService', () => {
       service.login({ email: 'person@example.test', password: 'test-password' }),
     );
 
-    http.expectNone('/api/v1/auth/login');
+    http.expectNone(`${apiConfig.baseUrl}/auth/login`);
     flushCsrf(http);
-    const request = http.expectOne('/api/v1/auth/login');
+    const request = http.expectOne(`${apiConfig.baseUrl}/auth/login`);
     expect(request.request.headers.get('X-XSRF-TOKEN')).toBe('csrf-test-token');
+    expect(request.request.withCredentials).toBe(true);
     request.flush({ access_token: 'access', expires_in: 3600 });
 
     await result;
@@ -63,7 +67,7 @@ describe('AuthService', () => {
     const payload = { mfa_challenge_token: 'challenge', totp_code: '123456' };
     service.verifyMfa(payload).subscribe();
     flushCsrf(http);
-    const request = http.expectOne('/api/v1/auth/mfa/totp/verify');
+    const request = http.expectOne(`${apiConfig.baseUrl}/auth/mfa/totp/verify`);
     expect(request.request.body).toEqual(payload);
     request.flush({ access_token: 'access', expires_in: 3600 });
   });
@@ -71,7 +75,7 @@ describe('AuthService', () => {
   it('inspecciona una invitación mediante POST sin incluir el token en la URL', () => {
     service.inspectInvitation({ token: 'invitation-token' }).subscribe();
     flushCsrf(http);
-    const request = http.expectOne('/api/v1/auth/invitations/inspect');
+    const request = http.expectOne(`${apiConfig.baseUrl}/auth/invitations/inspect`);
     expect(request.request.method).toBe('POST');
     expect(request.request.body).toEqual({ token: 'invitation-token' });
     request.flush({ exchange_token: 'exchange', user: { name: 'User', email: 'u@example.com' } });
@@ -83,15 +87,15 @@ describe('AuthService', () => {
       .subscribe({ error: () => undefined });
 
     http
-      .expectOne('/sanctum/csrf-cookie')
+      .expectOne(csrfUrl)
       .flush({}, { status: 503, statusText: 'Service Unavailable' });
 
-    http.expectNone('/api/v1/auth/login');
+    http.expectNone(`${apiConfig.baseUrl}/auth/login`);
   });
 });
 
 function flushCsrf(http: HttpTestingController): void {
-  const request = http.expectOne('/sanctum/csrf-cookie');
+  const request = http.expectOne(csrfUrl);
   expect(request.request.withCredentials).toBe(true);
   request.flush({});
 }

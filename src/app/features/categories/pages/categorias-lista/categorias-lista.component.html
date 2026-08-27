@@ -53,7 +53,7 @@
                   <div class="flex flex-col items-start gap-2">
                     <a [routerLink]="[cat.id]" class="text-sm font-medium text-gray-500 transition-colors hover:text-[#386641]">Ver</a>
                     @if (canManageCatalogs() && cat.estadoVersion === 'DRAFT') {
-                      <button type="button" class="text-sm font-medium text-[#386641] transition-colors hover:text-[#6A994E]" (click)="requestPublication(cat.versionId, cat.versionRegistro)">Activar</button>
+                      <button data-manager-action type="button" class="text-sm font-medium text-[#386641] transition-colors hover:text-[#6A994E]" (click)="requestPublication(cat.versionId, cat.versionRegistro)">Activar</button>
                     }
                   </div>
                 </td>

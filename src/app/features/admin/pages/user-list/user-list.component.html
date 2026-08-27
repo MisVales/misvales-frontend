@@ -7,6 +7,7 @@
     @if (canInviteUsers()) {
       <button
         class="bg-[#386641] hover:bg-[#6A994E] text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+        data-manager-action
         (click)="showInviteModal.set(true)"
       >
         <lucide-icon name="plus" class="h-4 w-4"></lucide-icon>
@@ -255,6 +256,7 @@
         <button
           class="bg-[#386641] hover:bg-[#6A994E] disabled:bg-[#386641]/70 disabled:cursor-not-allowed text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
           [disabled]="!inviteIsValid() || isActionLoading() === 'invite'"
+          data-manager-action
           (click)="inviteUser()"
         >
           @if (isActionLoading() === 'invite') {
@@ -325,6 +327,7 @@
           Cancelar
         </button>
         <button
+          data-manager-action
           (click)="confirmBlock()"
           class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm"
         >

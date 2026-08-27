@@ -41,7 +41,7 @@ describe('ListadoSolicitudesPageComponent', () => {
     expect(applicationsStore.listar).toHaveBeenCalledWith(1, 5);
     expect(fixture.nativeElement.querySelector('.directory-panel')?.textContent).toContain('María Pérez');
     expect(fixture.nativeElement.querySelector('.directory-panel')?.textContent).toContain('Plata · 6%');
-    expect(fixture.nativeElement.querySelector('.primary-action')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.primary-action')?.textContent).toContain('Nueva solicitud');
     expect(fixture.nativeElement.querySelector('.applications-panel')?.textContent).toContain('Solicitudes');
     expect(
       fixture.nativeElement.querySelector('.hub-layout')?.firstElementChild?.classList.contains('directory-panel'),

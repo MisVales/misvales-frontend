@@ -15,6 +15,7 @@ import { SessionExpiredService } from '../session/session-expired.service';
 import { SessionRefreshService } from '../session/session-refresh.service';
 import { SessionStore } from '../session/session.store';
 import { OfflineSyncService } from '@core/api/offline/offline-sync.service';
+import { runtimeDebugEnabled } from '@core/auth/data-access/auth-configuration.service';
 
 const PRODUCTION_SERVER_ERROR_MESSAGE = 'Ocurrió un error interno. Intenta nuevamente más tarde.';
 const SAFE_REQUEST_ID = /^[A-Za-z0-9._:-]{8,128}$/;
@@ -85,8 +86,17 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
     request: HttpRequest<unknown>,
     allowRefresh: boolean,
   ): Observable<HttpEvent<unknown>> {
-    if (isDevMode()) {
-      console.error('HTTP request failed', error);
+    if (isDevMode() || runtimeDebugEnabled()) {
+      const normalized = normalizeApiError(error);
+      console.error('[MisVales HTTP]', {
+        method: request.method,
+        url: request.url.split('?')[0],
+        status: error.status,
+        code: normalized.code,
+        message: normalized.message,
+        requestId: normalized.requestId,
+        details: normalized.details,
+      });
     }
 
     if (error.status === 403 && isRecord(error.error) && error.error['mfa_required'] === true) {
@@ -144,6 +154,15 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
     }
 
     if (error.status === 403) {
+      if (apiErrorCode(error, '') === 'VPN_REQUIRED') {
+        sessionStore.setManagerAccess(false, false);
+        alertService.showAlert(
+          'Conéctate a la VPN para realizar acciones gerenciales. Tu sesión sigue activa.',
+          'error',
+          7000,
+        );
+        return throwError(() => sanitizeServerError(error, isDevMode()));
+      }
       alertService.showAlert(
         'No tienes autorización para realizar esta acción. Tu sesión sigue activa.',
         'error',

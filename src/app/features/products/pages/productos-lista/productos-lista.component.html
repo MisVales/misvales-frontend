@@ -40,7 +40,7 @@
             <div class="text-right"><p class="text-xs text-[var(--mv-text-muted)]">{{ estadoEdicion(prod.estadoVersion) }}</p>@if (isGeneralManager()) { <a [routerLink]="[prod.id]" class="mt-1 inline-flex min-h-9 items-center text-sm font-semibold text-[var(--mv-primary-800)] underline underline-offset-4">Ver producto</a> }</div>
           </div>
           @if (canManageCatalogs() && prod.estadoVersion === 'DRAFT') {
-            <button type="button" class="mt-4 min-h-10 rounded-lg border border-[var(--mv-primary-600)] px-3 text-sm font-semibold text-[var(--mv-primary-800)]" (click)="requestPublication(prod.versionId, prod.versionRegistro)">Publicar producto</button>
+            <button data-manager-action type="button" class="mt-4 min-h-10 rounded-lg border border-[var(--mv-primary-600)] px-3 text-sm font-semibold text-[var(--mv-primary-800)]" (click)="requestPublication(prod.versionId, prod.versionRegistro)">Publicar producto</button>
           }
         </article>
       }
