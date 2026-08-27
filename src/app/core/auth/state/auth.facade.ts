@@ -4,7 +4,15 @@ import { signalStore, withMethods, withState, patchState } from '@ngrx/signals';
 import { firstValueFrom } from 'rxjs';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { AuthService } from '../data-access/auth.service';
-import { LoginReq, MfaMethod, MfaReq, RecoverReq, ResetPwdReq, SetupInvitationReq } from '../data-access/auth.dtos';
+import {
+  LoginReq,
+  LoginRes,
+  MfaMethod,
+  MfaReq,
+  RecoverReq,
+  ResetPwdReq,
+  SetupInvitationReq,
+} from '../data-access/auth.dtos';
 import { SessionStore } from '@core/session/session.store';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import { MeService } from '@core/auth/data-access/me.service';
@@ -136,6 +144,8 @@ export const AuthFacade = signalStore(
 
     return {
       async login(credentials: LoginReq): Promise<void> {
+        tokenStore.clear();
+        sessionStore.clearSession();
         patchState(store, { isLoading: true, error: null, validationErrors: {} });
         try {
           const response = await firstValueFrom(authService.login(credentials));
@@ -145,9 +155,7 @@ export const AuthFacade = signalStore(
               mfaChallengeToken: response.mfa_challenge_token,
               availableMfa: response.available_mfa ?? [],
               mfaStep: 'totp',
-              mfaExpiresAt: response.expires_in
-                ? Date.now() + response.expires_in * 1000
-                : null,
+              mfaExpiresAt: response.expires_in ? Date.now() + response.expires_in * 1000 : null,
             });
             await router.navigate(['/auth/totp']);
             return;
@@ -201,12 +209,13 @@ export const AuthFacade = signalStore(
         }
 
         patchState(store, { isLoading: true, error: null });
+        let response: LoginRes;
         try {
           const optionsJSON = await firstValueFrom(
             authService.getPasskeyOptions({ mfa_challenge_token: token }),
           );
           const credential = await startAuthentication({ optionsJSON });
-          const response = await firstValueFrom(
+          response = await firstValueFrom(
             authService.verifyPasskey({
               mfa_challenge_token: token,
               id: credential.id,
@@ -215,9 +224,45 @@ export const AuthFacade = signalStore(
               signature: credential.response.signature,
             }),
           );
-          if (response.access_token) await establishSession();
         } catch (error: unknown) {
           fail(error, 'La verificación con Passkey fue cancelada o no está disponible.');
+          return;
+        }
+
+        if (!response.access_token) {
+          patchState(store, {
+            isLoading: false,
+            error: 'El servidor confirmó la Passkey, pero no entregó una sesión de acceso.',
+          });
+          return;
+        }
+
+        tokenStore.set(response.access_token, response.expires_in ?? 300);
+
+        try {
+          await establishSession();
+        } catch {
+          if (!response.user) {
+            patchState(store, {
+              isLoading: false,
+              error: 'La Passkey fue verificada, pero no fue posible cargar la sesión.',
+            });
+            return;
+          }
+
+          sessionStore.setSession({ ...response.user, id: String(response.user.id) }, [], [], null);
+          patchState(store, {
+            isLoading: false,
+            error: null,
+            mfaChallengeToken: null,
+            availableMfa: [],
+            mfaExpiresAt: null,
+          });
+          alerts.showAlert(
+            'Inicio de sesión completado. Algunos permisos se actualizarán al recargar.',
+            'success',
+          );
+          await router.navigate(['/inicio']);
         }
       },
 
@@ -310,7 +355,9 @@ export const AuthFacade = signalStore(
           patchState(store, {
             isLoading: false,
             activationPhase: response.development_mfa_bypass ? 3 : 2,
-            activationRecoveryCodes: response.development_mfa_bypass ? null : response.recovery_codes,
+            activationRecoveryCodes: response.development_mfa_bypass
+              ? null
+              : response.recovery_codes,
           });
         } catch (error: unknown) {
           fail(error, 'Error al configurar la cuenta.');
