@@ -1,14 +1,16 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   ElementRef,
   EventEmitter,
   Input,
   OnDestroy,
   Output,
-  ViewChild,
-  afterNextRender,
+  effect,
   inject,
-  signal
+  signal,
+  untracked,
+  viewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnstileService } from '@core/auth/turnstile/turnstile.service';
@@ -16,7 +18,6 @@ import { TurnstileSize, TurnstileTheme } from '@core/auth/turnstile/turnstile.ty
 
 @Component({
   selector: 'app-turnstile',
-  standalone: true,
   imports: [CommonModule],
   template: `
     @if (isEnabled) {
@@ -32,12 +33,13 @@ import { TurnstileSize, TurnstileTheme } from '@core/auth/turnstile/turnstile.ty
     .turnstile-outer {
       contain: layout;
     }
-  `]
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TurnstileComponent implements OnDestroy {
   private readonly turnstileService = inject(TurnstileService);
 
-  @ViewChild('turnstileContainer') containerRef?: ElementRef<HTMLDivElement>;
+  readonly containerRef = viewChild<ElementRef<HTMLDivElement>>('turnstileContainer');
 
   @Input() theme: TurnstileTheme = 'auto';
   @Input() size: TurnstileSize = 'normal';
@@ -59,21 +61,24 @@ export class TurnstileComponent implements OnDestroy {
   }
 
   constructor() {
-    afterNextRender(() => {
-      if (this.isEnabled && !this.widgetId && !this.isDestroyed) {
-        this.renderWidget();
+    effect(() => {
+      const container = this.containerRef()?.nativeElement;
+      const enabled = this.isEnabled;
+      if (enabled && container && !this.widgetId && !this.isDestroyed) {
+        untracked(() => {
+          void this.renderWidget(container);
+        });
       }
     });
   }
 
-  async renderWidget(): Promise<void> {
+  async renderWidget(containerEl?: HTMLElement): Promise<void> {
     if (!this.isEnabled || this.isDestroyed) return;
 
     try {
-      const container = this.containerRef?.nativeElement;
+      const container = containerEl ?? this.containerRef()?.nativeElement;
       if (!container) return;
 
-      // Clear any leftover content
       container.innerHTML = '';
 
       this.widgetId = await this.turnstileService.render(container, {
@@ -105,7 +110,7 @@ export class TurnstileComponent implements OnDestroy {
             this.tokenChange.emit(null);
             this.timeout.emit();
           }
-        }
+        },
       });
 
       this.isLoaded.set(true);
