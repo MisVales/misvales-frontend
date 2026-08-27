@@ -418,22 +418,6 @@ export class UserListComponent implements OnInit, OnDestroy {
     }
   }
 
-  async resendInvitation(user: UserRes): Promise<void> {
-    if (this.isActionLoading()) return;
-
-    this.isActionLoading.set(`resend-${user.id}`);
-    this.pageError.set('');
-    try {
-      const response = await firstValueFrom(this.userService.sendInvitation(user.id));
-      this.alerts.success(response.message || 'El correo de invitación se reenvió correctamente.');
-      await this.loadUsers();
-    } catch (error: unknown) {
-      this.pageError.set(apiErrorMessage(error, 'No fue posible reenviar el correo de invitación.'));
-    } finally {
-      this.isActionLoading.set(null);
-    }
-  }
-
   stateLabel(state: UserState): string {
     return (
       {

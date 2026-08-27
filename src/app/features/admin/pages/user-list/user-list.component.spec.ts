@@ -12,7 +12,6 @@ import {
   ListFilter,
   Loader2,
   Lock,
-  Mail,
   LucideAngularModule,
   Plus,
   Search,
@@ -34,7 +33,6 @@ describe('UserListComponent', () => {
     createAccount: vi.fn(),
     blockUser: vi.fn(),
     unblockUser: vi.fn(),
-    sendInvitation: vi.fn(),
   };
   const alerts = { success: vi.fn() };
 
@@ -52,7 +50,6 @@ describe('UserListComponent', () => {
           ListFilter,
           Loader2,
           Lock,
-          Mail,
           Plus,
           Search,
           Users,
@@ -113,17 +110,4 @@ describe('UserListComponent', () => {
     expect(alerts.success).toHaveBeenCalledWith('La invitación se envió correctamente.');
   });
 
-  it('permite reenviar el correo a una solicitud pendiente de activación', async () => {
-    userService.sendInvitation.mockReturnValue(of({ message: 'Invitación reenviada.' }));
-
-    await component.resendInvitation({
-      id: 'user-1',
-      name: 'Usuario',
-      email: 'usuario@ejemplo.com',
-      state: 'PENDING_ACTIVATION',
-    });
-
-    expect(userService.sendInvitation).toHaveBeenCalledWith('user-1');
-    expect(alerts.success).toHaveBeenCalledWith('Invitación reenviada.');
-  });
 });
