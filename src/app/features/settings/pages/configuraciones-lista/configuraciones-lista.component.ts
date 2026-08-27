@@ -10,6 +10,7 @@ import {
   esConfiguracionDePago,
   esConfiguracionEditable,
   esConfiguracionVisible,
+  esHorarioVerificacionDomicilio,
 } from '../../data-access/configuraciones-visibilidad';
 import { ConfiguracionesStore } from '../../estado/configuraciones.store';
 
@@ -39,9 +40,15 @@ export class ConfiguracionesListaComponent implements OnInit {
   protected readonly configuracionesDePago = computed(() =>
     this.definicionesFiltradas().filter((item) => esConfiguracionDePago(item.clave)),
   );
+  protected readonly horariosVerificacion = computed(() =>
+    this.definicionesFiltradas().filter((item) => esHorarioVerificacionDomicilio(item.clave)),
+  );
   protected readonly configuracionesOperativas = computed(() =>
     this.definicionesFiltradas().filter(
-      (item) => !esCondicionFinancieraVale(item.clave) && !esConfiguracionDePago(item.clave),
+      (item) =>
+        !esCondicionFinancieraVale(item.clave) &&
+        !esConfiguracionDePago(item.clave) &&
+        !esHorarioVerificacionDomicilio(item.clave),
     ),
   );
 
