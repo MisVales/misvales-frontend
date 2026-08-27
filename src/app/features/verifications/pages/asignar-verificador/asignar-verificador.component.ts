@@ -97,7 +97,7 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
     return (
       value >= nextAssignableSlot(this.currentTime()) &&
       value.getHours() >= 8 &&
-      value.getHours() <= 19 &&
+      value.getHours() <= 23 &&
       value.getMinutes() % 15 === 0 &&
       !this.hasConflict(value)
     );
@@ -232,9 +232,8 @@ function calendarGrid(month: Date): (Date | null)[] {
 
 function quarterHourSlots(): string[] {
   const slots: string[] = [];
-  for (let hour = 8; hour <= 19; hour += 1) {
+  for (let hour = 8; hour <= 23; hour += 1) {
     for (const minute of [0, 15, 30, 45]) {
-      if (hour === 19 && minute > 0) continue;
       slots.push(`${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`);
     }
   }
