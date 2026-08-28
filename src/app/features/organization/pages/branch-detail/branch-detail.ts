@@ -39,9 +39,8 @@ import { MisvalesDateTimePipe } from '@shared/pipes/misvales-date-time.pipe';
             Editar
           </button>
           
-          <button data-manager-action *ngIf="canManageState()" (click)="statusConfirmationOpen.set(true)"
-                  [disabled]="branch()!.is_headquarters || facade.isLoading()"
-                  [title]="branch()!.is_headquarters ? 'No se puede desactivar la Sede Principal' : ''"
+          <button data-manager-action *ngIf="canManageState() && !branch()!.is_headquarters" (click)="statusConfirmationOpen.set(true)"
+                  [disabled]="facade.isLoading()"
                   class="px-4 py-2 rounded-xl shadow-sm text-sm font-medium transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border"
                   [ngClass]="branch()!.status === 'ACTIVE' ? 'bg-white border-red-200 text-red-600 hover:bg-red-50' : 'bg-[#386641] border-[#386641] text-white hover:bg-[#6A994E]'">
             

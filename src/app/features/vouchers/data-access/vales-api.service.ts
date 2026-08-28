@@ -163,12 +163,14 @@ export class ValesApiService {
   listar(
     page = 1,
     status = '',
+    clientId = '',
   ): Observable<{
     data: VoucherView[];
     meta: { current_page: number; last_page: number; total: number };
   }> {
     let params = new HttpParams().set('page', page).set('per_page', 15);
     if (status) params = params.set('status', status);
+    if (clientId) params = params.set('client_id', clientId);
     return this.http.get<{
       data: VoucherView[];
       meta: { current_page: number; last_page: number; total: number };

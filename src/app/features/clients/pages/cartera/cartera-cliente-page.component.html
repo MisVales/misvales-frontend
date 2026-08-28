@@ -67,16 +67,34 @@
         }
       </div>
 
-      <!-- SALDO CARD -->
-      <div class="bg-[#F4F5F0] border border-[#E5E7E1] rounded-xl p-5 text-center mb-6 shadow-sm">
-        <p class="text-[10px] font-bold text-[#386641] uppercase tracking-wider mb-1">
-          Saldo Actual
-        </p>
-        <p class="text-2xl font-bold text-[#1A4D2E]">
-          ${{ store.detalle()!.resumenCartera.saldoActual }}
-        </p>
+      <nav class="mb-6 flex gap-1 overflow-x-auto rounded-xl bg-gray-100 p-1" aria-label="Detalle de cartera del cliente">
+        @for (tab of tabs; track tab.id) {
+          <button type="button" class="min-h-11 shrink-0 rounded-lg px-4 text-sm font-bold text-gray-600" [class.bg-white]="activeTab() === tab.id" [class.text-[#386641]]="activeTab() === tab.id" [class.shadow-sm]="activeTab() === tab.id" [attr.aria-current]="activeTab() === tab.id ? 'page' : null" (click)="activeTab.set(tab.id)">{{ tab.label }}</button>
+        }
+      </nav>
+
+      @if (activeTab() === 'summary') {
+      <!-- RESUMEN DE CARTERA -->
+      <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        <div class="bg-[#F4F5F0] border border-[#E5E7E1] rounded-xl p-5 shadow-sm">
+          <p class="text-[10px] font-bold text-[#386641] uppercase tracking-wider mb-1">Saldo por cobrar al cliente</p>
+          <p class="text-2xl font-bold text-[#1A4D2E]">{{ store.detalle()!.resumenCartera.saldoActual | currency: 'MXN' }}</p>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Movimientos informativos</p>
+          <p class="text-2xl font-bold text-gray-900">{{ store.detalle()!.resumenCartera.cantidadMovimientos }}</p>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1">Último pago del cliente</p>
+          <p class="text-sm font-bold text-gray-900">{{ store.detalle()!.resumenCartera.ultimoPagoEn ? (store.detalle()!.resumenCartera.ultimoPagoEn | date: 'mediumDate') : 'Sin pago registrado' }}</p>
+        </div>
+        <div class="rounded-xl border p-5 shadow-sm" [class.border-red-200]="store.detalle()!.resumenCartera.tieneRegistrosVencidos" [class.bg-red-50]="store.detalle()!.resumenCartera.tieneRegistrosVencidos" [class.border-emerald-200]="!store.detalle()!.resumenCartera.tieneRegistrosVencidos" [class.bg-emerald-50]="!store.detalle()!.resumenCartera.tieneRegistrosVencidos">
+          <p class="text-[10px] font-bold uppercase tracking-wider mb-1">Seguimiento informativo</p>
+          <p class="text-sm font-bold">{{ store.detalle()!.resumenCartera.tieneRegistrosVencidos ? 'Tiene registros vencidos' : 'Sin registros vencidos' }}</p>
+        </div>
       </div>
 
+      @if (canManagePortfolio()) {
       <!-- ACCIONES -->
       <div class="grid grid-cols-2 gap-3 mb-3">
         <button
@@ -122,7 +140,41 @@
         </svg>
         <span class="text-xs font-bold">Agregar Nota</span>
       </button>
+      }
+      }
 
+      @if (activeTab() === 'vouchers') {
+        <section aria-labelledby="client-vouchers-title">
+          <h3 id="client-vouchers-title" class="text-lg font-bold text-gray-900">Vales del cliente</h3>
+          <p class="mt-1 text-sm text-gray-500">Colocación histórica visible dentro del alcance autorizado.</p>
+          <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            @for (voucher of vouchers(); track voucher.id) {
+              <article class="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+                <div class="flex items-start justify-between gap-3"><div><strong class="font-mono text-gray-950">{{ voucher.folio }}</strong><p class="text-sm text-gray-600">{{ voucher.product?.name || 'Producto histórico' }}</p></div><span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-bold text-gray-700">{{ voucher.status }}</span></div>
+                <dl class="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-3 text-sm"><div><dt class="text-gray-500">Capital entregado</dt><dd class="font-bold">{{ voucher.capital | currency: 'MXN' }}</dd></div><div><dt class="text-gray-500">Total a pagar por el cliente</dt><dd class="font-bold">{{ voucher.client_total | currency: 'MXN' }}</dd></div><div><dt class="text-gray-500">Pago quincenal del cliente</dt><dd class="font-semibold">{{ voucher.client_payment_per_fortnight | currency: 'MXN' }}</dd></div><div><dt class="text-gray-500">Ganancia de la distribuidora</dt><dd class="font-semibold text-emerald-800">{{ voucher.distributor_profit_total | currency: 'MXN' }}</dd></div></dl>
+              </article>
+            } @empty {
+              <p class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 sm:col-span-2">Este cliente no tiene vales visibles.</p>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeTab() === 'payments') {
+        <section aria-labelledby="client-payments-title">
+          <h3 id="client-payments-title" class="text-lg font-bold text-gray-900">Pagos recibidos del cliente</h3>
+          <p class="mt-1 text-sm text-gray-500">Seguimiento informativo cliente → distribuidora; no representa pagos a MisVales.</p>
+          <div class="mt-4 space-y-3">
+            @for (payment of clientPayments(); track payment.id) {
+              <article class="flex items-center justify-between gap-4 rounded-xl border border-gray-200 bg-white p-4"><div><strong class="text-gray-950">{{ getNombreTipo(payment.tipo) }}</strong><p class="text-xs text-gray-500">{{ payment.fecha | date: 'medium' }} · {{ payment.concepto }}</p></div><strong class="text-emerald-800">{{ payment.importe | currency: 'MXN' }}</strong></article>
+            } @empty {
+              <p class="rounded-xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">No hay pagos informativos registrados para este cliente.</p>
+            }
+          </div>
+        </section>
+      }
+
+      @if (activeTab() === 'movements') {
       <!-- HISTORIAL TIMELINE -->
       <h3 class="text-lg font-bold text-gray-900 mb-6">Historial de Movimientos</h3>
 
@@ -231,12 +283,13 @@
           </div>
         }
       </div>
+      }
     </div>
   }
 </div>
 
 <!-- MODAL DE NUEVO MOVIMIENTO -->
-@if (mostrarModal()) {
+@if (mostrarModal() && canManagePortfolio()) {
   <div
     class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 font-sans"
   >

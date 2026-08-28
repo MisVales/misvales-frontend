@@ -19,6 +19,13 @@ export interface OperationDashboardSummary {
   clarifications: { pending: number; authorized_refunds: number };
 }
 
+export interface DistributorDashboardSummary {
+  period_start: string;
+  period_end: string;
+  portfolio: { total_to_collect: string; clients_with_balance: number; overdue_entries: number };
+  period: { distributor_profit: string; paid_to_misvales: string; capital_recovered: string };
+}
+
 @Injectable({ providedIn: 'root' })
 export class DashboardOperationApiService {
   private readonly http = inject(HttpClient);
@@ -27,6 +34,12 @@ export class DashboardOperationApiService {
   summary(): Observable<OperationDashboardSummary> {
     return this.http
       .get<{ data: OperationDashboardSummary }>(`${this.config.baseUrl}/dashboard/operations`)
+      .pipe(map((response) => response.data));
+  }
+
+  distributorSummary(): Observable<DistributorDashboardSummary> {
+    return this.http
+      .get<{ data: DistributorDashboardSummary }>(`${this.config.baseUrl}/dashboard/distributor-summary`)
       .pipe(map((response) => response.data));
   }
 }

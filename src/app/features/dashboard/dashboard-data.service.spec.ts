@@ -66,4 +66,26 @@ describe('DashboardDataService para Cajera', () => {
 
     expect(loaded).toBe(true);
   });
+
+  it('presenta cartera y resumen del periodo en el inicio móvil de distribuidora', () => {
+    let result: import('./dashboard.models').DashboardData | undefined;
+    service.load('distributor').subscribe((value) => (result = value));
+
+    http.expectOne((request) => request.url.endsWith('/me/credit-line')).flush({ data: {
+      id: 'line-1', distributor: { id: 'd1', distributor_number: 'D-1', full_name: 'Ana' },
+      total_authorized: '20000.0000', used_balance: '5000.0000', available_balance: '15000.0000',
+      current_debt: '0.0000', restriction: null, lock_version: 1,
+    } });
+    http.expectOne((request) => request.url.endsWith('/vouchers')).flush({ data: [], meta: { current_page: 1, last_page: 1, total: 0 } });
+    http.expectOne((request) => request.url.endsWith('/relations')).flush({ data: { data: [], current_page: 1, last_page: 1, total: 0 } });
+    http.expectOne((request) => request.url.endsWith('/points/balance')).flush({ data: { balance: 25, reserved: 0, available_points: 25, money_equivalent: '25.0000', total_money_equivalent: '25.0000' } });
+    http.expectOne((request) => request.url.endsWith('/dashboard/distributor-summary')).flush({ data: {
+      period_start: '2026-08-01', period_end: '2026-08-31',
+      portfolio: { total_to_collect: '2500.0000', clients_with_balance: 2, overdue_entries: 1 },
+      period: { distributor_profit: '500.0000', paid_to_misvales: '1200.0000', capital_recovered: '900.0000' },
+    } });
+
+    expect(result?.sections.find((section) => section.id === 'client-portfolio')?.summary?.[0].label).toBe('Total por cobrar a clientes');
+    expect(result?.sections.find((section) => section.id === 'period-summary')?.summary?.map((item) => item.label)).toContain('Capital recuperado');
+  });
 });

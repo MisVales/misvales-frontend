@@ -79,7 +79,7 @@
         ><strong>{{ money(creditLine()?.total_authorized || distributor.lineaInicial) }}</strong>
       </div>
       <div>
-        <span>Saldo utilizado</span><strong>{{ money(effectiveUsedBalance()) }}</strong>
+        <span>Capital utilizado</span><strong>{{ money(effectiveUsedBalance()) }}</strong>
         <button
           type="button"
           class="mt-2 inline-flex items-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-1 text-[11px] font-bold text-emerald-800 disabled:opacity-60"
@@ -91,11 +91,11 @@
         </button>
       </div>
       <div class="ledger-strip__accent">
-        <span>Disponible</span
+        <span>Línea disponible</span
         ><strong>{{ money(availableBalance(distributor.lineaInicial)) }}</strong>
       </div>
       <div>
-        <span>Adeudo actual</span><strong>{{ money(currentDebt()) }}</strong>
+        <span>Saldo pendiente con MisVales</span><strong>{{ money(currentDebt()) }}</strong>
       </div>
       <div>
         <span>Relaciones</span><strong>{{ relations().length }}</strong>
@@ -267,7 +267,7 @@
                       <th>Referencia</th>
                       <th>Vencimiento</th>
                       <th>Estado</th>
-                      <th>Saldo</th>
+                      <th>Saldo pendiente de la relación</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -325,7 +325,7 @@
           <div class="rail-item">
             <lucide-icon name="receipt-text" [size]="20" aria-hidden="true" />
             <div>
-              <span>Saldo exigible vigente</span><strong>{{ money(currentDebt()) }}</strong>
+              <span>Saldo pendiente exigible a MisVales</span><strong>{{ money(currentDebt()) }}</strong>
             </div>
           </div>
           <div class="rail-item">

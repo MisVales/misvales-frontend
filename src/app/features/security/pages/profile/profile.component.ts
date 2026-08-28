@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { SessionStore } from '../../../../core/session/session.store';
 import { LucideAngularModule } from 'lucide-angular';
 import { DelinquencyStatus, RiesgoApiService } from '../../../delinquency/riesgo-api.service';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, RouterLink],
   templateUrl: './profile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -18,6 +19,9 @@ export class ProfileComponent {
   readonly accountStatusLoading = signal(false);
 
   readonly isDistributor = this.sessionStore.roles().includes('distributor');
+  readonly canViewPayments = this.hasAnyPermission(['relations.view_own']);
+  readonly canViewPoints = this.hasAnyPermission(['points.view_own', 'points.redeem_own']);
+  readonly canViewTransfers = this.hasAnyPermission(['client_transfers.view', 'client_transfers.create_own']);
 
   constructor() {
     if (!this.isDistributor) return;
@@ -30,5 +34,9 @@ export class ProfileComponent {
       },
       error: () => this.accountStatusLoading.set(false),
     });
+  }
+
+  private hasAnyPermission(permissions: string[]): boolean {
+    return permissions.some((permission) => this.sessionStore.permissions().includes(permission));
   }
 }

@@ -95,7 +95,7 @@
   <!-- Global Metrics Grid -->
   <div class="metrics-grid">
     <div class="metric-card">
-      <span class="metric-label">Total transferido</span>
+      <span class="metric-label">Pagos bancarios recibidos</span>
       <span class="metric-value">{{
         metrics().totalTransferred | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
       }}</span>
@@ -122,7 +122,7 @@
     </div>
 
     <div class="metric-card">
-      <span class="metric-label">Aplicado a Cargos</span>
+      <span class="metric-label">Aplicado a cargos financieros</span>
       <span class="metric-value text-amber-600">{{
         metrics().totalCharges | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
       }}</span>
@@ -130,7 +130,7 @@
     </div>
 
     <div class="metric-card">
-      <span class="metric-label">Aplicado a Capital</span>
+      <span class="metric-label">Capital aplicado</span>
       <span class="metric-value text-emerald-600">{{
         metrics().totalCapital | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
       }}</span>
@@ -138,7 +138,7 @@
     </div>
 
     <div class="metric-card accent-recovery">
-      <span class="metric-label">Línea Total Recuperada</span>
+      <span class="metric-label">Capital recuperado en línea</span>
       <span class="metric-value">{{
         metrics().totalLineRecovered | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
       }}</span>
@@ -170,6 +170,11 @@
     <aside class="relations-panel">
       <div class="panel-header">
         <h2 class="panel-title">Relaciones</h2>
+      </div>
+
+      <div class="mx-3 mt-3 grid grid-cols-2 rounded-xl bg-slate-100 p-1" aria-label="Vista de relaciones">
+        <button type="button" class="min-h-10 rounded-lg px-3 text-sm font-bold" [class.bg-white]="relationListMode() === 'pending'" [class.text-emerald-800]="relationListMode() === 'pending'" [class.shadow-sm]="relationListMode() === 'pending'" (click)="relationListMode.set('pending'); setHistoryPage(1)">Pendientes</button>
+        <button type="button" class="min-h-10 rounded-lg px-3 text-sm font-bold" [class.bg-white]="relationListMode() === 'history'" [class.text-emerald-800]="relationListMode() === 'history'" [class.shadow-sm]="relationListMode() === 'history'" (click)="relationListMode.set('history'); setHistoryPage(1)">Historial</button>
       </div>
 
       <app-history-filter-bar label="Filtros del historial de pagos">
@@ -230,7 +235,7 @@
 
             <div class="relation-card-footer">
               <span class="text-gray-500"
-                >{{ rel.financial_status === 'ROLLED_FORWARD' ? 'Trasladado:' : 'Saldo:' }}
+                >{{ rel.financial_status === 'ROLLED_FORWARD' ? 'Saldo trasladado:' : 'Saldo pendiente:' }}
                 <strong>{{
                   (rel.financial_status === 'ROLLED_FORWARD'
                     ? rel.rolled_forward_amount || 0
@@ -686,7 +691,7 @@
             @if (selectedPayment(); as payment) {
               <div class="allocation-summary">
                 <div>
-                  <span>Total transferido</span
+                  <span>Pago bancario recibido</span
                   ><strong>{{ paymentTransferred(payment) | currency: 'MXN' }}</strong>
                 </div>
                 <div>
@@ -800,7 +805,7 @@
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                   <p class="text-xs font-bold uppercase tracking-wide text-emerald-800">
-                    Total a pagar
+                    Saldo pendiente de la relación
                   </p>
                   <p class="mt-1 text-3xl font-black text-emerald-950">
                     {{ relation.balance | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
@@ -1007,7 +1012,7 @@
               </p>
             </div>
             <span class="text-xs font-semibold text-gray-500">
-              Total pagado en relación:
+              Pago recibido por MisVales en la relación:
               <strong>{{
                 relation.reconciled_total | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
               }}</strong>
@@ -1056,7 +1061,7 @@
                       <div
                         class="waterfall-segment seg-commission"
                         [style.width.%]="p.commission"
-                        title="Comisión MisVales: {{
+                        title="Comisión del préstamo: {{
                           payment.commission_applied | currency: 'MXN'
                         }}"
                       ></div>
@@ -1079,7 +1084,7 @@
                       <span class="legend-dot" style="background: #8b5cf6"></span> Seguro
                     </div>
                     <div class="legend-item">
-                      <span class="legend-dot" style="background: #3b82f6"></span> Comisión MisVales
+                      <span class="legend-dot" style="background: #3b82f6"></span> Comisión del préstamo
                     </div>
                     <div class="legend-item font-bold text-emerald-800">
                       <span class="legend-dot" style="background: #10b981"></span> Capital (Recupera
@@ -1109,7 +1114,7 @@
                     }}</span>
                   </div>
                   <div class="cascade-item">
-                    <span class="cascade-label">4. Comisión MisVales</span>
+                    <span class="cascade-label">4. Comisión del préstamo</span>
                     <span class="cascade-value text-blue-600">{{
                       payment.commission_applied | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
                     }}</span>

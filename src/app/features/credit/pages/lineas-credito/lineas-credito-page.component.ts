@@ -81,13 +81,13 @@ import {
               </p>
             </div>
             <div>
-              <p class="text-xs text-slate-500">En uso</p>
+              <p class="text-xs text-slate-500">Capital utilizado</p>
               <p class="mt-1 font-semibold tabular-nums">
                 {{ line.used_balance | currency: 'MXN' }}
               </p>
             </div>
             <div>
-              <p class="text-xs text-slate-500">Disponible</p>
+              <p class="text-xs text-slate-500">Línea disponible</p>
               <p class="mt-1 font-semibold tabular-nums text-emerald-800">
                 {{ line.available_balance | currency: 'MXN' }}
               </p>
@@ -120,12 +120,25 @@ import {
               </div>
               <dl class="mt-5 grid grid-cols-2 gap-4">
                 <div><dt class="text-xs text-emerald-100">Línea autorizada</dt><dd class="mt-1 text-lg font-bold tabular-nums">{{ line.total_authorized | currency: 'MXN' }}</dd></div>
-                <div><dt class="text-xs text-emerald-100">Disponible</dt><dd class="mt-1 text-lg font-bold tabular-nums">{{ line.available_balance | currency: 'MXN' }}</dd></div>
-                <div><dt class="text-xs text-emerald-100">Saldo utilizado</dt><dd class="mt-1 font-semibold tabular-nums">{{ line.used_balance | currency: 'MXN' }}</dd></div>
+                <div><dt class="text-xs text-emerald-100">Línea disponible</dt><dd class="mt-1 text-lg font-bold tabular-nums">{{ line.available_balance | currency: 'MXN' }}</dd></div>
+                <div><dt class="text-xs text-emerald-100">Capital utilizado</dt><dd class="mt-1 font-semibold tabular-nums">{{ line.used_balance | currency: 'MXN' }}</dd></div>
                 <div><dt class="text-xs text-emerald-100">Último movimiento</dt><dd class="mt-1 text-sm font-semibold">{{ lastMovementText(line) }}</dd></div>
               </dl>
               <div class="mt-4 h-2 overflow-hidden rounded-full bg-black/15"><div class="h-full rounded-full bg-white" [style.width.%]="usedPercent(line)"></div></div>
             </div>
+            @if (line.restriction) {
+              <section class="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4" aria-labelledby="credit-range-title">
+                <p class="text-xs font-bold uppercase tracking-[.14em] text-sky-800">Restricción vigente del 50%</p>
+                <h3 id="credit-range-title" class="mt-1 text-lg font-bold text-slate-950">Rango permitido para el siguiente vale</h3>
+                @if (line.restriction.has_admissible_range) {
+                  <p class="mt-2 text-2xl font-black tabular-nums text-sky-950">{{ line.restriction.lower_limit | currency: 'MXN' }} – {{ line.restriction.upper_limit | currency: 'MXN' }}</p>
+                  <p class="mt-1 text-sm text-slate-600">El selector de vales mostrará únicamente productos publicados dentro de este rango y de tu línea disponible.</p>
+                } @else {
+                  <p class="mt-2 font-semibold text-sky-950">No hay un rango utilizable con la línea disponible actual.</p>
+                  <p class="mt-1 text-sm text-slate-600">No se mostrarán productos que no puedas seleccionar.</p>
+                }
+              </section>
+            }
             @if (points(); as pointSummary) {
               <section class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-slate-950" aria-labelledby="my-points-title">
                 <div class="flex flex-wrap items-center justify-between gap-3">

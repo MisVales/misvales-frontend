@@ -37,6 +37,16 @@ export interface BranchReportApplicationRow {
 
 export interface BranchReportsHome {
   generated_at: string;
+  financial: {
+    period_start: string;
+    period_end: string;
+    portfolio_total: string;
+    misvales_total: string;
+    received_total: string;
+    pending_total: string;
+    overdue_total: string;
+    relations: number;
+  };
   delinquency: {
     total: number;
     overdue_balance: string;

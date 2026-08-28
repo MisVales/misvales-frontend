@@ -86,4 +86,22 @@
       </div>
     }
   </section>
+
+  @if (isDistributor) {
+    <section aria-labelledby="account-options-title">
+      <div class="mb-3"><p class="text-xs font-bold uppercase tracking-wider text-[#386641]">Mi cuenta</p><h2 id="account-options-title" class="text-xl font-bold text-gray-900">Consultas y procesos</h2><p class="mt-1 text-sm text-gray-500">Accesos internos disponibles para tu cuenta.</p></div>
+      <div class="grid gap-3 sm:grid-cols-2">
+        @if (canViewPayments) {
+          <a routerLink="/relaciones-pagos/pagos" class="flex min-h-24 items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[#386641]/40"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-50 text-[#386641]"><lucide-icon name="file-clock" [size]="22" aria-hidden="true" /></span><span><strong class="block text-gray-950">Estado de cuenta</strong><small class="text-gray-500">Historia, relaciones y pagos</small></span></a>
+          <a routerLink="/relaciones-pagos/pagos" class="flex min-h-24 items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[#386641]/40"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-emerald-50 text-[#386641]"><lucide-icon name="message-square-warning" [size]="22" aria-hidden="true" /></span><span><strong class="block text-gray-950">Aclaraciones</strong><small class="text-gray-500">Reporta desde la relación correspondiente</small></span></a>
+        }
+        @if (canViewPoints) {
+          <a routerLink="/puntos" class="flex min-h-24 items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[#386641]/40"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-amber-50 text-amber-800"><lucide-icon name="coins" [size]="22" aria-hidden="true" /></span><span><strong class="block text-gray-950">Puntos</strong><small class="text-gray-500">Saldo, movimientos y canjes</small></span></a>
+        }
+        @if (canViewTransfers) {
+          <a routerLink="/transferencias" class="flex min-h-24 items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-[#386641]/40"><span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-50 text-sky-800"><lucide-icon name="arrow-left-right" [size]="22" aria-hidden="true" /></span><span><strong class="block text-gray-950">Transferencias</strong><small class="text-gray-500">Procesos disponibles de clientes</small></span></a>
+        }
+      </div>
+    </section>
+  }
 </div>

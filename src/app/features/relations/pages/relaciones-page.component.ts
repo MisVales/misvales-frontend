@@ -16,6 +16,8 @@ import { HistoryPaginationComponent } from '../../../shared/components/history/h
 import { HistoryFilterBarComponent } from '../../../shared/components/history/history-filter-bar.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
+type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
+
 @Component({
   selector: 'app-relaciones-page',
   standalone: true,
@@ -150,8 +152,8 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                 <th class="p-4 font-medium">Límite</th>
                 <th class="p-4 font-medium">Referencia</th>
                 <th class="p-4 font-medium">Parcialidades</th>
-                <th class="p-4 text-right font-medium">Neto a pagar</th>
-                <th class="p-4 text-right font-medium">Saldo</th>
+                <th class="p-4 text-right font-medium">Importe a pagar a MisVales</th>
+                <th class="p-4 text-right font-medium">Saldo pendiente de la relación</th>
                 <th class="p-4 font-medium">Estado</th>
                 <th class="p-4 text-right font-medium">Acción</th>
               </tr>
@@ -229,13 +231,33 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
             </div>
           </div>
 
+          <nav
+            class="flex gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-1"
+            aria-label="Detalle financiero de la relación"
+          >
+            @for (tab of detailTabs; track tab.id) {
+              <button
+                type="button"
+                class="min-h-11 shrink-0 rounded-lg px-4 text-sm font-semibold text-gray-600 transition-colors hover:bg-white hover:text-gray-950"
+                [class.bg-white]="detailTab() === tab.id"
+                [class.text-emerald-800]="detailTab() === tab.id"
+                [class.shadow-sm]="detailTab() === tab.id"
+                [attr.aria-current]="detailTab() === tab.id ? 'page' : null"
+                (click)="detailTab.set(tab.id)"
+              >
+                {{ tab.label }}
+              </button>
+            }
+          </nav>
+
+          @if (detailTab() === 'summary') {
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div class="rounded-lg border bg-gray-50 p-4">
-              <span class="text-sm text-gray-600">Cobrado a clientes</span>
+              <span class="text-sm text-gray-600">Cartera que corresponde cobrar a clientes</span>
               <strong class="block text-xl">{{ item.portfolio_total | currency: 'MXN' }}</strong>
             </div>
             <div class="rounded-lg border border-emerald-200 bg-emerald-50 p-4">
-              <span class="text-sm font-medium text-emerald-800">Tu ganancia retenida</span>
+              <span class="text-sm font-medium text-emerald-800">Ganancia de la distribuidora</span>
               <strong class="block text-xl text-emerald-950">{{
                 relationDistributorProfit(item) | currency: 'MXN'
               }}</strong>
@@ -244,13 +266,13 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
               >
             </div>
             <div class="rounded-lg border bg-blue-50 p-4">
-              <span class="text-sm text-blue-700 font-medium">Total neto a pagar a MisVales</span>
+              <span class="text-sm text-blue-700 font-medium">Importe a pagar a MisVales</span>
               <strong class="block text-xl text-blue-900">{{
                 item.misvales_total | currency: 'MXN'
               }}</strong>
             </div>
             <div class="rounded-lg border bg-gray-50 p-4">
-              <span class="text-sm text-gray-600">Pagos conciliados</span>
+              <span class="text-sm text-gray-600">Pagado y conciliado por MisVales</span>
               <strong class="block text-xl">{{ item.reconciled_total | currency: 'MXN' }}</strong>
             </div>
           </div>
@@ -334,9 +356,38 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
               </button>
             </div>
           </section>
+          }
 
+          @if (detailTab() === 'installments') {
+            <section aria-labelledby="relation-installments-title">
+              <div class="mb-3">
+                <h3 id="relation-installments-title" class="text-lg font-bold text-gray-950">Parcialidades que generaron la relación</h3>
+                <p class="text-sm text-gray-600">Lo que paga el cliente y lo que corresponde entregar a MisVales.</p>
+              </div>
+              <div class="grid gap-3 lg:grid-cols-2">
+                @for (row of item.partidas ?? []; track row.id) {
+                  <article class="rounded-xl border border-gray-200 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                      <div><strong class="block text-gray-950">{{ row.snapshot['client'] || 'Cliente' }}</strong><span class="font-mono text-xs text-gray-500">{{ row.snapshot['folio'] || 'Sin folio' }}</span></div>
+                      <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">Parcialidad {{ row.snapshot['installment'] }} / {{ row.snapshot['total_installments'] }}</span>
+                    </div>
+                    <dl class="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-3 text-sm">
+                      <div><dt class="text-gray-500">Cliente paga</dt><dd class="font-bold">{{ row.snapshot['client_payment'] | currency: 'MXN' }}</dd></div>
+                      <div><dt class="text-gray-500">Para MisVales</dt><dd class="font-bold text-blue-800">{{ row.snapshot['misvales_payment'] | currency: 'MXN' }}</dd></div>
+                      <div><dt class="text-gray-500">Ganancia distribuidora</dt><dd class="font-bold text-emerald-800">{{ row.snapshot['distributor_profit'] | currency: 'MXN' }}</dd></div>
+                    </dl>
+                  </article>
+                } @empty {
+                  <p class="rounded-xl border border-dashed border-gray-300 p-6 text-center text-gray-600 lg:col-span-2">No hay parcialidades en esta relación.</p>
+                }
+              </div>
+            </section>
+          }
+
+          @if (detailTab() === 'breakdown') {
           <section>
-            <h3 class="text-lg font-bold mb-3 border-b pb-2">Partidas incluidas</h3>
+            <h3 class="text-lg font-bold mb-1">Desglose financiero completo</h3>
+            <p class="mb-3 text-sm text-gray-600">Trazabilidad de los componentes congelados al generar cada vale.</p>
             <div class="overflow-x-auto rounded-lg border">
               <table class="w-full text-sm text-left">
                 <thead class="bg-gray-50 text-gray-600">
@@ -346,15 +397,15 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                     <th class="p-3">Cliente</th>
                     <th class="p-3 text-center">Parcialidad</th>
                     <th class="p-3 text-right">Capital</th>
-                    <th class="p-3 text-right">Comisión MisVales</th>
+                    <th class="p-3 text-right">Comisión del préstamo</th>
                     <th class="p-3 text-right">Interés</th>
                     <th class="p-3 text-right">Seguro</th>
-                    <th class="p-3 text-right">Tu ganancia</th>
+                    <th class="p-3 text-right">Ganancia de la distribuidora</th>
                     <th class="p-3 text-right">Recargo</th>
-                    <th class="p-3 text-right">Cobro al cliente</th>
-                    <th class="p-3 text-right font-medium text-blue-800">Neto a MisVales</th>
-                    <th class="p-3 text-right">Conciliado</th>
-                    <th class="p-3 text-right">Saldo</th>
+                    <th class="p-3 text-right">Pago del cliente</th>
+                    <th class="p-3 text-right font-medium text-blue-800">Importe para MisVales</th>
+                    <th class="p-3 text-right">Pago conciliado</th>
+                    <th class="p-3 text-right">Saldo pendiente</th>
                     <th class="p-3 text-center">Estado</th>
                   </tr>
                 </thead>
@@ -425,9 +476,12 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
               </table>
             </div>
           </section>
+          }
 
+          @if (detailTab() === 'payments') {
           <section>
-            <h3 class="text-lg font-bold mb-3 border-b pb-2">Pagos aplicados</h3>
+            <h3 class="text-lg font-bold mb-1">Pagos recibidos por MisVales</h3>
+            <p class="mb-3 text-sm text-gray-600">Aplicación canónica del pago; sólo el capital aplicado recupera línea.</p>
             @for (payment of item.pagos ?? []; track payment.id) {
               <div class="mt-2 rounded-lg border bg-gray-50 p-4">
                 <div class="flex justify-between items-center mb-2">
@@ -461,7 +515,7 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
                     Seguro: <strong>{{ payment.insurance_applied | currency: 'MXN' }}</strong>
                   </div>
                   <div>
-                    Comisión MisVales:
+                    Comisión del préstamo:
                     <strong>{{ payment.commission_applied | currency: 'MXN' }}</strong>
                   </div>
                   <div>
@@ -526,6 +580,7 @@ import { RefactorSelectComponent } from '@shared/components/inputs/refactor-sele
               </div>
             }
           </section>
+          }
 
           @if (canClarify()) {
             <section
@@ -612,6 +667,13 @@ export class RelacionesPageComponent {
 
   readonly relations = signal<RelationView[]>([]);
   readonly selected = signal<RelationView | null>(null);
+  readonly detailTab = signal<RelationDetailTab>('summary');
+  readonly detailTabs: ReadonlyArray<{ id: RelationDetailTab; label: string }> = [
+    { id: 'summary', label: 'Resumen' },
+    { id: 'installments', label: 'Parcialidades' },
+    { id: 'payments', label: 'Pagos' },
+    { id: 'breakdown', label: 'Desglose' },
+  ];
   readonly error = signal('');
 
   readonly currentPage = signal(1);
@@ -650,6 +712,7 @@ export class RelacionesPageComponent {
 
   open(id: string): void {
     this.error.set('');
+    this.detailTab.set('summary');
     this.api.detail(id).subscribe({
       next: (v) => this.selected.set(v),
       error: () => this.error.set('No fue posible abrir la relación.'),
@@ -689,7 +752,7 @@ export class RelacionesPageComponent {
         SURCHARGE: 'Recargo',
         INTEREST: 'Interés',
         INSURANCE: 'Seguro',
-        LOAN_COMMISSION: 'Comisión MisVales',
+        LOAN_COMMISSION: 'Comisión del préstamo',
         CAPITAL: 'Capital',
       }[component] ?? component
     );

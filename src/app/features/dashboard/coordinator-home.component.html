@@ -165,7 +165,7 @@
               </div>
               @if (row.kind === 'line') {
                 <div>
-                  <dt>Línea total</dt>
+                  <dt>Línea autorizada</dt>
                   <dd>{{ money(row.total) }}</dd>
                 </div>
                 <div>
@@ -485,7 +485,7 @@
         <article class="kpi kpi--red">
           <span class="kpi__icon"><lucide-icon name="clock" [size]="27" aria-hidden="true" /></span
           ><span
-            ><small>Total</small><strong>{{ pendingCount() }}</strong
+            ><small>Pendientes operativos</small><strong>{{ pendingCount() }}</strong
             ><em>Acciones visibles</em></span
           >
         </article>

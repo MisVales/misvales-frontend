@@ -200,7 +200,7 @@
               @if (financialContext(); as context) {
                 <div class="financial-fields">
                   <div>
-                    <label for="voucher-commission">Comisión</label>
+                    <label for="voucher-commission">Comisión del préstamo</label>
                     <input
                       id="voucher-commission"
                       class="locked-field"
@@ -319,7 +319,7 @@
                     </dd>
                   </div>
                   <div>
-                    <dt>Comisión {{ percentage(data.calculation.loan_commission_percentage) }}</dt>
+                    <dt>Comisión del préstamo {{ percentage(data.calculation.loan_commission_percentage) }}</dt>
                     <dd>
                       {{
                         data.calculation.loan_commission_amount
@@ -382,7 +382,7 @@
                       Categoría {{ percentage(data.calculation.distributor_profit_percentage) }}
                     </dt>
                     <dd>
-                      Ganancia total
+                      Ganancia de la distribuidora
                       {{
                         data.calculation.distributor_profit_total
                           | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
@@ -413,7 +413,7 @@
                 <p>Pago de la persona</p>
                 <dl class="calculation-table">
                   <div class="total-row">
-                    <dt>Total que paga la persona</dt>
+                    <dt>Total a pagar por el cliente</dt>
                     <dd>
                       {{
                         data.calculation.client_total | currency: 'MXN' : 'symbol-narrow' : '1.2-2'

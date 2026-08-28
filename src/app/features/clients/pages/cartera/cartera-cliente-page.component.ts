@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, OnDestroy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -10,6 +10,10 @@ import { firstValueFrom } from 'rxjs';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { MoneyInputDirective } from '../../../applications/directives/money-input.directive';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import { SessionStore } from '../../../../core/session/session.store';
+import { ValesApiService, VoucherView } from '../../../vouchers/data-access/vales-api.service';
+
+type ClientPortfolioTab = 'summary' | 'vouchers' | 'payments' | 'movements';
 
 @Component({
   selector: 'app-cartera-cliente-page',
@@ -30,6 +34,8 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
   fb = inject(FormBuilder);
   api = inject(CarteraApiService);
   private readonly alerts = inject(AlertService);
+  private readonly session = inject(SessionStore);
+  private readonly vouchersApi = inject(ValesApiService);
 
   cargandoHistorial = this.store.registrandoMovimiento;
   movimientos = this.store.movimientosCartera;
@@ -39,6 +45,24 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
   form: FormGroup;
   guardando = this.store.registrandoMovimiento;
   serverError = signal<string | null>(null);
+  readonly activeTab = signal<ClientPortfolioTab>('summary');
+  readonly tabs: ReadonlyArray<{ id: ClientPortfolioTab; label: string }> = [
+    { id: 'summary', label: 'Resumen' },
+    { id: 'vouchers', label: 'Vales' },
+    { id: 'payments', label: 'Pagos' },
+    { id: 'movements', label: 'Movimientos' },
+  ];
+  readonly vouchers = signal<VoucherView[]>([]);
+  readonly clientPayments = computed(() =>
+    this.movimientos().filter((movement) =>
+      ['PAYMENT', 'PARTIAL_PAYMENT', 'CREDIT', 'ADJUSTMENT_DECREASE'].includes(movement.tipo),
+    ),
+  );
+  readonly canManagePortfolio = computed(
+    () =>
+      this.session.roles().includes('distributor') &&
+      this.session.permissions().includes('clients.manage_portfolio'),
+  );
 
   constructor() {
     this.form = this.fb.group({
@@ -73,6 +97,10 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
       if (id) {
         this.store.cargarDetalle(id);
         this.store.cargarCartera(id);
+        this.vouchersApi.listar(1, '', id).subscribe({
+          next: (response) => this.vouchers.set(response.data),
+          error: () => this.vouchers.set([]),
+        });
       }
     });
   }
@@ -82,6 +110,7 @@ export class CarteraClientePageComponent implements OnInit, OnDestroy {
   }
 
   abrirRegistro(type: string = 'NOTE') {
+    if (!this.canManagePortfolio()) return;
     this.form.reset();
     this.serverError.set(null);
     this.form.patchValue({ entry_type: type, occurred_at: new Date().toISOString().slice(0, 16) });

@@ -148,6 +148,7 @@ export class PagosPageComponent implements OnDestroy {
     });
   });
   readonly statusFilter = signal<string>('');
+  readonly relationListMode = signal<'pending' | 'history'>('pending');
   readonly historyPage = signal(1);
   readonly historyPageSize = 10;
   readonly loading = signal<boolean>(false);
@@ -186,13 +187,14 @@ export class PagosPageComponent implements OnDestroy {
         (item.distribuidora?.distributor_number &&
           item.distribuidora.distributor_number.toLowerCase().includes(search));
 
-      const matchStatus =
-        !status ||
-        (status === 'OVERDUE'
-          ? this.isOverdue(item.financial_status)
-          : item.financial_status === status);
+      const matchMode =
+        this.relationListMode() === 'history' ||
+        item.financial_status !== 'SETTLED' &&
+          item.financial_status !== 'ROLLED_FORWARD' &&
+          Number(item.balance) > 0;
+      const matchStatus = !status || (status === 'OVERDUE' ? this.isOverdue(item.financial_status) : item.financial_status === status);
 
-      return matchSearch && matchStatus;
+      return matchSearch && matchMode && matchStatus;
     });
   });
   readonly historyPages = computed(() =>
@@ -458,7 +460,7 @@ export class PagosPageComponent implements OnDestroy {
       SURCHARGE: 'Recargo',
       INTEREST: 'Interés',
       INSURANCE: 'Seguro',
-      LOAN_COMMISSION: 'Comisión MisVales',
+      LOAN_COMMISSION: 'Comisión del préstamo',
       CAPITAL: 'Capital',
     };
     return labels[component];
