@@ -18,12 +18,10 @@ import { DashboardKpiCardComponent } from './dashboard-kpi-card.component';
   styles: `
     .grid {
       display: grid;
-      grid-template-columns: repeat(6, minmax(0, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
       gap: 0.85rem;
     }
-    .grid[data-experience='tablet'] {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
+    .grid[data-experience='tablet'] { grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); }
     .grid[data-experience='mobile'] {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 0.6rem;

@@ -337,11 +337,13 @@ export class Dashboard implements OnInit {
   });
   readonly updatedLabel = computed(() => formatUpdated(this.data()?.generatedAt));
   readonly visibleKpis = computed(() =>
-    (this.data()?.kpis || []).map((item) =>
-      item.route && !canNavigate(item.route, this.session.permissions())
-        ? { ...item, route: undefined }
-        : item,
-    ),
+    (this.data()?.kpis || [])
+      .filter((item) => Boolean(item?.id && item.label?.trim() && item.value?.trim()))
+      .map((item) =>
+        item.route && !canNavigate(item.route, this.session.permissions())
+          ? { ...item, route: undefined }
+          : item,
+      ),
   );
 
   ngOnInit(): void {
