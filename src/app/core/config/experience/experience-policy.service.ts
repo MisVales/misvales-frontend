@@ -2,6 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { SessionStore } from '@core/session/session.store';
 import { DeviceExperienceService } from './device-experience.service';
 import { evaluateExperiencePolicy } from './experience-policy';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ExperiencePolicyService {
@@ -9,7 +10,24 @@ export class ExperiencePolicyService {
   private readonly deviceExperience = inject(DeviceExperienceService);
 
   readonly decision = computed(
-    () => evaluateExperiencePolicy(this.sessionStore.roles(), this.deviceExperience.context()),
+    () => {
+      const decision = evaluateExperiencePolicy(
+        this.sessionStore.roles(),
+        this.deviceExperience.context(),
+      );
+
+      // En desarrollo local se conserva el layout asignado al rol, pero no se
+      // bloquea la cuenta por el dispositivo físico desde el que se prueba.
+      if (!environment.production && decision.kind === 'unsupported') {
+        return {
+          kind: 'allowed' as const,
+          requiredExperience: decision.requiredExperience,
+          device: decision.device,
+        };
+      }
+
+      return decision;
+    },
     {
       equal: (a, b) => JSON.stringify(a) === JSON.stringify(b),
     },
