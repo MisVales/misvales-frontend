@@ -13,6 +13,7 @@ export interface LoginRes {
   access_token?: string;
   available_mfa?: MfaMethod[];
   next_step?: 'PASSKEY';
+  development_mfa_bypass?: boolean;
   user?: {
     id: number | string;
     name: string;

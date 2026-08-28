@@ -15,6 +15,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { TurnstileService } from '@core/auth/turnstile/turnstile.service';
 import { TurnstileSize, TurnstileTheme } from '@core/auth/turnstile/turnstile.types';
+import { environment } from '../../../../../environments/environment';
 
 @Component({
   selector: 'app-turnstile',
@@ -22,18 +23,34 @@ import { TurnstileSize, TurnstileTheme } from '@core/auth/turnstile/turnstile.ty
   template: `
     @if (isEnabled) {
       <div class="turnstile-outer my-3 flex justify-center w-full min-h-[65px]">
-        <div #turnstileContainer class="turnstile-container"></div>
+        @if (isLocalDemo) {
+          <button
+            type="button"
+            (click)="completeLocalDemo()"
+            class="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+          >
+            {{
+              localDemoCompleted()
+                ? 'Verificación local completada'
+                : 'Completar Turnstile local (demo)'
+            }}
+          </button>
+        } @else {
+          <div #turnstileContainer class="turnstile-container"></div>
+        }
       </div>
     }
   `,
-  styles: [`
-    :host {
-      display: block;
-    }
-    .turnstile-outer {
-      contain: layout;
-    }
-  `],
+  styles: [
+    `
+      :host {
+        display: block;
+      }
+      .turnstile-outer {
+        contain: layout;
+      }
+    `,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TurnstileComponent implements OnDestroy {
@@ -53,6 +70,8 @@ export class TurnstileComponent implements OnDestroy {
   @Output() timeout = new EventEmitter<void>();
 
   readonly isLoaded = signal(false);
+  readonly localDemoCompleted = signal(false);
+  readonly isLocalDemo = environment.turnstileLocalDemo;
   private widgetId: string | null = null;
   private isDestroyed = false;
 
@@ -64,7 +83,7 @@ export class TurnstileComponent implements OnDestroy {
     effect(() => {
       const container = this.containerRef()?.nativeElement;
       const enabled = this.isEnabled;
-      if (enabled && container && !this.widgetId && !this.isDestroyed) {
+      if (enabled && !this.isLocalDemo && container && !this.widgetId && !this.isDestroyed) {
         untracked(() => {
           void this.renderWidget(container);
         });
@@ -73,7 +92,7 @@ export class TurnstileComponent implements OnDestroy {
   }
 
   async renderWidget(containerEl?: HTMLElement): Promise<void> {
-    if (!this.isEnabled || this.isDestroyed) return;
+    if (!this.isEnabled || this.isLocalDemo || this.isDestroyed) return;
 
     try {
       const container = containerEl ?? this.containerRef()?.nativeElement;
@@ -123,10 +142,20 @@ export class TurnstileComponent implements OnDestroy {
   }
 
   reset(): void {
+    if (this.isLocalDemo) {
+      this.localDemoCompleted.set(false);
+      this.tokenChange.emit(null);
+      return;
+    }
     if (this.widgetId) {
       this.turnstileService.reset(this.widgetId);
       this.tokenChange.emit(null);
     }
+  }
+
+  completeLocalDemo(): void {
+    this.localDemoCompleted.set(true);
+    this.tokenChange.emit('local-demo-turnstile');
   }
 
   ngOnDestroy(): void {

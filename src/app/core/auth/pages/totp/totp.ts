@@ -20,6 +20,7 @@ export class Totp implements OnInit, OnDestroy {
   readonly availableMfa = this.authFacade.availableMfa;
   readonly mfaStep = this.authFacade.mfaStep;
   readonly mfaExpiresAt = this.authFacade.mfaExpiresAt;
+  readonly developmentMfaBypass = this.authFacade.developmentMfaBypass;
   readonly selectedFactor = signal<Extract<MfaMethod, 'TOTP' | 'RECOVERY_CODE'>>('TOTP');
   readonly timeLeftFormatted = signal('');
   readonly expired = signal(false);
@@ -70,14 +71,16 @@ export class Totp implements OnInit, OnDestroy {
 
     const code = this.mfaForm.getRawValue().code.trim();
     await this.authFacade.verifyMfa(
-      this.selectedFactor() === 'TOTP'
-        ? { totp_code: code }
-        : { recovery_code: code },
+      this.selectedFactor() === 'TOTP' ? { totp_code: code } : { recovery_code: code },
     );
   }
 
   usePasskey(): void {
     void this.authFacade.verifyPasskeyMfa();
+  }
+
+  skipFactor(factor: 'TOTP' | 'PASSKEY'): void {
+    void this.authFacade.skipDevelopmentMfa(factor);
   }
 
   private updateTimer(): void {

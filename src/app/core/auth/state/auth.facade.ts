@@ -4,7 +4,14 @@ import { signalStore, withMethods, withState, patchState } from '@ngrx/signals';
 import { firstValueFrom } from 'rxjs';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { AuthService } from '../data-access/auth.service';
-import { LoginReq, MfaMethod, MfaReq, RecoverReq, ResetPwdReq, SetupInvitationReq } from '../data-access/auth.dtos';
+import {
+  LoginReq,
+  MfaMethod,
+  MfaReq,
+  RecoverReq,
+  ResetPwdReq,
+  SetupInvitationReq,
+} from '../data-access/auth.dtos';
 import { SessionStore } from '@core/session/session.store';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import { MeService } from '@core/auth/data-access/me.service';
@@ -25,6 +32,7 @@ export interface AuthState {
   availableMfa: MfaMethod[];
   mfaStep: 'totp' | 'passkey';
   mfaExpiresAt: number | null;
+  developmentMfaBypass: boolean;
   activationPhase: number;
   activationOriginalToken: string | null;
   activationExchangeToken: string | null;
@@ -43,6 +51,7 @@ const initialAuthState: AuthState = {
   availableMfa: [],
   mfaStep: 'totp',
   mfaExpiresAt: null,
+  developmentMfaBypass: false,
   activationPhase: 0,
   activationOriginalToken: null,
   activationExchangeToken: null,
@@ -145,9 +154,8 @@ export const AuthFacade = signalStore(
               mfaChallengeToken: response.mfa_challenge_token,
               availableMfa: response.available_mfa ?? [],
               mfaStep: 'totp',
-              mfaExpiresAt: response.expires_in
-                ? Date.now() + response.expires_in * 1000
-                : null,
+              mfaExpiresAt: response.expires_in ? Date.now() + response.expires_in * 1000 : null,
+              developmentMfaBypass: Boolean(response.development_mfa_bypass),
             });
             await router.navigate(['/auth/totp']);
             return;
@@ -218,6 +226,32 @@ export const AuthFacade = signalStore(
           if (response.access_token) await establishSession();
         } catch (error: unknown) {
           fail(error, 'La verificación con Passkey fue cancelada o no está disponible.');
+        }
+      },
+
+      async skipDevelopmentMfa(factor: 'TOTP' | 'PASSKEY'): Promise<void> {
+        const token = store.mfaChallengeToken();
+        if (!token || !store.developmentMfaBypass()) return;
+
+        patchState(store, { isLoading: true, error: null });
+        try {
+          const response = await firstValueFrom(
+            authService.skipDevelopmentMfa({ mfa_challenge_token: token, factor }),
+          );
+          if (response.next_step === 'PASSKEY') {
+            patchState(store, {
+              isLoading: false,
+              mfaStep: 'passkey',
+              mfaChallengeToken: response.mfa_challenge_token ?? token,
+              mfaExpiresAt: response.expires_in
+                ? Date.now() + response.expires_in * 1000
+                : store.mfaExpiresAt(),
+            });
+            return;
+          }
+          if (response.access_token) await establishSession();
+        } catch (error: unknown) {
+          fail(error, 'No fue posible omitir el factor en la demo local.');
         }
       },
 
@@ -310,7 +344,9 @@ export const AuthFacade = signalStore(
           patchState(store, {
             isLoading: false,
             activationPhase: response.development_mfa_bypass ? 3 : 2,
-            activationRecoveryCodes: response.development_mfa_bypass ? null : response.recovery_codes,
+            activationRecoveryCodes: response.development_mfa_bypass
+              ? null
+              : response.recovery_codes,
           });
         } catch (error: unknown) {
           fail(error, 'Error al configurar la cuenta.');

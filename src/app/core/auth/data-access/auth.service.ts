@@ -4,13 +4,30 @@ import { API_CONFIG } from '@core/api/api.config';
 import { Observable, switchMap, tap } from 'rxjs';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import type { startAuthentication, startRegistration } from '@simplewebauthn/browser';
-import { LoginReq, LoginRes, MfaReq, RecoverReq, ResetPwdReq, InspectInvitationReq, InspectInvitationRes, SetupInvitationReq, SetupInvitationRes, CompleteInvitationReq, ResendInvitationReq, ResendInvitationRes, PasskeySetupReq, PasskeyRegisterReq, PasskeyVerifyReq, ApiMessageRes } from './auth.dtos';
+import {
+  LoginReq,
+  LoginRes,
+  MfaReq,
+  RecoverReq,
+  ResetPwdReq,
+  InspectInvitationReq,
+  InspectInvitationRes,
+  SetupInvitationReq,
+  SetupInvitationRes,
+  CompleteInvitationReq,
+  ResendInvitationReq,
+  ResendInvitationRes,
+  PasskeySetupReq,
+  PasskeyRegisterReq,
+  PasskeyVerifyReq,
+  ApiMessageRes,
+} from './auth.dtos';
 
 type AuthenticationOptionsJSON = Parameters<typeof startAuthentication>[0]['optionsJSON'];
 type RegistrationOptionsJSON = Parameters<typeof startRegistration>[0]['optionsJSON'];
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
   private http = inject(HttpClient);
@@ -28,24 +45,24 @@ export class AuthService {
 
   login(credentials: LoginReq): Observable<LoginRes> {
     return this.postWithCsrf<LoginRes>(`${this.baseUrl}/login`, credentials).pipe(
-      tap(this.saveTokensIfPresent)
+      tap(this.saveTokensIfPresent),
     );
   }
 
   verifyMfa(data: MfaReq): Observable<LoginRes> {
     if (data.recovery_code) {
       return this.postWithCsrf<LoginRes>(`${this.baseUrl}/mfa/recovery-code/verify`, data).pipe(
-        tap(this.saveTokensIfPresent)
+        tap(this.saveTokensIfPresent),
       );
     }
     return this.postWithCsrf<LoginRes>(`${this.baseUrl}/mfa/totp/verify`, data).pipe(
-      tap(this.saveTokensIfPresent)
+      tap(this.saveTokensIfPresent),
     );
   }
 
   logout(): Observable<unknown> {
     return this.postWithCsrf<unknown>(`${this.baseUrl}/logout`, {}).pipe(
-      tap(() => this.tokenStore.clear())
+      tap(() => this.tokenStore.clear()),
     );
   }
 
@@ -80,7 +97,10 @@ export class AuthService {
   }
 
   setupPasskey(data: PasskeySetupReq): Observable<RegistrationOptionsJSON> {
-    return this.postWithCsrf<RegistrationOptionsJSON>(`${this.baseUrl}/invitations/passkey/setup`, data);
+    return this.postWithCsrf<RegistrationOptionsJSON>(
+      `${this.baseUrl}/invitations/passkey/setup`,
+      data,
+    );
   }
 
   registerPasskey(data: PasskeyRegisterReq): Observable<ApiMessageRes> {
@@ -88,12 +108,24 @@ export class AuthService {
   }
 
   getPasskeyOptions(data: { mfa_challenge_token: string }): Observable<AuthenticationOptionsJSON> {
-    return this.postWithCsrf<AuthenticationOptionsJSON>(`${this.baseUrl}/mfa/passkey/options`, data);
+    return this.postWithCsrf<AuthenticationOptionsJSON>(
+      `${this.baseUrl}/mfa/passkey/options`,
+      data,
+    );
   }
 
   verifyPasskey(data: PasskeyVerifyReq): Observable<LoginRes> {
     return this.postWithCsrf<LoginRes>(`${this.baseUrl}/mfa/passkey/verify`, data).pipe(
-      tap(this.saveTokensIfPresent)
+      tap(this.saveTokensIfPresent),
+    );
+  }
+
+  skipDevelopmentMfa(data: {
+    mfa_challenge_token: string;
+    factor: 'TOTP' | 'PASSKEY';
+  }): Observable<LoginRes> {
+    return this.postWithCsrf<LoginRes>(`${this.baseUrl}/mfa/development/skip`, data).pipe(
+      tap(this.saveTokensIfPresent),
     );
   }
 
