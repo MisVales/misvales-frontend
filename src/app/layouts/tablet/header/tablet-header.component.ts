@@ -13,6 +13,9 @@ import { LucideAngularModule } from 'lucide-angular';
 import { BrandLockupComponent } from '@shared/components/brand/brand-lockup/brand-lockup.component';
 import { DistributorWorkspaceNavComponent } from '@shared/components/navigation/distributor-workspace-nav/distributor-workspace-nav.component';
 import { DistributorWorkspaceContextService } from '@shared/components/navigation/distributor-workspace-nav/distributor-workspace-context.service';
+import { AuthFacade } from '@core/auth/state/auth.facade';
+import { AuthService, type LocalSwitchAccount } from '@core/auth/data-access/auth.service';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-tablet-header',
@@ -74,6 +77,33 @@ import { DistributorWorkspaceContextService } from '@shared/components/navigatio
               <lucide-icon name="circle-user-round" [size]="19" aria-hidden="true" /> Perfil y
               seguridad
             </a>
+            @if (localAccountSwitchEnabled) {
+              <section class="local-switch" aria-label="Cambiar cuenta local">
+                <button type="button" class="local-switch-trigger" (click)="toggleLocalSwitch($event)">
+                  <lucide-icon name="users-round" [size]="19" aria-hidden="true" /> Cambiar cuenta
+                  <lucide-icon name="chevron-down" [size]="15" aria-hidden="true" />
+                </button>
+                @if (localSwitchOpen()) {
+                  <div class="local-switch-fields">
+                    <label for="tablet-local-demo-account">Cuentas demo</label>
+                    <select id="tablet-local-demo-account" [disabled]="localAccountsLoading() || authFacade.isLoading()" (change)="selectLocalAccount($event)">
+                      <option value="">Selecciona una cuenta</option>
+                      @for (account of localAccounts(); track account.id) {
+                        <option [value]="account.id">{{ account.role_name }} · {{ account.name }}</option>
+                      }
+                    </select>
+                    <label for="tablet-local-distributor-account">Distribuidoras</label>
+                    <select id="tablet-local-distributor-account" [disabled]="!localDistributors().length || localAccountsLoading() || authFacade.isLoading()" (change)="selectLocalAccount($event)">
+                      <option value="">{{ localDistributors().length ? 'Selecciona una distribuidora' : 'Sin distribuidoras activas' }}</option>
+                      @for (account of localDistributors(); track account.id) {
+                        <option [value]="account.id">{{ account.distributor_number }} · {{ account.name }}</option>
+                      }
+                    </select>
+                    @if (localAccountsError()) { <small class="local-switch-error">{{ localAccountsError() }}</small> }
+                  </div>
+                }
+              </section>
+            }
             <button
               type="button"
               role="menuitem"
@@ -236,6 +266,13 @@ import { DistributorWorkspaceContextService } from '@shared/components/navigatio
     .profile-dropdown button:last-child {
       color: var(--mv-danger);
     }
+    .local-switch { margin: 0.35rem 0; border-block: 1px solid var(--mv-border); padding-block: 0.25rem; }
+    .local-switch-trigger { width: 100%; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.65rem; padding: 0.65rem; border: 0; border-radius: 0.6rem; color: var(--mv-text); background: transparent; font: inherit; font-size: 0.76rem; font-weight: 700; text-align: left; cursor: pointer; }
+    .local-switch-trigger:hover { background: var(--mv-primary-50); color: var(--mv-primary-700); }
+    .local-switch-fields { display: grid; gap: 0.35rem; padding: 0.35rem 0.65rem 0.65rem; }
+    .local-switch-fields label { margin-top: 0.25rem; color: var(--mv-text-muted); font-size: 0.67rem; font-weight: 750; text-transform: uppercase; }
+    .local-switch-fields select { width: 100%; border: 1px solid var(--mv-border); border-radius: 0.5rem; background: var(--mv-surface); padding: 0.55rem; color: var(--mv-text); font: inherit; font-size: 0.72rem; }
+    .local-switch-error { color: var(--mv-danger); }
     .workspace {
       width: 100%;
       min-width: 0;
@@ -292,16 +329,53 @@ import { DistributorWorkspaceContextService } from '@shared/components/navigatio
 })
 export class TabletHeaderComponent {
   protected readonly distributorWorkspace = inject(DistributorWorkspaceContextService);
+  readonly authFacade = inject(AuthFacade);
+  private readonly authService = inject(AuthService);
   @Input() operationsCenterRoute: string | null = null;
   @Input() workspaceLabel = '';
   @Input() userName = '';
   @Input() initials = '';
   @Output() readonly logoutRequested = new EventEmitter<void>();
   readonly profileOpen = signal(false);
+  readonly localAccountSwitchEnabled = !environment.production;
+  readonly localSwitchOpen = signal(false);
+  readonly localAccountsLoading = signal(false);
+  readonly localAccountsError = signal('');
+  readonly localAccounts = signal<LocalSwitchAccount[]>([]);
+  readonly localDistributors = signal<LocalSwitchAccount[]>([]);
+
+  selectLocalAccount(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const userId = select.value;
+    select.value = '';
+    if (!userId || this.authFacade.isLoading()) return;
+    void this.authFacade.switchLocalAccount(userId).then((changed) => {
+      if (changed) {
+        this.profileOpen.set(false);
+        this.localSwitchOpen.set(false);
+      }
+    });
+  }
+
+  toggleLocalSwitch(event: MouseEvent): void {
+    event.stopPropagation();
+    this.localSwitchOpen.update((open) => !open);
+    if (this.localSwitchOpen()) this.loadLocalAccounts();
+  }
+
+  private loadLocalAccounts(): void {
+    if (this.localAccounts().length || this.localAccountsLoading()) return;
+    this.localAccountsLoading.set(true);
+    this.authService.localAccounts().subscribe({
+      next: (data) => { this.localAccounts.set(data.accounts); this.localDistributors.set(data.distributors); this.localAccountsLoading.set(false); },
+      error: () => { this.localAccountsError.set('No fue posible cargar las cuentas locales.'); this.localAccountsLoading.set(false); },
+    });
+  }
 
   @HostListener('document:click')
   closeProfile(): void {
     this.profileOpen.set(false);
+    this.localSwitchOpen.set(false);
   }
 
   @HostListener('document:keydown.escape')
