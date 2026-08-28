@@ -159,4 +159,10 @@ export class RelacionesApiService {
       responseType: 'blob',
     });
   }
+
+  downloadAccountStatement(distributorId: string): Observable<Blob> {
+    return this.http.get(`${this.config.baseUrl}/distributors/${distributorId}/account-statement`, {
+      responseType: 'blob',
+    });
+  }
 }

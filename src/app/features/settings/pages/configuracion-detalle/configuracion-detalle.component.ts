@@ -324,6 +324,10 @@ export class ConfiguracionDetalleComponent implements OnInit {
   }
 
   protected ayudaValor(definition: ConfiguracionDefinicion): string {
+    if (definition.clave === 'VERIFICATION_START_TIME')
+      return 'Primera hora que podrá seleccionar el coordinador al asignar una visita. Ejemplo: 03:00.';
+    if (definition.clave === 'VERIFICATION_MAX_START_TIME')
+      return 'Última hora que podrá seleccionar el coordinador al asignar una visita. Ejemplo: 23:00.';
     if (definition.unidad === 'percentage')
       return 'Captura el porcentaje completo. Por ejemplo, 5 equivale a 5 %.';
     if (definition.unidad === 'MXN') return 'Captura el importe en pesos mexicanos.';

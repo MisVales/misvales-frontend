@@ -26,9 +26,27 @@
         }}
       </span>
     </div>
-    <div class="payments-masthead__scope">
-      <lucide-icon name="lock" [size]="18" aria-hidden="true" />
-      <span>Alcance autorizado</span>
+    <div class="flex flex-col items-end gap-3">
+      <div class="payments-masthead__scope">
+        <lucide-icon name="lock" [size]="18" aria-hidden="true" />
+        <span>Alcance autorizado</span>
+      </div>
+      @if (isOwnDistributor()) {
+        <button
+          type="button"
+          class="inline-flex min-h-10 items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-extrabold text-emerald-900 shadow-sm disabled:opacity-60"
+          [disabled]="accountStatementBusy() || !relations().length"
+          (click)="downloadOwnAccountStatement()"
+        >
+          <lucide-icon
+            [name]="accountStatementBusy() ? 'loader-2' : 'download'"
+            [class.spin]="accountStatementBusy()"
+            [size]="16"
+            aria-hidden="true"
+          />
+          {{ accountStatementBusy() ? 'Preparando…' : 'Descargar mi estado de cuenta' }}
+        </button>
+      }
     </div>
   </header>
 
@@ -342,9 +360,13 @@
               <article class="money-route__step">
                 <span class="money-route__index">2</span>
                 <div>
-                  <small>Parcialidades agregadas en este corte</small>
+                  <small>Neto a pagar a MisVales por este corte</small>
                   <strong>{{ route.current | currency: 'MXN' }}</strong>
-                  <p>{{ relation.partidas?.length || 0 }} parcialidades nuevas.</p>
+                  <p>
+                    {{ relation.partidas?.length || 0 }} parcialidades nuevas · clientes pagan
+                    {{ route.currentClientCollection | currency: 'MXN' }} · conservas
+                    {{ route.currentDistributorProfit | currency: 'MXN' }} de ganancia.
+                  </p>
                 </div>
               </article>
               <article class="money-route__step is-payment">
@@ -369,7 +391,8 @@
                     } @else if (relation.temporal_classification === 'EARLY') {
                       Pago anticipado sin un bloque completo de capital para puntos.
                     } @else {
-                      {{ relationStatusLabel(relation.financial_status) }}.
+                      {{ relationStatusLabel(relation.financial_status) }} · incluye
+                      {{ route.accumulatedSurcharges | currency: 'MXN' }} de recargos acumulados.
                     }
                   </p>
                 </div>
@@ -477,6 +500,12 @@
                     {{ creditLine().available | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
                   </dd>
                 </div>
+                <div class="info-row">
+                  <dt>Adeudo Actual</dt>
+                  <dd class="font-bold">
+                    {{ creditLine().currentDebt | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                  </dd>
+                </div>
               </dl>
 
               <!-- Progress bar of credit usage -->
@@ -535,7 +564,11 @@
                   </div>
                   <div class="voucher-ledger__totals">
                     <strong>{{ voucher.paidTotal | currency: 'MXN' }}</strong>
-                    <span>pagado de {{ voucher.clientTotal | currency: 'MXN' }}</span>
+                    <span>pagado a MisVales de {{ voucher.misvalesTotal | currency: 'MXN' }}</span>
+                    <small>
+                      Cobro a clientes {{ voucher.clientTotal | currency: 'MXN' }} · ganancia
+                      {{ voucher.distributorProfit | currency: 'MXN' }}
+                    </small>
                   </div>
                 </header>
 

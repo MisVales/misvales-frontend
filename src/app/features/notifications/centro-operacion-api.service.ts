@@ -131,7 +131,7 @@ export class CentroOperacionApiService {
     return this.http
       .post<{ data: ForceCutoffResponse }>(
         `${this.config.baseUrl}/operations/force-cutoff`, 
-        { motivo }, 
+        { motivo },
         { headers: { 'Idempotency-Key': idempotencyKey } }
       )
       .pipe(map((response) => response.data));

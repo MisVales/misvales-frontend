@@ -44,6 +44,9 @@ interface PaymentPercentages {
 interface RelationMoneyRoute {
   inherited: number;
   current: number;
+  currentClientCollection: number;
+  currentDistributorProfit: number;
+  accumulatedSurcharges: number;
   inheritedPaid: number;
   currentPaid: number;
   outstanding: number;
@@ -69,6 +72,8 @@ interface VoucherInstallmentGroup {
   totalInstallments: number;
   installments: VoucherInstallmentTimeline[];
   clientTotal: number;
+  misvalesTotal: number;
+  distributorProfit: number;
   paidTotal: number;
   overdueTotal: number;
   paidCount: number;
@@ -105,6 +110,7 @@ export class PagosPageComponent implements OnDestroy {
   readonly surpluses = signal<Surplus[]>([]);
   readonly selectedRelationId = signal<string | null>(null);
   readonly selectedRelation = signal<RelationView | null>(null);
+  readonly currentFinancialState = signal<CreditLineView | null>(null);
   readonly selectedPaymentId = signal<string | null>(null);
   readonly searchTerm = signal<string>('');
   readonly contextDistributorNumber = signal<string>('');
@@ -155,6 +161,8 @@ export class PagosPageComponent implements OnDestroy {
   readonly removalBusy = signal(false);
   readonly removalSuccess = signal('');
   readonly relationPdfBusy = signal(false);
+  readonly accountStatementBusy = signal(false);
+  readonly isOwnDistributor = computed(() => this.session.roles().includes('distributor'));
   readonly reportFile = signal<File | null>(null);
   readonly reportReason = signal('');
   readonly reportBusy = signal(false);
@@ -264,14 +272,11 @@ export class PagosPageComponent implements OnDestroy {
   });
 
   readonly creditLine = computed(() => {
-    const rel = this.selectedRelation();
-    const line = rel?.distribuidora?.linea_credito || rel?.distribuidora?.lineaCredito;
-
-    const totalAuthorized = parseFloat(
-      (line?.total_authorized ?? rel?.header_snapshot?.credit_line_total ?? 0).toString(),
-    );
-    const usedBalance = parseFloat((line?.used_balance ?? 0).toString());
-    const available = Math.max(0, totalAuthorized - usedBalance);
+    const line = this.currentFinancialState();
+    const totalAuthorized = Number(line?.total_authorized ?? 0);
+    const usedBalance = Number(line?.used_balance ?? 0);
+    const available = Number(line?.available_balance ?? 0);
+    const currentDebt = Number(line?.current_debt ?? 0);
 
     const usedPercentage =
       totalAuthorized > 0 ? Math.min(100, (usedBalance / totalAuthorized) * 100) : 0;
@@ -281,6 +286,7 @@ export class PagosPageComponent implements OnDestroy {
       totalAuthorized,
       usedBalance,
       available,
+      currentDebt,
       usedPercentage,
       availablePercentage,
     };
@@ -344,6 +350,7 @@ export class PagosPageComponent implements OnDestroy {
             contextualRelation?.distribuidora?.id ?? contextualRelation?.distributor_id ?? null,
           );
         }
+        this.loadCurrentFinancialState();
         this.loading.set(false);
         const firstVisibleRelation = this.filteredRelations()[0];
         if (firstVisibleRelation && !this.selectedRelationId()) {
@@ -366,7 +373,21 @@ export class PagosPageComponent implements OnDestroy {
           (line) => line.distributor.distributor_number === distributorNumber,
         );
         this.contextDistributorId.set(match?.distributor.id ?? null);
+        this.loadCurrentFinancialState();
       },
+    });
+  }
+
+  private loadCurrentFinancialState(): void {
+    const distributorId = this.contextDistributorId();
+    if (!distributorId) {
+      this.currentFinancialState.set(null);
+      return;
+    }
+
+    this.creditApi.consultarLinea(distributorId).subscribe({
+      next: (state) => this.currentFinancialState.set(state),
+      error: () => this.currentFinancialState.set(null),
     });
   }
 
@@ -445,7 +466,8 @@ export class PagosPageComponent implements OnDestroy {
 
   distributorProfit(relation: RelationView): number {
     return (relation.partidas ?? []).reduce(
-      (total, item) => total + Number(item.snapshot['distributor_profit'] ?? 0),
+      (total, item) =>
+        total + Number(item.portfolio_amount ?? 0) - Number(item.misvales_amount ?? 0),
       0,
     );
   }
@@ -458,10 +480,18 @@ export class PagosPageComponent implements OnDestroy {
       0,
     );
     const inheritedPaid = Math.min(applied, inherited);
+    const currentClientCollection = (relation.partidas ?? []).reduce(
+      (sum, item) => sum + Number(item.portfolio_amount ?? 0),
+      0,
+    );
+    const currentDistributorProfit = this.distributorProfit(relation);
 
     return {
       inherited,
       current: Math.max(0, total - inherited),
+      currentClientCollection,
+      currentDistributorProfit,
+      accumulatedSurcharges: Number(relation.surcharge_total ?? 0),
       inheritedPaid,
       currentPaid: Math.max(0, applied - inheritedPaid),
       outstanding: Number(relation.balance ?? 0),
@@ -505,6 +535,8 @@ export class PagosPageComponent implements OnDestroy {
             totalInstallments: Number(item.snapshot['total_installments'] || 0),
             installments: [],
             clientTotal: 0,
+            misvalesTotal: 0,
+            distributorProfit: 0,
             paidTotal: 0,
             overdueTotal: 0,
             paidCount: 0,
@@ -543,7 +575,12 @@ export class PagosPageComponent implements OnDestroy {
 
     return [...groups.values()].map((group) => {
       group.installments.sort((a, b) => a.number - b.number);
-      group.clientTotal = group.installments.reduce((sum, item) => sum + item.misvalesAmount, 0);
+      group.clientTotal = group.installments.reduce((sum, item) => sum + item.clientAmount, 0);
+      group.misvalesTotal = group.installments.reduce(
+        (sum, item) => sum + item.misvalesAmount,
+        0,
+      );
+      group.distributorProfit = group.clientTotal - group.misvalesTotal;
       group.paidTotal = group.installments.reduce((sum, item) => sum + item.paid, 0);
       group.overdueTotal = group.installments
         .filter((item) => item.status === 'OVERDUE')
@@ -798,6 +835,28 @@ export class PagosPageComponent implements OnDestroy {
       error: () => {
         this.relationPdfBusy.set(false);
         this.error.set('No fue posible descargar el PDF de la relación. Intenta nuevamente.');
+      },
+    });
+  }
+
+  downloadOwnAccountStatement(): void {
+    const distributorId = this.contextDistributorId() ?? this.relations()[0]?.distributor_id;
+    if (!distributorId || this.accountStatementBusy()) return;
+    this.accountStatementBusy.set(true);
+    this.error.set('');
+    this.api.downloadAccountStatement(distributorId).subscribe({
+      next: (blob) => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `estado-de-cuenta-${this.contextDistributorNumber() || 'distribuidora'}.pdf`;
+        link.click();
+        URL.revokeObjectURL(url);
+        this.accountStatementBusy.set(false);
+      },
+      error: () => {
+        this.accountStatementBusy.set(false);
+        this.error.set('No fue posible descargar tu estado de cuenta. Intenta nuevamente.');
       },
     });
   }

@@ -86,6 +86,18 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   readonly coordinators = signal<PersonnelAssignment[]>([]);
   readonly availableCategories = signal<CategoryDto[]>([]);
   readonly changingCategory = signal(false);
+  readonly resendingInvitation = signal(false);
+  readonly downloadingStatement = signal(false);
+
+  readonly canResendActivation = computed(() => {
+    const distributor = this.store.detalle();
+
+    return (
+      !!distributor &&
+      (distributor.estado === 'PENDING_ACTIVATION' ||
+        distributor.estadoAcceso === 'PENDING_ACTIVATION')
+    );
+  });
 
   readonly canAssignCategory = computed(() => {
     const permissions = this.session.permissions();
@@ -196,9 +208,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
         this.availableCategories.set(
           categories.filter(
             (cat) =>
-              cat.status === 'ACTIVE' &&
-              cat.version_status === 'PUBLISHED' &&
-              !!cat.version_id,
+              cat.status === 'ACTIVE' && cat.version_status === 'PUBLISHED' && !!cat.version_id,
           ),
         );
       },
@@ -267,6 +277,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
   }
 
   abrirModalReenvio(): void {
+    if (!this.canResendActivation() || this.resendingInvitation()) return;
     this.mostrarModalReenvio = true;
   }
 
@@ -276,16 +287,21 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
 
   async reenviarInvitacion(event: any): Promise<void> {
     const distributor = this.store.detalle();
-    if (!distributor) return;
+    if (!distributor || !this.canResendActivation() || this.resendingInvitation()) return;
+    this.resendingInvitation.set(true);
     try {
       await firstValueFrom(this.api.reenviarInvitacion(distributor.id, event));
       this.cerrarModalReenvio();
-      this.alerts.showAlert('Invitación reenviada.', 'success');
+      this.alerts.showAlert('Correo de activación reenviado correctamente.', 'success');
     } catch (error: any) {
       this.alerts.showAlert(
-        error?.error?.message || 'No fue posible reenviar la invitación.',
+        error?.error?.error?.message ??
+          error?.error?.message ??
+          'No fue posible reenviar el correo de activación.',
         'error',
       );
+    } finally {
+      this.resendingInvitation.set(false);
     }
   }
 
@@ -372,16 +388,19 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
     );
   }
 
+  effectiveUsedBalance(): number {
+    return Number(this.creditLine()?.used_balance ?? 0);
+  }
+
+  currentDebt(): number {
+    return Number(this.creditLine()?.current_debt ?? 0);
+  }
+
   availableBalance(fallbackAuthorized: string | number | null = 0): number {
     const line = this.creditLine();
     if (!line) return Math.max(0, Number(fallbackAuthorized ?? 0));
 
-    const authorized = Number(line.total_authorized ?? 0);
-    const used = Number(line.used_balance ?? 0);
-    const reported = Number(line.available_balance ?? 0);
-
-    if (reported > 0 || authorized <= used || line.restriction) return Math.max(0, reported);
-    return Math.max(0, authorized - used);
+    return Number(line.available_balance ?? 0);
   }
 
   relationStatus(status: string): string {
@@ -391,8 +410,28 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
         PARTIALLY_PAID: 'Con abonos',
         PENDING: 'Pendiente',
         OVERDUE: 'Vencida',
+        ROLLED_FORWARD: 'Adeudo trasladado',
       }[status] ?? status.replaceAll('_', ' ')
     );
+  }
+
+  async downloadAccountStatement(): Promise<void> {
+    const distributor = this.store.detalle();
+    if (!distributor || this.downloadingStatement()) return;
+    this.downloadingStatement.set(true);
+    try {
+      const blob = await firstValueFrom(this.relationsApi.downloadAccountStatement(distributor.id));
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `estado-de-cuenta-${distributor.numero}.pdf`;
+      anchor.click();
+      URL.revokeObjectURL(url);
+    } catch (error: unknown) {
+      this.alerts.showAlert(apiErrorMessage(error, 'No fue posible descargar el estado de cuenta.'), 'error');
+    } finally {
+      this.downloadingStatement.set(false);
+    }
   }
 
   increaseStatus(status: string): string {
@@ -415,8 +454,11 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
         return fallback;
       }
     };
-    const [lines, movements, increases, relations, alerts] = await Promise.all([
-      safe(firstValueFrom(this.credit.listarLineas()), [] as CreditLineView[]),
+    const [line, movements, increases, relations, alerts] = await Promise.all([
+      safe(
+        firstValueFrom(this.credit.consultarLinea(distributorId)),
+        null as CreditLineView | null,
+      ),
       safe(
         firstValueFrom(this.credit.listarMovimientos(distributorId)),
         [] as CreditMovementView[],
@@ -433,7 +475,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
       ),
       safe(firstValueFrom(this.riskApi.alerts()), [] as RiskAlert[]),
     ]);
-    this.creditLine.set(lines.find((line) => line.distributor.id === distributorId) ?? null);
+    this.creditLine.set(line);
     this.movements.set(movements);
     this.increases.set(increases.filter((item) => item.distributor?.id === distributorId));
     this.relations.set(relations.filter((item) => item.distributor_id === distributorId));

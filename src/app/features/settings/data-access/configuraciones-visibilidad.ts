@@ -15,6 +15,11 @@ const CONDICIONES_FINANCIERAS_VALE = new Set([
   'LATE_FEE_AMOUNT',
 ]);
 
+const HORARIOS_VERIFICACION_DOMICILIO = new Set([
+  'VERIFICATION_START_TIME',
+  'VERIFICATION_MAX_START_TIME',
+]);
+
 export function esConfiguracionVisible(clave: string): boolean {
   return !CLAVES_RETIRADAS.has(clave);
 }
@@ -29,4 +34,12 @@ export function esCondicionFinancieraVale(clave: string): boolean {
 
 export function esConfiguracionDePago(clave: string): boolean {
   return CONFIGURACIONES_DE_PAGO.has(clave);
+}
+
+export function esHorarioVerificacionDomicilio(clave: string): boolean {
+  return HORARIOS_VERIFICACION_DOMICILIO.has(clave);
+}
+
+export function esHorarioDeVerificacion(clave: string): boolean {
+  return HORARIOS_VERIFICACION_DOMICILIO.has(clave);
 }
