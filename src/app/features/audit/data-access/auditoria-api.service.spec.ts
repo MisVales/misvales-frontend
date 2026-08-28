@@ -60,4 +60,54 @@ describe('AuditoriaApiService', () => {
     expect(request.request.params.get('channel')).toBe('OPERATION');
     request.flush({ data: { data: [] } });
   });
+
+  it('describe acciones legibles para eventos comunes de auditoría', () => {
+    const auditLogin = {
+      id: '1',
+      actor_id: 'u1',
+      actor_role: 'admin',
+      event_name: 'LOGIN_SUCCESSFUL',
+      result: 'SUCCESS' as const,
+      created_at: '2026-08-28T12:00:00Z',
+      updated_at: '2026-08-28T12:00:00Z',
+      actor: { id: 'u1', name: 'Administrador Demo', email: 'admin@misvales.com' },
+    };
+    expect(service.describeAction(auditLogin)).toBe('Administrador Demo inició sesión');
+
+    const auditClient = {
+      id: '2',
+      actor_id: 'u2',
+      actor_role: 'coordinator',
+      event_name: 'CLIENT_CREATED',
+      result: 'SUCCESS' as const,
+      created_at: '2026-08-28T12:00:00Z',
+      updated_at: '2026-08-28T12:00:00Z',
+      actor: { id: 'u2', name: 'Coordinador Demo', email: 'coord@misvales.com' },
+      new_value: { name: 'Juan Pérez' },
+    };
+    expect(service.describeAction(auditClient)).toBe('Coordinador Demo dio de alta al cliente "Juan Pérez"');
+  });
+
+  it('detecta y formatea campos modificados correctamente', () => {
+    const auditEdit = {
+      id: '3',
+      actor_id: 'u3',
+      actor_role: 'verifier',
+      event_name: 'CLIENT_UPDATED',
+      result: 'SUCCESS' as const,
+      created_at: '2026-08-28T12:00:00Z',
+      updated_at: '2026-08-28T12:00:00Z',
+      previous_value: { phone_number: '5551234', address: 'Calle 1' },
+      new_value: { phone_number: '5559999', address: 'Calle 1' },
+    };
+    const changes = service.getChangedFields(auditEdit);
+    expect(changes).toEqual([
+      {
+        field: 'phone_number',
+        label: 'Teléfono',
+        oldValue: '5551234',
+        newValue: '5559999',
+      },
+    ]);
+  });
 });

@@ -334,6 +334,104 @@ export const ENTITY_LABELS_ES: Record<string, string> = {
   refunds: 'Devoluciones',
 };
 
+export const FIELD_LABELS_ES: Record<string, string> = {
+  // Personal / Usuario
+  name: 'Nombre',
+  email: 'Correo electrónico',
+  normalized_email: 'Correo normalizado',
+  phone: 'Teléfono',
+  phone_number: 'Teléfono',
+  mobile_phone: 'Celular',
+  state: 'Estado de cuenta',
+  password: 'Contraseña',
+  curp: 'CURP',
+  rfc: 'RFC',
+  ine_number: 'Número de INE',
+  birth_date: 'Fecha de nacimiento',
+  gender: 'Género',
+  marital_status: 'Estado civil',
+  nationality: 'Nacionalidad',
+  education_level: 'Nivel de estudios',
+
+  // Dirección
+  street: 'Calle',
+  exterior_number: 'Número exterior',
+  interior_number: 'Número interior',
+  neighborhood: 'Colonia',
+  city: 'Ciudad',
+  municipality: 'Municipio',
+  state_name: 'Estado',
+  zip_code: 'Código postal',
+  postal_code: 'Código postal',
+  address: 'Dirección',
+  validated_address: 'Dirección validada',
+
+  // Financiero
+  credit_limit: 'Límite de crédito',
+  available_balance: 'Saldo disponible',
+  used_balance: 'Saldo utilizado',
+  amount: 'Monto',
+  total_amount: 'Monto total',
+  interest_rate: 'Tasa de interés',
+  late_fee: 'Cargo por mora',
+  payment_amount: 'Monto del pago',
+  balance: 'Saldo',
+  folio: 'Folio',
+  voucher_folio: 'Folio de vale',
+  distributor_number: 'Número de distribuidora',
+  client_number: 'Número de cliente',
+
+  // Estado / Workflow
+  status: 'Estado',
+  result: 'Resultado',
+  outcome: 'Resultado',
+  severity: 'Severidad',
+  reason: 'Motivo',
+  revocation_reason: 'Motivo de revocación',
+  rejection_reason: 'Motivo de rechazo',
+  cancellation_reason: 'Motivo de cancelación',
+  notes: 'Notas',
+  observations: 'Observaciones',
+  comment: 'Comentario',
+  comments: 'Comentarios',
+
+  // Organización
+  branch_id: 'Sucursal',
+  branch_name: 'Nombre de sucursal',
+  role: 'Rol',
+  role_code: 'Código de rol',
+  category: 'Categoría',
+  category_name: 'Nombre de categoría',
+  product_name: 'Nombre del producto',
+  code: 'Código',
+
+  // Fechas
+  created_at: 'Fecha de creación',
+  updated_at: 'Fecha de actualización',
+  activated_at: 'Fecha de activación',
+  expires_at: 'Fecha de expiración',
+  revoked_at: 'Fecha de revocación',
+  scheduled_for: 'Programado para',
+  effective_from: 'Vigente desde',
+  effective_to: 'Vigente hasta',
+  due_date: 'Fecha de vencimiento',
+  payment_date: 'Fecha de pago',
+  cutoff_date: 'Fecha de corte',
+
+  // Seguridad
+  ip_address: 'Dirección IP',
+  user_agent: 'Navegador',
+  device: 'Dispositivo',
+  mfa_method: 'Método MFA',
+  authentication_method: 'Método de autenticación',
+
+  // Verificación
+  verification_result: 'Resultado de verificación',
+  verifier_id: 'Verificador',
+  coordinator_id: 'Coordinador',
+  evaluation_result: 'Resultado de evaluación',
+};
+
 @Injectable({ providedIn: 'root' })
 export class AuditoriaApiService {
   private readonly http = inject(HttpClient);
@@ -436,5 +534,220 @@ export class AuditoriaApiService {
       .trim()
       .toLowerCase()
       .replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
+  }
+
+  getFieldLabel(field: string): string {
+    return FIELD_LABELS_ES[field] || this.humanize(field);
+  }
+
+  formatValue(value: unknown): string {
+    if (value === null || value === undefined) return '(vacío)';
+    if (typeof value === 'boolean') return value ? 'Sí' : 'No';
+    if (typeof value === 'number') return String(value);
+    if (typeof value === 'string') {
+      if (value === '') return '(vacío)';
+      if (value.length > 80) return value.substring(0, 77) + '...';
+      return value;
+    }
+    if (Array.isArray(value)) return value.map((item) => this.formatValue(item)).join(', ');
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  getChangedFields(
+    audit: AuditRecord,
+  ): { field: string; label: string; oldValue: string; newValue: string }[] {
+    const prev = audit.previous_value ?? {};
+    const next = audit.new_value ?? {};
+    const allKeys = new Set([...Object.keys(prev), ...Object.keys(next)]);
+    const changes: { field: string; label: string; oldValue: string; newValue: string }[] = [];
+
+    const skipKeys = new Set([
+      'id',
+      'created_at',
+      'updated_at',
+      'deleted_at',
+      'device',
+      'security_event_id',
+      'password',
+    ]);
+
+    allKeys.forEach((key) => {
+      if (skipKeys.has(key)) return;
+      const oldVal = prev[key];
+      const newVal = next[key];
+      if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
+        changes.push({
+          field: key,
+          label: this.getFieldLabel(key),
+          oldValue: this.formatValue(oldVal),
+          newValue: this.formatValue(newVal),
+        });
+      }
+    });
+
+    return changes;
+  }
+
+  describeAction(audit: AuditRecord): string {
+    const event = audit.event_name;
+    const actorName = audit.actor?.name ?? 'Un usuario';
+    const entityLabel = this.getEntityLabel(audit.entity_type || '').toLowerCase();
+    const newVal = audit.new_value ?? {};
+    const prevVal = audit.previous_value ?? {};
+    const targetName =
+      (newVal['name'] as string) ||
+      (newVal['email'] as string) ||
+      (newVal['folio'] as string) ||
+      (newVal['voucher_folio'] as string) ||
+      (newVal['distributor_number'] as string) ||
+      (newVal['client_number'] as string) ||
+      '';
+
+    // --- Accesos y Seguridad ---
+    if (event === 'LOGIN_SUCCESSFUL') return `${actorName} inició sesión`;
+    if (event === 'LOGIN_FAILED')
+      return `Intento fallido de inicio de sesión${newVal['email'] ? ' con ' + (newVal['email'] as string) : ''}`;
+    if (event === 'LOGOUT') return `${actorName} cerró sesión`;
+    if (event === 'PASSWORD_CHANGED') return `${actorName} cambió su contraseña`;
+    if (event === 'MFA_ENABLED') return `${actorName} activó la autenticación de dos pasos (MFA)`;
+
+    // --- Vales ---
+    if (event === 'VOUCHER_GENERATED') {
+      const folio = (newVal['folio'] as string) || (newVal['voucher_folio'] as string) || '';
+      const amount = newVal['amount'] || newVal['total_amount'] || '';
+      let desc = `${actorName} generó un vale`;
+      if (folio) desc += ` con folio ${folio}`;
+      if (amount) desc += ` por $${amount}`;
+      return desc;
+    }
+    if (event === 'VOUCHER_CANCELLED' || event === 'VOUCHER_CANCELLED_BY_DISTRIBUTOR') {
+      const folio = (newVal['folio'] as string) || (prevVal['folio'] as string) || '';
+      return `${actorName} canceló el vale${folio ? ' ' + folio : ''}`;
+    }
+    if (event === 'VOUCHER_RELEASED') {
+      const folio = (newVal['folio'] as string) || '';
+      return `${actorName} liberó el vale${folio ? ' ' + folio : ''}`;
+    }
+    if (event === 'VOUCHER_CASHED') {
+      const folio = (newVal['folio'] as string) || '';
+      return `${actorName} cobró el vale${folio ? ' ' + folio : ''}`;
+    }
+    if (event.startsWith('VOUCHER_MODIFICATION')) {
+      if (event.includes('REQUESTED')) return `${actorName} solicitó modificación de vale`;
+      if (event.includes('AUTHORIZED')) return `${actorName} autorizó modificación de vale`;
+      if (event.includes('REJECTED')) return `${actorName} rechazó modificación de vale`;
+      if (event.includes('APPLIED')) return `${actorName} aplicó la modificación de vale`;
+    }
+
+    // --- Clientes ---
+    if (event === 'CLIENT_CREATED') {
+      return `${actorName} dio de alta al cliente${targetName ? ' "' + targetName + '"' : ''}`;
+    }
+    if (event === 'CLIENT_UPDATED') {
+      const changes = this.getChangedFields(audit);
+      if (changes.length > 0) {
+        const fieldList = changes
+          .slice(0, 3)
+          .map((c) => c.label.toLowerCase())
+          .join(', ');
+        return `${actorName} editó ${fieldList} del cliente`;
+      }
+      return `${actorName} actualizó datos del cliente`;
+    }
+    if (event === 'CLIENT_DELETED') {
+      return `${actorName} eliminó al cliente${targetName ? ' "' + targetName + '"' : ''}`;
+    }
+
+    // --- Créditos ---
+    if (event === 'CREDIT_LINE_ADJUSTED') {
+      const amount = newVal['amount'] || newVal['credit_limit'] || '';
+      return `${actorName} ajustó la línea de crédito${amount ? ' a $' + amount : ''}`;
+    }
+
+    // --- Pagos ---
+    if (event === 'PAYMENT_APPLIED') {
+      const amount = newVal['amount'] || newVal['payment_amount'] || '';
+      return `${actorName} aplicó un pago${amount ? ' de $' + amount : ''}`;
+    }
+    if (event === 'CUTOFF_EXECUTED') return `${actorName} ejecutó un corte de relación`;
+
+    // --- Puntos ---
+    if (event === 'POINTS_REDEMPTION_REQUESTED') return `${actorName} solicitó un canje de puntos`;
+    if (event === 'POINTS_REDEMPTION_AUTHORIZED') return `${actorName} autorizó un canje de puntos`;
+    if (event === 'POINTS_REDEMPTION_DELIVERED')
+      return `${actorName} entregó el efectivo del canje de puntos`;
+    if (event === 'POINTS_REDEMPTION_REJECTED') return `${actorName} rechazó un canje de puntos`;
+
+    // --- Distribuidoras ---
+    if (event === 'DISTRIBUTOR_BLOCKED') return `${actorName} bloqueó a la distribuidora`;
+    if (event === 'DISTRIBUTOR_RELEASED')
+      return `${actorName} levantó el bloqueo de la distribuidora`;
+    if (event === 'RISK_ALERT_GENERATED') return `Se generó una alerta de riesgo`;
+    if (event === 'DELINQUENCY_REMOVAL_REQUESTED')
+      return `${actorName} solicitó retiro de morosidad`;
+    if (event === 'DELINQUENCY_REMOVAL_AUTHORIZED')
+      return `${actorName} autorizó retiro de morosidad`;
+
+    // --- Archivos ---
+    if (event === 'PRIVATE_MEDIA_DOWNLOADED')
+      return `${actorName} descargó un archivo de ${entityLabel || 'expediente'}`;
+    if (event === 'MEDIA_UPLOADED') return `${actorName} cargó un documento`;
+    if (event === 'PRIVATE_MEDIA_STORED') return `${actorName} almacenó un archivo`;
+
+    // --- Solicitudes de distribuidora ---
+    if (event === 'APPLICATION_MANAGER_APPROVED')
+      return `${actorName} aprobó la solicitud de distribuidora`;
+    if (event === 'APPLICATION_MANAGER_REJECTED')
+      return `${actorName} rechazó la solicitud de distribuidora`;
+    if (event === 'APPLICATION_COORDINATOR_EVALUATED')
+      return `${actorName} evaluó la solicitud de distribuidora`;
+    if (event === 'APPLICATION_SENT_TO_MANAGER')
+      return `${actorName} envió la solicitud al gerente`;
+    if (event === 'APPLICATION_CORRECTION_APPLIED')
+      return `${actorName} aplicó correcciones a la solicitud`;
+    if (event === 'APPLICATION_CORRECTIONS_COMPLETED')
+      return `${actorName} completó las correcciones de la solicitud`;
+    if (event.includes('DISTRIBUTOR_APPLICATION_RETURNED'))
+      return `${actorName} devolvió la solicitud al verificador`;
+
+    // --- Verificación ---
+    if (event === 'VERIFICATION_ACCESS_DENIED')
+      return `Se denegó acceso de verificación a ${actorName}`;
+    if (event === 'VERIFICATION_EVIDENCE_UPLOADED')
+      return `${actorName} cargó evidencia de verificación`;
+    if (event === 'VERIFICATION_EVIDENCE_REMOVED')
+      return `${actorName} eliminó evidencia de verificación`;
+
+    // --- Genérico por patrón ---
+    const group = this.getActionGroup(event);
+    if (group === 'CREATE') {
+      return `${actorName} creó un registro en ${entityLabel || 'el sistema'}${targetName ? ': "' + targetName + '"' : ''}`;
+    }
+    if (group === 'UPDATE') {
+      const changes = this.getChangedFields(audit);
+      if (changes.length > 0) {
+        const fieldList = changes
+          .slice(0, 3)
+          .map((c) => c.label.toLowerCase())
+          .join(', ');
+        const suffix = changes.length > 3 ? ` y ${changes.length - 3} campo(s) más` : '';
+        return `${actorName} editó ${fieldList}${suffix} en ${entityLabel || 'el sistema'}`;
+      }
+      return `${actorName} actualizó ${entityLabel || 'un registro'}`;
+    }
+    if (group === 'DELETE') {
+      return `${actorName} eliminó/canceló un registro de ${entityLabel || 'el sistema'}`;
+    }
+    if (group === 'PROCESS') {
+      return `${actorName} procesó una operación en ${entityLabel || 'el sistema'}`;
+    }
+    if (group === 'READ') {
+      return `${actorName} consultó ${entityLabel || 'información del sistema'}`;
+    }
+
+    // Fallback
+    const eventInfo = this.getEventInfo(event);
+    return `${actorName} realizó: ${eventInfo.label}`;
   }
 }
