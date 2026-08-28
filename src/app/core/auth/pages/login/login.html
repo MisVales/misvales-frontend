@@ -33,6 +33,31 @@
       <p>Accede a tu cuenta para continuar.</p>
     </div>
 
+    @if (localAccountSwitchEnabled) {
+      <section class="local-account-picker" aria-label="Acceso local de desarrollo">
+        <div>
+          <span class="local-account-picker__eyebrow">Entorno local</span>
+          <strong>Elegir cuenta demo</strong>
+          <small>Acceso directo para probar cada perfil.</small>
+        </div>
+        <label for="login-local-demo-account">Cuentas demo</label>
+        <select id="login-local-demo-account" [disabled]="localAccountsLoading() || isLoading" (change)="selectLocalAccount($event)">
+          <option value="">Selecciona una cuenta</option>
+          @for (account of localAccounts(); track account.id) {
+            <option [value]="account.id">{{ account.role_name }} · {{ account.name }}</option>
+          }
+        </select>
+        <label for="login-local-distributor-account">Distribuidoras</label>
+        <select id="login-local-distributor-account" [disabled]="!localDistributors().length || localAccountsLoading() || isLoading" (change)="selectLocalAccount($event)">
+          <option value="">{{ localDistributors().length ? 'Selecciona una distribuidora' : 'Sin distribuidoras activas' }}</option>
+          @for (account of localDistributors(); track account.id) {
+            <option [value]="account.id">{{ account.distributor_number }} · {{ account.name }}</option>
+          }
+        </select>
+        @if (localAccountsError()) { <small class="local-account-picker__error">{{ localAccountsError() }}</small> }
+      </section>
+    }
+
     @if (error) {
       <div class="login-alert" role="alert">
         <lucide-icon name="alert-triangle" [size]="19" aria-hidden="true" />
