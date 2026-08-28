@@ -95,6 +95,9 @@
         ><strong>{{ money(availableBalance(distributor.lineaInicial)) }}</strong>
       </div>
       <div>
+        <span>Adeudo actual</span><strong>{{ money(currentDebt()) }}</strong>
+      </div>
+      <div>
         <span>Relaciones</span><strong>{{ relations().length }}</strong>
       </div>
       <div [class.ledger-strip__alert]="riskAlerts().length">
@@ -322,7 +325,7 @@
           <div class="rail-item">
             <lucide-icon name="receipt-text" [size]="20" aria-hidden="true" />
             <div>
-              <span>Saldo exigible vigente</span><strong>{{ money(currentRelationBalance()) }}</strong>
+              <span>Saldo exigible vigente</span><strong>{{ money(currentDebt()) }}</strong>
             </div>
           </div>
           <div class="rail-item">

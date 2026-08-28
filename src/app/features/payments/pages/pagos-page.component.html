@@ -500,6 +500,12 @@
                     {{ creditLine().available | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
                   </dd>
                 </div>
+                <div class="info-row">
+                  <dt>Adeudo Actual</dt>
+                  <dd class="font-bold">
+                    {{ creditLine().currentDebt | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
+                  </dd>
+                </div>
               </dl>
 
               <!-- Progress bar of credit usage -->

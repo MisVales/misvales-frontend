@@ -110,6 +110,7 @@ export class PagosPageComponent implements OnDestroy {
   readonly surpluses = signal<Surplus[]>([]);
   readonly selectedRelationId = signal<string | null>(null);
   readonly selectedRelation = signal<RelationView | null>(null);
+  readonly currentFinancialState = signal<CreditLineView | null>(null);
   readonly selectedPaymentId = signal<string | null>(null);
   readonly searchTerm = signal<string>('');
   readonly contextDistributorNumber = signal<string>('');
@@ -271,14 +272,11 @@ export class PagosPageComponent implements OnDestroy {
   });
 
   readonly creditLine = computed(() => {
-    const rel = this.selectedRelation();
-    const line = rel?.distribuidora?.linea_credito || rel?.distribuidora?.lineaCredito;
-
-    const totalAuthorized = parseFloat(
-      (line?.total_authorized ?? rel?.header_snapshot?.credit_line_total ?? 0).toString(),
-    );
-    const usedBalance = parseFloat((line?.used_balance ?? 0).toString());
-    const available = Math.max(0, totalAuthorized - usedBalance);
+    const line = this.currentFinancialState();
+    const totalAuthorized = Number(line?.total_authorized ?? 0);
+    const usedBalance = Number(line?.used_balance ?? 0);
+    const available = Number(line?.available_balance ?? 0);
+    const currentDebt = Number(line?.current_debt ?? 0);
 
     const usedPercentage =
       totalAuthorized > 0 ? Math.min(100, (usedBalance / totalAuthorized) * 100) : 0;
@@ -288,6 +286,7 @@ export class PagosPageComponent implements OnDestroy {
       totalAuthorized,
       usedBalance,
       available,
+      currentDebt,
       usedPercentage,
       availablePercentage,
     };
@@ -351,6 +350,7 @@ export class PagosPageComponent implements OnDestroy {
             contextualRelation?.distribuidora?.id ?? contextualRelation?.distributor_id ?? null,
           );
         }
+        this.loadCurrentFinancialState();
         this.loading.set(false);
         const firstVisibleRelation = this.filteredRelations()[0];
         if (firstVisibleRelation && !this.selectedRelationId()) {
@@ -373,7 +373,21 @@ export class PagosPageComponent implements OnDestroy {
           (line) => line.distributor.distributor_number === distributorNumber,
         );
         this.contextDistributorId.set(match?.distributor.id ?? null);
+        this.loadCurrentFinancialState();
       },
+    });
+  }
+
+  private loadCurrentFinancialState(): void {
+    const distributorId = this.contextDistributorId();
+    if (!distributorId) {
+      this.currentFinancialState.set(null);
+      return;
+    }
+
+    this.creditApi.consultarLinea(distributorId).subscribe({
+      next: (state) => this.currentFinancialState.set(state),
+      error: () => this.currentFinancialState.set(null),
     });
   }
 

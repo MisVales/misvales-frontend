@@ -25,6 +25,15 @@ describe('CreditoApiService', () => {
     expect(result.map(line => line.id)).toEqual(['l1']);
   });
 
+  it('consulta el estado financiero actual de una distribuidora desde el canal canónico', () => {
+    let result: any;
+    service.consultarLinea('d1').subscribe(value => result = value);
+    const request = http.expectOne('/api/v1/distributors/d1/credit-line');
+    expect(request.request.method).toBe('GET');
+    request.flush({ data: { id: 'l1', total_authorized: '60000.0000', used_balance: '47400.0000', available_balance: '12600.0000', current_debt: '48100.0000' } });
+    expect(result.current_debt).toBe('48100.0000');
+  });
+
   it('envía paginación canónica para incrementos existentes', () => {
     service.listarIncrementos(2).subscribe();
     const request = http.expectOne('/api/v1/credit-increase-requests?page=2&per_page=100');

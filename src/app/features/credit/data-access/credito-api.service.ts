@@ -9,6 +9,7 @@ export interface CreditLineView {
   total_authorized: string;
   used_balance: string;
   available_balance: string;
+  current_debt: string;
   restriction: { restriction_type: string; restriction_status: string; has_admissible_range: boolean; reference_amount: string; lower_limit: string; upper_limit: string } | null;
   last_movement?: { type: string; amount: string; occurred_at: string } | null;
   capabilities?: { can_request_increase: boolean; can_review_increase: boolean; can_decide_increase: boolean; can_view_movements: boolean };
@@ -64,6 +65,12 @@ export class CreditoApiService {
 
   consultarMiLinea(): Observable<CreditLineView> {
     return this.http.get<{ data: CreditLineView }>(`${this.config.baseUrl}/me/credit-line`).pipe(map(response => response.data));
+  }
+
+  consultarLinea(distributorId: string): Observable<CreditLineView> {
+    return this.http.get<{ data: CreditLineView }>(
+      `${this.config.baseUrl}/distributors/${distributorId}/credit-line`,
+    ).pipe(map(response => response.data));
   }
 
   listarIncrementos(page = 1, perPage = 100): Observable<{ data: CreditIncreaseView[]; meta: { current_page: number; last_page: number; total: number } }> {

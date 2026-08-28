@@ -384,29 +384,23 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
     if (!line || Number(line.total_authorized) <= 0) return 0;
     return Math.min(
       100,
-      Math.round((this.effectiveUsedBalance() / Number(line.total_authorized)) * 100),
+      Math.round((Number(line.used_balance) / Number(line.total_authorized)) * 100),
     );
   }
 
   effectiveUsedBalance(): number {
-    return Math.max(Number(this.creditLine()?.used_balance ?? 0), this.currentRelationBalance());
+    return Number(this.creditLine()?.used_balance ?? 0);
   }
 
-  currentRelationBalance(): number {
-    const current = this.relations().find((relation) => relation.financial_status !== 'ROLLED_FORWARD');
-    return Number(current?.balance ?? 0);
+  currentDebt(): number {
+    return Number(this.creditLine()?.current_debt ?? 0);
   }
 
   availableBalance(fallbackAuthorized: string | number | null = 0): number {
     const line = this.creditLine();
     if (!line) return Math.max(0, Number(fallbackAuthorized ?? 0));
 
-    const authorized = Number(line.total_authorized ?? 0);
-    const used = this.effectiveUsedBalance();
-    const reported = Number(line.available_balance ?? 0);
-
-    if (line.restriction && reported <= authorized - used) return Math.max(0, reported);
-    return Math.max(0, authorized - used);
+    return Number(line.available_balance ?? 0);
   }
 
   relationStatus(status: string): string {
@@ -460,8 +454,11 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
         return fallback;
       }
     };
-    const [lines, movements, increases, relations, alerts] = await Promise.all([
-      safe(firstValueFrom(this.credit.listarLineas()), [] as CreditLineView[]),
+    const [line, movements, increases, relations, alerts] = await Promise.all([
+      safe(
+        firstValueFrom(this.credit.consultarLinea(distributorId)),
+        null as CreditLineView | null,
+      ),
       safe(
         firstValueFrom(this.credit.listarMovimientos(distributorId)),
         [] as CreditMovementView[],
@@ -478,7 +475,7 @@ export class DetalleDistribuidoraPageComponent implements OnInit, OnDestroy {
       ),
       safe(firstValueFrom(this.riskApi.alerts()), [] as RiskAlert[]),
     ]);
-    this.creditLine.set(lines.find((line) => line.distributor.id === distributorId) ?? null);
+    this.creditLine.set(line);
     this.movements.set(movements);
     this.increases.set(increases.filter((item) => item.distributor?.id === distributorId));
     this.relations.set(relations.filter((item) => item.distributor_id === distributorId));
