@@ -144,6 +144,19 @@ export const AuthFacade = signalStore(
     }
 
     return {
+      async switchLocalAccount(userId: string): Promise<boolean> {
+        patchState(store, { isLoading: true, error: null });
+        try {
+          const response = await firstValueFrom(authService.switchLocalAccount(userId));
+          if (!response.access_token) throw new Error('La sesión local no devolvió un token.');
+          sessionStore.clearSession();
+          await establishSession();
+          return true;
+        } catch (error: unknown) {
+          fail(error, 'No fue posible cambiar la cuenta local.');
+          return false;
+        }
+      },
       async login(credentials: LoginReq): Promise<void> {
         patchState(store, { isLoading: true, error: null, validationErrors: {} });
         try {

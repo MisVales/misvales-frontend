@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders, HttpXsrfTokenExtractor } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { API_CONFIG } from '@core/api/api.config';
-import { Observable, switchMap, tap } from 'rxjs';
+import { map, Observable, switchMap, tap } from 'rxjs';
 import { AuthTokenStore } from '@core/session/auth-token.store';
 import type { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import {
@@ -22,6 +22,20 @@ import {
   PasskeyVerifyReq,
   ApiMessageRes,
 } from './auth.dtos';
+
+export interface LocalSwitchAccount {
+  id: string;
+  name: string;
+  email: string;
+  role_code: string;
+  role_name: string;
+  distributor_number?: string;
+}
+
+export interface LocalSwitchAccounts {
+  accounts: LocalSwitchAccount[];
+  distributors: LocalSwitchAccount[];
+}
 
 type AuthenticationOptionsJSON = Parameters<typeof startAuthentication>[0]['optionsJSON'];
 type RegistrationOptionsJSON = Parameters<typeof startRegistration>[0]['optionsJSON'];
@@ -64,6 +78,18 @@ export class AuthService {
     return this.postWithCsrf<unknown>(`${this.baseUrl}/logout`, {}).pipe(
       tap(() => this.tokenStore.clear()),
     );
+  }
+
+  localAccounts(): Observable<LocalSwitchAccounts> {
+    return this.http
+      .get<{ data: LocalSwitchAccounts }>(`${this.baseUrl}/local/accounts`)
+      .pipe(map((response) => response.data));
+  }
+
+  switchLocalAccount(userId: string): Observable<LoginRes> {
+    return this.postWithCsrf<LoginRes>(`${this.baseUrl}/local/switch-account`, {
+      user_id: userId,
+    }).pipe(tap(this.saveTokensIfPresent));
   }
 
   private saveTokensIfPresent = (response: LoginRes) => {

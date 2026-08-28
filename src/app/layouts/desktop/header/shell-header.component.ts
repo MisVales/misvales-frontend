@@ -27,6 +27,11 @@ import {
 } from '@features/verifications/presentation/components/primitives/verification-primitives';
 import { MenuItem } from '@features/verifications/presentation/models/verification.models';
 import { CentroOperacionApiService } from '@features/notifications/centro-operacion-api.service';
+import {
+  AuthService,
+  type LocalSwitchAccount,
+} from '@core/auth/data-access/auth.service';
+import { environment } from '../../../../environments/environment';
 
 const OPERATIONS_PERMISSIONS = [
   'notifications.view_own',
@@ -126,6 +131,56 @@ const OPERATIONS_PERMISSIONS = [
                 [readOnly]="false"
                 (itemSelected)="handleAccountAction($event)"
               />
+              @if (localAccountSwitchEnabled) {
+                <section class="shell-header__local-switch" aria-label="Cambiar cuenta local">
+                  <button
+                    type="button"
+                    class="shell-header__local-switch-trigger"
+                    (click)="toggleLocalAccountSwitch($event)"
+                    [attr.aria-expanded]="localAccountSwitchOpen()"
+                  >
+                    <lucide-icon name="users-round" [size]="17" aria-hidden="true" />
+                    <span>Cambiar cuenta</span>
+                    <lucide-icon name="chevron-down" [size]="15" aria-hidden="true" />
+                  </button>
+                  @if (localAccountSwitchOpen()) {
+                    <div class="shell-header__local-switch-fields">
+                      <label for="local-demo-account">Cuentas demo</label>
+                      <select
+                        id="local-demo-account"
+                        [disabled]="localAccountsLoading() || authFacade.isLoading()"
+                        (change)="selectLocalAccount($event)"
+                      >
+                        <option value="">Selecciona una cuenta</option>
+                        @for (account of localAccounts(); track account.id) {
+                          <option [value]="account.id" [disabled]="account.id === currentUserId()">
+                            {{ account.role_name }} · {{ account.name }}
+                          </option>
+                        }
+                      </select>
+
+                      <label for="local-distributor-account">Distribuidoras</label>
+                      <select
+                        id="local-distributor-account"
+                        [disabled]="!localDistributors().length || localAccountsLoading() || authFacade.isLoading()"
+                        (change)="selectLocalAccount($event)"
+                      >
+                        <option value="">
+                          {{ localDistributors().length ? 'Selecciona una distribuidora' : 'Sin distribuidoras activas' }}
+                        </option>
+                        @for (account of localDistributors(); track account.id) {
+                          <option [value]="account.id" [disabled]="account.id === currentUserId()">
+                            {{ account.distributor_number }} · {{ account.name }}
+                          </option>
+                        }
+                      </select>
+                      @if (localAccountsError()) {
+                        <small class="shell-header__local-switch-error">{{ localAccountsError() }}</small>
+                      }
+                    </div>
+                  }
+                </section>
+              }
             </div>
           }
         </div>
@@ -325,6 +380,51 @@ const OPERATIONS_PERMISSIONS = [
     .shell-header__account-summary > div {
       min-width: 0;
     }
+    .shell-header__local-switch {
+      border-top: 1px solid var(--mv-border);
+      padding: 0.45rem;
+    }
+    .shell-header__local-switch-trigger {
+      display: grid;
+      width: 100%;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.65rem;
+      border: 0;
+      border-radius: 0.55rem;
+      background: transparent;
+      padding: 0.65rem;
+      color: var(--mv-text);
+      text-align: left;
+      cursor: pointer;
+    }
+    .shell-header__local-switch-trigger:hover {
+      background: var(--mv-surface-muted);
+    }
+    .shell-header__local-switch-fields {
+      display: grid;
+      gap: 0.35rem;
+      padding: 0.45rem 0.65rem 0.65rem;
+    }
+    .shell-header__local-switch-fields label {
+      margin-top: 0.3rem;
+      color: var(--mv-text-muted);
+      font-size: 0.67rem;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+    .shell-header__local-switch-fields select {
+      width: 100%;
+      border: 1px solid var(--mv-border);
+      border-radius: 0.5rem;
+      background: var(--mv-surface);
+      padding: 0.55rem;
+      color: var(--mv-text);
+      font-size: 0.72rem;
+    }
+    .shell-header__local-switch-error {
+      color: var(--mv-danger-700, #b42318);
+    }
     .shell-header__user:focus-visible {
       outline: 2px solid var(--mv-primary-600);
       outline-offset: -2px;
@@ -386,11 +486,19 @@ export class ShellHeaderComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
   private readonly sessionStore = inject(SessionStore);
-  private readonly authFacade = inject(AuthFacade);
+  readonly authFacade = inject(AuthFacade);
   private readonly notificationsApi = inject(CentroOperacionApiService);
+  private readonly authService = inject(AuthService);
   readonly shellNavigation = inject(ShellNavigationService);
   private readonly currentUrl = signal(this.router.url);
   readonly accountMenuOpen = signal(false);
+  readonly localAccountSwitchEnabled = !environment.production;
+  readonly localAccountSwitchOpen = signal(false);
+  readonly localAccountsLoading = signal(false);
+  readonly localAccountsError = signal('');
+  readonly localAccounts = signal<LocalSwitchAccount[]>([]);
+  readonly localDistributors = signal<LocalSwitchAccount[]>([]);
+  readonly currentUserId = computed(() => this.sessionStore.user()?.id ?? null);
   readonly unreadCount = signal(0);
   readonly displayedUnreadCount = computed(() =>
     this.unreadCount() > 99 ? '99+' : String(this.unreadCount()),
@@ -507,8 +615,41 @@ export class ShellHeaderComponent {
     this.accountMenuOpen.update((open) => !open);
   }
 
+  toggleLocalAccountSwitch(event: MouseEvent): void {
+    event.stopPropagation();
+    this.localAccountSwitchOpen.update((open) => !open);
+    if (this.localAccountSwitchOpen() && !this.localAccounts().length) this.loadLocalAccounts();
+  }
+
+  selectLocalAccount(event: Event): void {
+    const select = event.target as HTMLSelectElement;
+    const userId = select.value;
+    select.value = '';
+    if (!userId || userId === this.currentUserId() || this.authFacade.isLoading()) return;
+    void this.authFacade.switchLocalAccount(userId).then((changed) => {
+      if (changed) this.closeAccountMenu();
+    });
+  }
+
+  private loadLocalAccounts(): void {
+    this.localAccountsLoading.set(true);
+    this.localAccountsError.set('');
+    this.authService.localAccounts().subscribe({
+      next: (data) => {
+        this.localAccounts.set(data.accounts);
+        this.localDistributors.set(data.distributors);
+        this.localAccountsLoading.set(false);
+      },
+      error: () => {
+        this.localAccountsError.set('No fue posible cargar las cuentas locales.');
+        this.localAccountsLoading.set(false);
+      },
+    });
+  }
+
   closeAccountMenu(): void {
     this.accountMenuOpen.set(false);
+    this.localAccountSwitchOpen.set(false);
   }
 
   @HostListener('document:click', ['$event'])
