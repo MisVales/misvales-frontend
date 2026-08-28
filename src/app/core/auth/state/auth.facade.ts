@@ -98,7 +98,7 @@ export const AuthFacade = signalStore(
     const alerts = inject(AlertService);
     const diagnostics = inject(AuthConfigurationService);
 
-    async function establishSession(): Promise<void> {
+    async function establishSession(forceReload = false): Promise<void> {
       await firstValueFrom(meService.fetchMe());
       patchState(store, {
         isLoading: false,
@@ -107,7 +107,14 @@ export const AuthFacade = signalStore(
         availableMfa: [],
         mfaExpiresAt: null,
       });
-      await router.navigate(['/inicio']);
+      if (forceReload) {
+        await router.navigateByUrl('/inicio', {
+          replaceUrl: true,
+          onSameUrlNavigation: 'reload',
+        });
+      } else {
+        await router.navigate(['/inicio']);
+      }
     }
 
     function fail(error: unknown, fallback: string): void {
@@ -150,7 +157,7 @@ export const AuthFacade = signalStore(
           const response = await firstValueFrom(authService.switchLocalAccount(userId));
           if (!response.access_token) throw new Error('La sesión local no devolvió un token.');
           sessionStore.clearSession();
-          await establishSession();
+          await establishSession(true);
           return true;
         } catch (error: unknown) {
           fail(error, 'No fue posible cambiar la cuenta local.');
