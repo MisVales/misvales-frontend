@@ -18,6 +18,10 @@
     </header>
 
     @if (loading()) {
+      <p class="loading-status" role="status" aria-live="polite">
+        <lucide-icon class="loading-status__icon" name="loader-2" [size]="15" aria-hidden="true" />
+        Cargando indicadores y operación…
+      </p>
       <div class="loading-kpis" aria-label="Cargando indicadores" aria-busy="true">
         @for (item of config().role === 'cashier' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4]; track item) {
           <div class="skeleton"></div>

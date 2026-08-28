@@ -102,6 +102,18 @@ import { VerifierHomeComponent } from './verifier-home.component';
       grid-template-columns: repeat(4, minmax(0, 1fr));
       gap: 0.85rem;
     }
+    .loading-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin: -0.35rem 0 0;
+      color: var(--mv-text-muted);
+      font-size: 0.75rem;
+      font-weight: 650;
+    }
+    .loading-status__icon {
+      animation: spin 0.9s linear infinite;
+    }
     .skeleton {
       min-height: 7.7rem;
       border: 1px solid var(--mv-border);
@@ -231,6 +243,9 @@ import { VerifierHomeComponent } from './verifier-home.component';
         background-position: -200% 0;
       }
     }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
     @media (max-width: 900px) {
       .sections,
       .dashboard[data-experience='tablet'] .sections,
@@ -253,7 +268,8 @@ import { VerifierHomeComponent } from './verifier-home.component';
       }
     }
     @media (prefers-reduced-motion: reduce) {
-      .skeleton {
+      .skeleton,
+      .loading-status__icon {
         animation: none;
       }
     }
