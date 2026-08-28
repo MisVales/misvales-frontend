@@ -4,6 +4,7 @@ import { Observable, tap } from 'rxjs';
 import { API_CONFIG } from '@core/api/api.config';
 import { MeRes } from '@core/api/models/me.dtos';
 import { SessionStore } from '@core/session/session.store';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class MeService {
@@ -28,7 +29,8 @@ export class MeService {
         const isVpnHost =
           typeof window !== 'undefined' &&
           (window.location.hostname === 'vpn.safeacces.lat' ||
-            window.location.hostname.startsWith('vpn.'));
+            window.location.hostname.startsWith('vpn.') ||
+            (!environment.production && window.location.port === '4201'));
         const vpn = Boolean(response.access_context?.vpn || isVpnHost);
         const managerActions = Boolean(
           response.capabilities?.manager_actions || (isManager && vpn),

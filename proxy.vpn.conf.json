@@ -1,0 +1,18 @@
+{
+  "/api": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "X-MisVales-VPN-Simulated": "true"
+    }
+  },
+  "/sanctum": {
+    "target": "http://127.0.0.1:8000",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "X-MisVales-VPN-Simulated": "true"
+    }
+  }
+}
