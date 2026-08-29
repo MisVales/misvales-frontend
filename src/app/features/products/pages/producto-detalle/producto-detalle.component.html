@@ -6,7 +6,7 @@
   <header class="mt-5 border-b border-[var(--mv-border)] pb-5">
     <p class="text-xs font-bold uppercase tracking-[.12em] text-[var(--mv-primary-700)]">Catálogo de importes</p>
     <h1 class="mt-2 text-2xl font-bold tracking-tight text-[var(--mv-text)]">{{ isNew() ? 'Crear producto' : 'Crear nueva edición del producto' }}</h1>
-    <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Define únicamente el importe disponible. Las condiciones financieras se capturan al otorgar cada vale.</p>
+    <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Define el importe y las condiciones financieras que aplicarán a los vales de este producto.</p>
   </header>
 
   <form data-manager-action [formGroup]="form" (ngSubmit)="guardar()" class="mt-6 grid gap-5 rounded-2xl border border-[var(--mv-border)] bg-white p-5 shadow-sm md:grid-cols-2 md:p-7">
@@ -35,9 +35,51 @@
       <app-input-error [control]="form.controls.nominal_amount" label="El importe nominal" [forceShow]="mostrarError('nominal_amount')" [customMessages]="{ min: 'El importe mínimo es de $100.00.' }"></app-input-error>
     </div>
 
+    <!-- Condiciones financieras del producto -->
+    <div class="md:col-span-2 border-t border-[var(--mv-border)] pt-4 mt-2">
+      <h3 class="text-base font-bold text-[var(--mv-text)] mb-1">Condiciones financieras del vale</h3>
+      <p class="text-xs text-[var(--mv-text-muted)] mb-4">Estos valores se aplican automáticamente a los vales generados con este producto.</p>
+      <div class="grid gap-4 md:grid-cols-2">
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Comisión del préstamo (%) <span class="text-red-600" aria-hidden="true">*</span></label>
+          <input type="number" step="0.1" class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="loan_commission_percentage" placeholder="Ej. 10" (focus)="marcarCampoAlEnfocar('loan_commission_percentage')">
+          <p class="mt-1 text-xs text-[var(--mv-text-muted)]">Porcentaje global aplicado al capital (ej. 10%).</p>
+          <app-input-error [control]="form.controls.loan_commission_percentage" label="La comisión" [forceShow]="mostrarError('loan_commission_percentage')"></app-input-error>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Interés por quincena (%) <span class="text-red-600" aria-hidden="true">*</span></label>
+          <input type="number" step="0.1" class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="simple_interest_percentage" placeholder="Ej. 3" (focus)="marcarCampoAlEnfocar('simple_interest_percentage')">
+          <p class="mt-1 text-xs text-[var(--mv-text-muted)]">Interés simple por cada quincena (ej. 3%).</p>
+          <app-input-error [control]="form.controls.simple_interest_percentage" label="El interés por quincena" [forceShow]="mostrarError('simple_interest_percentage')"></app-input-error>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Seguro del vale ($) <span class="text-red-600" aria-hidden="true">*</span></label>
+          <input appMoneyInput type="text" inputmode="decimal" class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="insurance_amount" placeholder="Ej. 100.00" (focus)="marcarCampoAlEnfocar('insurance_amount')">
+          <p class="mt-1 text-xs text-[var(--mv-text-muted)]">Importe de seguro al emitir el vale (ej. $100.00).</p>
+          <app-input-error [control]="form.controls.insurance_amount" label="El seguro del vale" [forceShow]="mostrarError('insurance_amount')"></app-input-error>
+        </div>
+
+        <div>
+          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Número de quincenas <span class="text-red-600" aria-hidden="true">*</span></label>
+          <input type="number" step="1" class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="fortnights_count" placeholder="Ej. 8" (focus)="marcarCampoAlEnfocar('fortnights_count')">
+          <p class="mt-1 text-xs text-[var(--mv-text-muted)]">Plazo fijo en quincenas para este producto (ej. 8).</p>
+          <app-input-error [control]="form.controls.fortnights_count" label="El número de quincenas" [forceShow]="mostrarError('fortnights_count')"></app-input-error>
+        </div>
+
+        <div class="md:col-span-2">
+          <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Recargo por falta de pago ($) <span class="text-red-600" aria-hidden="true">*</span></label>
+          <input appMoneyInput type="text" inputmode="decimal" class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="late_fee_amount" placeholder="Ej. 200.00" (focus)="marcarCampoAlEnfocar('late_fee_amount')">
+          <p class="mt-1 text-xs text-[var(--mv-text-muted)]">Importe del recargo aplicable en caso de falta de pago (ej. $200.00).</p>
+          <app-input-error [control]="form.controls.late_fee_amount" label="El recargo por falta de pago" [forceShow]="mostrarError('late_fee_amount')"></app-input-error>
+        </div>
+      </div>
+    </div>
+
     <div class="md:col-span-2">
       <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Motivo del alta o cambio <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-      <textarea class="w-full resize-none rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="reason" rows="2" placeholder="Explica por qué se crea o ajusta este importe" (focus)="marcarCampoAlEnfocar('reason')"></textarea>
+      <textarea class="w-full resize-none rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="reason" rows="2" placeholder="Explica por qué se crea o ajusta este producto" (focus)="marcarCampoAlEnfocar('reason')"></textarea>
       <app-input-error [control]="form.controls.reason" label="El motivo" [forceShow]="mostrarError('reason')"></app-input-error>
     </div>
 

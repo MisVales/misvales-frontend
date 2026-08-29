@@ -37,6 +37,11 @@ export class ProductoDetalleComponent implements OnInit {
     name: ['', Validators.required],
     description: [''],
     nominal_amount: ['', [Validators.required, Validators.min(100)]],
+    loan_commission_percentage: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
+    simple_interest_percentage: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
+    insurance_amount: ['', [Validators.required, Validators.min(0)]],
+    fortnights_count: ['', [Validators.required, Validators.min(1)]],
+    late_fee_amount: ['', [Validators.required, Validators.min(0)]],
     reason: ['', Validators.required],
   });
 
@@ -44,9 +49,16 @@ export class ProductoDetalleComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id && id !== 'nuevo') {
       this.service.consultarDetalle(id).subscribe({
-        next: (d) => {
+        next: (d: any) => {
           this.lockVersion = d.lock_version;
-          this.form.patchValue(d as any);
+          const patchObj = { ...d };
+          if (d.loan_commission_percentage != null) {
+            patchObj.loan_commission_percentage = String(Number(d.loan_commission_percentage) * 100);
+          }
+          if (d.simple_interest_percentage != null) {
+            patchObj.simple_interest_percentage = String(Number(d.simple_interest_percentage) * 100);
+          }
+          this.form.patchValue(patchObj);
           this.form.controls.code.disable();
         },
         error: (e) => this.error.set(e?.error?.message ?? 'No fue posible cargar el producto.')
@@ -58,7 +70,9 @@ export class ProductoDetalleComponent implements OnInit {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.controlesConErrorVisible.set(new Set([
-        'code', 'name', 'nominal_amount', 'reason',
+        'code', 'name', 'nominal_amount', 'loan_commission_percentage',
+        'simple_interest_percentage', 'insurance_amount', 'fortnights_count',
+        'late_fee_amount', 'reason',
       ]));
       return;
     }
@@ -71,6 +85,21 @@ export class ProductoDetalleComponent implements OnInit {
       name: v.name!,
       description: v.description || null,
       nominal_amount: String(v.nominal_amount),
+      loan_commission_percentage: v.loan_commission_percentage !== '' && v.loan_commission_percentage != null
+        ? String(Number(v.loan_commission_percentage) / 100)
+        : null,
+      simple_interest_percentage: v.simple_interest_percentage !== '' && v.simple_interest_percentage != null
+        ? String(Number(v.simple_interest_percentage) / 100)
+        : null,
+      insurance_amount: v.insurance_amount !== '' && v.insurance_amount != null
+        ? String(v.insurance_amount)
+        : null,
+      fortnights_count: v.fortnights_count !== '' && v.fortnights_count != null
+        ? Number(v.fortnights_count)
+        : null,
+      late_fee_amount: v.late_fee_amount !== '' && v.late_fee_amount != null
+        ? String(v.late_fee_amount)
+        : null,
       reason: v.reason!,
     };
 
