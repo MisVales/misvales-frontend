@@ -64,6 +64,7 @@ export interface AplicarCorreccionRequestDto {
 
 export interface FinalizarCorreccionesRequestDto {
   lock_version: number;
+  force?: boolean;
 }
 
 export interface EvaluarSolicitudRequestDto {

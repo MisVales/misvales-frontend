@@ -39,6 +39,7 @@ export class ListaComprobacionVisitaComponent {
   cambiarEstadoPunto = output<{ puntoId: string; estado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA' }>();
   cambiarEstadoGrupo = output<{ grupo: string; estado: 'COMPROBADO' }>();
   registrarDiferencia = output<PuntoComprobacion>();
+  quitarDiferencia = output<PuntoComprobacion>();
 
   private readonly gruposEnDiferencia = signal<Set<string>>(new Set());
 
@@ -97,6 +98,11 @@ export class ListaComprobacionVisitaComponent {
   onRegistrarDiferencia(punto: PuntoComprobacion) {
     if (this.isReadonly()) return;
     this.registrarDiferencia.emit(punto);
+  }
+
+  onQuitarDiferencia(punto: PuntoComprobacion) {
+    if (this.isReadonly()) return;
+    this.quitarDiferencia.emit(punto);
   }
 
   cantidadDiferencias(grupo: GrupoComprobacion): number {

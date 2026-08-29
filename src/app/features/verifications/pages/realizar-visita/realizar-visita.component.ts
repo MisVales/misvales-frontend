@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, OnInit, OnDestroy, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distribuidoras.facade';
 import { ListaComprobacionVisitaComponent, PuntoComprobacion } from '../../components/lista-comprobacion-visita/lista-comprobacion-visita.component';
@@ -17,10 +18,30 @@ import {
 import { DecisionOption } from '../../presentation/models/verification.models';
 import { canStartScheduledVisit } from '../../utils/visit-schedule-policy';
 
+export type SeccionVisita =
+  | 'datos_personales'
+  | 'familiares'
+  | 'domicilios'
+  | 'vehiculos'
+  | 'patrimonio'
+  | 'empleos'
+  | 'creditos'
+  | 'evidencias_visita'
+  | 'resultado_final';
+
+export interface PasoVisita {
+  id: SeccionVisita;
+  label: string;
+  seccionClave?: string;
+  grupoNombre?: string;
+  evidenciaPurpose?: string;
+}
+
 @Component({
   selector: 'app-realizar-visita',
   standalone: true,
   imports: [
+    CommonModule,
     ListaComprobacionVisitaComponent, 
     CapturaEvidenciaComponent, 
     GaleriaEvidenciasComponent, 
@@ -40,9 +61,21 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   private readonly alerts = inject(AlertService);
   private readonly confirmation = inject(ConfirmationService);
   private readonly mediaApi = inject(MediaApiService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  // Tabs / Wizard steps
-  step = signal<number>(1);
+  readonly pasos: PasoVisita[] = [
+    { id: 'datos_personales', label: 'Datos Personales', seccionClave: 'personal_data', grupoNombre: 'Datos personales', evidenciaPurpose: 'IDENTIFICATION' },
+    { id: 'familiares', label: 'Familiares', seccionClave: 'family_members', grupoNombre: 'Familiares' },
+    { id: 'domicilios', label: 'Domicilios', seccionClave: 'residences', grupoNombre: 'Domicilios', evidenciaPurpose: 'ADDRESS_PROOF' },
+    { id: 'vehiculos', label: 'Vehículos', seccionClave: 'vehicles', grupoNombre: 'Vehículos', evidenciaPurpose: 'VEHICLE_EVIDENCE' },
+    { id: 'patrimonio', label: 'Patrimonio', seccionClave: 'assets_liabilities', grupoNombre: 'Patrimonio', evidenciaPurpose: 'ASSET_EVIDENCE' },
+    { id: 'empleos', label: 'Empleos', seccionClave: 'employments', grupoNombre: 'Empleos' },
+    { id: 'creditos', label: 'Créditos', seccionClave: 'commercial_credits', grupoNombre: 'Créditos comerciales', evidenciaPurpose: 'COMMERCIAL_EVIDENCE' },
+    { id: 'evidencias_visita', label: 'Evidencias de Visita' },
+    { id: 'resultado_final', label: 'Resultado Final' },
+  ];
+
+  pasoActual = signal<SeccionVisita>('datos_personales');
   
   puntosComprobacion = signal<PuntoComprobacion[]>([]);
 
@@ -83,6 +116,66 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     },
   ];
 
+  // Puntos del paso actual
+  puntosPasoActual = computed(() => {
+    const paso = this.pasos.find((p) => p.id === this.pasoActual());
+    if (!paso || !paso.grupoNombre) return [];
+    return this.puntosComprobacion().filter((punto) => punto.grupo === paso.grupoNombre);
+  });
+
+  // Evidencias declaradas para el paso actual
+  evidenciasDeclaradasPasoActual = computed(() => {
+    const paso = this.pasos.find((p) => p.id === this.pasoActual());
+    const visita = this.facade.visitaSeleccionada();
+    if (!paso || !paso.evidenciaPurpose || !visita) return [];
+    return visita.evidenciasDeclaradas.filter((e) => e.tipo === paso.evidenciaPurpose);
+  });
+
+  conteoDiferenciasPaso(paso: PasoVisita): number {
+    if (!paso.grupoNombre) return 0;
+    return this.puntosComprobacion().filter(
+      (p) => p.grupo === paso.grupoNombre && p.estado === 'DIFERENCIA',
+    ).length;
+  }
+
+  pasoCompletado(paso: PasoVisita): boolean {
+    if (paso.id === 'evidencias_visita') {
+      return (this.facade.visitaSeleccionada()?.evidencias.length ?? 0) > 0;
+    }
+    if (paso.id === 'resultado_final') {
+      return !!this.resultadoFinal();
+    }
+    const puntos = this.puntosComprobacion().filter((p) => p.grupo === paso.grupoNombre);
+    return puntos.length > 0 && puntos.every((p) => p.estado === 'COMPROBADO' || p.estado === 'DIFERENCIA');
+  }
+
+  cambiarPaso(pasoId: SeccionVisita) {
+    this.pasoActual.set(pasoId);
+  }
+
+  pasoSiguiente() {
+    const currentIndex = this.pasos.findIndex((p) => p.id === this.pasoActual());
+    if (currentIndex < this.pasos.length - 1) {
+      this.pasoActual.set(this.pasos[currentIndex + 1].id);
+    }
+  }
+
+  pasoAnterior() {
+    const currentIndex = this.pasos.findIndex((p) => p.id === this.pasoActual());
+    if (currentIndex > 0) {
+      this.pasoActual.set(this.pasos[currentIndex - 1].id);
+    }
+  }
+
+  marcarTodoCorrectoPasoActualYContinuar() {
+    const paso = this.pasos.find((p) => p.id === this.pasoActual());
+    if (paso && paso.grupoNombre) {
+      this.onEstadoGrupoChange({ grupo: paso.grupoNombre, estado: 'COMPROBADO' });
+      this.alerts.showAlert(`Sección "${paso.label}" marcada como todo correcto.`, 'success');
+      this.pasoSiguiente();
+    }
+  }
+
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -93,6 +186,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
           await this.facade.cargarSolicitud(visita.solicitudId);
         }
         this.construirComprobacion();
+        this.cdr.markForCheck();
       }
     }
   }
@@ -208,6 +302,22 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     ));
   }
 
+  contextoEditor = computed(() => {
+    const punto = this.puntoDiferencia();
+    if (!punto) return null;
+    const dif = this.facade.visitaSeleccionada()?.diferencias.find(
+      (d) => d.seccion === punto.seccion && d.campo === punto.campo && (!d.registroId || d.registroId === punto.registroId)
+    );
+    return {
+      seccion: punto.seccion,
+      campo: punto.campo,
+      etiqueta: punto.grupo + ' · ' + punto.etiqueta,
+      datoDeclarado: punto.datoDeclarado,
+      datoObservado: dif?.datoObservado || '',
+      descripcion: dif?.descripcion || ''
+    };
+  });
+
   abrirEditorDiferencia(punto?: PuntoComprobacion) {
     if (!punto) return;
     this.puntoDiferencia.set(punto);
@@ -223,9 +333,17 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     const visita = this.facade.visitaSeleccionada();
     if (!visita) return;
 
-    // Actualizar la visita agregando la diferencia
+    const punto = this.puntoDiferencia();
+    const registroId = punto?.registroId;
+    const registroNombre = punto?.registro;
+
+    // Filter out previous difference for this specific field to allow editing without duplicates
+    const diferenciasFiltradas = visita.diferencias.filter(
+      (d) => !(d.seccion === diferencia.seccion && d.campo === diferencia.campo && (!d.registroId || d.registroId === registroId))
+    );
+
     const nuevasDiferencias = [
-      ...visita.diferencias.map(d => ({
+      ...diferenciasFiltradas.map(d => ({
         seccion: d.seccion,
         campo: d.campo,
         dato_declarado: d.datoDeclarado,
@@ -240,8 +358,8 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
         dato_declarado: diferencia.datoDeclarado,
         dato_observado: diferencia.datoObservado,
         descripcion: diferencia.descripcion,
-        registro_id: this.puntoDiferencia()?.registroId,
-        registro_nombre: this.puntoDiferencia()?.registro
+        registro_id: registroId,
+        registro_nombre: registroNombre
       }
     ];
 
@@ -251,12 +369,44 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     });
 
     if (success) {
-      const punto = this.puntoDiferencia();
-      if (punto) this.puntosComprobacion.update((puntos) => puntos.map((item) => item.id === punto.id
-        ? { ...item, estado: 'DIFERENCIA', diferenciaRegistrada: true }
+      if (punto) {
+        this.puntosComprobacion.update((puntos) => puntos.map((item) => item.id === punto.id
+          ? { ...item, estado: 'DIFERENCIA', diferenciaRegistrada: true }
+          : item
+        ));
+      }
+      this.alerts.showAlert('Diferencia guardada exitosamente.', 'success');
+      this.cerrarEditorDiferencia();
+    }
+  }
+
+  async onEliminarDiferencia(punto: PuntoComprobacion) {
+    const visita = this.facade.visitaSeleccionada();
+    if (!visita) return;
+
+    const nuevasDiferencias = visita.diferencias
+      .filter((d) => !(d.seccion === punto.seccion && d.campo === punto.campo && (!d.registroId || d.registroId === punto.registroId)))
+      .map((d) => ({
+        seccion: d.seccion,
+        campo: d.campo,
+        dato_declarado: d.datoDeclarado,
+        dato_observado: d.datoObservado,
+        descripcion: d.descripcion,
+        registro_id: d.registroId,
+        registro_nombre: d.registroNombre
+      }));
+
+    const success = await this.facade.actualizarVisita(visita.id, {
+      diferencias: nuevasDiferencias,
+      lock_version: visita.lockVersion
+    });
+
+    if (success) {
+      this.puntosComprobacion.update((puntos) => puntos.map((item) => item.id === punto.id
+        ? { ...item, estado: 'COMPROBADO', diferenciaRegistrada: false }
         : item
       ));
-      this.cerrarEditorDiferencia();
+      this.alerts.showAlert('Diferencia revertida; campo marcado como correcto.', 'info');
     }
   }
 
@@ -310,6 +460,15 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     const visita = this.facade.visitaSeleccionada();
     if (!visita) return;
 
+    if (visita.evidencias.length === 0) {
+      this.alerts.showAlert(
+        'Debes capturar o subir al menos una fotografía de evidencia (fachada, interior o documento) en el paso "Evidencias de Visita" antes de finalizar.',
+        'warning'
+      );
+      this.cambiarPaso('evidencias_visita');
+      return;
+    }
+
     if (!this.resultadoFinal()) {
       this.alerts.showAlert('Selecciona el resultado final de la visita.', 'warning');
       return;
@@ -332,10 +491,6 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
         this.router.navigate(['/verificacion-distribuidoras/verificaciones/asignadas']);
       }
     }
-  }
-
-  setStep(s: number) {
-    this.step.set(s);
   }
 }
 

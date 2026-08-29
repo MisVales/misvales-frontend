@@ -1,178 +1,355 @@
-<div class="page-container">
-  @if (facade.isLoading()) {
+<div class="min-h-screen bg-[#F8F9F5] p-6 lg:p-8">
+  @if (facade.isLoading() && !facade.visitaSeleccionada()) {
     <div class="loading-state">
       <div class="spinner"></div>
-      <p>Cargando visita...</p>
+      <p>Cargando visita de verificación...</p>
     </div>
   }
 
   @if (facade.visitaSeleccionada(); as visita) {
-    <div class="wizard-header">
-      <div class="wizard-title-area">
-        <h1 class="page-title">Visita Física</h1>
-        <p class="page-desc">{{ identificadorSolicitud() }}</p>
+    <!-- Header de la Visita -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3 mb-2">
+          <h1 class="text-2xl font-bold text-gray-900">Visita Física de Verificación</h1>
+          <span
+            class="inline-flex px-2.5 py-1 rounded text-xs font-bold"
+            [class.bg-amber-100]="visita.estado === 'IN_PROGRESS'"
+            [class.text-amber-800]="visita.estado === 'IN_PROGRESS'"
+            [class.border]="visita.estado === 'IN_PROGRESS'"
+            [class.border-amber-200]="visita.estado === 'IN_PROGRESS'"
+            [class.bg-green-100]="visita.estado === 'COMPLETED'"
+            [class.text-green-800]="visita.estado === 'COMPLETED'"
+          >
+            {{ visita.estado === 'IN_PROGRESS' ? 'EN PROGRESO' : visita.estado === 'COMPLETED' ? 'FINALIZADA' : 'ASIGNADA' }}
+          </span>
+        </div>
+        <div class="flex items-center gap-4 text-sm text-gray-500">
+          <div class="flex items-center gap-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+            {{ identificadorSolicitud() }}
+          </div>
+          @if (visita.fechaProgramada) {
+            <div class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+              Fecha: {{ visita.fechaProgramada | date:'dd/MM/yyyy HH:mm' }}
+            </div>
+          }
+        </div>
       </div>
-      
-      @if (visita.estado === 'IN_PROGRESS' || visita.estado === 'COMPLETED') {
-        <span class="badge" [class.badge-warning]="visita.estado === 'IN_PROGRESS'" [class.badge-success]="visita.estado === 'COMPLETED'">
-          {{ visita.estado === 'IN_PROGRESS' ? 'EN PROGRESO' : 'FINALIZADA' }}
-        </span>
-      }
+
+      <div class="flex items-center gap-3">
+        <div class="text-right">
+          <div class="text-xs font-semibold text-gray-500 uppercase">Diferencias reportadas</div>
+          <div class="text-lg font-bold" [class.text-amber-600]="visita.diferencias.length > 0" [class.text-green-600]="visita.diferencias.length === 0">
+            {{ visita.diferencias.length }} diferencia(s)
+          </div>
+        </div>
+      </div>
     </div>
 
-    @if (visita.estado !== 'ASSIGNED') {
-      <div class="responsibility-banner" role="note">
-        <strong>Rol del verificador:</strong> documenta lo declarado, lo observado y las evidencias. Las correcciones posteriores corresponden exclusivamente a coordinación.
-      </div>
-      <!-- Wizard Navigation -->
-      <div class="wizard-tabs" role="tablist" aria-label="Etapas de la visita">
-        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 1" [class.active]="step() === 1" (click)="setStep(1)">1. Revisar expediente</button>
-        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 2" [class.active]="step() === 2" (click)="setStep(2)">2. Evidencias</button>
-        <button class="tab-btn" role="tab" [attr.aria-selected]="step() === 3" [class.active]="step() === 3" (click)="setStep(3)">3. Resultado final</button>
-      </div>
-
-      <!-- Step 1: Comprobación -->
-      @if (step() === 1) {
-        <div class="step-content">
-          <h2 class="step-title">Revisión del expediente</h2>
-          <p class="step-intro">Revisa todo el expediente a simple vista. Marca <strong>Correcto todo</strong> cuando el grupo coincida; si detectas un error, activa <strong>Marcar diferencia</strong> para seleccionar únicamente el campo que debes documentar.</p>
-          <h3 class="section-subtitle">Evidencias declaradas ({{ visita.evidenciasDeclaradas.length }})</h3>
-          <p class="step-intro">Consulta los documentos aportados para vehículos, bienes, deudas, compromisos y créditos antes de marcar el expediente.</p>
-          <app-galeria-evidencias
-            [evidencias]="visita.evidenciasDeclaradas"
-            [permitirEliminar]="false"
-            [permitirDescargar]="true"
-            [descargaPrivada]="true"
-            [tiposPermitidos]="tiposEvidenciaDeclarada"
-            (download)="onDescargarEvidenciaDeclarada($event)">
-          </app-galeria-evidencias>
-          <hr class="divider">
-          <app-lista-comprobacion-visita
-            [puntos]="puntosComprobacion()"
-            [isReadonly]="visita.estado === 'COMPLETED'"
-            (cambiarEstadoGrupo)="onEstadoGrupoChange($event)"
-            (cambiarEstadoPunto)="onEstadoPuntoChange($event)"
-            (registrarDiferencia)="abrirEditorDiferencia($event)">
-          </app-lista-comprobacion-visita>
+    @if (visita.estado === 'ASSIGNED') {
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 text-center max-w-xl mx-auto my-12">
+        <div class="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
         </div>
-      }
-
-      <!-- Step 2: Evidencias -->
-      @if (step() === 2) {
-        <div class="step-content">
-          <h2 class="step-title">Captura de Evidencias</h2>
-          
-          @if (visita.estado !== 'COMPLETED') {
-            <app-captura-evidencia
-              [tiposPermitidos]="tiposEvidencia"
-              [isUploading]="facade.isUploading()"
-              [progress]="facade.uploadProgress()"
-              (fileSelected)="onSubirEvidencia($event)">
-            </app-captura-evidencia>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Iniciar Visita de Verificación</h2>
+        <p class="text-sm text-gray-500 mb-6">
+          Inicia la visita física para comenzar la revisión del expediente punto por punto y registrar evidencias en campo.
+        </p>
+        <button
+          type="button"
+          (click)="iniciarVisita()"
+          [disabled]="facade.isLoading()"
+          class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-6 py-3 rounded-lg text-base font-semibold shadow-md transition-colors w-full sm:w-auto"
+        >
+          {{ facade.isLoading() ? 'Iniciando...' : 'Comenzar Visita Física' }}
+        </button>
+      </div>
+    } @else {
+      <!-- Layout Grid: Stepper Wizard + Content -->
+      <div class="flex flex-col lg:flex-row gap-6">
+        
+        <!-- Stepper Lateral -->
+        <div class="w-full lg:w-64 shrink-0">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 px-3">Pasos de Verificación</h3>
             
-            <hr class="divider">
-          }
-          
-          <h3 class="section-subtitle">Evidencias Adjuntas ({{ visita.evidencias.length }})</h3>
-          <app-galeria-evidencias
-            [evidencias]="visita.evidencias"
-            [permitirEliminar]="visita.estado !== 'COMPLETED'"
-            [permitirDescargar]="true"
-            [tiposPermitidos]="tiposEvidencia"
-            [isProcessing]="facade.isLoading()"
-            (delete)="onEliminarEvidencia($event)"
-            (download)="onDescargarEvidencia($event)">
-          </app-galeria-evidencias>
-        </div>
-      }
+            <div class="relative flex gap-1 overflow-x-auto lg:block lg:space-y-1" role="tablist">
+              @for (paso of pasos; track paso.id) {
+                <button
+                  type="button"
+                  role="tab"
+                  [attr.aria-selected]="pasoActual() === paso.id"
+                  (click)="cambiarPaso(paso.id)"
+                  class="stepper-item"
+                  [class.active]="pasoActual() === paso.id"
+                >
+                  <div class="flex items-center gap-2.5">
+                    @if (conteoDiferenciasPaso(paso) > 0) {
+                      <svg class="w-5 h-5 text-amber-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    } @else if (pasoCompletado(paso)) {
+                      <svg class="w-5 h-5 text-[#82B965] shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    } @else {
+                      <svg class="w-5 h-5 text-gray-300 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-width="2"></circle></svg>
+                    }
+                    <span>{{ paso.label }}</span>
+                  </div>
 
-      <!-- Step 3: Resultado Final -->
-      @if (step() === 3) {
-        <div class="step-content">
-          <h2 class="step-title">Finalizar Visita</h2>
-          
-          <div class="summary-box">
-            <p><strong>Evidencias cargadas:</strong> {{ visita.evidencias.length }}</p>
-            <p><strong>Diferencias reportadas:</strong> {{ visita.diferencias.length }}</p>
-            @if (visita.diferencias.length) {
-              <ul class="summary-differences" aria-label="Diferencias registradas">
-                @for (diferencia of visita.diferencias; track diferencia.id) {
-                  <li>
-                    <strong>{{ etiquetaDiferencia(diferencia.seccion, diferencia.campo) }}.</strong>
-                    {{ diferencia.descripcion || diferencia.datoObservado || 'Sin descripción adicional.' }}
-                  </li>
-                }
-              </ul>
-            }
+                  @if (conteoDiferenciasPaso(paso) > 0) {
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
+                      {{ conteoDiferenciasPaso(paso) }} dif
+                    </span>
+                  }
+                </button>
+              }
+            </div>
           </div>
-
-          @if (visita.estado !== 'COMPLETED') {
-            <div class="form-group mt-4">
-              <label>Resultado Físico de la Visita *</label>
-              <verification-decision-group
-                label="Resultado físico de la visita"
-                [options]="resultadoOptions"
-                [value]="resultadoFinal() ?? ''"
-                [readOnly]="false"
-                (valueChange)="resultadoFinal.set($any($event))"
-              />
-              @if (submittedFinal() && !resultadoFinal()) {
-                <p class="text-sm text-danger mt-1">Debes seleccionar un resultado final de la visita (Favorable o Desfavorable).</p>
-              }
-            </div>
-
-            <div class="form-group mt-4">
-              <verification-observation-panel
-                title="Observaciones generales"
-                subtitle="Documenta únicamente los hallazgos observados durante la visita."
-                placeholder="Describe los hallazgos generales…"
-                [value]="observacionesFila()"
-                [required]="resultadoFinal() === 'UNFAVORABLE'"
-                [readOnly]="false"
-                (valueChange)="observacionesFila.set($event)"
-              />
-              @if (submittedFinal() && resultadoFinal() === 'UNFAVORABLE' && !observacionesFila()) {
-                <p class="text-sm text-danger mt-1">Debes incluir observaciones detalladas si el resultado es desfavorable.</p>
-              }
-            </div>
-
-            <div class="alert alert-warning mt-4">
-              <strong>Atención:</strong> Una vez finalizada la visita, no podrás modificar los datos ni agregar más evidencias.
-            </div>
-
-            <button class="btn btn-primary btn-block mt-4 btn-lg" (click)="finalizarVisita()">Finalizar Visita Definitivamente</button>
-          } @else {
-            <div class="form-group mt-4 readonly-group">
-              <label>Resultado Físico</label>
-              <div class="badge" [class.badge-success]="visita.resultadoFisico === 'FAVORABLE'" [class.badge-danger]="visita.resultadoFisico === 'UNFAVORABLE'">
-                {{ visita.resultadoFisico }}
-              </div>
-            </div>
-            @if (visita.observacionesGenerales) {
-              <div class="form-group mt-4 readonly-group">
-                <label>Observaciones Generales</label>
-                <p>{{ visita.observacionesGenerales }}</p>
-              </div>
-            }
-          }
         </div>
-      }
+
+        <!-- Main Content Area -->
+        <div class="flex-1">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 min-h-[500px] flex flex-col justify-between">
+            
+            <!-- Contenido del Paso Actual -->
+            <div>
+              <!-- 1 a 7: Pasos de Comprobación de Secciones -->
+              @if (pasoActual() !== 'evidencias_visita' && pasoActual() !== 'resultado_final') {
+                @if (pasos.find(p => p.id === pasoActual()); as pasoConfig) {
+                  <!-- Galería de Evidencia Declarada para esta Sección -->
+                  @if (evidenciasDeclaradasPasoActual().length > 0) {
+                    <div class="mb-6 rounded-xl border border-gray-200 bg-gray-50/50 p-4">
+                      <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                          Evidencias Declaradas en {{ pasoConfig.label }} ({{ evidenciasDeclaradasPasoActual().length }})
+                        </span>
+                      </div>
+                      <app-galeria-evidencias
+                        [evidencias]="evidenciasDeclaradasPasoActual()"
+                        [permitirEliminar]="false"
+                        [permitirDescargar]="true"
+                        [descargaPrivada]="true"
+                        [tiposPermitidos]="tiposEvidenciaDeclarada"
+                        (download)="onDescargarEvidenciaDeclarada($event)"
+                      >
+                      </app-galeria-evidencias>
+                    </div>
+                  }
+
+                  <!-- Lista de Comprobación para la Sección Actual -->
+                  <app-lista-comprobacion-visita
+                    [puntos]="puntosPasoActual()"
+                    [isReadonly]="visita.estado === 'COMPLETED'"
+                    (cambiarEstadoGrupo)="onEstadoGrupoChange($event)"
+                    (cambiarEstadoPunto)="onEstadoPuntoChange($event)"
+                    (registrarDiferencia)="abrirEditorDiferencia($event)"
+                    (quitarDiferencia)="onEliminarDiferencia($event)"
+                  >
+                  </app-lista-comprobacion-visita>
+                }
+              }
+
+              <!-- 8: Captura de Evidencias de la Visita -->
+              @else if (pasoActual() === 'evidencias_visita') {
+                <div>
+                  <div class="mb-6 pb-4 border-b border-gray-100">
+                    <h2 class="text-xl font-bold text-gray-900">Evidencias Fotográficas de la Visita</h2>
+                    <p class="text-sm text-gray-500">Toma o sube fotografías de fachada, interior y documentos encontrados en el domicilio.</p>
+                  </div>
+
+                  @if (visita.estado !== 'COMPLETED') {
+                    <div class="mb-8">
+                      <app-captura-evidencia
+                        [tiposPermitidos]="tiposEvidencia"
+                        [isUploading]="facade.isUploading()"
+                        [progress]="facade.uploadProgress()"
+                        (fileSelected)="onSubirEvidencia($event)"
+                      >
+                      </app-captura-evidencia>
+                    </div>
+                  }
+
+                  <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">
+                    Fotografías Capturadas en Campo ({{ visita.evidencias.length }})
+                  </h3>
+                  <app-galeria-evidencias
+                    [evidencias]="visita.evidencias"
+                    [permitirEliminar]="visita.estado !== 'COMPLETED'"
+                    [permitirDescargar]="true"
+                    [tiposPermitidos]="tiposEvidencia"
+                    [isProcessing]="facade.isLoading()"
+                    (delete)="onEliminarEvidencia($event)"
+                    (download)="onDescargarEvidencia($event)"
+                  >
+                  </app-galeria-evidencias>
+                </div>
+              }
+
+              <!-- 9: Resultado Final y Cierre -->
+              @else if (pasoActual() === 'resultado_final') {
+                <div>
+                  <div class="mb-6 pb-4 border-b border-gray-100">
+                    <h2 class="text-xl font-bold text-gray-900">Resultado Final de la Visita</h2>
+                    <p class="text-sm text-gray-500">Emite el dictamen físico correspondiente y finaliza el proceso de verificación.</p>
+                  </div>
+
+                  <!-- Resumen de Hallazgos -->
+                  <div class="bg-gray-50 border border-gray-200 rounded-xl p-5 mb-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <span class="text-xs font-bold text-gray-500 uppercase block mb-1">Evidencias tomadas en campo</span>
+                        <span class="text-lg font-bold text-gray-800">{{ visita.evidencias.length }} fotografías</span>
+                      </div>
+                      <div>
+                        <span class="text-xs font-bold text-gray-500 uppercase block mb-1">Diferencias documentadas</span>
+                        <span class="text-lg font-bold" [class.text-amber-600]="visita.diferencias.length > 0" [class.text-green-600]="visita.diferencias.length === 0">
+                          {{ visita.diferencias.length }} registrada(s)
+                        </span>
+                      </div>
+                    </div>
+
+                    @if (visita.evidencias.length === 0) {
+                      <div class="mt-4 p-4 rounded-xl border border-red-200 bg-red-50 flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-2.5">
+                          <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                          <div>
+                            <h4 class="text-xs font-bold text-red-900 uppercase">Fotografías de visita requeridas</h4>
+                            <p class="text-xs text-red-700 mt-0.5">Se requiere adjuntar al menos una fotografía física (Fachada, Interior o Documento) antes de finalizar la visita.</p>
+                          </div>
+                        </div>
+                        <button type="button" (click)="cambiarPaso('evidencias_visita')" class="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-bold shrink-0 transition-colors">
+                          Ir a Evidencias →
+                        </button>
+                      </div>
+                    }
+
+                    @if (visita.diferencias.length > 0) {
+                      <div class="pt-4 border-t border-gray-200">
+                        <h4 class="text-xs font-bold text-gray-700 uppercase mb-2">Detalle de Diferencias:</h4>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                          @for (diferencia of visita.diferencias; track diferencia.id || diferencia.indice) {
+                            <li class="bg-white p-3 rounded-lg border border-amber-200 flex items-start gap-2">
+                              <span class="font-bold text-amber-900">{{ etiquetaDiferencia(diferencia.seccion, diferencia.campo) }}:</span>
+                              <span>{{ diferencia.descripcion || diferencia.datoObservado || 'Sin descripción' }}</span>
+                            </li>
+                          }
+                        </ul>
+                      </div>
+                    }
+                  </div>
+
+                  @if (visita.estado !== 'COMPLETED') {
+                    <div class="space-y-6">
+                      <div>
+                        <label class="block text-sm font-bold text-gray-900 mb-2">Dictamen Físico de la Visita <span class="text-red-500">*</span></label>
+                        <verification-decision-group
+                          label="Resultado físico de la visita"
+                          [options]="resultadoOptions"
+                          [value]="resultadoFinal() ?? ''"
+                          [readOnly]="false"
+                          (valueChange)="resultadoFinal.set($any($event))"
+                        />
+                        @if (submittedFinal() && !resultadoFinal()) {
+                          <p class="text-xs text-red-600 mt-1.5 font-semibold">Debes seleccionar un dictamen (Favorable o Desfavorable).</p>
+                        }
+                      </div>
+
+                      <div>
+                        <verification-observation-panel
+                          title="Observaciones del Verificador"
+                          subtitle="Describe los hallazgos y detalles observados en campo."
+                          placeholder="Escribe tus observaciones aquí…"
+                          [value]="observacionesFila()"
+                          [required]="resultadoFinal() === 'UNFAVORABLE'"
+                          [readOnly]="false"
+                          (valueChange)="observacionesFila.set($event)"
+                        />
+                        @if (submittedFinal() && resultadoFinal() === 'UNFAVORABLE' && !observacionesFila()) {
+                          <p class="text-xs text-red-600 mt-1.5 font-semibold">Las observaciones son obligatorias para un dictamen desfavorable.</p>
+                        }
+                      </div>
+
+                      <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Al finalizar la visita, el checklist y las diferencias se cerrarán y se enviarán para revisión de coordinación.</span>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                      <span class="text-xs font-bold text-gray-500 block mb-1">Resultado Final</span>
+                      <span class="text-base font-bold" [class.text-green-700]="visita.resultadoFisico === 'FAVORABLE'" [class.text-red-700]="visita.resultadoFisico === 'UNFAVORABLE'">
+                        {{ visita.resultadoFisico === 'FAVORABLE' ? '✓ Favorable' : '! Desfavorable' }}
+                      </span>
+                      @if (visita.observacionesGenerales) {
+                        <p class="mt-2 text-sm text-gray-600">{{ visita.observacionesGenerales }}</p>
+                      }
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Bottom Navigation Bar -->
+            <div class="flex items-center justify-between pt-6 border-t border-gray-100 mt-6">
+              <button
+                type="button"
+                (click)="pasoAnterior()"
+                [disabled]="pasoActual() === 'datos_personales'"
+                class="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                ← Paso Anterior
+              </button>
+
+              <div class="flex items-center gap-3">
+                @if (pasoActual() !== 'evidencias_visita' && pasoActual() !== 'resultado_final') {
+                  <button
+                    type="button"
+                    (click)="marcarTodoCorrectoPasoActualYContinuar()"
+                    class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors flex items-center gap-1.5"
+                  >
+                    <span>Todo correcto y Avanzar</span>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                  </button>
+                } @else if (pasoActual() === 'evidencias_visita') {
+                  <button
+                    type="button"
+                    (click)="pasoSiguiente()"
+                    class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow-sm transition-colors"
+                  >
+                    Ir a Resultado Final →
+                  </button>
+                } @else {
+                  @if (visita.estado !== 'COMPLETED') {
+                    <button
+                      type="button"
+                      (click)="finalizarVisita()"
+                      [disabled]="facade.isLoading()"
+                      class="bg-[#1A4D2E] hover:bg-[#133c23] text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-md transition-colors disabled:opacity-50"
+                    >
+                      {{ facade.isLoading() ? 'Finalizando...' : 'Finalizar Visita Definitivamente' }}
+                    </button>
+                  }
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     }
   }
 
-  <!-- Modal/Overlay para Editor de Diferencias -->
-  @if (mostrarEditorDiferencia()) {
+  <!-- Modal para Editor de Diferencias -->
+  @if (mostrarEditorDiferencia() && contextoEditor(); as ctx) {
     <div class="modal-overlay" role="presentation">
       <div class="modal-content" role="dialog" aria-modal="true" aria-labelledby="editor-diferencia-titulo">
-        @if (puntoDiferencia(); as punto) {
-          <app-editor-diferencias
-            [contexto]="{ seccion: punto.seccion, campo: punto.campo, etiqueta: punto.grupo + ' · ' + punto.etiqueta, datoDeclarado: punto.datoDeclarado }"
-            [isProcessing]="facade.isLoading()"
-            (cancelar)="cerrarEditorDiferencia()"
-            (guardar)="onGuardarDiferencia($event)">
-          </app-editor-diferencias>
-        }
+        <app-editor-diferencias
+          [contexto]="ctx"
+          [isProcessing]="facade.isLoading()"
+          (cancelar)="cerrarEditorDiferencia()"
+          (guardar)="onGuardarDiferencia($event)">
+        </app-editor-diferencias>
       </div>
     </div>
   }
 </div>
+

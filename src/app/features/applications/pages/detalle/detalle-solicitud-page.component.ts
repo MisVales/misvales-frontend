@@ -95,6 +95,10 @@ export class DetalleSolicitudPageComponent implements OnInit {
 
     this.alerts.clear();
     this.pasoActual = paso;
+    const id = this.store.detalle()?.id;
+    if (id && paso === 'resumen') {
+      this.store.refrescarDetalleSilencioso(id);
+    }
   }
 
   private obtenerSeccionActual(): SeccionValidable | undefined {

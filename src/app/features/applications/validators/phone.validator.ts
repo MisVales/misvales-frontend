@@ -1,5 +1,5 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
-import { isValidPhoneNumber } from 'libphonenumber-js';
+import { isValidPhoneNumber, parsePhoneNumberFromString } from 'libphonenumber-js';
 
 export function phoneValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -8,8 +8,26 @@ export function phoneValidator(): ValidatorFn {
     }
 
     try {
-      const valid = isValidPhoneNumber(control.value);
-      return valid ? null : { invalidPhone: true };
+      const raw = String(control.value).trim();
+      const valid = isValidPhoneNumber(raw);
+      if (!valid) {
+        return { invalidPhone: true };
+      }
+
+      const parsed = parsePhoneNumberFromString(raw);
+      if (parsed) {
+        // Enforce 10 digits for national number
+        if (parsed.nationalNumber.length !== 10) {
+          return { invalidPhone: true };
+        }
+      } else {
+        const digitsOnly = raw.replace(/\D/g, '');
+        if (digitsOnly.length !== 10 && digitsOnly.length !== 12) {
+          return { invalidPhone: true };
+        }
+      }
+
+      return null;
     } catch {
       return { invalidPhone: true };
     }

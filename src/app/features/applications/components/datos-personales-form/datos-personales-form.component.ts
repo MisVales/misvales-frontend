@@ -259,9 +259,13 @@ export class DatosPersonalesFormComponent implements OnInit {
           purpose: 'IDENTIFICATION',
         })
         .subscribe({
-          next: () => {
+          next: async () => {
             this.uploadingEvidence = false;
             this.form.get('evidence_uploaded')?.setValue(true);
+            const idSol = this.store.detalle()?.id;
+            if (idSol) {
+              await this.store.refrescarDetalleSilencioso(idSol);
+            }
             this.cdr.markForCheck();
           },
           error: (err: any) => {

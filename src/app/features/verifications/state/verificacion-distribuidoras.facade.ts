@@ -40,14 +40,20 @@ export const VerificacionDistribuidorasFacade = signalStore(
         } else if (errorCode === 'VERIFIER_SCHEDULE_CONFLICT') {
           errorMsg =
             err.error?.error?.message ?? 'Ese horario se cruza con otra visita del verificador.';
+        } else if (errorCode === 'VERIFICATION_VISIT_EVIDENCE_REQUIRED') {
+          errorMsg = 'Debes subir al menos una evidencia fotográfica antes de finalizar la visita.';
+        } else if (errorCode === 'RESOURCE_VERSION_CONFLICT') {
+          errorMsg = 'La visita cambió. Recarga para continuar.';
+          isConflict = true;
+        } else if (err.error?.error?.message) {
+          errorMsg = err.error.error.message;
+          if (err.status === 409) isConflict = true;
         } else if (err.status === 409) {
           errorMsg = 'La visita cambió. Recarga para continuar.';
           isConflict = true;
         } else if (err.status === 403) {
           errorMsg = 'Acceso denegado a esta operación.';
           isDenied = true;
-        } else if (err.error?.error?.message) {
-          errorMsg = err.error.error.message;
         } else if (err.error?.message) {
           errorMsg = err.error.message;
         }

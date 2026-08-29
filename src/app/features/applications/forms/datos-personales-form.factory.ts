@@ -13,7 +13,7 @@ export class DatosPersonalesFormFactory {
       first_last_name: ['', [Validators.required, Validators.maxLength(100), personNameValidator]],
       second_last_name: ['', [Validators.maxLength(100), personNameValidator]],
       curp: ['', [Validators.required, Validators.maxLength(18), curpValidator()]],
-      rfc: ['', [Validators.maxLength(15), rfcValidator()]],
+      rfc: ['', [Validators.maxLength(13), rfcValidator()]],
       birth_country: ['MX', [Validators.required, Validators.maxLength(2)]],
       birth_date: ['', [Validators.required, adultBirthDateValidator]],
       birth_state: ['', [Validators.required, Validators.maxLength(50)]],
