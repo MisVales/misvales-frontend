@@ -37,7 +37,6 @@ export class ProductoDetalleComponent implements OnInit {
   private lockVersion = 0;
 
   protected form = this.fb.group({
-    code: ['', Validators.required],
     name: ['', Validators.required],
     description: [''],
     nominal_amount: ['', [Validators.required, Validators.min(100), Validators.pattern(/^\d+00(?:\.0+)?$/)]],
@@ -46,7 +45,6 @@ export class ProductoDetalleComponent implements OnInit {
     insurance_amount: ['', [Validators.required, Validators.min(0)]],
     fortnights_count: ['', [Validators.required, Validators.min(1)]],
     late_fee_amount: ['', [Validators.required, Validators.min(0)]],
-    reason: ['', Validators.required],
   });
 
   ngOnInit() {
@@ -63,7 +61,6 @@ export class ProductoDetalleComponent implements OnInit {
             patchObj.simple_interest_percentage = String(Number(d.simple_interest_percentage) * 100);
           }
           this.form.patchValue(patchObj);
-          this.form.controls.code.disable();
         },
         error: (e) => this.error.set(apiErrorMessage(e, 'No fue posible cargar el producto.'))
       });
@@ -74,9 +71,9 @@ export class ProductoDetalleComponent implements OnInit {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       this.controlesConErrorVisible.set(new Set([
-        'code', 'name', 'nominal_amount', 'loan_commission_percentage',
+        'name', 'nominal_amount', 'loan_commission_percentage',
         'simple_interest_percentage', 'insurance_amount', 'fortnights_count',
-        'late_fee_amount', 'reason',
+        'late_fee_amount',
       ]));
       return;
     }
@@ -104,13 +101,12 @@ export class ProductoDetalleComponent implements OnInit {
       late_fee_amount: v.late_fee_amount !== '' && v.late_fee_amount != null
         ? String(v.late_fee_amount)
         : null,
-      reason: v.reason!,
     };
 
     try {
       const id = this.route.snapshot.paramMap.get('id');
       if (this.isNew()) {
-        await firstValueFrom(this.service.crear({ code: v.code!, ...payload }));
+        await firstValueFrom(this.service.crear(payload));
       } else {
         await firstValueFrom(this.service.actualizar(id!, { ...payload, lock_version: this.lockVersion }));
       }

@@ -11,7 +11,7 @@ export interface ProductDto {
 }
 export interface ProductListResponseDto { data: ProductDto[]; meta: { current_page: number; last_page: number; total: number; }; }
 export interface CreateProductRequestDto {
-  code: string; name: string; description: string | null; nominal_amount: string; reason: string;
+  name: string; description: string | null; nominal_amount: string;
   loan_commission_percentage?: string | null;
   simple_interest_percentage?: string | null;
   insurance_amount?: string | null;
@@ -19,7 +19,7 @@ export interface CreateProductRequestDto {
   late_fee_amount?: string | null;
 }
 export interface UpdateProductRequestDto {
-  name: string; description: string | null; nominal_amount: string; reason: string; lock_version: number;
+  name: string; description: string | null; nominal_amount: string; lock_version: number;
   loan_commission_percentage?: string | null;
   simple_interest_percentage?: string | null;
   insurance_amount?: string | null;

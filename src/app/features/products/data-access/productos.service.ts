@@ -35,8 +35,8 @@ export class ProductosService {
     return this.http.get<ProductListResponseDto | any[]>(`${this.baseUrl}`, { params }).pipe(map((response) => {
       const rows = Array.isArray(response) ? response : response.data ?? [];
       const meta = Array.isArray(response)
-        ? { current_page: pagina, last_page: rows.length ? 1 : 1, total: rows.length }
-        : response.meta;
+        ? { current_page: pagina, last_page: 1, total: rows.length }
+        : response.meta ?? response;
 
       return {
       data: rows.map((row) => {

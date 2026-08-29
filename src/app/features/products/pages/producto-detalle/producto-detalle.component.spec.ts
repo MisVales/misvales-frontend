@@ -43,8 +43,6 @@ describe('ProductoDetalleComponent', () => {
     await (component as any).guardar();
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('La clave es obligatorio.');
     expect(fixture.nativeElement.textContent).toContain('El importe nominal es obligatorio.');
-    expect(fixture.nativeElement.textContent).toContain('El motivo es obligatorio.');
   });
 });

@@ -10,13 +10,7 @@
   </header>
 
   <form data-manager-action [formGroup]="form" (ngSubmit)="guardar()" class="mt-6 grid gap-5 rounded-2xl border border-[var(--mv-border)] bg-white p-5 shadow-sm md:grid-cols-2 md:p-7">
-    <div>
-      <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Clave del producto <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-      <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="code" placeholder="Ej. VALE-5000" autocomplete="off" (focus)="marcarCampoAlEnfocar('code')">
-      <app-input-error [control]="form.controls.code" label="La clave" [forceShow]="mostrarError('code')"></app-input-error>
-    </div>
-
-    <div>
+    <div class="md:col-span-2">
       <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Nombre para operación <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
       <input class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="name" placeholder="Ej. Vale de $5,000" (focus)="marcarCampoAlEnfocar('name')">
       <app-input-error [control]="form.controls.name" label="El nombre" [forceShow]="mostrarError('name')"></app-input-error>
@@ -75,12 +69,6 @@
           <app-input-error [control]="form.controls.late_fee_amount" label="El recargo por falta de pago" [forceShow]="mostrarError('late_fee_amount')"></app-input-error>
         </div>
       </div>
-    </div>
-
-    <div class="md:col-span-2">
-      <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Motivo del alta o cambio <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
-      <textarea class="w-full resize-none rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="reason" rows="2" placeholder="Explica por qué se crea o ajusta este producto" (focus)="marcarCampoAlEnfocar('reason')"></textarea>
-      <app-input-error [control]="form.controls.reason" label="El motivo" [forceShow]="mostrarError('reason')"></app-input-error>
     </div>
 
     @if (error()) {
