@@ -38,6 +38,7 @@ import { HistoryPaginationComponent } from '../../../shared/components/history/h
 import { HistoryFilterBarComponent } from '../../../shared/components/history/history-filter-bar.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 import { ConfirmationService } from '../../../shared/dialogs/confirmation.service';
+import { AlertService } from '../../../shared/components/alerts/alert.service';
 
 @Component({
   selector: 'app-vales-page',
@@ -62,6 +63,7 @@ export class ValesPageComponent implements OnInit {
   private readonly formBuilder = inject(FormBuilder);
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmation = inject(ConfirmationService);
+  private readonly alerts = inject(AlertService);
 
   protected readonly form = this.formBuilder.group({
     search: this.formBuilder.nonNullable.control(''),
@@ -354,9 +356,10 @@ export class ValesPageComponent implements OnInit {
       details?.lower_limit &&
       details?.upper_limit
     ) {
-      this.error.set(
-        `Por la regla temporal de tu línea de crédito, el siguiente vale debe estar entre ${this.formatCurrency(details.lower_limit)} y ${this.formatCurrency(details.upper_limit)}. Elige un importe dentro de ese rango.`,
-      );
+      const message =
+        `Por la regla temporal de tu línea de crédito, el siguiente vale debe estar entre ${this.formatCurrency(details.lower_limit)} y ${this.formatCurrency(details.upper_limit)}. Elige un importe dentro de ese rango.`;
+      this.clearError();
+      this.alerts.warning(message);
 
       return;
     }
