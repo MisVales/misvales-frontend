@@ -92,7 +92,7 @@ export class CreditosComercialesFormComponent implements OnInit {
     return true;
   }
 
-  getSaveFn(index: number) {
+  getSaveFn(form: FormGroup) {
     return (rawValue: any): Observable<any> =>
       from(
         this.store.ejecutarGuardado(async () => {
@@ -101,16 +101,31 @@ export class CreditosComercialesFormComponent implements OnInit {
           if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
 
           const payload = { ...rawValue };
-          const idRegistro = payload.id;
+          const idRegistro = payload.id || form.value.id;
           const proofType = payload.proof_type;
           delete payload.id;
           delete payload.proof_type;
+
+          if (payload.credit_limit !== undefined && payload.credit_limit !== null) {
+            const cleanLimit = String(payload.credit_limit).replaceAll(',', '').trim();
+            payload.credit_limit = cleanLimit === '' ? null : cleanLimit;
+          }
+
+          if (
+            !payload.proof_reference ||
+            typeof payload.proof_reference !== 'string' ||
+            !payload.proof_reference.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)
+          ) {
+            delete payload.proof_reference;
+          }
 
           if (proofType) {
             payload.details_payload = {
               ...(payload.details_payload ?? {}),
               proof_type: proofType,
             };
+          } else if (!payload.details_payload || Object.keys(payload.details_payload).length === 0) {
+            delete payload.details_payload;
           }
 
           const request$ = idRegistro
@@ -124,7 +139,7 @@ export class CreditosComercialesFormComponent implements OnInit {
 
           return firstValueFrom(request$).then((res) => {
             if (!idRegistro && res && res.id) {
-              this.creditosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+              form.patchValue({ id: res.id }, { emitEvent: false });
             }
             this.store.registrarAutoguardado(res);
             return res;
@@ -147,35 +162,56 @@ export class CreditosComercialesFormComponent implements OnInit {
     return state;
   }
 
-  onEvidenceChange(form: FormGroup, event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    const recordId = form.value.id;
-    if (!file || !recordId) return;
+  async onEvidenceChange(form: FormGroup, event: Event): Promise<void> {
+    const inputEl = event.target as HTMLInputElement;
+    const file = inputEl.files?.[0];
+    if (!file) return;
+
     const state = this.evidenceState(form);
     state.file = file;
     state.uploading = true;
     state.error = undefined;
-    this.mediaApi
-      .upload({
-        file,
-        owner_type: 'application_commercial_credit',
-        owner_id: recordId,
-        purpose: 'COMMERCIAL_EVIDENCE',
-      })
-      .subscribe({
-        next: () => {
-          state.uploading = false;
-          state.uploaded = true;
-          this.cdr.markForCheck();
-        },
-        error: (error) => {
-          state.uploading = false;
-          state.error =
-            apiValidationErrors(error)['file']?.[0] ??
-            apiErrorMessage(error, 'No fue posible subir la evidencia.');
-          this.cdr.markForCheck();
-        },
-      });
+    this.cdr.markForCheck();
+
+    try {
+      let recordId = form.value.id;
+      if (!recordId) {
+        // Guardar el registro en borrador para generar el ID en el backend
+        const res = await firstValueFrom(this.getSaveFn(form)(form.value));
+        recordId = res?.id || form.value.id;
+      }
+
+      if (!recordId) {
+        state.uploading = false;
+        state.error = 'Completa los datos del crédito antes de adjuntar la evidencia.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      await firstValueFrom(
+        this.mediaApi.upload({
+          file,
+          owner_type: 'application_commercial_credit',
+          owner_id: recordId,
+          purpose: 'COMMERCIAL_EVIDENCE',
+        }),
+      );
+
+      state.uploading = false;
+      state.uploaded = true;
+      const idSol = this.store.detalle()?.id;
+      if (idSol) {
+        await this.store.refrescarDetalleSilencioso(idSol);
+      }
+      this.alerts.showAlert('Evidencia adjuntada y guardada correctamente.', 'success');
+      this.cdr.markForCheck();
+    } catch (error: any) {
+      state.uploading = false;
+      state.error =
+        apiValidationErrors(error)['file']?.[0] ??
+        apiErrorMessage(error, 'No fue posible subir la evidencia.');
+      this.cdr.markForCheck();
+    }
   }
 
   private esperarDetalle(): Promise<void> {
@@ -242,11 +278,15 @@ export class CreditosComercialesFormComponent implements OnInit {
     if (!idSolicitud) return;
 
     try {
-      await this.api
-        .eliminarCreditoComercial(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo)
-        .toPromise();
+      await firstValueFrom(
+        this.api.eliminarCreditoComercial(
+          idSolicitud,
+          idRegistro,
+          this.store.detalle()!.versionBloqueo,
+        ),
+      );
       this.removerCreditoVisual(index);
-      await this.store.cargarDetalle(idSolicitud);
+      await this.store.refrescarDetalleSilencioso(idSolicitud);
     } catch {
     } finally {
       this.cdr.markForCheck();

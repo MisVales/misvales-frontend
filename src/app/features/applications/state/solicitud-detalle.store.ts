@@ -123,6 +123,15 @@ export const SolicitudDetalleStore = signalStore(
         patchState(store, { detalle: { ...detalle, versionBloqueo: version }, errorConcurrencia: false });
       },
 
+      async refrescarDetalleSilencioso(id: string) {
+        try {
+          const detalle = await firstValueFrom(service.consultarSolicitud(id));
+          patchState(store, { detalle, errorConcurrencia: false });
+        } catch {
+          // ignore error on background refresh
+        }
+      },
+
       registrarAutoguardado(resultado: any) {
         const detalle = store.detalle();
         if (!detalle) return;

@@ -48,7 +48,17 @@
                 </div>
 
                 @if (punto.estado === 'DIFERENCIA' && punto.diferenciaRegistrada) {
-                  <span class="estado-badge diferencia">Diferencia registrada</span>
+                  <div class="diferencia-actions-container">
+                    <span class="estado-badge diferencia">Diferencia</span>
+                    @if (!isReadonly()) {
+                      <button type="button" class="campo-btn-edit" (click)="onRegistrarDiferencia(punto)" title="Editar datos de la diferencia">
+                        Editar
+                      </button>
+                      <button type="button" class="campo-btn-revert" (click)="onQuitarDiferencia(punto)" title="Descartar diferencia y marcar correcto">
+                        Quitar
+                      </button>
+                    }
+                  </div>
                 } @else if (isGrupoEnDiferencia(grupo.nombre)) {
                   <button type="button" class="campo-action diferencia" (click)="onRegistrarDiferencia(punto)" [disabled]="isReadonly()" [attr.aria-label]="'Marcar diferencia en ' + punto.etiqueta">
                     Marcar diferencia

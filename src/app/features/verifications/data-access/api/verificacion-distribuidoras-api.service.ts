@@ -1,4 +1,4 @@
-﻿import { inject, Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpParams, HttpEvent, HttpEventType } from '@angular/common/http';
 import { Observable, filter, map } from 'rxjs';
 import { API_CONFIG } from '@core/api/api.config';
@@ -267,6 +267,8 @@ export class VerificacionDistribuidorasApiService {
         visit_id: req.visit_id,
         section: req.seccion,
         field_path: req.campo,
+        new_value: req.valor_corregido !== undefined ? req.valor_corregido : req.valor_observado,
+        reason: req.motivo || 'Corrección aplicada en verificación',
         lock_version: req.lock_version,
         record_id: req.record_id,
         difference_index: req.difference_index,

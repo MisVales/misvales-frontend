@@ -1,19 +1,164 @@
 <div class="editor-container">
   <h3 id="editor-diferencia-titulo" class="editor-title">Registrar diferencia</h3>
   <p class="editor-helper">{{ contexto().etiqueta }}</p>
+  
   <div class="form-group readonly-group">
-    <label>Dato declarado</label>
+    <label>Dato declarado (actual)</label>
     <div class="readonly-value">{{ contexto().datoDeclarado || 'Sin dato' }}</div>
   </div>
 
   <div class="form-group">
-    <label>Dato observado</label>
-    <input type="text" class="form-control" [ngModel]="datoObservado()" (ngModelChange)="datoObservado.set($event)" placeholder="¿Qué observaste durante la visita?" [disabled]="isProcessing()">
+    <label>Dato observado (físico / real)</label>
+    
+    <!-- Date picker for dates -->
+    @if (isDateField()) {
+      <input
+        type="date"
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      />
+    }
+
+    <!-- Nationality select -->
+    @else if (isNationalityField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona nacionalidad</option>
+        <option value="MEXICAN">Mexicana</option>
+        <option value="FOREIGN">Extranjera</option>
+      </select>
+    }
+
+    <!-- Country select -->
+    @else if (isCountryField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona país...</option>
+        @for (pais of paises; track pais.code) {
+          <option [value]="pais.code">{{ pais.name }}</option>
+        }
+      </select>
+    }
+
+    <!-- Official ID Type select -->
+    @else if (isOfficialIdTypeField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona tipo de identificación</option>
+        <option value="INE">Credencial para votar (INE)</option>
+        <option value="PASSPORT">Pasaporte</option>
+        <option value="PROFESSIONAL_LICENSE">Cédula Profesional</option>
+        <option value="OTHER">Otro</option>
+      </select>
+    }
+
+    <!-- Boolean / Evidence select -->
+    @else if (isBooleanField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Seleccionar...</option>
+        <option value="true">Sí (Comprobado / Cuenta con evidencia)</option>
+        <option value="false">No (Sin comprobar / No cuenta con evidencia)</option>
+      </select>
+    }
+
+    <!-- CURP input with 18 max -->
+    @else if (campo() === 'curp') {
+      <input
+        type="text"
+        class="form-control uppercase"
+        maxlength="18"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        placeholder="Ej. GOHM850101HMCNRN01 (18 caracteres)"
+        [disabled]="isProcessing()"
+      />
+      <small class="form-help text-xs text-gray-500">Exactamente 18 caracteres alfanuméricos.</small>
+    }
+
+    <!-- RFC input with 13 max -->
+    @else if (campo() === 'rfc') {
+      <input
+        type="text"
+        class="form-control uppercase"
+        maxlength="13"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        placeholder="Ej. GOHM8501011A2 (13 caracteres)"
+        [disabled]="isProcessing()"
+      />
+      <small class="form-help text-xs text-gray-500">Máximo 13 caracteres para persona física.</small>
+    }
+
+    <!-- Phone input with 10 digits -->
+    @else if (campo() === 'phone_number') {
+      <input
+        type="tel"
+        class="form-control"
+        maxlength="10"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        placeholder="10 dígitos (Ej. 8711234567)"
+        [disabled]="isProcessing()"
+      />
+      <small class="form-help text-xs text-gray-500">10 dígitos numéricos.</small>
+    }
+
+    <!-- Official ID Number with 25 max -->
+    @else if (campo() === 'official_id_number') {
+      <input
+        type="text"
+        class="form-control"
+        maxlength="25"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        placeholder="Número de identificación oficial"
+        [disabled]="isProcessing()"
+      />
+      <small class="form-help text-xs text-gray-500">Máximo 25 caracteres.</small>
+    }
+
+    <!-- Default text input -->
+    @else {
+      <input
+        type="text"
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        placeholder="¿Qué observaste durante la visita?"
+        [disabled]="isProcessing()"
+      />
+    }
   </div>
 
   <div class="form-group">
-    <label>Descripción *</label>
-    <textarea class="form-control" [ngModel]="descripcion()" (ngModelChange)="descripcion.set($event)" rows="3" placeholder="Describe la diferencia para coordinación." [disabled]="isProcessing()"></textarea>
+    <label>Descripción del hallazgo *</label>
+    <textarea
+      class="form-control"
+      [ngModel]="descripcion()"
+      (ngModelChange)="descripcion.set($event)"
+      rows="3"
+      placeholder="Describe la diferencia para el coordinador."
+      [disabled]="isProcessing()"
+    ></textarea>
     @if (submitted() && !datoObservado().trim() && !descripcion().trim()) {
       <p class="text-sm text-danger mt-1">Debes ingresar el dato observado o describir la diferencia encontrada.</p>
     }

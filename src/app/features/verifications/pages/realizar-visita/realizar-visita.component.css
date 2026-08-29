@@ -1,3 +1,34 @@
+.stepper-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.7rem 0.875rem;
+  border-radius: 0.5rem;
+  border: 1px solid transparent;
+  border-left: 4px solid transparent;
+  background: transparent;
+  color: #4b5563;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.stepper-item:hover {
+  background: #f9fafb;
+  color: #111827;
+}
+
+.stepper-item.active {
+  background: #f4f8f4;
+  color: #1a4d2e;
+  font-weight: 600;
+  border-left-color: #1a4d2e;
+}
+
 .page-container {
   padding: clamp(1rem, 2.2vw, 2rem);
   max-width: 1480px;

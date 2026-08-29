@@ -254,35 +254,56 @@ export class PatrimonioFormComponent implements OnInit {
     return state;
   }
 
-  onEvidenceChange(form: FormGroup, event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    const recordId = form.value.id;
-    if (!file || !recordId) return;
+  async onEvidenceChange(form: FormGroup, event: Event): Promise<void> {
+    const inputEl = event.target as HTMLInputElement;
+    const file = inputEl.files?.[0];
+    if (!file) return;
+
     const state = this.evidenceState(form);
     state.file = file;
     state.uploading = true;
     state.error = undefined;
-    this.mediaApi
-      .upload({
-        file,
-        owner_type: 'application_asset_liability',
-        owner_id: recordId,
-        purpose: 'ASSET_EVIDENCE',
-      })
-      .subscribe({
-        next: () => {
-          state.uploading = false;
-          state.uploaded = true;
-          this.cdr.markForCheck();
-        },
-        error: (error) => {
-          state.uploading = false;
-          state.error =
-            apiValidationErrors(error)['file']?.[0] ??
-            apiErrorMessage(error, 'No fue posible subir la evidencia.');
-          this.cdr.markForCheck();
-        },
-      });
+    this.cdr.markForCheck();
+
+    try {
+      let recordId = form.value.id;
+      if (!recordId) {
+        // Guardar el registro en borrador para generar el ID en el backend
+        const res = await firstValueFrom(this.getSaveFn(form)(form.value));
+        recordId = res?.id || form.value.id;
+      }
+
+      if (!recordId) {
+        state.uploading = false;
+        state.error = 'Completa los datos del bien o compromiso antes de adjuntar la evidencia.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      await firstValueFrom(
+        this.mediaApi.upload({
+          file,
+          owner_type: 'application_asset_liability',
+          owner_id: recordId,
+          purpose: 'ASSET_EVIDENCE',
+        }),
+      );
+
+      state.uploading = false;
+      state.uploaded = true;
+      const idSol = this.store.detalle()?.id;
+      if (idSol) {
+        await this.store.refrescarDetalleSilencioso(idSol);
+      }
+      this.alerts.showAlert('Evidencia adjuntada y guardada correctamente.', 'success');
+      this.cdr.markForCheck();
+    } catch (error: any) {
+      state.uploading = false;
+      state.error =
+        apiValidationErrors(error)['file']?.[0] ??
+        apiErrorMessage(error, 'No fue posible subir la evidencia.');
+      this.cdr.markForCheck();
+    }
   }
 
   private esperarDetalle(): Promise<void> {
@@ -386,11 +407,15 @@ export class PatrimonioFormComponent implements OnInit {
     if (!idSolicitud) return;
 
     try {
-      await this.api
-        .eliminarPatrimonio(idSolicitud, idRegistro, this.store.detalle()!.versionBloqueo)
-        .toPromise();
+      await firstValueFrom(
+        this.api.eliminarPatrimonio(
+          idSolicitud,
+          idRegistro,
+          this.store.detalle()!.versionBloqueo,
+        ),
+      );
       this.removerRegistroVisual(formGroup);
-      await this.store.cargarDetalle(idSolicitud);
+      await this.store.refrescarDetalleSilencioso(idSolicitud);
     } catch {
     } finally {
       this.cdr.markForCheck();

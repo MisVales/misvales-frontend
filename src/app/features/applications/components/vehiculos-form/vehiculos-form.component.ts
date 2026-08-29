@@ -104,7 +104,7 @@ export class VehiculosFormComponent implements OnInit {
     return true;
   }
 
-  getSaveFn(index: number) {
+  getSaveFn(form: FormGroup) {
     return (rawValue: any): Observable<any> =>
       from(
         this.store.ejecutarGuardado(async () => {
@@ -113,8 +113,23 @@ export class VehiculosFormComponent implements OnInit {
           if (!idSolicitud || detalle.versionBloqueo === undefined) return undefined;
 
           const payload = { ...rawValue };
-          const idVehiculo = payload.id;
+          const idVehiculo = payload.id || form.value.id;
           delete payload.id;
+
+          if (payload.model_year === '' || payload.model_year === undefined) {
+            payload.model_year = null;
+          } else if (payload.model_year !== null) {
+            const parsedYear = Number(payload.model_year);
+            payload.model_year = isNaN(parsedYear) ? null : parsedYear;
+          }
+
+          if (payload.brand === '') payload.brand = null;
+          if (payload.model === '') payload.model = null;
+          if (payload.vehicle_type === '') payload.vehicle_type = null;
+          if (payload.ownership_status === '') payload.ownership_status = null;
+          if (payload.details_payload === null || payload.details_payload === undefined) {
+            delete payload.details_payload;
+          }
 
           const request$ = idVehiculo
             ? this.api.actualizarVehiculo(idSolicitud, idVehiculo, payload, detalle.versionBloqueo)
@@ -122,7 +137,7 @@ export class VehiculosFormComponent implements OnInit {
 
           return firstValueFrom(request$).then((res) => {
             if (!idVehiculo && res && res.id) {
-              this.vehiculosArray.at(index).patchValue({ id: res.id }, { emitEvent: false });
+              form.patchValue({ id: res.id }, { emitEvent: false });
             }
             this.store.registrarAutoguardado(res);
             return res;
@@ -146,35 +161,56 @@ export class VehiculosFormComponent implements OnInit {
     return state;
   }
 
-  onEvidenceChange(form: FormGroup, event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    const recordId = form.value.id;
-    if (!file || !recordId) return;
+  async onEvidenceChange(form: FormGroup, event: Event): Promise<void> {
+    const inputEl = event.target as HTMLInputElement;
+    const file = inputEl.files?.[0];
+    if (!file) return;
+
     const state = this.evidenceState(form);
     state.file = file;
     state.uploading = true;
     state.error = undefined;
-    this.mediaApi
-      .upload({
-        file,
-        owner_type: 'application_vehicle',
-        owner_id: recordId,
-        purpose: 'VEHICLE_EVIDENCE',
-      })
-      .subscribe({
-        next: () => {
-          state.uploading = false;
-          state.uploaded = true;
-          this.cdr.markForCheck();
-        },
-        error: (error) => {
-          state.uploading = false;
-          state.error =
-            apiValidationErrors(error)['file']?.[0] ??
-            apiErrorMessage(error, 'No fue posible subir la evidencia.');
-          this.cdr.markForCheck();
-        },
-      });
+    this.cdr.markForCheck();
+
+    try {
+      let recordId = form.value.id;
+      if (!recordId) {
+        // Guardar el registro en borrador para generar el ID en el backend
+        const res = await firstValueFrom(this.getSaveFn(form)(form.value));
+        recordId = res?.id || form.value.id;
+      }
+
+      if (!recordId) {
+        state.uploading = false;
+        state.error = 'Completa los datos del vehículo antes de adjuntar la evidencia.';
+        this.cdr.markForCheck();
+        return;
+      }
+
+      await firstValueFrom(
+        this.mediaApi.upload({
+          file,
+          owner_type: 'application_vehicle',
+          owner_id: recordId,
+          purpose: 'VEHICLE_EVIDENCE',
+        }),
+      );
+
+      state.uploading = false;
+      state.uploaded = true;
+      const idSol = this.store.detalle()?.id;
+      if (idSol) {
+        await this.store.refrescarDetalleSilencioso(idSol);
+      }
+      this.alerts.showAlert('Evidencia adjuntada y guardada correctamente.', 'success');
+      this.cdr.markForCheck();
+    } catch (error: any) {
+      state.uploading = false;
+      state.error =
+        apiValidationErrors(error)['file']?.[0] ??
+        apiErrorMessage(error, 'No fue posible subir la evidencia.');
+      this.cdr.markForCheck();
+    }
   }
 
   private esperarDetalle(): Promise<void> {
@@ -281,11 +317,15 @@ export class VehiculosFormComponent implements OnInit {
     if (!idSolicitud) return;
 
     try {
-      await this.api
-        .eliminarVehiculo(idSolicitud, idVehiculo, this.store.detalle()!.versionBloqueo)
-        .toPromise();
+      await firstValueFrom(
+        this.api.eliminarVehiculo(
+          idSolicitud,
+          idVehiculo,
+          this.store.detalle()!.versionBloqueo,
+        ),
+      );
       this.removerVehiculoVisual(index);
-      await this.store.cargarDetalle(idSolicitud);
+      await this.store.refrescarDetalleSilencioso(idSolicitud);
     } catch {
     } finally {
       this.cdr.markForCheck();

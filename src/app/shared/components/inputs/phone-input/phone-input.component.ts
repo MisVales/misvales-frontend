@@ -58,7 +58,7 @@ export const SORTED_DIAL_CODES = [...TOP_CODES, ...OTHER_CODES];
           <span [title]="item.name">{{ item.flag }} {{ item.code }}</span>
         </ng-template>
       </ng-select>
-      <input type="tel" formControlName="digits" (blur)="onTouched()" placeholder="Número de teléfono" class="flex-1 rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] focus:z-10 h-[42px]">
+      <input type="tel" formControlName="digits" maxlength="10" (blur)="onTouched()" placeholder="10 dígitos" class="flex-1 rounded-lg border border-gray-300 p-2 text-sm focus:outline-none focus:border-[#386641] focus:ring-1 focus:ring-[#386641] focus:z-10 h-[42px]">
     </div>
   `,
   providers: [

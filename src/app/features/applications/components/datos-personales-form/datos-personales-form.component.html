@@ -196,7 +196,7 @@
         <input
           type="text"
           formControlName="rfc"
-          maxlength="15"
+          maxlength="13"
           placeholder="Ej. GOHM8501011A2"
           [class.border-red-500]="mostrarError('rfc')"
           [attr.aria-invalid]="mostrarError('rfc')"
@@ -207,8 +207,8 @@
           [forceShow]="mostrarErroresDeValidacion"
           label="El RFC"
           [customMessages]="{
-            invalidRfc: 'El formato de RFC es inválido.',
-            maxlength: 'El RFC no puede exceder 15 caracteres.',
+            invalidRfc: 'El formato de RFC es inválido (13 caracteres para persona física).',
+            maxlength: 'El RFC no puede exceder 13 caracteres.',
           }"
         ></app-input-error>
       </div>
@@ -330,7 +330,7 @@
           [forceShow]="mostrarErroresDeValidacion"
           label="El teléfono"
           [customMessages]="{
-            invalidPhone: 'Debe contener un número de teléfono válido para el país seleccionado.',
+            invalidPhone: 'El teléfono debe contener exactamente 10 dígitos válidos.',
           }"
         ></app-input-error>
       </div>
