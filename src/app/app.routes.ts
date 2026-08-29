@@ -10,6 +10,7 @@ const componentCatalogRoutes: Routes = environment.production
       {
         path: 'compos',
         title: 'Catálogo de componentes · MisVales',
+        canActivate: [authGuard, roleGuard(['general_manager', 'admin'])],
         loadComponent: () =>
           import('./features/compos/compos-catalog.component').then(
             (component) => component.ComposCatalogComponent,

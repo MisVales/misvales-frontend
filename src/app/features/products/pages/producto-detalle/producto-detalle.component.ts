@@ -8,6 +8,7 @@ import { SessionStore } from '../../../../core/session/session.store';
 import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { MoneyInputDirective } from '../../../applications/directives/money-input.directive';
+import { apiErrorMessage } from '../../../../core/api/api-error';
 
 @Component({
   selector: 'app-producto-detalle',
@@ -26,7 +27,10 @@ export class ProductoDetalleComponent implements OnInit {
   private readonly alerts = inject(AlertService);
 
   protected isNew = computed(() => !this.route.snapshot.paramMap.get('id') || this.route.snapshot.paramMap.get('id') === 'nuevo');
-  protected canWrite = computed(() => this.session.roles().includes('general_manager'));
+  protected canWrite = computed(() => {
+    const permissions = this.session.permissions();
+    return permissions.includes('all') || permissions.includes('catalogs.manage');
+  });
   protected saving = signal(false);
   protected error = signal<string | null>(null);
   protected readonly controlesConErrorVisible = signal<ReadonlySet<keyof typeof this.form.controls>>(new Set());
@@ -36,7 +40,7 @@ export class ProductoDetalleComponent implements OnInit {
     code: ['', Validators.required],
     name: ['', Validators.required],
     description: [''],
-    nominal_amount: ['', [Validators.required, Validators.min(100)]],
+    nominal_amount: ['', [Validators.required, Validators.min(100), Validators.pattern(/^\d+00(?:\.0+)?$/)]],
     loan_commission_percentage: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
     simple_interest_percentage: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
     insurance_amount: ['', [Validators.required, Validators.min(0)]],
@@ -61,7 +65,7 @@ export class ProductoDetalleComponent implements OnInit {
           this.form.patchValue(patchObj);
           this.form.controls.code.disable();
         },
-        error: (e) => this.error.set(e?.error?.message ?? 'No fue posible cargar el producto.')
+        error: (e) => this.error.set(apiErrorMessage(e, 'No fue posible cargar el producto.'))
       });
     }
   }
@@ -114,8 +118,8 @@ export class ProductoDetalleComponent implements OnInit {
         ? 'El producto se guardó como borrador correctamente.'
         : 'La nueva edición del producto se guardó correctamente.');
       await this.router.navigate(['/productos']);
-    } catch (e: any) {
-      this.error.set(e?.error?.message ?? 'No fue posible guardar el producto.');
+    } catch (e: unknown) {
+      this.error.set(apiErrorMessage(e, 'No fue posible guardar el producto.'));
     } finally {
       this.saving.set(false);
     }

@@ -97,38 +97,38 @@ import { VerifierHomeComponent } from './verifier-home.component';
       height: 100%;
       align-self: stretch;
     }
-    .loading-kpis {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.85rem;
-    }
-    .loading-status {
-      display: inline-flex;
+    .loading-state {
+      min-height: 5.5rem;
+      display: flex;
       align-items: center;
-      gap: 0.4rem;
-      margin: -0.35rem 0 0;
-      color: var(--mv-text-muted);
-      font-size: 0.75rem;
-      font-weight: 650;
-    }
-    .loading-status__icon {
-      animation: spin 0.9s linear infinite;
-    }
-    .skeleton {
-      min-height: 7.7rem;
+      gap: 0.75rem;
+      padding: 1rem 1.1rem;
       border: 1px solid var(--mv-border);
       border-radius: var(--mv-radius-lg);
-      background: linear-gradient(100deg, #eef3ef 25%, #fafcfb 45%, #eef3ef 65%);
-      background-size: 200% 100%;
-      animation: shimmer 1.25s linear infinite;
+      background: var(--mv-surface);
+      color: var(--mv-text-muted);
     }
-    .loading-panels {
+    .loading-state__icon {
+      width: 2.5rem;
+      height: 2.5rem;
       display: grid;
-      grid-template-columns: 1.35fr 1fr;
-      gap: 1rem;
+      flex: 0 0 auto;
+      place-items: center;
+      border-radius: 50%;
+      color: var(--mv-primary-700);
+      background: var(--mv-primary-50);
     }
-    .loading-panels .skeleton {
-      min-height: 17rem;
+    .loading-state__icon lucide-icon {
+      animation: spin 0.9s linear infinite;
+    }
+    .loading-state strong {
+      display: block;
+      color: var(--mv-text);
+      font-size: 0.86rem;
+    }
+    .loading-state p {
+      margin: 0.2rem 0 0;
+      font-size: 0.75rem;
     }
     .error-state {
       min-height: 16rem;
@@ -224,38 +224,15 @@ import { VerifierHomeComponent } from './verifier-home.component';
       justify-content: flex-start;
       margin: 0 0.1rem;
     }
-    .dashboard[data-experience='mobile'] .loading-kpis {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 0.6rem;
-    }
-    .dashboard[data-experience='mobile'] .loading-panels {
-      grid-template-columns: 1fr;
-      gap: 0.75rem;
-    }
-    .dashboard[data-experience='mobile'] .skeleton {
-      min-height: 6.25rem;
-    }
-    .dashboard[data-experience='mobile'] .loading-panels .skeleton {
-      min-height: 11rem;
-    }
-    @keyframes shimmer {
-      to {
-        background-position: -200% 0;
-      }
-    }
     @keyframes spin {
-      to { transform: rotate(360deg); }
+      to {
+        transform: rotate(360deg);
+      }
     }
     @media (max-width: 900px) {
       .sections,
       .dashboard[data-experience='tablet'] .sections,
       .dashboard[data-role='cashier'] .sections {
-        grid-template-columns: 1fr;
-      }
-      .loading-kpis {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      .loading-panels {
         grid-template-columns: 1fr;
       }
       .sections > .section-wide {
@@ -268,8 +245,7 @@ import { VerifierHomeComponent } from './verifier-home.component';
       }
     }
     @media (prefers-reduced-motion: reduce) {
-      .skeleton,
-      .loading-status__icon {
+      .loading-state__icon lucide-icon {
         animation: none;
       }
     }

@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from '@core/guards/auth.guard';
-import { permissionGuard } from '@core/guards/permission.guard';
+import { anyPermissionGuard, permissionGuard } from '@core/guards/permission.guard';
 
 export const CONFIGURACIONES_ROUTES: Routes = [
   {
@@ -9,7 +9,7 @@ export const CONFIGURACIONES_ROUTES: Routes = [
     children: [
       {
         path: '',
-        canActivate: [permissionGuard('catalogs.view_published')],
+        canActivate: [anyPermissionGuard(['catalogs.view_published', 'catalogs.view_history'])],
         loadComponent: () => import('./pages/configuraciones-lista/configuraciones-lista.component').then(m => m.ConfiguracionesListaComponent)
       },
       {

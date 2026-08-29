@@ -18,19 +18,15 @@
     </header>
 
     @if (loading()) {
-      <p class="loading-status" role="status" aria-live="polite">
-        <lucide-icon class="loading-status__icon" name="loader-2" [size]="15" aria-hidden="true" />
-        Cargando indicadores y operación…
-      </p>
-      <div class="loading-kpis" aria-label="Cargando indicadores" aria-busy="true">
-        @for (item of config().role === 'cashier' ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4]; track item) {
-          <div class="skeleton"></div>
-        }
-      </div>
-      <div class="loading-panels" aria-hidden="true">
-        <div class="skeleton"></div>
-        <div class="skeleton"></div>
-      </div>
+      <section class="loading-state" role="status" aria-live="polite" aria-busy="true">
+        <span class="loading-state__icon" aria-hidden="true">
+          <lucide-icon name="loader-2" [size]="22" />
+        </span>
+        <div>
+          <strong>Cargando Inicio</strong>
+          <p>Estamos preparando la información de tu operación.</p>
+        </div>
+      </section>
     } @else if (error()) {
       <section class="error-state" role="alert">
         <lucide-icon name="alert-triangle" [size]="28" aria-hidden="true" />

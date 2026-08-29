@@ -3,11 +3,11 @@
     <div>
       <p class="text-xs font-bold uppercase tracking-[.12em] text-[var(--mv-primary-700)]">Catálogo global</p>
       <h1 class="mt-2 text-3xl font-bold tracking-tight text-[var(--mv-text)]">Productos</h1>
-      <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Cada producto representa solamente un importe que puede entregarse. Las condiciones financieras se aplican al otorgar el vale, nunca al crear este catálogo.</p>
+      <p class="mt-2 max-w-2xl text-sm leading-6 text-[var(--mv-text-muted)]">Cada producto representa un importe y sus condiciones financieras. Se guardan como borrador y sólo aplican a vales nuevos cuando la versión se publica.</p>
     </div>
     @if (canManageCatalogs()) {
       <div class="flex flex-wrap gap-3">
-        <a routerLink="/configuraciones" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--mv-primary-600)] px-4 text-sm font-semibold text-[var(--mv-primary-800)]">Condiciones financieras</a>
+        <a routerLink="/configuraciones" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-[var(--mv-primary-600)] px-4 text-sm font-semibold text-[var(--mv-primary-800)]">Configuraciones generales</a>
         <a routerLink="nuevo" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-[var(--mv-primary-700)] px-4 text-sm font-semibold text-white">Crear producto</a>
       </div>
     }

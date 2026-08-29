@@ -29,6 +29,10 @@ import {
 } from '../data-access/caja-vales-api.service';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 import { StatusBadgeComponent } from '@shared/components/badges/status-badge/status-badge.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../shared/utils/files/file-validation';
 
 interface DocumentPreview {
   url: string;
@@ -622,7 +626,7 @@ interface CorrectionAddress extends Record<string, string> {
                     </p>
                     <input
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,application/pdf"
+                      accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif,application/pdf"
                       aria-label="Comprobante de domicilio de la distribuidora"
                       class="block w-full text-sm"
                       [disabled]="uploadingAddressProof() || !voucher.document_owner"
@@ -1012,9 +1016,17 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     return !!voucher.address?.['address_proof_media_id'];
   }
   uploadAddressProof(voucher: CashVoucher, event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     const applicationId = voucher.document_owner?.owner_id;
     if (!file || !applicationId || this.uploadingAddressProof()) return;
+
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      this.error.set(validationError);
+      input.value = '';
+      return;
+    }
 
     this.clear();
     this.uploadingAddressProof.set(true);

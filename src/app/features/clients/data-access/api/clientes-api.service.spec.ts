@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
 import { ClientesApiService } from './clientes-api.service';
 
 describe('ClientesApiService', () => {
   let service: ClientesApiService; let http: HttpTestingController;
-  beforeEach(() => { TestBed.configureTestingModule({ imports: [HttpClientTestingModule], providers: [ClientesApiService] }); service=TestBed.inject(ClientesApiService); http=TestBed.inject(HttpTestingController); });
+  beforeEach(() => { TestBed.configureTestingModule({ imports: [HttpClientTestingModule], providers: [ClientesApiService, { provide: API_CONFIG, useValue: defaultApiConfig }] }); service=TestBed.inject(ClientesApiService); http=TestBed.inject(HttpTestingController); });
   afterEach(() => http.verify());
 
   it('adapta la lista canónica y conserva los filtros de alcance', () => {

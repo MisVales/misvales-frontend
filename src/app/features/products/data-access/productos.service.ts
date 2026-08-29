@@ -32,7 +32,13 @@ export class ProductosService {
       params = params.set('search', busqueda);
     }
       
-    return this.http.get<any[]>(`${this.baseUrl}`, { params }).pipe(map((rows) => ({
+    return this.http.get<ProductListResponseDto | any[]>(`${this.baseUrl}`, { params }).pipe(map((response) => {
+      const rows = Array.isArray(response) ? response : response.data ?? [];
+      const meta = Array.isArray(response)
+        ? { current_page: pagina, last_page: rows.length ? 1 : 1, total: rows.length }
+        : response.meta;
+
+      return {
       data: rows.map((row) => {
         const version = [...(row.versions ?? [])].sort((a, b) => b.version - a.version)[0] ?? {};
         return {
@@ -44,14 +50,20 @@ export class ProductosService {
           status: row.status,
           nominal_amount: version.nominal_amount ?? '0',
           version_status: version.status ?? 'DRAFT',
-          effective_from: version.effective_from ?? '',
-          reason: version.reason ?? '',
-          created_at: row.created_at,
-          lock_version: version.lock_version ?? row.lock_version,
-        };
+           effective_from: version.effective_from ?? '',
+           reason: version.reason ?? '',
+           created_at: row.created_at,
+           lock_version: version.lock_version ?? row.lock_version,
+           loan_commission_percentage: version.loan_commission_percentage ?? row.loan_commission_percentage ?? null,
+           simple_interest_percentage: version.simple_interest_percentage ?? row.simple_interest_percentage ?? null,
+           insurance_amount: version.insurance_amount ?? row.insurance_amount ?? null,
+           fortnights_count: version.fortnights_count ?? row.fortnights_count ?? null,
+         late_fee_amount: version.late_fee_amount ?? row.late_fee_amount ?? null,
+         };
       }),
-      meta: { current_page: pagina, last_page: 1, total: rows.length },
-    })));
+      meta: { current_page: meta.current_page ?? pagina, last_page: meta.last_page ?? 1, total: meta.total ?? rows.length },
+      };
+    }));
   }
 
   consultarDetalle(id: string): Observable<ProductDto> {
@@ -94,6 +106,11 @@ export class ProductosService {
     return { id: row.id, version_id: version.id ?? '', code: row.code, name: version.name ?? row.code, description: version.description ?? null,
       status: row.status, nominal_amount: version.nominal_amount ?? '0', version_status: version.status ?? 'DRAFT', effective_from: version.effective_from ?? '',
       reason: version.reason ?? '', created_at: row.created_at, lock_version: version.lock_version ?? row.lock_version ?? 0,
+      loan_commission_percentage: version.loan_commission_percentage ?? row.loan_commission_percentage ?? null,
+      simple_interest_percentage: version.simple_interest_percentage ?? row.simple_interest_percentage ?? null,
+      insurance_amount: version.insurance_amount ?? row.insurance_amount ?? null,
+      fortnights_count: version.fortnights_count ?? row.fortnights_count ?? null,
+      late_fee_amount: version.late_fee_amount ?? row.late_fee_amount ?? null,
     };
   }
 }

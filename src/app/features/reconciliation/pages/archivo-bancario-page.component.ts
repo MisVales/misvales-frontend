@@ -11,6 +11,10 @@ import {
 import { HistoryPageHeaderComponent } from '../../../shared/components/history/history-page-header.component';
 import { HistoryFilterBarComponent } from '../../../shared/components/history/history-filter-bar.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import {
+  BANK_XLSX_FILE_RULE,
+  validateUploadFile,
+} from '../../../shared/utils/files/file-validation';
 
 @Component({
   selector: 'app-archivo-bancario-page',
@@ -66,9 +70,21 @@ export class ArchivoBancarioPageComponent {
   }
 
   select(event: Event): void {
-    const selected = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const input = event.target as HTMLInputElement;
+    const selected = input.files?.[0] ?? null;
     this.clearMessages();
-    if (selected && !selected.name.toLowerCase().endsWith('.xlsx')) {
+    if (!selected) {
+      this.file.set(null);
+      return;
+    }
+    const validationError = validateUploadFile(selected, BANK_XLSX_FILE_RULE);
+    if (validationError) {
+      this.file.set(null);
+      this.error.set(validationError);
+      input.value = '';
+      return;
+    }
+    if (!selected.name.toLowerCase().endsWith('.xlsx')) {
       this.file.set(null);
       this.error.set('Selecciona un archivo con extensión .xlsx.');
       return;

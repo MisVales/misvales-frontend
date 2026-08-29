@@ -17,6 +17,8 @@
         class="form-control"
         [ngModel]="datoObservado()"
         (ngModelChange)="datoObservado.set($event)"
+        [min]="isBirthDateField() ? minBirthDate : null"
+        [max]="isBirthDateField() ? maxAdultDate : maxDate"
         [disabled]="isProcessing()"
       />
     }
@@ -80,6 +82,38 @@
       </select>
     }
 
+    <!-- Numeric fields -->
+    @else if (isIntegerField()) {
+      <input
+        type="number"
+        class="form-control"
+        min="1990"
+        [max]="maxModelYear"
+        step="1"
+        inputmode="numeric"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="onValueChange($event)"
+        placeholder="Año del vehículo"
+        [disabled]="isProcessing()"
+      />
+      <small class="form-help text-xs text-gray-500">Año entre 1990 y {{ maxModelYear }}.</small>
+    }
+
+    @else if (isNumericField()) {
+      <input
+        type="number"
+        class="form-control"
+        min="0"
+        step="0.01"
+        inputmode="decimal"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="onValueChange($event)"
+        placeholder="Captura un valor numérico"
+        [disabled]="isProcessing()"
+      />
+      <small class="form-help text-xs text-gray-500">Número válido; las medidas deben ser mayores que cero.</small>
+    }
+
     <!-- CURP input with 18 max -->
     @else if (campo() === 'curp') {
       <input
@@ -114,8 +148,10 @@
         type="tel"
         class="form-control"
         maxlength="10"
+        inputmode="numeric"
+        autocomplete="tel-national"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onPhoneNumberChange($event)"
         placeholder="10 dígitos (Ej. 8711234567)"
         [disabled]="isProcessing()"
       />

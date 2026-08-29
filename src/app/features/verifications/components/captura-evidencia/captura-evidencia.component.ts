@@ -7,9 +7,13 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { AttachmentPreviewComponent } from '../../../../shared/components/media/attachment-preview/attachment-preview.component';
 import { CommonModule } from '@angular/common';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import { AttachmentPreviewComponent } from '../../../../shared/components/media/attachment-preview/attachment-preview.component';
+import {
+  VERIFICATION_EVIDENCE_FILE_RULE,
+  validateUploadFile,
+} from '../../../../shared/utils/files/file-validation';
 
 export interface EvidenciaPayload {
   tipo: string;
@@ -25,30 +29,26 @@ export interface EvidenciaPayload {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CapturaEvidenciaComponent {
-  // Inputs
   tiposPermitidos = input<{ id: string; label: string }[]>([]);
   maxSizeMB = input<number>(10);
   isUploading = input<boolean>(false);
   progress = input<number>(0);
 
-  // Outputs
   fileSelected = output<EvidenciaPayload>();
 
-  // View Childs
   fileInput = viewChild<ElementRef<HTMLInputElement>>('fileInput');
 
-  // State
   tipoSeleccionado = signal<string>('');
   archivoSeleccionado = signal<File | null>(null);
   errorMsg = signal<string | null>(null);
 
-  onTipoChange(event: Event) {
+  onTipoChange(event: Event): void {
     const select = event.target as HTMLSelectElement;
     this.tipoSeleccionado.set(select.value);
     this.errorMsg.set(null);
   }
 
-  onFileChange(event: Event) {
+  onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
 
@@ -59,17 +59,12 @@ export class CapturaEvidenciaComponent {
       return;
     }
 
-    // Validate size
-    const sizeInMB = file.size / (1024 * 1024);
-    if (sizeInMB > this.maxSizeMB()) {
-      this.errorMsg.set(`El archivo excede el tamaño máximo permitido de ${this.maxSizeMB()}MB.`);
-      this.limpiarArchivo();
-      return;
-    }
-
-    // Validate mime
-    if (!['image/jpeg', 'image/png', 'image/webp', 'application/pdf'].includes(file.type)) {
-      this.errorMsg.set('Solo se permiten archivos JPG, PNG, WebP o PDF.');
+    const validationError = validateUploadFile(file, {
+      ...VERIFICATION_EVIDENCE_FILE_RULE,
+      maxBytes: this.maxSizeMB() * 1024 * 1024,
+    });
+    if (validationError) {
+      this.errorMsg.set(validationError);
       this.limpiarArchivo();
       return;
     }
@@ -77,7 +72,7 @@ export class CapturaEvidenciaComponent {
     this.archivoSeleccionado.set(file);
   }
 
-  subirEvidencia() {
+  subirEvidencia(): void {
     if (!this.tipoSeleccionado()) {
       this.errorMsg.set('Debes seleccionar el tipo de evidencia.');
       return;
@@ -89,10 +84,20 @@ export class CapturaEvidenciaComponent {
       return;
     }
 
+    const validationError = validateUploadFile(file, {
+      ...VERIFICATION_EVIDENCE_FILE_RULE,
+      maxBytes: this.maxSizeMB() * 1024 * 1024,
+    });
+    if (validationError) {
+      this.errorMsg.set(validationError);
+      this.limpiarArchivo();
+      return;
+    }
+
     this.fileSelected.emit({ tipo: this.tipoSeleccionado(), file });
   }
 
-  limpiarArchivo() {
+  limpiarArchivo(): void {
     this.archivoSeleccionado.set(null);
     const input = this.fileInput();
     if (input) {
@@ -100,7 +105,7 @@ export class CapturaEvidenciaComponent {
     }
   }
 
-  cancelar() {
+  cancelar(): void {
     this.limpiarArchivo();
     this.tipoSeleccionado.set('');
     this.errorMsg.set(null);

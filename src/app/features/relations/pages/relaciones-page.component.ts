@@ -15,6 +15,10 @@ import { HistoryPageHeaderComponent } from '../../../shared/components/history/h
 import { HistoryPaginationComponent } from '../../../shared/components/history/history-pagination.component';
 import { HistoryFilterBarComponent } from '../../../shared/components/history/history-filter-bar.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../shared/utils/files/file-validation';
 
 type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
 
@@ -604,7 +608,7 @@ type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
                   >Comprobante<input
                     class="mt-1 block min-h-11 w-full rounded-lg border bg-white p-2 font-normal text-gray-900"
                     type="file"
-                    accept=".pdf,.jpg,.jpeg,.png,.webp"
+                    accept=".pdf,.jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif"
                     (change)="selectClarificationFile($event)"
                 /></label>
                 <label class="text-sm font-semibold text-amber-950"
@@ -778,7 +782,21 @@ export class RelacionesPageComponent {
   }
 
   selectClarificationFile(event: Event): void {
-    this.clarificationFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      this.clarificationFile.set(null);
+      this.error.set('');
+      return;
+    }
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      this.clarificationFile.set(null);
+      this.error.set(validationError);
+      input.value = '';
+      return;
+    }
+    this.clarificationFile.set(file);
   }
 
   submitClarification(relation: RelationView): void {

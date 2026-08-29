@@ -42,21 +42,11 @@ export interface VoucherFinancialConditions {
   interest_rate: string;
   insurance_amount: string;
   installment_count: number;
-  minimum_installment_count: number;
-  maximum_installment_count: number;
   category_rate: string;
   late_fee_amount: string;
 }
 export interface VoucherFinancialContext {
   category: { name: string; percentage: string };
-  conditions: {
-    commission_rate: string;
-    interest_rate: string;
-    insurance_amount: string;
-    minimum_installment_count: number;
-    maximum_installment_count: number;
-    late_fee_amount: string;
-  };
 }
 export interface VoucherCreditLine {
   total_authorized: string;

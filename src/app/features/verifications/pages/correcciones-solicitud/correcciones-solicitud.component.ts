@@ -17,6 +17,18 @@ import { AlertService } from '../../../../shared/components/alerts/alert.service
 import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 
+const MIN_BIRTH_DATE = '1900-01-01';
+
+function toDateInputValue(date: Date): string {
+  return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
+}
+
+function maxAdultBirthDate(): string {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - 18);
+  return toDateInputValue(date);
+}
+
 export interface PasoCorreccion {
   id: string;
   label: string;
@@ -58,6 +70,10 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   registroSeleccionado = signal<string>('');
   valorCorregido = signal<string>('');
   motivoCorreccion = signal<string>('');
+  readonly minBirthDate = MIN_BIRTH_DATE;
+  readonly maxAdultDate = maxAdultBirthDate();
+  readonly maxDate = toDateInputValue(new Date());
+  readonly maxModelYear = String(new Date().getFullYear() + 1);
 
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -162,6 +178,9 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
       if (['Mexicana', 'Mexicano', 'México', 'MEXICAN'].includes(initialVal)) initialVal = 'MEXICAN';
       else if (['Extranjera', 'Extranjero', 'FOREIGN'].includes(initialVal)) initialVal = 'FOREIGN';
     }
+    if (diferencia.campo === 'phone_number') {
+      initialVal = this.normalizarTelefonoNacional(initialVal);
+    }
     this.valorCorregido.set(initialVal);
     this.motivoCorreccion.set(diferencia.descripcion ?? 'Corrección aceptada por coordinación');
     this.mostrarFormularioCorreccion.set(true);
@@ -178,6 +197,10 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     return ['birth_date', 'started_at', 'ended_at'].includes(campo);
   }
 
+  isBirthDateField(campo: string): boolean {
+    return campo === 'birth_date';
+  }
+
   isNationalityField(campo: string): boolean {
     return campo === 'nationality';
   }
@@ -192,6 +215,30 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
 
   isBooleanField(campo: string): boolean {
     return ['is_current', 'is_active', 'has_identification_evidence'].includes(campo);
+  }
+
+  isIntegerField(campo: string): boolean {
+    return campo === 'model_year';
+  }
+
+  isNumericField(campo: string): boolean {
+    return [
+      'amount',
+      'outstanding_balance',
+      'monthly_payment',
+      'credit_limit',
+      'width_meters',
+      'length_meters',
+      'built_area_square_meters',
+    ].includes(campo);
+  }
+
+  onPhoneNumberChange(value: string): void {
+    this.valorCorregido.set(this.normalizarTelefonoNacional(value));
+  }
+
+  onValueChange(value: unknown): void {
+    this.valorCorregido.set(value === null || value === undefined ? '' : String(value));
   }
 
   async aplicarCorreccion() {
@@ -238,10 +285,28 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
 
       if (campo === 'phone_number') {
         const digits = nuevoValor.replace(/\D/g, '');
-        if (digits.length !== 10 && digits.length !== 12) {
+        if (digits.length !== 10) {
           this.alerts.showAlert('El teléfono debe contener exactamente 10 dígitos numéricos.', 'warning');
           return;
         }
+        nuevoValor = digits;
+      }
+
+      if (this.isDateField(campo) && !this.fechaEsValida(campo, nuevoValor)) {
+        return;
+      }
+
+      if (this.isDateField(campo) && !this.ordenDeFechasEsValido(dif, campo, nuevoValor)) {
+        return;
+      }
+
+      if (this.isIntegerField(campo) && (!/^\d{4}$/.test(nuevoValor) || Number(nuevoValor) < 1990 || Number(nuevoValor) > Number(this.maxModelYear))) {
+        this.alerts.showAlert(`El año del vehículo debe tener cuatro dígitos y estar entre 1990 y ${this.maxModelYear}.`, 'warning');
+        return;
+      }
+
+      if (this.isNumericField(campo) && !this.numeroEsValido(campo, nuevoValor)) {
+        return;
       }
 
       if (campo === 'official_id_number') {
@@ -270,6 +335,79 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
       this.alerts.showAlert('Corrección guardada y aplicada al expediente.', 'success');
       this.cerrarCorreccion();
     }
+  }
+
+  private normalizarTelefonoNacional(value: string): string {
+    const raw = String(value ?? '').trim();
+    const digits = raw.replace(/\D/g, '');
+    return raw.startsWith('+') ? digits.slice(-10) : digits.slice(0, 10);
+  }
+
+  private fechaEsValida(campo: string, value: string): boolean {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !this.fechaCalendarioEsValida(value)) {
+      this.alerts.showAlert('Selecciona una fecha válida.', 'warning');
+      return false;
+    }
+    if (campo === 'birth_date' && (value < this.minBirthDate || value > this.maxAdultDate)) {
+      this.alerts.showAlert('La fecha de nacimiento debe corresponder a una persona mayor de edad y ser posterior al 01/01/1900.', 'warning');
+      return false;
+    }
+    if (campo === 'started_at' && value > this.maxDate) {
+      this.alerts.showAlert('La fecha de inicio no puede ser posterior a hoy.', 'warning');
+      return false;
+    }
+
+    return true;
+  }
+
+  private fechaCalendarioEsValida(value: string): boolean {
+    const date = new Date(`${value}T00:00:00`);
+    return !Number.isNaN(date.getTime()) && toDateInputValue(date) === value;
+  }
+
+  private ordenDeFechasEsValido(dif: any, campo: string, value: string): boolean {
+    if (!['started_at', 'ended_at'].includes(campo)) return true;
+
+    const relatedField = campo === 'started_at' ? 'ended_at' : 'started_at';
+    const recordId = String(dif.registroId || this.registroSeleccionado());
+    const recordData = this.facade.solicitudSeleccionada()?.datosDeclarados?.[dif.seccion];
+    const record = Array.isArray(recordData)
+      ? recordData.find((item: any) => item?.id && String(item.id) === recordId)
+      : null;
+    const latestCorrection = this.correccionesAplicadas()
+      .filter((correction) =>
+        correction.seccion === dif.seccion
+        && correction.campo === relatedField
+        && String(correction.registroId || '') === recordId,
+      )
+      .at(-1);
+    const relatedRaw = latestCorrection?.valorCorregido ?? record?.[relatedField];
+    const relatedDate = typeof relatedRaw === 'string' ? relatedRaw.slice(0, 10) : '';
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(relatedDate)) return true;
+
+    if (campo === 'started_at' && value > relatedDate) {
+      this.alerts.showAlert('La fecha de inicio no puede ser posterior a la fecha de terminación.', 'warning');
+      return false;
+    }
+    if (campo === 'ended_at' && value < relatedDate) {
+      this.alerts.showAlert('La fecha de terminación debe ser igual o posterior a la fecha de inicio.', 'warning');
+      return false;
+    }
+
+    return true;
+  }
+
+  private numeroEsValido(campo: string, value: string): boolean {
+    if (!/^\d{1,15}(?:\.\d{1,4})?$/.test(value)) {
+      this.alerts.showAlert('Captura un número válido, sin signo negativo y con hasta 4 decimales.', 'warning');
+      return false;
+    }
+    if (['width_meters', 'length_meters', 'built_area_square_meters'].includes(campo) && Number(value) <= 0) {
+      this.alerts.showAlert('La medida debe ser mayor que cero.', 'warning');
+      return false;
+    }
+
+    return true;
   }
 
   etiquetaSeccion(seccion: string): string {

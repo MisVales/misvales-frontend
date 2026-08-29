@@ -32,6 +32,10 @@ import {
   BreadcrumbsComponent,
   type BreadcrumbItem,
 } from '@shared/components/navigation/breadcrumbs/breadcrumbs.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../shared/utils/files/file-validation';
 
 interface PaymentPercentages {
   surcharge: number;
@@ -864,7 +868,21 @@ export class PagosPageComponent implements OnDestroy {
   }
 
   selectReportFile(event: Event): void {
-    this.reportFile.set((event.target as HTMLInputElement).files?.[0] ?? null);
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      this.reportFile.set(null);
+      this.error.set('');
+      return;
+    }
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      this.reportFile.set(null);
+      this.error.set(validationError);
+      input.value = '';
+      return;
+    }
+    this.reportFile.set(file);
   }
 
   submitReport(relation: RelationView): void {

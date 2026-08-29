@@ -330,7 +330,8 @@
           [forceShow]="mostrarErroresDeValidacion"
           label="El teléfono"
           [customMessages]="{
-            invalidPhone: 'El teléfono debe contener exactamente 10 dígitos válidos.',
+            invalidPhone: 'Debe contener un número de teléfono válido para el país seleccionado y no exceder 10 dígitos nacionales.',
+            phoneLength: 'El número telefónico debe tener exactamente 10 dígitos nacionales.',
           }"
         ></app-input-error>
       </div>
@@ -409,7 +410,7 @@
         >
         <input
           type="file"
-          accept="image/*,.pdf"
+          accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif,application/pdf"
           (change)="onFileChange($event)"
           [class.border-red-500]="mostrarError('evidence_uploaded')"
           [attr.aria-invalid]="mostrarError('evidence_uploaded')"

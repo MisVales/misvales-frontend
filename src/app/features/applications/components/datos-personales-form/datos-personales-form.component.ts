@@ -29,6 +29,10 @@ import {
 import { PhoneInputComponent } from '../../../../shared/components/inputs/phone-input/phone-input.component';
 import { AttachmentPreviewComponent } from '../../../../shared/components/media/attachment-preview/attachment-preview.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../../shared/utils/files/file-validation';
 
 @Component({
   selector: 'app-datos-personales-form',
@@ -245,6 +249,15 @@ export class DatosPersonalesFormComponent implements OnInit {
       const file = input.files[0];
       const applicationId = this.store.detalle()?.id;
       if (!applicationId) return;
+
+      const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+      if (validationError) {
+        this.currentEvidenceFile = undefined;
+        this.evidenceError = validationError;
+        input.value = '';
+        this.cdr.markForCheck();
+        return;
+      }
 
       this.currentEvidenceFile = file;
       this.uploadingEvidence = true;

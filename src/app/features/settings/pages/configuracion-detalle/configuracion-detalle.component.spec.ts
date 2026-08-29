@@ -13,9 +13,9 @@ describe('ConfiguracionDetalleComponent', () => {
   const store = {
     definicionSeleccionada: signal({
       id: 'definition-1',
-      clave: 'LOAN_COMMISSION_PERCENTAGE',
-      nombre: 'Comisión del préstamo',
-      descripcion: 'Comisión global del vale',
+      clave: 'TEST_PERCENTAGE_CONFIGURATION',
+      nombre: 'Porcentaje de prueba',
+      descripcion: 'Configuración porcentual de prueba',
       tipoValor: 'PERCENTAGE' as const,
       unidad: 'percentage',
       requerida: true,
@@ -41,7 +41,7 @@ describe('ConfiguracionDetalleComponent', () => {
         provideRouter([]),
         { provide: ConfiguracionesStore, useValue: store },
         { provide: AlertService, useValue: alerts },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ clave: 'LOAN_COMMISSION_PERCENTAGE' }) } } },
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ clave: 'TEST_PERCENTAGE_CONFIGURATION' }) } } },
       ],
     }).compileComponents();
 
@@ -71,7 +71,7 @@ describe('ConfiguracionDetalleComponent', () => {
 
     await instance.guardarCambios();
 
-    expect(store.actualizarActual).toHaveBeenCalledWith('LOAN_COMMISSION_PERCENTAGE', {
+    expect(store.actualizarActual).toHaveBeenCalledWith('TEST_PERCENTAGE_CONFIGURATION', {
       value: 0.125,
       reason: 'Ajuste autorizado de comisión',
     });

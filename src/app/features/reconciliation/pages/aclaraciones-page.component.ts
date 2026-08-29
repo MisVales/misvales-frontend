@@ -6,6 +6,10 @@ import { RouterLink } from '@angular/router';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { MediaApiService } from '@core/api/media/media-api.service';
 import { StatusBadgeComponent, StatusBadgeTone } from '@shared/components/badges/status-badge/status-badge.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../shared/utils/files/file-validation';
 import { ExcedentesApiService, RefundRequest } from '@features/payments/data-access/excedentes-api.service';
 import {
   BankMovement,
@@ -114,11 +118,11 @@ interface QueueItem {
         <section class="w-full max-w-xl space-y-4 rounded-2xl bg-white p-6 shadow-xl">
           <div><h2 id="refund-title" class="text-xl font-bold">Registrar devolución autorizada</h2><p class="text-sm text-slate-600">Importe autorizado: {{ refund.amount | currency: 'MXN' }}. Captura la operación externa realizada.</p></div>
           <div class="grid gap-4 sm:grid-cols-2">
-            <label class="text-sm font-semibold">Fecha y hora<input type="datetime-local" class="mt-1 min-h-11 w-full rounded-lg border border-slate-200 px-3 font-normal" [(ngModel)]="executedAt" /></label>
+            <label class="text-sm font-semibold">Fecha y hora<input type="datetime-local" [max]="maxExecutedAt" class="mt-1 min-h-11 w-full rounded-lg border border-slate-200 px-3 font-normal" [(ngModel)]="executedAt" /><span class="mt-1 block text-xs font-normal text-slate-500">No puede ser posterior a la hora actual.</span></label>
             <label class="text-sm font-semibold">Método<input class="mt-1 min-h-11 w-full rounded-lg border border-slate-200 px-3 font-normal" maxlength="50" [(ngModel)]="method" /></label>
             <label class="text-sm font-semibold sm:col-span-2">Referencia o folio<input class="mt-1 min-h-11 w-full rounded-lg border border-slate-200 px-3 font-normal" maxlength="100" [(ngModel)]="reference" /></label>
           </div>
-          <label class="block text-sm font-semibold">Comprobante privado<input type="file" accept="image/jpeg,image/png,image/webp,application/pdf" class="mt-1 block w-full text-sm font-normal" (change)="onEvidence($event)" /></label>
+          <label class="block text-sm font-semibold">Comprobante privado<input type="file" accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif,application/pdf" class="mt-1 block w-full text-sm font-normal" (change)="onEvidence($event)" /></label>
           <label class="block text-sm font-semibold">Observaciones<textarea rows="3" maxlength="2000" class="mt-1 w-full rounded-lg border border-slate-200 p-3 font-normal" [(ngModel)]="observations"></textarea></label>
           <div class="flex justify-end gap-3"><button type="button" class="min-h-11 rounded-lg border border-slate-200 px-4" (click)="closeRefund()">Cancelar</button><button data-manager-action type="button" [disabled]="busy()" class="min-h-11 rounded-lg bg-emerald-700 px-4 font-semibold text-white disabled:opacity-50" (click)="executeRefund(refund)">{{ busy() ? 'Registrando…' : 'Registrar devolución' }}</button></div>
         </section>
@@ -147,6 +151,7 @@ export class AclaracionesPageComponent {
   reference = '';
   observations = '';
   executedAt = this.localDateTime();
+  readonly maxExecutedAt = this.localDateTime();
   readonly visibleItems = computed(() => this.filter() === 'all' ? this.items() : this.items().filter((item) => item.kind === this.filter()));
   readonly summaries = computed(() => [
     { label: 'Pendientes de revisar', value: this.items().filter((item) => item.kind === 'clarification' && ['OPEN', 'IN_REVIEW'].includes(item.status)).length },
@@ -196,10 +201,31 @@ export class AclaracionesPageComponent {
 
   openRefund(item: RefundRequest): void { this.resetRefund(); this.refundTarget.set(item); }
   closeRefund(): void { this.refundTarget.set(null); this.resetRefund(); }
-  onEvidence(event: Event): void { this.evidenceFile.set((event.target as HTMLInputElement).files?.[0] ?? null); }
+  onEvidence(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      this.evidenceFile.set(null);
+      this.error.set('');
+      return;
+    }
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      this.evidenceFile.set(null);
+      this.error.set(validationError);
+      input.value = '';
+      return;
+    }
+    this.evidenceFile.set(file);
+  }
 
   async executeRefund(item: RefundRequest): Promise<void> {
     const file = this.evidenceFile();
+    const fileError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (fileError) { this.error.set(fileError); return; }
+    if (!this.validExecutedAt(this.executedAt)) {
+      this.error.set('La fecha y hora de la devolución no son válidas o son posteriores a la hora actual.'); return;
+    }
     if (!file || !this.method.trim() || !this.reference.trim() || !this.executedAt) {
       this.error.set('Captura fecha, método, referencia y comprobante antes de registrar la devolución.'); return;
     }
@@ -224,5 +250,12 @@ export class AclaracionesPageComponent {
   }
   private resetRefund(): void { this.evidenceFile.set(null); this.method = ''; this.reference = ''; this.observations = ''; this.executedAt = this.localDateTime(); }
   private localDateTime(): string { const date = new Date(); date.setMinutes(date.getMinutes() - date.getTimezoneOffset()); return date.toISOString().slice(0, 16); }
+  private validExecutedAt(value: string): boolean {
+    const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+    if (!match) return false;
+    const [, year, month, day, hour, minute] = match.map(Number);
+    const date = new Date(year, month - 1, day, hour, minute);
+    return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day && date.getHours() === hour && date.getMinutes() === minute && date.getTime() <= Date.now();
+  }
   private showError(error: unknown, fallback: string): void { this.error.set(error instanceof HttpErrorResponse ? error.error?.error?.message ?? error.error?.message ?? fallback : fallback); }
 }

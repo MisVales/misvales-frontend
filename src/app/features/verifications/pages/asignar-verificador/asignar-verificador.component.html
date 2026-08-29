@@ -113,27 +113,30 @@
             }
 
             <label for="visitTime">Hora de inicio</label>
-            <select
+            <input
               id="visitTime"
               class="time-select"
+              type="time"
               [(ngModel)]="selectedTime"
+              (ngModelChange)="onTimeChange($event)"
+              [min]="schedulePolicy().start_time"
+              [max]="schedulePolicy().max_start_time"
+              [step]="schedulePolicy().slot_minutes * 60"
               [disabled]="!verifierId || scheduleLoading()"
-            >
-              <option value="">Selecciona una hora</option>
-              @for (time of timeSlots(); track time) {
-                <option [value]="time" [disabled]="slotDisabled(time)">
-                  {{ time }}{{ slotDisabled(time) ? ' · no disponible' : '' }}
-                </option>
-              }
-            </select>
+              aria-describedby="scheduler-help"
+            />
             <p id="scheduler-help" class="schedule-help">
               Horario global vigente: {{ schedulePolicy().start_time }}–{{ schedulePolicy().max_start_time }}
-              ({{ schedulePolicy().timezone }}). Para hoy, el primer horario disponible es el siguiente bloque.
+              ({{ schedulePolicy().timezone }}). Usa el selector de hora y bloques de
+              {{ schedulePolicy().slot_minutes }} minutos. Para hoy, el primer horario disponible es el siguiente bloque.
               Cada visita reserva 15 min antes, 30 min de visita y 30 min para validación y
               traslado. Debe haber 75 min entre inicios.
             </p>
+            @if (submitted && selectedTimeHasConflict()) {
+              <p class="field-error">Ese horario no está disponible; debe haber 75 minutos entre inicios.</p>
+            }
             @if (submitted && !isValidSchedule()) {
-              <p class="field-error">Elige un horario disponible entre {{ schedulePolicy().start_time }} y {{ schedulePolicy().max_start_time }}.</p>
+              <p class="field-error">Captura una hora válida entre {{ schedulePolicy().start_time }} y {{ schedulePolicy().max_start_time }}, en bloques de {{ schedulePolicy().slot_minutes }} minutos.</p>
             }
           </section>
         </div>

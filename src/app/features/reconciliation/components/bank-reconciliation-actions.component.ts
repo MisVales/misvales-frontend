@@ -2,6 +2,10 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal } from '@angular/core';
 import { ConciliacionApiService } from '../data-access/conciliacion-api.service';
+import {
+  BANK_XLSX_FILE_RULE,
+  validateUploadFile,
+} from '../../../shared/utils/files/file-validation';
 
 @Component({
   selector: 'app-bank-reconciliation-actions',
@@ -69,9 +73,21 @@ export class BankReconciliationActionsComponent {
   constructor() { this.checkAvailability(); }
 
   select(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
     this.error.set('');
-    if (file && !file.name.toLocaleLowerCase('es-MX').endsWith('.xlsx')) {
+    if (!file) {
+      this.file.set(null);
+      return;
+    }
+    const validationError = validateUploadFile(file, BANK_XLSX_FILE_RULE);
+    if (validationError) {
+      this.file.set(null);
+      this.error.set(validationError);
+      input.value = '';
+      return;
+    }
+    if (!file.name.toLocaleLowerCase('es-MX').endsWith('.xlsx')) {
       this.file.set(null); this.error.set('Selecciona un archivo XLSX válido.'); return;
     }
     this.file.set(file);

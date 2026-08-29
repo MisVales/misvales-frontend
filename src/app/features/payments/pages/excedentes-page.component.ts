@@ -9,6 +9,10 @@ import { ConfirmationService } from '../../../shared/dialogs/confirmation.servic
 import { ReasonActionDialogComponent } from '../../../shared/dialogs/reason-action-dialog/reason-action-dialog.component';
 import { AttachmentPreviewComponent } from '../../../shared/components/media/attachment-preview/attachment-preview.component';
 import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../shared/utils/files/file-validation';
+import {
   StatusBadgeComponent,
   StatusBadgeTone,
 } from '../../../shared/components/badges/status-badge/status-badge.component';
@@ -150,7 +154,20 @@ export class ExcedentesPageComponent implements OnDestroy {
   }
 
   onEvidence(event: Event): void {
-    const file = (event.target as HTMLInputElement).files?.[0] ?? null;
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      this.evidenceFile.set(null);
+      this.error.set('');
+      return;
+    }
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      this.evidenceFile.set(null);
+      this.error.set(validationError);
+      input.value = '';
+      return;
+    }
     this.evidenceFile.set(file);
   }
 
@@ -165,6 +182,11 @@ export class ExcedentesPageComponent implements OnDestroy {
 
   async execute(item: RefundGroup): Promise<void> {
     const file = this.evidenceFile();
+    const fileError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (fileError) {
+      this.error.set(fileError);
+      return;
+    }
     if (!this.method.trim() || !this.reference.trim() || !this.executedAt || !file) {
       this.error.set(
         'Captura método, fecha, referencia y comprobante antes de registrar la devolución.',

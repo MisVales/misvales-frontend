@@ -32,18 +32,18 @@
       <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Importe nominal a entregar <span class="text-red-600" aria-hidden="true">*</span><span class="sr-only"> obligatorio</span></label>
       <input appMoneyInput class="w-full max-w-sm rounded-lg border border-[var(--mv-border-strong)] bg-white px-3 py-2.5 text-lg font-semibold tabular-nums" type="text" inputmode="decimal" formControlName="nominal_amount" placeholder="Ej. 5,000" (focus)="marcarCampoAlEnfocar('nominal_amount')">
       <p class="mt-2 text-xs leading-5 text-[var(--mv-text-muted)]">Debe ser múltiplo de $100. Este es el capital del vale, no el total que pagará la persona.</p>
-      <app-input-error [control]="form.controls.nominal_amount" label="El importe nominal" [forceShow]="mostrarError('nominal_amount')" [customMessages]="{ min: 'El importe mínimo es de $100.00.' }"></app-input-error>
+      <app-input-error [control]="form.controls.nominal_amount" label="El importe nominal" [forceShow]="mostrarError('nominal_amount')" [customMessages]="{ min: 'El importe mínimo es de $100.00.', pattern: 'El importe nominal debe ser un múltiplo de $100.' }"></app-input-error>
     </div>
 
     <!-- Condiciones financieras del producto -->
     <div class="md:col-span-2 border-t border-[var(--mv-border)] pt-4 mt-2">
       <h3 class="text-base font-bold text-[var(--mv-text)] mb-1">Condiciones financieras del vale</h3>
-      <p class="text-xs text-[var(--mv-text-muted)] mb-4">Estos valores se aplican automáticamente a los vales generados con este producto.</p>
+      <p class="text-xs text-[var(--mv-text-muted)] mb-4">Estos valores quedan en borrador y se aplican a vales nuevos únicamente al publicar la versión.</p>
       <div class="grid gap-4 md:grid-cols-2">
         <div>
           <label class="mb-1 block text-sm font-semibold text-[var(--mv-text)]">Comisión del préstamo (%) <span class="text-red-600" aria-hidden="true">*</span></label>
           <input type="number" step="0.1" class="w-full rounded-lg border border-[var(--mv-border-strong)] px-3 py-2.5 text-base" formControlName="loan_commission_percentage" placeholder="Ej. 10" (focus)="marcarCampoAlEnfocar('loan_commission_percentage')">
-          <p class="mt-1 text-xs text-[var(--mv-text-muted)]">Porcentaje global aplicado al capital (ej. 10%).</p>
+          <p class="mt-1 text-xs text-[var(--mv-text-muted)]">Porcentaje aplicado al capital de este producto (ej. 10%).</p>
           <app-input-error [control]="form.controls.loan_commission_percentage" label="La comisión" [forceShow]="mostrarError('loan_commission_percentage')"></app-input-error>
         </div>
 

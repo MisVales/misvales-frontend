@@ -9,25 +9,19 @@ export function phoneValidator(): ValidatorFn {
 
     try {
       const raw = String(control.value).trim();
-      const valid = isValidPhoneNumber(raw);
-      if (!valid) {
+      const phone = parsePhoneNumberFromString(raw);
+      if (!phone) {
         return { invalidPhone: true };
       }
-
-      const parsed = parsePhoneNumberFromString(raw);
-      if (parsed) {
-        // Enforce 10 digits for national number
-        if (parsed.nationalNumber.length !== 10) {
-          return { invalidPhone: true };
-        }
-      } else {
-        const digitsOnly = raw.replace(/\D/g, '');
-        if (digitsOnly.length !== 10 && digitsOnly.length !== 12) {
-          return { invalidPhone: true };
-        }
+      if (phone.nationalNumber.length !== 10) {
+        return {
+          phoneLength: {
+            message: 'El número telefónico debe tener exactamente 10 dígitos nacionales.',
+          },
+        };
       }
-
-      return null;
+      const valid = isValidPhoneNumber(raw);
+      return valid ? null : { invalidPhone: true };
     } catch {
       return { invalidPhone: true };
     }

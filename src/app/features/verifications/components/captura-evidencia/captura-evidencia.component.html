@@ -21,7 +21,7 @@
       <input
         #fileInput
         type="file"
-        accept="image/jpeg,image/png,image/webp,application/pdf"
+        accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif,application/pdf"
         (change)="onFileChange($event)"
         [disabled]="!tipoSeleccionado() || isUploading()"
         style="display: none"

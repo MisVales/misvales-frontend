@@ -4,6 +4,7 @@ import { Producto, CreateProductRequestDto, UpdateProductRequestDto } from '../d
 import { ProductosMapper } from '../data-access/productos.mapper';
 import { ProductosService } from '../data-access/productos.service';
 import { firstValueFrom } from 'rxjs';
+import { apiErrorCode, apiErrorMessage, normalizeApiError } from '../../../core/api/api-error';
 
 export interface ProductosFiltros {
   busqueda?: string;
@@ -43,8 +44,8 @@ export const ProductosStore = signalStore(
           estadoCarga: false,
           operacionEnProceso: null
         });
-      } catch (err: any) {
-        patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al listar productos', operacionEnProceso: null });
+      } catch (err: unknown) {
+        patchState(store, { estadoCarga: false, error: apiErrorMessage(err, 'No fue posible listar productos.'), operacionEnProceso: null });
       }
     },
 
@@ -54,8 +55,8 @@ export const ProductosStore = signalStore(
         await firstValueFrom(service.crear(datos));
         this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
         patchState(store, { operacionEnProceso: 'crearSuccess' });
-      } catch (err: any) {
-        patchState(store, { estadoCarga: false, error: err?.error?.message || 'Error al crear producto', operacionEnProceso: null });
+      } catch (err: unknown) {
+        patchState(store, { estadoCarga: false, error: apiErrorMessage(err, 'No fue posible crear el producto.'), operacionEnProceso: null });
       }
     },
 
@@ -65,7 +66,7 @@ export const ProductosStore = signalStore(
         await firstValueFrom(service.actualizar(id, datos));
         this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
         patchState(store, { operacionEnProceso: 'actualizarSuccess' });
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.manejarErrorConcurrencia(err, 'Error al actualizar producto');
       }
     },
@@ -76,13 +77,14 @@ export const ProductosStore = signalStore(
         await firstValueFrom(service.cambiarEstado(id, nuevoEstado, versionRegistro));
         this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
         patchState(store, { operacionEnProceso: 'cambiarEstadoSuccess' });
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.manejarErrorConcurrencia(err, 'Error al cambiar estado de producto');
       }
     },
 
-    manejarErrorConcurrencia(err: any, mensajePorDefecto: string) {
-      if (err?.status === 409 || err?.error?.code === 'RESOURCE_VERSION_CONFLICT') {
+    manejarErrorConcurrencia(err: unknown, mensajePorDefecto: string) {
+      const normalizedError = normalizeApiError(err);
+      if (normalizedError.status === 409 || apiErrorCode(err, '') === 'RESOURCE_VERSION_CONFLICT') {
         this.listar(store.paginacion().pagina, store.paginacion().porPagina, store.filtros().busqueda);
         patchState(store, { 
           estadoCarga: false, 
@@ -90,7 +92,7 @@ export const ProductosStore = signalStore(
           operacionEnProceso: null 
         });
       } else {
-        patchState(store, { estadoCarga: false, error: err?.error?.message || mensajePorDefecto, operacionEnProceso: null });
+        patchState(store, { estadoCarga: false, error: apiErrorMessage(err, mensajePorDefecto), operacionEnProceso: null });
       }
     },
 

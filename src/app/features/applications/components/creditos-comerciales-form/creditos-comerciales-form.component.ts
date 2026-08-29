@@ -22,6 +22,10 @@ import { MediaApiService } from '../../../../core/api/media/media-api.service';
 import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-error';
 import { AttachmentPreviewComponent } from '../../../../shared/components/media/attachment-preview/attachment-preview.component';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../../shared/utils/files/file-validation';
 
 @Component({
   selector: 'app-creditos-comerciales-form',
@@ -163,11 +167,21 @@ export class CreditosComercialesFormComponent implements OnInit {
   }
 
   async onEvidenceChange(form: FormGroup, event: Event): Promise<void> {
-    const inputEl = event.target as HTMLInputElement;
-    const file = inputEl.files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
-
     const state = this.evidenceState(form);
+
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      state.file = undefined;
+      state.error = validationError;
+      state.uploading = false;
+      input.value = '';
+      this.cdr.markForCheck();
+      return;
+    }
+
     state.file = file;
     state.uploading = true;
     state.error = undefined;

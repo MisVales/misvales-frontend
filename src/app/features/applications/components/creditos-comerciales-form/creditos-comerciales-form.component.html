@@ -205,7 +205,7 @@
         >
         <input
           type="file"
-          accept="image/*,.pdf"
+          accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif,application/pdf"
           (change)="onEvidenceChange(form, $event)"
           [disabled]="evidenceState(form).uploading || !form.value.id"
           class="mt-2 block w-full text-sm"

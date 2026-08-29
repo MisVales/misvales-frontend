@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
 import { CarteraApiService } from './cartera-api.service';
 
 describe('CarteraApiService', () => {
   let service:CarteraApiService; let http:HttpTestingController;
-  beforeEach(()=>{TestBed.configureTestingModule({imports:[HttpClientTestingModule],providers:[CarteraApiService]});service=TestBed.inject(CarteraApiService);http=TestBed.inject(HttpTestingController);});
+  beforeEach(()=>{TestBed.configureTestingModule({imports:[HttpClientTestingModule],providers:[CarteraApiService,{provide:API_CONFIG,useValue:defaultApiConfig}]});service=TestBed.inject(CarteraApiService);http=TestBed.inject(HttpTestingController);});
   afterEach(()=>http.verify());
 
   it('envía el movimiento informativo canónico sin convertirlo en operación financiera',()=>{

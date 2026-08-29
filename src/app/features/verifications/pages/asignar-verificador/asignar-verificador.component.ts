@@ -51,8 +51,6 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   protected readonly monthLabel = computed(() =>
     this.visibleMonth().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }),
   );
-  protected readonly timeSlots = computed(() => scheduleSlots(this.schedulePolicy()));
-
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -117,6 +115,10 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
     this.selectedTime = '';
   }
 
+  protected onTimeChange(value: string): void {
+    this.selectedTime = /^\d{2}:\d{2}$/.test(value) ? value : '';
+  }
+
   protected isSelectedDay(day: Date): boolean {
     return localDateKey(day) === this.selectedDate;
   }
@@ -130,9 +132,10 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
     return day < todayAt(0);
   }
 
-  protected slotDisabled(time: string): boolean {
-    const candidate = dateTimeFromLocal(this.selectedDate, time);
-    return !candidate || candidate < nextAssignableSlot(this.currentTime()) || this.hasConflict(candidate);
+  protected selectedTimeHasConflict(): boolean {
+    const candidate = this.scheduledDateTime();
+
+    return candidate !== null && this.hasConflict(candidate);
   }
 
   protected async changeMonth(offset: number): Promise<void> {
@@ -230,7 +233,7 @@ function localDateKey(date: Date): string {
 }
 
 function dateTimeFromLocal(date: string, time: string): Date | null {
-  if (!date || !time) return null;
+  if (!date || !/^\d{2}:\d{2}$/.test(time)) return null;
   const value = new Date(`${date}T${time}:00`);
   return Number.isNaN(value.getTime()) ? null : value;
 }
@@ -249,18 +252,4 @@ function calendarGrid(month: Date): (Date | null)[] {
 
 function localTimeKey(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-}
-
-function scheduleSlots(policy: { start_time: string; max_start_time: string; slot_minutes: number }): string[] {
-  const slots: string[] = [];
-  const [startHour, startMinute] = policy.start_time.split(':').map(Number);
-  const [maxHour, maxMinute] = policy.max_start_time.split(':').map(Number);
-  for (
-    let minutes = startHour * 60 + startMinute;
-    minutes <= maxHour * 60 + maxMinute;
-    minutes += policy.slot_minutes
-  ) {
-    slots.push(`${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`);
-  }
-  return slots;
 }

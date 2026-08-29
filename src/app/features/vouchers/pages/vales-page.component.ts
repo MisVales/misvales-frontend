@@ -32,7 +32,6 @@ import {
   VoucherProduct,
   VoucherView,
 } from '../data-access/vales-api.service';
-import { StrictNumberInputDirective } from '../../../shared/directives/strict-number-input.directive';
 import { HistoryPageHeaderComponent } from '../../../shared/components/history/history-page-header.component';
 import { HistoryPaginationComponent } from '../../../shared/components/history/history-pagination.component';
 import { HistoryFilterBarComponent } from '../../../shared/components/history/history-filter-bar.component';
@@ -47,7 +46,6 @@ import { AlertService } from '../../../shared/components/alerts/alert.service';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
-    StrictNumberInputDirective,
     HistoryPageHeaderComponent,
     HistoryPaginationComponent,
     HistoryFilterBarComponent,
@@ -348,13 +346,6 @@ export class ValesPageComponent implements OnInit {
         `Por la regla temporal de tu línea de crédito, el siguiente vale debe estar entre ${this.formatCurrency(details.lower_limit)} y ${this.formatCurrency(details.upper_limit)}. Elige un importe dentro de ese rango.`;
       this.clearError();
       this.alerts.warning(message);
-
-      return;
-    }
-    if (code === 'VOUCHER_INSTALLMENT_COUNT_OUT_OF_RANGE') {
-      this.error.set(
-        `Elige entre ${details?.minimum_installment_count ?? 2} y ${details?.maximum_installment_count ?? 16} quincenas.`,
-      );
 
       return;
     }

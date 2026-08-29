@@ -1,4 +1,5 @@
 import { importProvidersFrom } from '@angular/core';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import {
@@ -14,13 +15,15 @@ import {
 } from 'lucide-angular';
 import { describe, expect, it } from 'vitest';
 import { DistributorWorkspaceContextService } from '@shared/components/navigation/distributor-workspace-nav/distributor-workspace-context.service';
+import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
 import { TabletHeaderComponent } from './tablet-header.component';
 
 describe('TabletHeaderComponent distributor context', () => {
   it('renders the opened distributor navigation inside the tablet header', async () => {
     TestBed.configureTestingModule({
-      imports: [TabletHeaderComponent],
+      imports: [TabletHeaderComponent, HttpClientTestingModule],
       providers: [
+        { provide: API_CONFIG, useValue: defaultApiConfig },
         provideRouter([]),
         importProvidersFrom(
           LucideAngularModule.pick({

@@ -13,10 +13,12 @@
     </header>
 
     @if (loading()) {
-      <div class="loading-grid" aria-label="Cargando panel" aria-busy="true">
-        @for (item of [1, 2, 3, 4]; track item) {
-          <span></span>
-        }
+      <div class="loading-state" role="status" aria-live="polite" aria-busy="true">
+        <lucide-icon name="loader-2" [size]="22" aria-hidden="true" />
+        <span
+          ><strong>Cargando Inicio</strong
+          ><small>Preparando la información de coordinación.</small></span
+        >
       </div>
     } @else {
       <section class="kpi-grid" aria-label="Indicadores principales">
@@ -319,10 +321,12 @@
     </header>
 
     @if (loading()) {
-      <div class="loading-grid" aria-label="Cargando información" aria-busy="true">
-        @for (item of [1, 2, 3, 4]; track item) {
-          <span></span>
-        }
+      <div class="loading-state" role="status" aria-live="polite" aria-busy="true">
+        <lucide-icon name="loader-2" [size]="22" aria-hidden="true" />
+        <span
+          ><strong>Cargando información</strong
+          ><small>Preparando los datos de coordinación.</small></span
+        >
       </div>
     } @else if (view() === 'distribuidoras') {
       <section class="kpi-grid kpi-grid--compact" aria-label="Resumen de distribuidoras">

@@ -3,8 +3,13 @@ import { CanActivateFn, Router } from '@angular/router';
 import { SessionStore } from '../session/session.store';
 
 export const negativeRoleGuard = (deniedRoles: readonly string[]): CanActivateFn => () => {
-  const roles = inject(SessionStore).roles();
-  return deniedRoles.some(role => roles.includes(role))
-    ? inject(Router).createUrlTree(['/unauthorized'])
-    : true;
+  const sessionStore = inject(SessionStore);
+  const router = inject(Router);
+  const roles = sessionStore.roles();
+
+  if (deniedRoles.some((role) => roles.includes(role))) {
+    return router.createUrlTree(['/acceso-denegado']);
+  }
+
+  return true;
 };

@@ -21,6 +21,10 @@ import {
 } from './centro-operacion-api.service';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 import { PaymentCyclePanelComponent } from './components/payment-cycle-panel/payment-cycle-panel.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../shared/utils/files/file-validation';
 
 @Component({
   selector: 'app-centro-operacion-page',
@@ -623,7 +627,7 @@ import { PaymentCyclePanelComponent } from './components/payment-cycle-panel/pay
           <label class="block text-sm font-bold"
             >Comprobante privado<input
               type="file"
-              accept="image/jpeg,image/png,image/webp,application/pdf"
+              accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif,application/pdf"
               class="mt-1 block w-full font-normal"
               (change)="selectRefundEvidence($event)"
           /></label>
@@ -889,7 +893,21 @@ export class CentroOperacionPageComponent {
     this.refundEvidence.set(null);
   }
   selectRefundEvidence(event: Event): void {
-    this.refundEvidence.set((event.target as HTMLInputElement).files?.[0] ?? null);
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    if (!file) {
+      this.refundEvidence.set(null);
+      this.refundError.set('');
+      return;
+    }
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      this.refundEvidence.set(null);
+      this.refundError.set(validationError);
+      input.value = '';
+      return;
+    }
+    this.refundEvidence.set(file);
   }
   async executeRefund(refund: RefundRequest): Promise<void> {
     const file = this.refundEvidence();

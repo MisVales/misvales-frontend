@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { of } from 'rxjs';
@@ -54,7 +55,14 @@ function createComponent(): DetalleSolicitudPageComponent {
     providers: [
       { provide: AlertService, useValue: alerts },
       { provide: ActivatedRoute, useValue: { paramMap: of(new Map()) } },
-      { provide: SolicitudDetalleStore, useValue: {} },
+      {
+        provide: SolicitudDetalleStore,
+        useValue: {
+          detalle: signal(null),
+          cargarDetalle: vi.fn(),
+          refrescarDetalleSilencioso: vi.fn(),
+        },
+      },
     ],
   });
   TestBed.overrideComponent(DetalleSolicitudPageComponent, { set: { template: '' } });

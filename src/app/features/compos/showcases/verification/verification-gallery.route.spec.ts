@@ -18,7 +18,7 @@ describe('development component catalog route', () => {
     const route = routes.find((candidate) => candidate.path === 'compos');
 
     expect(route).toBeDefined();
-    expect(route?.canActivate).toBeUndefined();
+    expect(route?.canActivate).toHaveLength(2);
     expect(route?.canMatch).toBeUndefined();
     expect(route?.children).toBeUndefined();
     expect(await route?.loadComponent?.()).toBe(ComposCatalogComponent);

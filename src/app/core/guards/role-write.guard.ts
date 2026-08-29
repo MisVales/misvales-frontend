@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { SessionStore } from '../session/session.store';
 
-export const roleWriteGuard: CanActivateFn = (route, state) => {
+export const roleWriteGuard: CanActivateFn = () => {
   const sessionStore = inject(SessionStore);
   const router = inject(Router);
 
@@ -11,5 +11,7 @@ export const roleWriteGuard: CanActivateFn = (route, state) => {
     return true;
   }
 
-  return router.createUrlTree(['/auth/login']);
+  return router.createUrlTree([
+    sessionStore.isAuthenticated() ? '/acceso-denegado' : '/auth/login',
+  ]);
 };

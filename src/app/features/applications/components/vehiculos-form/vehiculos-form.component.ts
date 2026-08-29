@@ -26,6 +26,10 @@ import { apiErrorMessage, apiValidationErrors } from '../../../../core/api/api-e
 import { AttachmentPreviewComponent } from '../../../../shared/components/media/attachment-preview/attachment-preview.component';
 import { StrictNumberInputDirective } from '../../../../shared/directives/strict-number-input.directive';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import {
+  PRIVATE_MEDIA_FILE_RULE,
+  validateUploadFile,
+} from '../../../../shared/utils/files/file-validation';
 
 @Component({
   selector: 'app-vehiculos-form',
@@ -162,11 +166,21 @@ export class VehiculosFormComponent implements OnInit {
   }
 
   async onEvidenceChange(form: FormGroup, event: Event): Promise<void> {
-    const inputEl = event.target as HTMLInputElement;
-    const file = inputEl.files?.[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
-
     const state = this.evidenceState(form);
+
+    const validationError = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (validationError) {
+      state.file = undefined;
+      state.error = validationError;
+      state.uploading = false;
+      input.value = '';
+      this.cdr.markForCheck();
+      return;
+    }
+
     state.file = file;
     state.uploading = true;
     state.error = undefined;

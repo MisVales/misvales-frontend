@@ -18,7 +18,7 @@ describe('development component catalog route', () => {
     const route = routes.find((candidate) => candidate.path === 'compos');
 
     expect(routes.some((candidate) => candidate.path?.startsWith('refactor/'))).toBe(false);
-    expect(route?.canActivate).toBeUndefined();
+    expect(route?.canActivate).toHaveLength(2);
     expect(route?.canActivateChild).toBeUndefined();
     expect(route?.canMatch).toBeUndefined();
     expect(route).toBeDefined();
