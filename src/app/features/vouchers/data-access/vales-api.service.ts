@@ -124,20 +124,17 @@ export class ValesApiService {
   previsualizar(
     clientId: string,
     productVersionId: string,
-    installmentCount: number,
   ): Observable<VoucherPreview> {
     return this.http
       .post<{ data: VoucherPreview }>(`${this.config.baseUrl}/vouchers/preview`, {
         client_id: clientId,
         product_version_id: productVersionId,
-        installment_count: installmentCount,
       })
       .pipe(map((response) => response.data));
   }
   generar(
     clientId: string,
     productVersionId: string,
-    installmentCount: number,
   ): Observable<VoucherView> {
     return this.http
       .post<{ data: VoucherView }>(
@@ -145,7 +142,6 @@ export class ValesApiService {
         {
           client_id: clientId,
           product_version_id: productVersionId,
-          installment_count: installmentCount,
         },
         { headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }) },
       )

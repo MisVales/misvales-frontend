@@ -69,7 +69,6 @@ export class ValesPageComponent implements OnInit {
     search: this.formBuilder.nonNullable.control(''),
     clientId: this.formBuilder.nonNullable.control(''),
     productVersionId: this.formBuilder.nonNullable.control(''),
-    installmentCount: this.formBuilder.control<number | null>(null),
   });
   protected readonly clientForm = this.formBuilder.nonNullable.group({
     firstName: ['', [Validators.required, Validators.maxLength(120)]],
@@ -117,13 +116,10 @@ export class ValesPageComponent implements OnInit {
       : 'Sin categoría vigente';
   });
   protected readonly canPreview = computed(() => {
-    const value = this.formValue();
     return (
       !!this.selectedClient() &&
       !!this.selectedProduct() &&
-      !this.busy() &&
-      value.installmentCount !== null &&
-      this.form.controls.installmentCount.valid
+      !this.busy()
     );
   });
 
@@ -141,12 +137,6 @@ export class ValesPageComponent implements OnInit {
     this.api.obtenerContextoFinanciero().subscribe({
       next: (context) => {
         this.financialContext.set(context);
-        this.form.controls.installmentCount.setValidators([
-          Validators.required,
-          Validators.min(context.conditions.minimum_installment_count),
-          Validators.max(context.conditions.maximum_installment_count),
-        ]);
-        this.form.controls.installmentCount.updateValueAndValidity({ emitEvent: false });
       },
       error: (error) => this.handle(error),
     });
@@ -161,8 +151,7 @@ export class ValesPageComponent implements OnInit {
         distinctUntilChanged(
           (prev, curr) =>
             prev.productVersionId === curr.productVersionId &&
-            prev.clientId === curr.clientId &&
-            prev.installmentCount === curr.installmentCount,
+            prev.clientId === curr.clientId,
         ),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -227,13 +216,13 @@ export class ValesPageComponent implements OnInit {
   }
 
   protected preview(): void {
-    const { clientId, productVersionId, installmentCount } = this.form.getRawValue();
-    if (this.busy() || !clientId || !productVersionId || installmentCount === null) return;
+    const { clientId, productVersionId } = this.form.getRawValue();
+    if (this.busy() || !clientId || !productVersionId) return;
     this.busy.set(true);
     this.clearError();
     this.generated.set(null);
     this.api
-      .previsualizar(clientId, productVersionId, installmentCount)
+      .previsualizar(clientId, productVersionId)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (data) => this.previewData.set(data),
@@ -242,19 +231,18 @@ export class ValesPageComponent implements OnInit {
   }
 
   protected generate(): void {
-    const { clientId, productVersionId, installmentCount } = this.form.getRawValue();
+    const { clientId, productVersionId } = this.form.getRawValue();
     if (
       this.busy() ||
       !clientId ||
       !productVersionId ||
-      installmentCount === null ||
       !this.previewData()
     )
       return;
     this.busy.set(true);
     this.clearError();
     this.api
-      .generar(clientId, productVersionId, installmentCount)
+      .generar(clientId, productVersionId)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (voucher) => {

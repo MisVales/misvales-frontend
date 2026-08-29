@@ -193,11 +193,11 @@
                 <h2 id="financial-heading">Condiciones financieras</h2>
               </div>
               <span class="section-aside"
-                >Gerencia define las condiciones; tú eliges solamente el plazo.</span
+                >Las condiciones financieras las determina el producto seleccionado.</span
               >
             </div>
             @if (selectedClient() && selectedProduct()) {
-              @if (financialContext(); as context) {
+              @if (previewData(); as data) {
                 <div class="financial-fields">
                   <div>
                     <label for="voucher-commission">Comisión del préstamo</label>
@@ -206,7 +206,7 @@
                       class="locked-field"
                       type="text"
                       disabled
-                      [value]="percentage(context.conditions.commission_rate)"
+                      [value]="percentage(data.financial_conditions.commission_rate)"
                     />
                   </div>
                   <div>
@@ -216,7 +216,7 @@
                       class="locked-field"
                       type="text"
                       disabled
-                      [value]="percentage(context.conditions.interest_rate)"
+                      [value]="percentage(data.financial_conditions.interest_rate)"
                     />
                   </div>
                   <div>
@@ -227,7 +227,7 @@
                       type="text"
                       disabled
                       [value]="
-                        context.conditions.insurance_amount
+                        data.financial_conditions.insurance_amount
                           | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
                       "
                     />
@@ -235,24 +235,12 @@
                   <div>
                     <label for="voucher-fortnights">Número de quincenas</label>
                     <input
-                      appStrictNumber
                       id="voucher-fortnights"
-                      type="number"
-                      step="1"
-                      [min]="context.conditions.minimum_installment_count"
-                      [max]="context.conditions.maximum_installment_count"
-                      formControlName="installmentCount"
-                      [placeholder]="
-                        'Entre ' +
-                        context.conditions.minimum_installment_count +
-                        ' y ' +
-                        context.conditions.maximum_installment_count
-                      "
+                      class="locked-field"
+                      type="text"
+                      disabled
+                      [value]="data.calculation.fortnights_count + ' quincenas'"
                     />
-                    <small>
-                      Permitido: {{ context.conditions.minimum_installment_count }} a
-                      {{ context.conditions.maximum_installment_count }} quincenas.
-                    </small>
                   </div>
                   <div>
                     <label for="voucher-category">% Categoría de la distribuidora</label>
@@ -272,14 +260,16 @@
                       type="text"
                       disabled
                       [value]="
-                        context.conditions.late_fee_amount
+                        data.financial_conditions.late_fee_amount
                           | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
                       "
                     />
                   </div>
                 </div>
+              } @else if (busy()) {
+                <p class="field-help">Calculando previsualización…</p>
               } @else {
-                <p class="field-help">Cargando condiciones globales…</p>
+                <p class="field-help">Cargando condiciones del producto…</p>
               }
             } @else {
               <p class="field-help">
