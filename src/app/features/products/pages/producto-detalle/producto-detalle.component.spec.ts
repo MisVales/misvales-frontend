@@ -21,7 +21,7 @@ describe('ProductoDetalleComponent', () => {
         provideRouter([]),
         { provide: ProductosService, useValue: service },
         { provide: AlertService, useValue: alerts },
-        { provide: SessionStore, useValue: { roles: signal(['general_manager']) } },
+        { provide: SessionStore, useValue: { roles: signal(['general_manager']), permissions: signal(['catalogs.manage']) } },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: 'nuevo' }) } } },
       ],
     }).compileComponents();

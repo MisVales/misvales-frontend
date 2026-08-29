@@ -147,6 +147,206 @@ describe('PagosPageComponent surplus presentation', () => {
     });
   });
 
+  it('separa cobro, comisión y deuda de MisVales, incluyendo el acumulado por parcialidad', () => {
+    const firstRelation = {
+      id: 'relation-1',
+      distributor_id: 'distributor-1',
+      cutoff_at: '2026-08-15T00:00:00Z',
+      financial_status: 'OVERDUE',
+      partidas: [
+        {
+          id: 'item-1',
+          portfolio_amount: '950.0000',
+          misvales_amount: '912.0000',
+          snapshot: { folio: 'VAL-1', installment: 1, total_installments: 8, distributor_profit: '38.0000' },
+        },
+      ],
+      pagos: [],
+    } as never;
+    const selectedRelation = {
+      id: 'relation-2',
+      distributor_id: 'distributor-1',
+      cutoff_at: '2026-08-30T00:00:00Z',
+      financial_status: 'OVERDUE',
+      partidas: [
+        {
+          id: 'item-2',
+          portfolio_amount: '950.0000',
+          misvales_amount: '912.0000',
+          snapshot: { folio: 'VAL-1', installment: 2, total_installments: 8, distributor_profit: '38.0000' },
+        },
+      ],
+      pagos: [],
+    } as never;
+    (component as any).relations = () => [firstRelation, selectedRelation];
+
+    const [voucher] = component.groupedInstallments(selectedRelation);
+
+    expect(voucher.misvalesTotal).toBe(1824);
+    expect(voucher.distributorProfit).toBe(76);
+    expect(voucher.installments[1]).toMatchObject({
+      accumulatedClientAmount: 1900,
+      accumulatedDistributorProfit: 76,
+      accumulatedMisvalesAmount: 1824,
+      accumulatedOutstanding: 1824,
+    });
+  });
+
+  it('conserva 8/8 y cada ocurrencia terminal como registros distintos en orden', () => {
+    const normalRelations = Array.from({ length: 8 }, (_, index) => ({
+      id: `relation-${index + 1}`,
+      distributor_id: 'distributor-1',
+      cutoff_at: `2026-${String(index + 1).padStart(2, '0')}-15T00:00:00Z`,
+      financial_status: 'OVERDUE',
+      partidas: [
+        {
+          id: `installment-${index + 1}`,
+          occurrence_type: 'INSTALLMENT',
+          portfolio_amount: '1887.0000',
+          misvales_amount: '1812.0000',
+          snapshot: {
+            folio: 'VAL-MARIA',
+            client: 'María',
+            product: '8-10000',
+            installment: index + 1,
+            total_installments: 8,
+            distributor_profit: '75.0000',
+          },
+        },
+      ],
+      pagos: [],
+    }));
+    const firstTerminal = {
+      id: 'relation-9',
+      distributor_id: 'distributor-1',
+      cutoff_at: '2026-09-15T00:00:00Z',
+      financial_status: 'OVERDUE',
+      partidas: [
+        {
+          id: 'terminal-1',
+          occurrence_type: 'TERMINAL_OVERDUE',
+          terminal_sequence: 1,
+          portfolio_amount: '75.0000',
+          misvales_amount: '75.0000',
+          snapshot: {
+            folio: 'VAL-MARIA',
+            client: 'María',
+            product: '8-10000',
+            installment: 8,
+            total_installments: 8,
+            terminal_sequence: 1,
+            terminal_charge: '75.0000',
+            distributor_profit: '75.0000',
+          },
+        },
+      ],
+      pagos: [],
+    };
+    const mariaProgression = [1812, 3999, 6186, 8373, 10560, 12747, 14934, 17121];
+    (firstTerminal as any).voucher_summaries = [{
+      voucher_id: 'voucher-maria',
+      folio: 'VAL-MARIA',
+      client: 'MarÃ­a',
+      product: '8-10000',
+      total_installments: 8,
+      cumulative_misvales_due: '17496.0000',
+      cumulative_surcharge: '2400.0000',
+      cumulative_forfeited_profit: '525.0000',
+      occurrences: [
+        ...normalRelations.map((relation, index) => ({
+          relation_id: relation.id,
+          relation_item_id: relation.partidas[0].id,
+          occurrence_type: 'INSTALLMENT',
+          installment: index + 1,
+          total_installments: 8,
+          terminal_sequence: null,
+          cumulative_misvales_due: `${mariaProgression[index]}.0000`,
+          cumulative_surcharge: `${Math.max(0, index) * 300}.0000`,
+          cumulative_forfeited_profit: `${Math.max(0, index) * 75}.0000`,
+        })),
+        {
+          relation_id: firstTerminal.id,
+          relation_item_id: 'terminal-1',
+          occurrence_type: 'TERMINAL_OVERDUE',
+          installment: 8,
+          total_installments: 8,
+          terminal_sequence: 1,
+          cumulative_misvales_due: '17496.0000',
+          cumulative_surcharge: '2400.0000',
+          cumulative_forfeited_profit: '525.0000',
+        },
+      ],
+    }];
+    const secondTerminal = {
+      ...firstTerminal,
+      id: 'relation-10',
+      cutoff_at: '2026-10-15T00:00:00Z',
+      partidas: [
+        {
+          ...firstTerminal.partidas[0],
+          id: 'terminal-2',
+          terminal_sequence: 2,
+          snapshot: { ...firstTerminal.partidas[0].snapshot, terminal_sequence: 2 },
+        },
+      ],
+    };
+    (secondTerminal as any).voucher_summaries = [{
+      ...(firstTerminal as any).voucher_summaries[0],
+      cumulative_misvales_due: '17871.0000',
+      cumulative_surcharge: '2700.0000',
+      occurrences: [
+        ...(firstTerminal as any).voucher_summaries[0].occurrences,
+        {
+          relation_id: secondTerminal.id,
+          relation_item_id: 'terminal-2',
+          occurrence_type: 'TERMINAL_OVERDUE',
+          installment: 8,
+          total_installments: 8,
+          terminal_sequence: 2,
+          cumulative_misvales_due: '17871.0000',
+          cumulative_surcharge: '2700.0000',
+          cumulative_forfeited_profit: '525.0000',
+        },
+      ],
+    }];
+
+    (component as any).relations = () => [firstTerminal, ...[...normalRelations].reverse()];
+    const [withFirstTerminal] = component.groupedInstallments(firstTerminal as never);
+
+    expect(withFirstTerminal.installments).toHaveLength(9);
+    expect(withFirstTerminal.installments.map((item) => item.shortLabel)).toEqual([
+      '1', '2', '3', '4', '5', '6', '7', '8', '*8',
+    ]);
+    expect(withFirstTerminal.installments.slice(-2).map((item) => item.label)).toEqual(['8/8', '*8/8']);
+    expect(withFirstTerminal.clientTotal).toBe(15171);
+    expect(withFirstTerminal.installments.map((item) => item.accumulatedOutstanding)).toEqual([
+      1812, 3999, 6186, 8373, 10560, 12747, 14934, 17121, 17496,
+    ]);
+    expect(withFirstTerminal.misvalesTotal).toBe(17496);
+    expect(withFirstTerminal.distributorProfit).toBe(600);
+
+    (component as any).relations = () => [
+      secondTerminal,
+      firstTerminal,
+      ...[...normalRelations].reverse(),
+    ];
+    const [withSecondTerminal] = component.groupedInstallments(secondTerminal as never);
+
+    expect(withSecondTerminal.installments).toHaveLength(10);
+    expect(withSecondTerminal.installments.map((item) => item.shortLabel)).toEqual([
+      '1', '2', '3', '4', '5', '6', '7', '8', '*8', '*8',
+    ]);
+    expect(withSecondTerminal.installments.slice(-3).map((item) => item.label)).toEqual([
+      '8/8', '*8/8', '*8/8',
+    ]);
+    expect(withSecondTerminal.installments.slice(-2).map((item) => item.terminalSequence)).toEqual([1, 2]);
+    expect(new Set(withSecondTerminal.installments.map((item) => item.id)).size).toBe(10);
+    expect(withSecondTerminal.clientTotal).toBe(15246);
+    expect(withSecondTerminal.installments.at(-1)?.accumulatedOutstanding).toBe(17871);
+    expect(withSecondTerminal.misvalesTotal).toBe(17871);
+    expect(withSecondTerminal.distributorProfit).toBe(600);
+  });
+
   it('does not infer inherited debt from allocation rounding differences', () => {
     const relation = {
       id: 'relation-3',

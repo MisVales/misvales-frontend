@@ -8,6 +8,7 @@ import { ConciliacionApiService } from '@features/reconciliation/data-access/con
 import {
   PaginatedRelations,
   RelacionesApiService,
+  RelationItem,
   RelationView,
 } from '../data-access/relaciones-api.service';
 import { StatusLabelPipe } from '../../../shared/pipes/status-label.pipe';
@@ -373,7 +374,12 @@ type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
                   <article class="rounded-xl border border-gray-200 p-4">
                     <div class="flex items-start justify-between gap-3">
                       <div><strong class="block text-gray-950">{{ row.snapshot['client'] || 'Cliente' }}</strong><span class="font-mono text-xs text-gray-500">{{ row.snapshot['folio'] || 'Sin folio' }}</span></div>
-                      <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">Parcialidad {{ row.snapshot['installment'] }} / {{ row.snapshot['total_installments'] }}</span>
+                      <div class="text-right">
+                        <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-700">Parcialidad {{ installmentLabel(row) }}</span>
+                        @if (row.terminal_sequence) {
+                          <small class="mt-1 block text-xs text-gray-500">Secuencia terminal {{ row.terminal_sequence }}</small>
+                        }
+                      </div>
                     </div>
                     <dl class="mt-4 grid grid-cols-3 gap-3 border-t border-gray-100 pt-3 text-sm">
                       <div><dt class="text-gray-500">Cliente paga</dt><dd class="font-bold">{{ row.snapshot['client_payment'] | currency: 'MXN' }}</dd></div>
@@ -421,9 +427,11 @@ type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
                       <td class="p-3 min-w-[200px]">{{ row.snapshot['client'] }}</td>
                       <td class="p-3 text-center whitespace-nowrap">
                         <span class="rounded bg-gray-100 px-2 py-1"
-                          >{{ row.snapshot['installment'] }} /
-                          {{ row.snapshot['total_installments'] }}</span
+                          >{{ installmentLabel(row) }}</span
                         >
+                        @if (row.terminal_sequence) {
+                          <small class="ml-1 text-gray-500">#{{ row.terminal_sequence }}</small>
+                        }
                       </td>
                       <td class="p-3 text-right">
                         {{ row.snapshot['capital'] | currency: 'MXN' }}
@@ -552,9 +560,7 @@ type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
                             }}</span>
                           </td>
                           <td class="p-2 text-center font-mono">
-                            {{ allocation.partida_relacion?.snapshot?.['installment'] || '—' }}/{{
-                              allocation.partida_relacion?.snapshot?.['total_installments'] || '—'
-                            }}
+                            {{ allocation.partida_relacion ? installmentLabel(allocation.partida_relacion) : '—/—' }}
                           </td>
                           <td class="p-2">{{ paymentComponentLabel(allocation.component) }}</td>
                           <td class="p-2 text-right font-bold tabular-nums">
@@ -730,7 +736,7 @@ export class RelacionesPageComponent {
     const uniqueFormatted = Array.from(
       new Set(
         item.partidas.map(
-          (p) => `${p.snapshot['installment']}/${p.snapshot['total_installments']}`,
+          (p) => this.installmentLabel(p),
         ),
       ),
     );
@@ -748,6 +754,11 @@ export class RelacionesPageComponent {
       (total, partida) => total + Number(partida.snapshot['distributor_profit'] ?? 0),
       0,
     );
+  }
+
+  installmentLabel(row: RelationItem): string {
+    const terminal = row.occurrence_type === 'TERMINAL_OVERDUE' || Boolean(row.snapshot['is_terminal_overdue_cycle']);
+    return `${terminal ? '*' : ''}${row.snapshot['installment'] ?? '—'}/${row.snapshot['total_installments'] ?? '—'}`;
   }
 
   paymentComponentLabel(component: string): string {

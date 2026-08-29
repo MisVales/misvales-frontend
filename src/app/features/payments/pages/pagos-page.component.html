@@ -568,8 +568,11 @@
                     </h4>
                   </div>
                   <div class="voucher-ledger__totals">
-                    <strong>{{ voucher.paidTotal | currency: 'MXN' }}</strong>
-                    <span>pagado a MisVales de {{ voucher.misvalesTotal | currency: 'MXN' }}</span>
+                    <strong>
+                      {{ voucher.paidTotal | currency: 'MXN' }} /
+                      {{ voucher.misvalesTotal | currency: 'MXN' }}
+                    </strong>
+                    <span>pagado a MisVales</span>
                     <small>
                       Cobro a clientes {{ voucher.clientTotal | currency: 'MXN' }} · ganancia
                       {{ voucher.distributorProfit | currency: 'MXN' }}
@@ -585,13 +588,16 @@
                       }}"
                       role="listitem"
                       [attr.title]="
-                        'Quincena ' +
-                        installment.number +
+                        'Parcialidad ' +
+                        installment.label +
+                        (installment.terminalSequence
+                          ? ' · secuencia terminal ' + installment.terminalSequence
+                          : '') +
                         ': ' +
                         installmentDisplayLabel(installment.status)
                       "
                     >
-                      <span>{{ installment.number }}</span>
+                      <span>{{ installment.shortLabel }}</span>
                     </div>
                   }
                 </div>
@@ -618,21 +624,30 @@
                   <div class="voucher-installment-grid">
                     @for (installment of voucher.installments; track installment.id) {
                       <div
-                        class="voucher-installment-card status-{{
+                        class="voucher-installment-card !grid !grid-cols-1 !gap-2 !p-3 sm:!grid-cols-3 status-{{
                           installment.status.toLowerCase()
                         }}"
                       >
-                        <div>
-                          <strong>{{ installment.number }}/{{ installment.total }}</strong
-                          ><span>{{ installmentDisplayLabel(installment.status) }}</span>
+                        <div class="flex items-baseline justify-between gap-2 sm:col-span-3">
+                          <strong>{{ installment.label }}</strong>
+                          <span>
+                            {{ installmentDisplayLabel(installment.status) }}
+                            @if (installment.terminalSequence) {
+                              · secuencia {{ installment.terminalSequence }}
+                            }
+                          </span>
                         </div>
                         <div>
-                          <small>Cobro</small
-                          ><strong>{{ installment.clientAmount | currency: 'MXN' }}</strong>
+                          <small>Cliente me paga</small
+                          ><strong>{{ installment.accumulatedClientAmount | currency: 'MXN' }}</strong>
                         </div>
                         <div>
-                          <small>Pagado</small
-                          ><strong>{{ installment.paid | currency: 'MXN' }}</strong>
+                          <small>Comisión ganada</small
+                          ><strong>{{ installment.accumulatedDistributorProfit | currency: 'MXN' }}</strong>
+                        </div>
+                        <div>
+                          <small>Yo pago</small
+                          ><strong>{{ installment.accumulatedOutstanding | currency: 'MXN' }}</strong>
                         </div>
                       </div>
                     }

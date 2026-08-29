@@ -14,6 +14,7 @@ import {
   PaymentItem,
   PaymentAllocation,
   RelacionesApiService,
+  RelationItem,
   RelationView,
 } from '@features/relations/data-access/relaciones-api.service';
 import { HistoryFilterBarComponent } from '../../../shared/components/history/history-filter-bar.component';
@@ -63,9 +64,23 @@ interface VoucherInstallmentTimeline {
   id: string;
   number: number;
   total: number;
+  occurrenceType: 'INSTALLMENT' | 'TERMINAL_OVERDUE';
+  terminalSequence: number | null;
+  shortLabel: string;
+  label: string;
+  cutoffAt: number;
   clientAmount: number;
+  distributorProfit: number;
   misvalesAmount: number;
   paid: number;
+  accumulatedClientAmount: number;
+  accumulatedDistributorProfit: number;
+  accumulatedMisvalesAmount: number;
+  accumulatedPaid: number;
+  accumulatedOutstanding: number;
+  canonicalOutstanding: number | null;
+  cumulativeSurcharge: number;
+  cumulativeForfeitedProfit: number;
   status: InstallmentDisplayStatus;
 }
 
@@ -523,6 +538,14 @@ export class PagosPageComponent implements OnDestroy {
     const selectedCutoff = new Date(selected.cutoff_at).getTime();
     const selectedSettled = selected.financial_status === 'SETTLED';
     const groups = new Map<string, VoucherInstallmentGroup>();
+    const canonicalOccurrences = new Map(
+      (selected.voucher_summaries ?? []).flatMap((summary) =>
+        summary.occurrences.map((occurrence) => [occurrence.relation_item_id, occurrence] as const),
+      ),
+    );
+    const canonicalVouchers = new Map(
+      (selected.voucher_summaries ?? []).map((summary) => [summary.folio, summary] as const),
+    );
 
     for (const relation of this.relations()) {
       if (selected.distributor_id && relation.distributor_id !== selected.distributor_id) continue;
@@ -531,7 +554,13 @@ export class PagosPageComponent implements OnDestroy {
       for (const item of relation.partidas ?? []) {
         const folio = String(item.snapshot['folio'] || 'Sin folio');
         const number = Number(item.snapshot['installment'] || 0);
-        const key = `${folio}:${number}`;
+        const occurrenceType = item.occurrence_type === 'TERMINAL_OVERDUE'
+          ? 'TERMINAL_OVERDUE'
+          : 'INSTALLMENT';
+        const terminalSequence = occurrenceType === 'TERMINAL_OVERDUE'
+          ? Number(item.terminal_sequence || item.snapshot['terminal_sequence'] || 0)
+          : null;
+        const occurrenceKey = this.installmentOccurrenceKey(item, occurrenceType, number, terminalSequence);
         let group = groups.get(folio);
         if (!group) {
           group = {
@@ -549,10 +578,11 @@ export class PagosPageComponent implements OnDestroy {
           };
           groups.set(folio, group);
         }
-        if (group.installments.some((installment) => installment.id === key)) continue;
+        if (group.installments.some((installment) => installment.id === occurrenceKey)) continue;
 
         const paid = this.paidForInstallment(relation, item.id);
         const amount = Number(item.misvales_amount || 0);
+        const canonical = canonicalOccurrences.get(item.id);
         const relationOverdue = this.isOverdue(relation.financial_status);
         const status: InstallmentDisplayStatus =
           relation.financial_status === 'SETTLED'
@@ -568,25 +598,72 @@ export class PagosPageComponent implements OnDestroy {
                 : 'PENDING';
 
         group.installments.push({
-          id: key,
+          id: occurrenceKey,
           number,
           total: Number(item.snapshot['total_installments'] || 0),
+          occurrenceType,
+          terminalSequence,
+          shortLabel: `${occurrenceType === 'TERMINAL_OVERDUE' ? '*' : ''}${number}`,
+          label: `${occurrenceType === 'TERMINAL_OVERDUE' ? '*' : ''}${number}/${Number(item.snapshot['total_installments'] || 0)}`,
+          cutoffAt: new Date(relation.cutoff_at).getTime(),
           clientAmount: Number(item.portfolio_amount || 0),
+          distributorProfit: occurrenceType === 'TERMINAL_OVERDUE'
+            ? Number(item.portfolio_amount || 0) - Number(item.misvales_amount || 0)
+            : Number(
+                item.snapshot['distributor_profit'] ??
+                  Number(item.portfolio_amount || 0) - Number(item.misvales_amount || 0),
+              ),
           misvalesAmount: amount,
           paid: status === 'LATE_PAID' && paid === 0 ? amount : paid,
+          accumulatedClientAmount: 0,
+          accumulatedDistributorProfit: 0,
+          accumulatedMisvalesAmount: 0,
+          accumulatedPaid: 0,
+          accumulatedOutstanding: 0,
+          canonicalOutstanding: canonical ? Number(canonical.cumulative_misvales_due) : null,
+          cumulativeSurcharge: Number(canonical?.cumulative_surcharge ?? 0),
+          cumulativeForfeitedProfit: Number(canonical?.cumulative_forfeited_profit ?? 0),
           status,
         });
       }
     }
 
     return [...groups.values()].map((group) => {
-      group.installments.sort((a, b) => a.number - b.number);
+      group.installments.sort((a, b) => {
+        if (a.number !== b.number) return a.number - b.number;
+        if (a.occurrenceType !== b.occurrenceType) {
+          return a.occurrenceType === 'INSTALLMENT' ? -1 : 1;
+        }
+        if (a.terminalSequence !== b.terminalSequence) {
+          return (a.terminalSequence ?? 0) - (b.terminalSequence ?? 0);
+        }
+        return a.cutoffAt - b.cutoffAt;
+      });
+      let accumulatedClientAmount = 0;
+      let accumulatedDistributorProfit = 0;
+      let accumulatedMisvalesAmount = 0;
+      let accumulatedPaid = 0;
+      for (const installment of group.installments) {
+        accumulatedClientAmount += installment.clientAmount;
+        accumulatedDistributorProfit += installment.distributorProfit;
+        accumulatedMisvalesAmount += installment.misvalesAmount;
+        accumulatedPaid += installment.paid;
+        installment.accumulatedClientAmount = accumulatedClientAmount;
+        installment.accumulatedDistributorProfit = accumulatedDistributorProfit;
+        installment.accumulatedMisvalesAmount = accumulatedMisvalesAmount;
+        installment.accumulatedPaid = accumulatedPaid;
+        installment.accumulatedOutstanding = installment.canonicalOutstanding ?? Math.max(
+          0,
+          accumulatedMisvalesAmount - accumulatedPaid,
+        );
+      }
       group.clientTotal = group.installments.reduce((sum, item) => sum + item.clientAmount, 0);
-      group.misvalesTotal = group.installments.reduce(
-        (sum, item) => sum + item.misvalesAmount,
+      group.misvalesTotal = Number(canonicalVouchers.get(group.folio)?.cumulative_misvales_due ??
+        group.installments.reduce((sum, item) => sum + item.misvalesAmount, 0));
+      group.distributorProfit = group.installments.reduce(
+        (sum, item) => sum + item.distributorProfit,
         0,
       );
-      group.distributorProfit = group.clientTotal - group.misvalesTotal;
       group.paidTotal = group.installments.reduce((sum, item) => sum + item.paid, 0);
       group.overdueTotal = group.installments
         .filter((item) => item.status === 'OVERDUE')
@@ -596,6 +673,19 @@ export class PagosPageComponent implements OnDestroy {
       ).length;
       return group;
     });
+  }
+
+  private installmentOccurrenceKey(
+    item: RelationItem,
+    occurrenceType: 'INSTALLMENT' | 'TERMINAL_OVERDUE',
+    installment: number,
+    terminalSequence: number | null,
+  ): string {
+    const occurrence = occurrenceType === 'TERMINAL_OVERDUE'
+      ? `terminal:${terminalSequence ?? 0}`
+      : `installment:${installment}`;
+
+    return `${item.id}:${occurrenceType}:${occurrence}`;
   }
 
   installmentDisplayLabel(status: InstallmentDisplayStatus): string {

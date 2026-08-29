@@ -17,6 +17,7 @@ export interface BankImport {
 
 export interface PendingReconciliationPeriod {
   process_run_id: string;
+  reconciliation_number: number;
   cutoff_at: string;
   payment_deadline_at: string | null;
   relations: number;

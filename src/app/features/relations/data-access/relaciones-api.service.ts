@@ -8,6 +8,32 @@ export interface RelationItem {
   snapshot: Record<string, string | number>;
   portfolio_amount: string;
   misvales_amount: string;
+  occurrence_type?: 'INSTALLMENT' | 'TERMINAL_OVERDUE';
+  source_voucher_installment_id?: string | null;
+  previous_terminal_occurrence_id?: string | null;
+  terminal_sequence?: number | null;
+}
+export interface VoucherOccurrenceSummary {
+  relation_id: string;
+  relation_item_id: string;
+  occurrence_type: 'INSTALLMENT' | 'TERMINAL_OVERDUE';
+  installment: number;
+  total_installments: number;
+  terminal_sequence?: number | null;
+  cumulative_misvales_due: string;
+  cumulative_surcharge: string;
+  cumulative_forfeited_profit: string;
+}
+export interface VoucherFinancialSummary {
+  voucher_id: string;
+  folio: string;
+  client: string;
+  product: string;
+  total_installments: number;
+  cumulative_misvales_due: string;
+  cumulative_surcharge: string;
+  cumulative_forfeited_profit: string;
+  occurrences: VoucherOccurrenceSummary[];
 }
 export type PaymentComponent =
   'SURCHARGE' | 'INTEREST' | 'INSURANCE' | 'LOAN_COMMISSION' | 'CAPITAL';
@@ -110,6 +136,8 @@ export interface RelationView {
     clabe?: string | null;
   };
   partidas?: RelationItem[];
+  voucher_summaries?: VoucherFinancialSummary[];
+  voucher_balance_total?: string;
   settled_at?: string;
   temporal_classification?: string;
   pagos?: PaymentItem[];
