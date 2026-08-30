@@ -213,8 +213,40 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     return campo === 'official_id_type';
   }
 
+  isHousingTenureField(campo: string): boolean {
+    return campo === 'housing_tenure';
+  }
+
+  isFinancingStatusField(campo: string): boolean {
+    return campo === 'financing_status';
+  }
+
+  isRelationshipField(campo: string): boolean {
+    return campo === 'relationship';
+  }
+
+  isOwnershipStatusField(campo: string): boolean {
+    return campo === 'ownership_status';
+  }
+
+  isVehicleTypeField(campo: string): boolean {
+    return campo === 'vehicle_type';
+  }
+
+  isEntryTypeField(campo: string): boolean {
+    return campo === 'entry_type';
+  }
+
+  isProofTypeField(campo: string): boolean {
+    return ['proof_type', 'proof_reference_type'].includes(campo);
+  }
+
+  isCivilStatusField(campo: string): boolean {
+    return ['marital_status', 'civil_status'].includes(campo);
+  }
+
   isBooleanField(campo: string): boolean {
-    return ['is_current', 'is_active', 'has_identification_evidence'].includes(campo);
+    return ['is_current', 'is_active', 'has_identification_evidence', 'has_evidence', 'economic_dependency', 'is_family_reference'].includes(campo);
   }
 
   isIntegerField(campo: string): boolean {

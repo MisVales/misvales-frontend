@@ -51,6 +51,12 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   protected readonly monthLabel = computed(() =>
     this.visibleMonth().toLocaleDateString('es-MX', { month: 'long', year: 'numeric' }),
   );
+  readonly isReassign = computed(() =>
+    Boolean(this.facade.solicitudSeleccionada()?.visitas.some((v) => v.estado === 'ASSIGNED')),
+  );
+
+  rawTimeInput = '';
+
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -59,6 +65,19 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
         this.facade.cargarVerificadoresDisponibles(id),
         this.loadSchedulePolicy(),
       ]);
+
+      const solicitud = this.facade.solicitudSeleccionada();
+      const visit = solicitud?.visitas.find((v) => v.estado === 'ASSIGNED');
+      if (visit && visit.fechaProgramada) {
+        const visitDate = new Date(visit.fechaProgramada);
+        this.selectedDate = localDateKey(visitDate);
+        this.selectedTime = localTimeKey(visitDate);
+        this.rawTimeInput = this.selectedTime;
+        this.verifierId = visit.verificadorId || '';
+        if (this.verifierId) {
+          await this.loadSchedule();
+        }
+      }
     }
   }
 
@@ -67,10 +86,40 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
     this.facade.limpiarSeleccion();
   }
 
+  is15MinuteInterval(time: string): boolean {
+    if (!time || !/^\d{2}:\d{2}$/.test(time)) return false;
+    const [, minutes] = time.split(':').map(Number);
+    return minutes % this.schedulePolicy().slot_minutes === 0;
+  }
+
+  isOutOfPolicyHours(time: string): boolean {
+    if (!time || !/^\d{2}:\d{2}$/.test(time)) return false;
+    return time < this.schedulePolicy().start_time || time > this.schedulePolicy().max_start_time;
+  }
+
   async onAssign() {
     this.submitted = true;
-    if (!this.verifierId || !this.isValidSchedule()) {
-      this.alerts.showAlert('Selecciona un verificador y un horario disponible.', 'warning');
+    if (!this.verifierId) {
+      this.alerts.showAlert('Debes seleccionar un verificador.', 'warning');
+      return;
+    }
+    if (!this.selectedTime) {
+      this.alerts.showAlert('Debes indicar la hora de inicio de la visita.', 'warning');
+      return;
+    }
+    if (!this.is15MinuteInterval(this.selectedTime)) {
+      this.alerts.showAlert(
+        `Los horarios deben programarse en bloques exactos de 15 minutos (ejemplos: 2:00, 2:15, 2:30, 2:45). La hora "${this.selectedTime}" no es válida.`,
+        'error',
+      );
+      return;
+    }
+    if (!this.isValidSchedule()) {
+      if (this.selectedTimeHasConflict()) {
+        this.alerts.showAlert('Ese horario se cruza con otra visita asignada al verificador.', 'warning');
+      } else {
+        this.alerts.showAlert('Selecciona un horario disponible y válido dentro de las políticas de agenda.', 'warning');
+      }
       return;
     }
     const solicitud = this.facade.solicitudSeleccionada();
@@ -84,6 +133,12 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
 
     const success = await this.facade.asignarVerificador(solicitud.id, req);
     if (success) {
+      this.alerts.showAlert(
+        this.isReassign()
+          ? 'Horario de visita reprogramado exitosamente.'
+          : 'Verificador asignado y visita programada exitosamente.',
+        'success',
+      );
       this.router.navigate([
         '/verificacion-distribuidoras/solicitudes-distribuidora',
         solicitud.id,
@@ -94,6 +149,7 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   async onVerifierChange(verifierId: string): Promise<void> {
     this.verifierId = verifierId;
     this.selectedTime = '';
+    this.rawTimeInput = '';
     this.schedule.set([]);
     await this.loadSchedule();
   }
@@ -113,10 +169,22 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   protected selectDate(day: Date): void {
     this.selectedDate = localDateKey(day);
     this.selectedTime = '';
+    this.rawTimeInput = '';
   }
 
   protected onTimeChange(value: string): void {
+    this.rawTimeInput = value;
     this.selectedTime = /^\d{2}:\d{2}$/.test(value) ? value : '';
+  }
+
+  isItemCurrentApplication(item: AgendaVerificadorDto): boolean {
+    const solicitud = this.facade.solicitudSeleccionada();
+    if (!solicitud) return false;
+    const activeVisit = solicitud.visitas.find((v) => v.estado === 'ASSIGNED');
+    if (activeVisit && activeVisit.id === item.id) return true;
+    if (item.application_id && item.application_id === solicitud.id) return true;
+    if (item.application_number && item.application_number === solicitud.folio) return true;
+    return false;
   }
 
   protected isSelectedDay(day: Date): boolean {
@@ -125,7 +193,10 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
 
   protected hasVisits(day: Date): boolean {
     const key = localDateKey(day);
-    return this.schedule().some((item) => localDateKey(new Date(item.scheduled_for)) === key);
+    return this.schedule().some(
+      (item) =>
+        localDateKey(new Date(item.scheduled_for)) === key && !this.isItemCurrentApplication(item),
+    );
   }
 
   protected isPastDay(day: Date): boolean {
@@ -152,10 +223,13 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
     return new Date(iso).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
   }
 
-  protected selectedDayVisits(): AgendaVerificadorDto[] {
-    return this.schedule().filter(
-      (item) => localDateKey(new Date(item.scheduled_for)) === this.selectedDate,
-    );
+  protected selectedDayVisits(): (AgendaVerificadorDto & { isCurrentApplication?: boolean })[] {
+    return this.schedule()
+      .filter((item) => localDateKey(new Date(item.scheduled_for)) === this.selectedDate)
+      .map((item) => ({
+        ...item,
+        isCurrentApplication: this.isItemCurrentApplication(item),
+      }));
   }
 
   private async loadSchedule(): Promise<void> {
@@ -196,10 +270,12 @@ export class AsignarVerificadorComponent implements OnInit, OnDestroy {
   }
 
   private hasConflict(candidate: Date): boolean {
-    return this.schedule().some(
-      (item) =>
-        Math.abs(candidate.getTime() - new Date(item.scheduled_for).getTime()) < 75 * 60_000,
-    );
+    return this.schedule().some((item) => {
+      if (this.isItemCurrentApplication(item)) {
+        return false;
+      }
+      return Math.abs(candidate.getTime() - new Date(item.scheduled_for).getTime()) < 75 * 60_000;
+    });
   }
 
   onCancel() {

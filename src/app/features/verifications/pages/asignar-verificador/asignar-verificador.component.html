@@ -17,7 +17,7 @@
       <header class="dialog-header">
         <div>
           <p class="eyebrow">Agenda de verificación</p>
-          <h1 id="scheduler-title">Asignar verificador</h1>
+          <h1 id="scheduler-title">{{ isReassign() ? 'Reasignar / Cambiar Horario de Visita' : 'Asignar verificador' }}</h1>
           <p>{{ solicitud.folio }} · {{ solicitud.aspirante.nombreCompleto }}</p>
         </div>
         <button
@@ -102,9 +102,14 @@
             @if (selectedDayVisits().length) {
               <div class="busy-list">
                 @for (visit of selectedDayVisits(); track visit.id) {
-                  <div>
-                    <strong>{{ formatVisitTime(visit.scheduled_for) }}</strong
-                    ><span>{{ visit.application_number || 'Visita programada' }}</span>
+                  <div [class.is-current-app]="visit.isCurrentApplication">
+                    <strong>{{ formatVisitTime(visit.scheduled_for) }}</strong>
+                    <span>
+                      {{ visit.application_number || 'Visita programada' }}
+                      @if (visit.isCurrentApplication) {
+                        <small class="current-badge text-amber-700 font-bold ml-1">(Horario actual)</small>
+                      }
+                    </span>
                   </div>
                 }
               </div>
@@ -132,11 +137,19 @@
               Cada visita reserva 15 min antes, 30 min de visita y 30 min para validación y
               traslado. Debe haber 75 min entre inicios.
             </p>
-            @if (submitted && selectedTimeHasConflict()) {
-              <p class="field-error">Ese horario no está disponible; debe haber 75 minutos entre inicios.</p>
-            }
-            @if (submitted && !isValidSchedule()) {
-              <p class="field-error">Captura una hora válida entre {{ schedulePolicy().start_time }} y {{ schedulePolicy().max_start_time }}, en bloques de {{ schedulePolicy().slot_minutes }} minutos.</p>
+
+            @if (rawTimeInput && !is15MinuteInterval(rawTimeInput)) {
+              <div class="field-error mt-2 p-2.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs font-semibold">
+                ⚠️ El horario debe ser en intervalos exactos de 15 minutos (ejemplos: 2:00, 2:15, 2:30, 2:45). La hora "{{ rawTimeInput }}" no es válida.
+              </div>
+            } @else if (rawTimeInput && isOutOfPolicyHours(rawTimeInput)) {
+              <div class="field-error mt-2 p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 text-xs font-semibold">
+                ⚠️ El horario debe estar dentro del horario de atención ({{ schedulePolicy().start_time }} a {{ schedulePolicy().max_start_time }}).
+              </div>
+            } @else if (submitted && selectedTimeHasConflict()) {
+              <div class="field-error mt-2 p-2.5 rounded-lg border border-red-200 bg-red-50 text-red-700 text-xs font-semibold">
+                ⚠️ Ese horario no está disponible; debe haber al menos 75 minutos entre inicios para traslados y validación.
+              </div>
             }
           </section>
         </div>
@@ -157,7 +170,7 @@
           (click)="onAssign()"
           [disabled]="facade.isLoading() || scheduleLoading() || !verifierId || !isValidSchedule()"
         >
-          Asignar visita
+          {{ isReassign() ? 'Guardar Cambios de Horario' : 'Asignar visita' }}
         </button>
       </footer>
     </section>
