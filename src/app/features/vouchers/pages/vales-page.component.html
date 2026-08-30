@@ -638,7 +638,45 @@
           <small class="field-error">Captura el apellido paterno.</small>
         }
         <label for="client-second-last-name">Apellido materno</label>
-        <input id="client-second-last-name" type="text" formControlName="secondLastName" />
+        <input id="client-second-last-name" type="text" formControlName="secondLastName" required />
+        @if (clientForm.controls.secondLastName.touched && clientForm.controls.secondLastName.invalid) {
+          <small class="field-error">Captura el apellido materno.</small>
+        }
+        <label for="client-birth-date">Fecha de nacimiento</label>
+        <input id="client-birth-date" type="date" formControlName="birthDate" required />
+        @if (clientForm.controls.birthDate.touched && clientForm.controls.birthDate.invalid) {
+          <small class="field-error">Captura una fecha de nacimiento válida.</small>
+        }
+        <label for="client-phone-number">Teléfono</label>
+        <app-phone-input id="client-phone-number" formControlName="phoneNumber"></app-phone-input>
+        @if (clientForm.controls.phoneNumber.touched && clientForm.controls.phoneNumber.invalid) {
+          <small class="field-error">Captura un teléfono válido de 10 dígitos.</small>
+        }
+        <fieldset class="client-registration-section">
+          <legend>Dirección</legend>
+          <app-address-form
+            #clientAddressForm
+            [showValidationState]="true"
+            [enableStreetAutocomplete]="false"
+            (addressChange)="onClientAddressChange($event)"
+          ></app-address-form>
+        </fieldset>
+        <fieldset class="client-registration-section">
+          <legend>Documentos adjuntos</legend>
+          <label for="client-ine-front">INE por enfrente (sin reverso)</label>
+          <input id="client-ine-front" type="file" accept="image/*" (change)="selectClientFile($event, 'ine')" required />
+          @if (clientIneFront) {
+            <app-attachment-preview [file]="clientIneFront" [fileName]="clientIneFront.name"></app-attachment-preview>
+          }
+          <label for="client-address-proof">Comprobante de domicilio</label>
+          <input id="client-address-proof" type="file" accept="image/*,.pdf,application/pdf" (change)="selectClientFile($event, 'address')" required />
+          @if (clientAddressProof) {
+            <app-attachment-preview [file]="clientAddressProof" [fileName]="clientAddressProof.name"></app-attachment-preview>
+          }
+          @if (clientFileError) {
+            <small class="field-error">{{ clientFileError }}</small>
+          }
+        </fieldset>
         <div class="dialog-actions">
           <button
             type="button"

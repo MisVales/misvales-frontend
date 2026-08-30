@@ -647,7 +647,9 @@ app-history-page-header {
   background: rgb(20 32 25 / 0.48);
 }
 .client-dialog {
-  width: min(100%, 30rem);
+  width: min(100%, 48rem);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   border: 1px solid var(--mv-border);
   border-radius: var(--mv-radius-lg);
   padding: 1.25rem;
@@ -797,6 +799,8 @@ app-history-page-header {
     margin-top: 1rem;
   }
 }
+.client-registration-section { display: grid; gap: .55rem; margin-top: .8rem; border: 1px solid var(--mv-border); border-radius: var(--mv-radius-md); padding: .8rem; }
+.client-registration-section legend { padding: 0 .25rem; color: var(--mv-primary-800); font-size: .8rem; font-weight: 800; }
 @media (max-width: 380px) {
   .product-options,
   .credit-availability dl {
