@@ -1,4 +1,4 @@
-<section class="auditoria-container">
+﻿<section class="auditoria-container">
   <!-- Page Header -->
   <header class="page-header">
     <div>
@@ -56,7 +56,7 @@
 
     <article class="kpi-card">
       <div class="kpi-icon-wrap kpi-icon-green">
-        <lucide-icon name="check-circle-2" class="w-6 h-6"></lucide-icon>
+        <lucide-icon name="circle-check" class="w-6 h-6"></lucide-icon>
       </div>
       <div class="kpi-content">
         <span class="kpi-label">Exitosas en esta página</span>
@@ -68,7 +68,7 @@
 
     <article class="kpi-card">
       <div class="kpi-icon-wrap kpi-icon-amber">
-        <lucide-icon name="alert-triangle" class="w-6 h-6"></lucide-icon>
+        <lucide-icon name="triangle-alert" class="w-6 h-6"></lucide-icon>
       </div>
       <div class="kpi-content">
         <span class="kpi-label">No exitosas en esta página</span>
@@ -107,7 +107,7 @@
 
         <div class="filter-group">
           <label class="filter-label" for="action-filter">Tipo de acción</label>
-          <refactor-select
+          <select
             id="action-filter"
             class="form-control"
             [(ngModel)]="actionFilter"
@@ -117,12 +117,12 @@
             @for (action of actionOptions; track action.value) {
               <option [value]="action.value">{{ action.label }}</option>
             }
-          </refactor-select>
+          </select>
         </div>
 
         <div class="filter-group">
           <label class="filter-label" for="module-filter">Módulo</label>
-          <refactor-select
+          <select
             id="module-filter"
             class="form-control"
             [(ngModel)]="moduleFilter"
@@ -132,12 +132,12 @@
             @for (module of moduleOptions; track module.value) {
               <option [value]="module.value">{{ module.label }}</option>
             }
-          </refactor-select>
+          </select>
         </div>
 
         <div class="filter-group">
           <label class="filter-label" for="event-filter">Evento específico</label>
-          <refactor-select
+          <select
             id="event-filter"
             class="form-control"
             [(ngModel)]="eventNameFilter"
@@ -147,12 +147,12 @@
             @for (event of eventOptions; track event.value) {
               <option [value]="event.value">{{ event.label }}</option>
             }
-          </refactor-select>
+          </select>
         </div>
 
         <div class="filter-group">
           <label class="filter-label" for="role-filter">Rol del Usuario</label>
-          <refactor-select
+          <select
             id="role-filter"
             class="form-control"
             [(ngModel)]="roleFilter"
@@ -162,12 +162,12 @@
             @for (role of filterOptions().actor_roles; track role) {
               <option [value]="role">{{ api.getRoleLabel(role) }}</option>
             }
-          </refactor-select>
+          </select>
         </div>
 
         <div class="filter-group">
           <label class="filter-label" for="result-filter">Resultado</label>
-          <refactor-select
+          <select
             id="result-filter"
             class="form-control"
             [(ngModel)]="resultFilter"
@@ -179,7 +179,7 @@
                 {{ result === 'SUCCESS' ? 'Exitoso' : result === 'FAILURE' ? 'Fallido' : result }}
               </option>
             }
-          </refactor-select>
+          </select>
         </div>
 
         <div class="filter-group">
@@ -212,7 +212,7 @@
             (click)="loadAudits(1)"
           >
             <lucide-icon
-              [name]="isLoading() ? 'loader-2' : 'search'"
+              [name]="isLoading() ? 'loader-circle' : 'search'"
               class="w-4 h-4"
               [class.animate-spin]="isLoading()"
             ></lucide-icon>
@@ -238,7 +238,7 @@
         </div>
         <div class="filter-group">
           <label class="filter-label" for="channel-filter">Canal</label>
-          <refactor-select
+          <select
             id="channel-filter"
             class="form-control"
             [(ngModel)]="logChannelFilter"
@@ -250,11 +250,11 @@
             <option value="OPERATION">Operación</option>
             <option value="ERROR">Errores</option>
             <option value="AUDIT">Auditoría</option>
-          </refactor-select>
+          </select>
         </div>
         <div class="filter-group">
           <label class="filter-label" for="level-filter">Nivel</label>
-          <refactor-select
+          <select
             id="level-filter"
             class="form-control"
             [(ngModel)]="logLevelFilter"
@@ -266,7 +266,7 @@
             <option value="WARNING">Advertencia</option>
             <option value="ERROR">Error</option>
             <option value="CRITICAL">Crítico</option>
-          </refactor-select>
+          </select>
         </div>
         <div class="filter-group">
           <label class="filter-label" for="status-filter">Código HTTP</label>
@@ -308,7 +308,7 @@
             (click)="loadOperationalLogs(1)"
           >
             <lucide-icon
-              [name]="isLoading() ? 'loader-2' : 'search'"
+              [name]="isLoading() ? 'loader-circle' : 'search'"
               class="w-4 h-4"
               [class.animate-spin]="isLoading()"
             ></lucide-icon>
@@ -336,7 +336,7 @@
       <div
         class="p-12 text-center text-gray-500 font-semibold flex items-center justify-center gap-2"
       >
-        <lucide-icon name="loader-2" class="w-5 h-5 animate-spin"></lucide-icon>
+        <lucide-icon name="loader-circle" class="w-5 h-5 animate-spin"></lucide-icon>
         <span>Cargando registros de auditoría...</span>
       </div>
     } @else {
@@ -345,112 +345,134 @@
           <table class="audit-table">
             <thead>
               <tr>
-                <th>Quién (Usuario / Rol)</th>
-                <th>Qué Acción</th>
-                <th>Descripción</th>
+                <th>Quién</th>
+                <th>Acción</th>
+                <th>Cambios Detectados</th>
                 <th>Entidad / Folio</th>
-                <th>Cuándo (Fecha y Hora)</th>
-                <th>Dónde (Sucursal / IP)</th>
-                <th>Resultado</th>
-                <th>Detalles</th>
+                <th>Fecha</th>
+                <th class="th-actions">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              @for (audit of audits(); track audit.id) {
-                @let eventInfo = api.getEventInfo(audit.event_name);
-                <tr>
+              @for (row of auditRows(); track row.id) {
+                <tr [class.row-success]="row.isSuccess" [class.row-failure]="!row.isSuccess">
                   <!-- Quién -->
                   <td>
                     <div class="actor-cell">
                       <span class="actor-name">
-                        {{ audit.actor?.name || 'Usuario sin nombre disponible' }}
+                        {{ row.actorName }}
                       </span>
-                      <span class="actor-email">{{ audit.actor?.email || audit.actor_role }}</span>
+                      <span class="actor-email">{{ row.actorEmailOrRole }}</span>
                       <span class="actor-role-badge">
-                        {{ api.getRoleLabel(audit.actor_role) }}
+                        {{ row.actorRoleBadge }}
                       </span>
                     </div>
                   </td>
 
-                  <!-- Qué Acción -->
+                  <!-- Acción -->
                   <td>
-                    <span class="badge-event" [class]="eventInfo.badgeColor">
-                      <lucide-icon [name]="eventInfo.icon" class="w-3.5 h-3.5"></lucide-icon>
-                      <span>{{ eventInfo.label }}</span>
-                    </span>
+                    <div class="action-cell">
+                      <span class="badge-event" [class]="row.eventBadgeColor">
+                        <lucide-icon [name]="row.eventIcon" class="w-3.5 h-3.5"></lucide-icon>
+                        <span>{{ row.eventLabel }}</span>
+                      </span>
+                      <span
+                        class="result-indicator"
+                        [class.result-indicator-success]="row.isSuccess"
+                        [class.result-indicator-failure]="!row.isSuccess"
+                      >
+                        <lucide-icon [name]="row.isSuccess ? 'circle-check' : 'circle-x'" class="w-3 h-3"></lucide-icon>
+                        {{ row.isSuccess ? 'Éxito' : 'Fallido' }}
+                      </span>
+                    </div>
                   </td>
 
-                  <!-- Descripción -->
+                  <!-- Cambios Detectados -->
                   <td>
-                    <span class="text-xs text-gray-700 line-clamp-2 max-w-sm">
-                      {{ api.describeAction(audit) }}
-                    </span>
+                    @if (row.changes.length > 0) {
+                      <div class="changes-inline">
+                        @for (change of row.changesPreview; track change.field) {
+                          <div class="change-row">
+                            <span class="change-field">{{ change.label }}</span>
+                            <div class="change-values">
+                              @if (change.isCreation) {
+                                <span class="change-badge change-badge-new">{{ change.newValue }}</span>
+                              } @else if (change.isDeletion) {
+                                <span class="change-badge change-badge-old">{{ change.oldValue }}</span>
+                                <lucide-icon name="arrow-right" class="w-3 h-3 change-arrow"></lucide-icon>
+                                <span class="change-badge change-badge-empty">(eliminado)</span>
+                              } @else {
+                                <span class="change-badge change-badge-old">{{ change.oldValue }}</span>
+                                <lucide-icon name="arrow-right" class="w-3 h-3 change-arrow"></lucide-icon>
+                                <span class="change-badge change-badge-new">{{ change.newValue }}</span>
+                              }
+                            </div>
+                          </div>
+                        }
+                        @if (row.totalChanges > 3) {
+                          <span class="change-more">+{{ row.totalChanges - 3 }} campo(s) más</span>
+                        }
+                      </div>
+                    } @else {
+                      <span class="no-changes">
+                        <span class="no-changes-dot"></span>
+                        Sin cambios
+                      </span>
+                    }
                   </td>
 
                   <!-- Entidad / Folio -->
                   <td>
                     <div class="flex flex-col">
-                      <span class="font-bold text-slate-800 text-xs">
-                        {{ api.getEntityLabel(audit.entity_type || 'Sistema') }}
-                      </span>
-                      @if (audit.entity_id) {
-                        <span class="text-xs text-gray-500 font-mono">
-                          {{ audit.entity_id.substring(0, 13) }}...
+                      @if (row.isRealFolio) {
+                        <span class="folio-badge">
+                          {{ row.folio }}
                         </span>
+                        <span class="entity-label">
+                          {{ row.entityLabel }}
+                        </span>
+                      } @else {
+                        <span class="entity-label-main">
+                          {{ row.entityLabel }}
+                        </span>
+                        @if (row.entityId) {
+                          <span class="entity-id-mono">
+                            {{ row.folio }}
+                          </span>
+                        }
                       }
                     </div>
                   </td>
 
-                  <!-- Cuándo -->
+                  <!-- Fecha -->
                   <td>
                     <div class="flex flex-col">
-                      <span class="font-bold text-slate-800 text-xs">
-                        {{ audit.created_at | date: 'dd/MM/yyyy' }}
+                      <span class="date-primary">
+                        {{ row.createdAt | date: 'dd/MM/yyyy' }}
                       </span>
-                      <span class="text-xs text-gray-500 font-mono">
-                        {{ audit.created_at | date: 'HH:mm:ss' }}
+                      <span class="date-secondary">
+                        {{ row.createdAt | date: 'HH:mm:ss' }}
                       </span>
                     </div>
                   </td>
 
-                  <!-- Dónde -->
+                  <!-- Acciones -->
                   <td>
-                    <div class="location-cell">
-                      <span class="location-branch">
-                        {{ audit.branch?.name || 'Oficina Central / Remoto' }}
-                      </span>
-                      <span class="location-ip">IP: {{ audit.ip_address || 'Sin dato' }}</span>
+                    <div class="actions-cell">
+                      <button type="button" class="btn-action btn-action-detail" (click)="openDetailModal(row.raw)" title="Ver detalle completo">
+                        <lucide-icon name="eye" class="w-3.5 h-3.5"></lucide-icon>
+                        <span>Detalle</span>
+                      </button>
+                      <button type="button" class="btn-action btn-action-json" (click)="openJsonModal(row.raw)" title="Ver JSON y payload">
+                        <lucide-icon name="terminal" class="w-3.5 h-3.5"></lucide-icon>
+                        <span>JSON</span>
+                      </button>
                     </div>
-                  </td>
-
-                  <!-- Resultado -->
-                  <td>
-                    <span
-                      class="badge-result"
-                      [class.result-success]="audit.result === 'SUCCESS'"
-                      [class.result-failure]="audit.result !== 'SUCCESS'"
-                    >
-                      @if (audit.result === 'SUCCESS') {
-                        <lucide-icon name="check-circle-2" class="w-3 h-3"></lucide-icon>
-                        <span>Éxito</span>
-                      } @else {
-                        <lucide-icon name="x-circle" class="w-3 h-3"></lucide-icon>
-                        <span>Fallido</span>
-                      }
-                    </span>
-                  </td>
-
-                  <!-- Detalle -->
-                  <td>
-                    <button type="button" class="btn-view-detail" (click)="openDetailModal(audit)">
-                      <lucide-icon name="eye" class="w-3.5 h-3.5"></lucide-icon>
-                      <span>Ver Detalle</span>
-                    </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="8" class="p-12 text-center text-gray-500">
+                  <td colspan="6" class="p-12 text-center text-gray-500">
                     No se encontraron eventos de auditoría con los filtros seleccionados.
                   </td>
                 </tr>
@@ -498,45 +520,29 @@
                     </span>
                   </td>
                   <td>
-                    <div class="actor-cell">
-                      <span class="actor-name">{{
-                        row.duration_ms === null ? 'Sin dato' : row.duration_ms + ' ms'
-                      }}</span>
-                      <span class="actor-email"
-                        >{{ row.context?.['db_query_count'] ?? 'Sin dato' }} consultas</span
-                      >
+                    <span class="duration-badge">{{ row.duration_ms || 0 }} ms</span>
+                  </td>
+                  <td>
+                    <div class="flex flex-col">
+                      <span class="date-primary">
+                        {{ row.occurred_at | date: 'dd/MM/yyyy' }}
+                      </span>
+                      <span class="date-secondary">
+                        {{ row.occurred_at | date: 'HH:mm:ss' }}
+                      </span>
                     </div>
                   </td>
                   <td>
-                    <div class="actor-cell">
-                      <span class="actor-name">{{ row.occurred_at | date: 'dd/MM/yyyy' }}</span>
-                      <span class="actor-email">{{ row.occurred_at | date: 'HH:mm:ss' }}</span>
+                    <div class="flex flex-col text-xs text-gray-500 font-mono">
+                      <span>Req: {{ row.request_id ? row.request_id.substring(0, 10) + '...' : 'N/A' }}</span>
+                      <span>Corr: {{ row.correlation_id ? row.correlation_id.substring(0, 10) + '...' : 'N/A' }}</span>
                     </div>
-                  </td>
-                  <td>
-                    <details class="trace-details">
-                      <summary>Ver folios</summary>
-                      <dl>
-                        <div>
-                          <dt>Solicitud</dt>
-                          <dd>{{ row.request_id || 'Sin dato' }}</dd>
-                        </div>
-                        <div>
-                          <dt>Traza</dt>
-                          <dd>{{ row.trace_id || 'Sin dato' }}</dd>
-                        </div>
-                        <div>
-                          <dt>Correlación</dt>
-                          <dd>{{ row.correlation_id || 'Sin dato' }}</dd>
-                        </div>
-                      </dl>
-                    </details>
                   </td>
                 </tr>
               } @empty {
                 <tr>
                   <td colspan="6" class="p-12 text-center text-gray-500">
-                    No se encontraron solicitudes de endpoints con los filtros seleccionados.
+                    No se encontraron trazas de solicitudes operacionales.
                   </td>
                 </tr>
               }
@@ -545,7 +551,6 @@
         </div>
       }
 
-      <!-- Pagination Controls -->
       <footer class="pagination-bar">
         <span class="page-info">
           Mostrando página <strong>{{ currentPage() }}</strong> de
@@ -580,16 +585,26 @@
       <div class="modal-dialog" (click)="$event.stopPropagation()">
         <!-- Modal Header -->
         <header class="modal-header">
-          <div class="flex items-center gap-3">
+          <div class="modal-header-left">
             <span class="badge-event" [class]="targetEvent.badgeColor">
-              <lucide-icon [name]="targetEvent.icon" class="w-4 h-4"></lucide-icon>
+              <lucide-icon [name]="targetEvent.icon || 'activity'" class="w-4 h-4"></lucide-icon>
               <span>{{ targetEvent.label }}</span>
             </span>
             <span class="modal-title">Detalle de Operación Auditada</span>
           </div>
-          <button type="button" class="btn-close-modal" (click)="closeDetailModal()">
-            <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
-          </button>
+          <div class="modal-header-right">
+            <button
+              type="button"
+              class="btn-json-header"
+              (click)="copyJsonPayload(target)"
+            >
+              <lucide-icon [name]="copySuccess() ? 'check' : 'copy'" class="w-3.5 h-3.5"></lucide-icon>
+              <span>{{ copySuccess() ? '¡Copiado!' : 'Copiar JSON' }}</span>
+            </button>
+            <button type="button" class="btn-close-modal" (click)="closeDetailModal()">
+              <lucide-icon name="x" class="w-5 h-5"></lucide-icon>
+            </button>
+          </div>
         </header>
 
         <!-- Modal Tabs -->
@@ -602,7 +617,7 @@
               (click)="detailTab.set('summary')"
             >
               <lucide-icon name="info" class="w-4 h-4 inline-block mr-1"></lucide-icon>
-              <span>Resumen y Contexto</span>
+              <span>Resumen</span>
             </button>
             <button
               type="button"
@@ -611,10 +626,10 @@
               (click)="detailTab.set('changes')"
             >
               <lucide-icon
-                name="sliders-horizontal"
+                name="git-compare"
                 class="w-4 h-4 inline-block mr-1"
               ></lucide-icon>
-              <span>Comparativa de Cambios (Valores)</span>
+              <span>Cambios</span>
             </button>
             <button
               type="button"
@@ -623,30 +638,41 @@
               (click)="detailTab.set('tech')"
             >
               <lucide-icon name="terminal" class="w-4 h-4 inline-block mr-1"></lucide-icon>
-              <span>Trazabilidad Técnica</span>
+              <span>Trazabilidad</span>
             </button>
           </nav>
 
           <!-- TAB 1: Resumen y Contexto -->
           @if (detailTab() === 'summary') {
+            @let folioInfo = api.getEntityFolioOrIdentifier(target);
             <div class="kv-grid">
               <div class="kv-item" style="grid-column: 1 / -1">
                 <span class="kv-label">Descripción de la Operación</span>
-                <span class="kv-value text-slate-900 font-semibold">
+                <span class="kv-value text-slate-900 font-bold text-sm bg-slate-50 p-3.5 rounded-xl border border-slate-200 block">
                   {{ api.describeAction(target) }}
                 </span>
               </div>
               <div class="kv-item">
+                <span class="kv-label">Folio / Registro Afectado</span>
+                <span class="kv-value font-bold text-blue-900">
+                  {{ folioInfo.isRealFolio ? folioInfo.folio : (api.getEntityLabel(target.entity_type || 'Sistema') + ' · ' + folioInfo.folio) }}
+                </span>
+              </div>
+              <div class="kv-item">
+                <span class="kv-label">Módulo / Entidad</span>
+                <span class="kv-value">{{ api.getEntityLabel(target.entity_type || 'Sistema') }}</span>
+              </div>
+              <div class="kv-item">
                 <span class="kv-label">Usuario Responsable</span>
-                <span class="kv-value">{{ target.actor?.name || 'Usuario no disponible' }}</span>
+                <span class="kv-value font-semibold">{{ target.actor?.name || 'Usuario no disponible' }}</span>
               </div>
               <div class="kv-item">
                 <span class="kv-label">Correo Electrónico</span>
-                <span class="kv-value">{{ target.actor?.email || 'Sin dato' }}</span>
+                <span class="kv-value font-mono text-xs">{{ target.actor?.email || 'Sin dato' }}</span>
               </div>
               <div class="kv-item">
                 <span class="kv-label">Rol del Usuario</span>
-                <span class="kv-value">{{ api.getRoleLabel(target.actor_role) }}</span>
+                <span class="kv-value font-medium">{{ api.getRoleLabel(target.actor_role) }}</span>
               </div>
               <div class="kv-item">
                 <span class="kv-label">Sucursal / Ubicación</span>
@@ -661,116 +687,188 @@
               <div class="kv-item">
                 <span class="kv-label">Resultado</span>
                 <span
-                  class="kv-value"
+                  class="kv-value font-bold inline-flex items-center gap-1.5"
                   [class.text-emerald-700]="target.result === 'SUCCESS'"
                   [class.text-red-700]="target.result !== 'SUCCESS'"
                 >
-                  {{ target.result === 'SUCCESS' ? 'Operación Exitosa' : 'Operación Fallida' }}
+                  <lucide-icon [name]="target.result === 'SUCCESS' ? 'circle-check' : 'circle-x'" class="w-4 h-4"></lucide-icon>
+                  {{ target.result === 'SUCCESS' ? 'Operación Exitosa' : 'Operación Fallida / Denegada' }}
                 </span>
               </div>
+              <div class="kv-item">
+                <span class="kv-label">Dirección IP</span>
+                <span class="kv-value font-mono text-xs">{{ target.ip_address || 'Sin dato' }}</span>
+              </div>
+              @if (target.reason) {
+                <div class="kv-item" style="grid-column: 1 / -1">
+                  <span class="kv-label">Motivo / Justificación Registrada</span>
+                  <span class="kv-value text-amber-900 bg-amber-50 p-2.5 rounded-lg border border-amber-200 block text-xs">
+                    {{ target.reason }}
+                  </span>
+                </div>
+              }
             </div>
           }
 
           <!-- TAB 2: Comparativa de Cambios -->
           @if (detailTab() === 'changes') {
-            @if (
-              api.getChangedFields(target).length > 0
-            ) {
-              <div style="margin-bottom: 1rem;">
-                <h4 style="font-size: 0.8rem; font-weight: 700; color: #334155; margin-bottom: 0.5rem;">
-                  Resumen de cambios detectados
-                </h4>
-                <table class="audit-table" style="font-size: 0.75rem;">
-                  <thead>
-                    <tr>
-                      <th style="padding: 0.5rem 0.75rem;">Campo</th>
-                      <th style="padding: 0.5rem 0.75rem;">Valor anterior</th>
-                      <th style="padding: 0.5rem 0.75rem;">Valor nuevo</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (change of api.getChangedFields(target); track change.field) {
-                      <tr>
-                        <td style="padding: 0.5rem 0.75rem; font-weight: 600; color: #475569;">
-                          {{ change.label }}
-                        </td>
-                        <td style="padding: 0.5rem 0.75rem; color: #dc2626; background: #fef2f2;">
-                          {{ change.oldValue }}
-                        </td>
-                        <td style="padding: 0.5rem 0.75rem; color: #16a34a; background: #f0fdf4;">
-                          {{ change.newValue }}
-                        </td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            } @else {
-              <p style="font-size: 0.8rem; color: #94a3b8; font-style: italic; margin-bottom: 1rem;">
-                No se detectaron campos con diferencias entre el valor anterior y el nuevo.
-              </p>
-            }
-            <div class="diff-grid">
-              <!-- Valor Anterior -->
-              <div class="diff-panel">
-                <header class="diff-header diff-header-prev">
-                  <div class="flex items-center gap-1.5">
-                    <lucide-icon name="alert-triangle" class="w-3.5 h-3.5"></lucide-icon>
-                    <span>Valor Anterior (Previo)</span>
-                  </div>
-                  <span class="text-xs">Estado Original</span>
-                </header>
-                <div class="diff-content">
-                  @if (target.previous_value && hasKeys(target.previous_value)) {
-                    <pre>{{ target.previous_value | json }}</pre>
-                  } @else {
-                    <span class="text-gray-400 italic"
-                      >No aplica (Registro nuevo o consulta de lectura).</span
-                    >
-                  }
+            @let changes = api.getChangedFields(target);
+            <div class="changes-tab-content">
+              <div class="changes-tab-header">
+                <div>
+                  <h4 class="changes-tab-title">
+                    Modificaciones de Datos
+                  </h4>
+                  <p class="changes-tab-subtitle">
+                    {{ changes.length > 0 ? (changes.length + ' campo(s) con cambios registrados') : 'Registro sin modificaciones directas de campos' }}
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  class="btn-toggle-json"
+                  (click)="toggleRawJson()"
+                >
+                  <lucide-icon [name]="showRawJson() ? 'eye-off' : 'terminal'" class="w-3.5 h-3.5"></lucide-icon>
+                  <span>{{ showRawJson() ? 'Ocultar JSON' : 'Ver JSON' }}</span>
+                </button>
               </div>
 
-              <!-- Valor Nuevo -->
-              <div class="diff-panel">
-                <header class="diff-header diff-header-new">
-                  <div class="flex items-center gap-1.5">
-                    <lucide-icon name="check-circle-2" class="w-3.5 h-3.5"></lucide-icon>
-                    <span>Valor Nuevo (Actualizado)</span>
-                  </div>
-                  <span class="text-xs">Estado Resultante</span>
-                </header>
-                <div class="diff-content">
-                  @if (target.new_value && hasKeys(target.new_value)) {
-                    <pre>{{ target.new_value | json }}</pre>
-                  } @else {
-                    <span class="text-gray-400 italic">Sin carga de datos modificados.</span>
-                  }
+              @if (changes.length > 0) {
+                <div class="changes-table-wrap">
+                  <table class="changes-table">
+                    <thead>
+                      <tr>
+                        <th class="changes-th-field">Campo</th>
+                        <th class="changes-th-old">Valor Anterior</th>
+                        <th class="changes-th-arrow"></th>
+                        <th class="changes-th-new">Valor Nuevo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (change of changes; track change.field) {
+                        <tr class="changes-row">
+                          <td class="changes-td-field">
+                            <div class="changes-field-wrap">
+                              @if (change.isCreation) {
+                                <span class="change-type-dot dot-created" title="Campo nuevo"></span>
+                              } @else if (change.isDeletion) {
+                                <span class="change-type-dot dot-deleted" title="Campo eliminado"></span>
+                              } @else {
+                                <span class="change-type-dot dot-modified" title="Campo modificado"></span>
+                              }
+                              <div>
+                                <div class="change-field-label">{{ change.label }}</div>
+                                <small class="change-field-key">{{ change.field }}</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td class="changes-td-old">
+                            @if (change.isCreation) {
+                              <span class="change-value-empty">(nuevo)</span>
+                            } @else {
+                              <span class="change-value-old">{{ change.oldValue }}</span>
+                            }
+                          </td>
+                          <td class="changes-td-arrow">
+                            <lucide-icon name="arrow-right" class="w-4 h-4 text-gray-400"></lucide-icon>
+                          </td>
+                          <td class="changes-td-new">
+                            @if (change.isDeletion) {
+                              <span class="change-value-empty">(eliminado)</span>
+                            } @else {
+                              <span class="change-value-new">{{ change.newValue }}</span>
+                            }
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
                 </div>
-              </div>
+              } @else {
+                <div class="no-changes-panel">
+                  <lucide-icon name="info" class="w-6 h-6 text-blue-500 mx-auto"></lucide-icon>
+                  <p class="no-changes-title">Operación informativa o de consulta</p>
+                  <p class="no-changes-desc">Esta acción no generó modificaciones directas en los campos de la base de datos (p. ej. consulta de lectura, descarga de archivo, inicio de sesión o evento de seguridad).</p>
+                </div>
+              }
+
+              <!-- Sección JSON / Payload Técnico -->
+              @if (showRawJson()) {
+                <div class="json-section">
+                  <div class="json-section-header">
+                    <span class="json-section-title">Payloads JSON en Base de Datos</span>
+                    <button
+                      type="button"
+                      class="btn-copy-json"
+                      (click)="copyJsonPayload(target)"
+                    >
+                      <lucide-icon [name]="copySuccess() ? 'check' : 'copy'" class="w-3.5 h-3.5"></lucide-icon>
+                      <span>{{ copySuccess() ? '¡Copiado!' : 'Copiar JSON' }}</span>
+                    </button>
+                  </div>
+                  <div class="diff-grid">
+                    <div class="diff-panel">
+                      <header class="diff-header diff-header-prev">
+                        <span>Payload Anterior (previous_value)</span>
+                      </header>
+                      <div class="diff-content">
+                        @if (target.previous_value && hasKeys(target.previous_value)) {
+                          <pre>{{ target.previous_value | json }}</pre>
+                        } @else {
+                          <span class="text-gray-400 italic text-xs">Sin payload anterior.</span>
+                        }
+                      </div>
+                    </div>
+                    <div class="diff-panel">
+                      <header class="diff-header diff-header-new">
+                        <span>Payload Nuevo (new_value)</span>
+                      </header>
+                      <div class="diff-content">
+                        @if (target.new_value && hasKeys(target.new_value)) {
+                          <pre>{{ target.new_value | json }}</pre>
+                        } @else {
+                          <span class="text-gray-400 italic text-xs">Sin payload nuevo.</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
             </div>
           }
 
           <!-- TAB 3: Trazabilidad Técnica -->
           @if (detailTab() === 'tech') {
             <div class="flex flex-col gap-3">
+              <div class="flex items-center justify-between bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <span class="text-xs font-bold text-slate-700">Registro Completo de Auditoría (JSON)</span>
+                <button
+                  type="button"
+                  class="btn-copy-json"
+                  (click)="copyJsonPayload(target)"
+                >
+                  <lucide-icon [name]="copySuccess() ? 'check' : 'copy'" class="w-4 h-4"></lucide-icon>
+                  <span>{{ copySuccess() ? '¡JSON Copiado!' : 'Copiar Registro Completo (JSON)' }}</span>
+                </button>
+              </div>
+
               <div class="kv-item">
                 <span class="kv-label">Dirección IP de Origen</span>
-                <div class="copyable-field">
+                <div class="copyable-field font-mono text-xs">
                   <span>{{ target.ip_address || 'Sin dato' }}</span>
                 </div>
               </div>
 
               <div class="kv-item">
-                <span class="kv-label">Agente de Usuario (Navegador y Sistema)</span>
-                <div class="copyable-field text-xs">
+                <span class="kv-label">Agente de Usuario (Navegador y Dispositivo)</span>
+                <div class="copyable-field text-xs font-mono">
                   <span>{{ target.user_agent || 'Sin dato' }}</span>
                 </div>
               </div>
 
               <div class="kv-item">
                 <span class="kv-label">Correlation ID</span>
-                <div class="copyable-field">
+                <div class="copyable-field font-mono text-xs">
                   <span class="flex-1">{{ target.correlation_id || 'Sin dato' }}</span>
                   @if (target.correlation_id) {
                     <button
@@ -786,7 +884,7 @@
 
               <div class="kv-item">
                 <span class="kv-label">Trace ID</span>
-                <div class="copyable-field">
+                <div class="copyable-field font-mono text-xs">
                   <span class="flex-1">{{ target.trace_id || 'Sin dato' }}</span>
                   @if (target.trace_id) {
                     <button
@@ -802,7 +900,7 @@
 
               <div class="kv-item">
                 <span class="kv-label">Request ID</span>
-                <div class="copyable-field">
+                <div class="copyable-field font-mono text-xs">
                   <span class="flex-1">{{ target.request_id || 'Sin dato' }}</span>
                   @if (target.request_id) {
                     <button
@@ -822,10 +920,11 @@
         <!-- Modal Footer -->
         <footer class="modal-footer">
           <button type="button" class="btn-filter btn-reset" (click)="closeDetailModal()">
-            Cerrar Inspector
+            Cerrar
           </button>
         </footer>
       </div>
     </div>
   }
 </section>
+
