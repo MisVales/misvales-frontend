@@ -147,6 +147,27 @@ describe('PagosPageComponent surplus presentation', () => {
     });
   });
 
+  it('conserva el total generado y usa el balance exigible despues de recargos', () => {
+    const relation = {
+      id: 'relation-overdue',
+      financial_status: 'OVERDUE',
+      misvales_total: '41407.0000',
+      carried_balance: '36796.0000',
+      carried_surcharge: '4800.0000',
+      reconciled_total: '0.0000',
+      surcharge_total: '6000.0000',
+      balance: '42607.0000',
+      partidas: [{ portfolio_amount: '4611.0000', misvales_amount: '4611.0000', snapshot: {} }],
+      pagos: [],
+    } as never;
+
+    expect(component.relationMoneyRoute(relation)).toMatchObject({
+      current: 4611,
+      accumulatedSurcharges: 6000,
+      outstanding: 42607,
+    });
+  });
+
   it('separa cobro, comisión y deuda de MisVales, incluyendo el acumulado por parcialidad', () => {
     const firstRelation = {
       id: 'relation-1',

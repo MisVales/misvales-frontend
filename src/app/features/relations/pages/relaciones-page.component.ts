@@ -157,7 +157,7 @@ type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
                 <th class="p-4 font-medium">Límite</th>
                 <th class="p-4 font-medium">Referencia</th>
                 <th class="p-4 font-medium">Parcialidades</th>
-                <th class="p-4 text-right font-medium">Importe a pagar a MisVales</th>
+                <th class="p-4 text-right font-medium">Total generado antes de recargos posteriores</th>
                 <th class="p-4 text-right font-medium">Saldo pendiente de la relación</th>
                 <th class="p-4 font-medium">Estado</th>
                 <th class="p-4 text-right font-medium">Acción</th>
@@ -271,7 +271,9 @@ type RelationDetailTab = 'summary' | 'installments' | 'payments' | 'breakdown';
               >
             </div>
             <div class="rounded-lg border bg-blue-50 p-4">
-              <span class="text-sm text-blue-700 font-medium">Importe a pagar a MisVales</span>
+              <span class="text-sm text-blue-700 font-medium"
+                >Total generado para MisVales antes de recargos posteriores</span
+              >
               <strong class="block text-xl text-blue-900">{{
                 item.misvales_total | currency: 'MXN'
               }}</strong>

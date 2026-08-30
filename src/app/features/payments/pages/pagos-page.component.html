@@ -365,12 +365,13 @@
               <article class="money-route__step">
                 <span class="money-route__index">2</span>
                 <div>
-                  <small>Neto a pagar a MisVales por este corte</small>
+                  <small>Neto generado para MisVales por este corte</small>
                   <strong>{{ route.current | currency: 'MXN' }}</strong>
                   <p>
                     {{ relation.partidas?.length || 0 }} parcialidades nuevas · clientes pagan
                     {{ route.currentClientCollection | currency: 'MXN' }} · conservas
-                    {{ route.currentDistributorProfit | currency: 'MXN' }} de ganancia.
+                    {{ route.currentDistributorProfit | currency: 'MXN' }} de ganancia · antes de
+                    recargos posteriores.
                   </p>
                 </div>
               </article>
@@ -427,13 +428,15 @@
                 >
               </div>
               <div class="flex flex-col rounded-xl border border-blue-200 bg-blue-50 p-3">
-                <span class="text-xs text-blue-700">Neto a pagar a MisVales</span>
+                <span class="text-xs text-blue-700"
+                  >Total generado para MisVales antes de recargos posteriores</span
+                >
                 <strong class="text-base text-blue-950">{{
                   relation.misvales_total | currency: 'MXN'
                 }}</strong>
               </div>
               <div class="flex flex-col rounded-xl border border-slate-200 bg-slate-50 p-3">
-                <span class="text-xs text-slate-500">Saldo pendiente</span>
+                <span class="text-xs text-slate-500">Saldo exigible actual</span>
                 <strong class="text-base text-slate-950">{{
                   relation.balance | currency: 'MXN'
                 }}</strong>
@@ -820,7 +823,7 @@
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
                   <p class="text-xs font-bold uppercase tracking-wide text-emerald-800">
-                    Saldo pendiente de la relación
+                    Saldo exigible actual de la relación
                   </p>
                   <p class="mt-1 text-3xl font-black text-emerald-950">
                     {{ relation.balance | currency: 'MXN' : 'symbol-narrow' : '1.2-2' }}
@@ -1033,7 +1036,10 @@
               }}</strong>
               de
               <strong>{{
-                relation.misvales_total | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
+                (relation.financial_status === 'OVERDUE' || relation.financial_status === 'PAST_DUE'
+                  ? relation.balance
+                  : relation.misvales_total)
+                  | currency: 'MXN' : 'symbol-narrow' : '1.2-2'
               }}</strong>
             </span>
           </div>
