@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { anyPermissionGuard } from '../../core/guards/permission.guard';
+import { roleGuard } from '../../core/guards/role.guard';
 
 export const valesRoutes: Routes = [
   {
@@ -9,6 +10,7 @@ export const valesRoutes: Routes = [
         (module) => module.CajaFeriadoPageComponent,
       ),
     canActivate: [
+      roleGuard(['general_manager', 'branch_manager', 'cashier']),
       anyPermissionGuard([
         'vouchers.cash_branch',
         'voucher_modifications.authorize_branch',

@@ -18,9 +18,13 @@ import {
   AddressFormComponent,
   AddressResult,
 } from '../../../shared/components/inputs/address-form/address-form';
+import { PhoneInputComponent } from '../../../shared/components/inputs/phone-input/phone-input.component';
 import { AttachmentPreviewComponent } from '../../../shared/components/media/attachment-preview/attachment-preview.component';
 import { InputErrorComponent } from '../../../shared/components/inputs/input-error/input-error.component';
 import { curpValidator } from '../../applications/validators/curp.validator';
+import { adultBirthDateValidator } from '../../applications/validators/adult-birth-date.validator';
+import { personNameValidator } from '../../applications/validators/person-name.validator';
+import { phoneValidator } from '../../applications/validators/phone.validator';
 import {
   CajaValesApiService,
   CashVoucher,
@@ -61,6 +65,7 @@ interface CorrectionAddress extends Record<string, string> {
     ReactiveFormsModule,
     AttachmentPreviewComponent,
     AddressFormComponent,
+    PhoneInputComponent,
     InputErrorComponent,
     RefactorSelectComponent,
     StatusBadgeComponent,
@@ -136,6 +141,21 @@ interface CorrectionAddress extends Record<string, string> {
               </p>
             </div>
             <div class="rounded-lg bg-gray-50 p-3 text-sm">
+              @if (item.requested_changes?.first_name) {
+                <p><span class="font-semibold">Nombre propuesto:</span> {{ item.requested_changes?.first_name }}</p>
+              }
+              @if (item.requested_changes?.first_last_name) {
+                <p><span class="font-semibold">Apellido paterno propuesto:</span> {{ item.requested_changes?.first_last_name }}</p>
+              }
+              @if (item.requested_changes?.second_last_name) {
+                <p><span class="font-semibold">Apellido materno propuesto:</span> {{ item.requested_changes?.second_last_name }}</p>
+              }
+              @if (item.requested_changes?.birth_date) {
+                <p><span class="font-semibold">Fecha de nacimiento propuesta:</span> {{ item.requested_changes?.birth_date }}</p>
+              }
+              @if (item.requested_changes?.phone_number) {
+                <p><span class="font-semibold">Teléfono propuesto:</span> {{ item.requested_changes?.phone_number }}</p>
+              }
               @if (item.requested_changes?.curp) {
                 <p>
                   <span class="font-semibold">CURP propuesta:</span>
@@ -154,9 +174,9 @@ interface CorrectionAddress extends Record<string, string> {
                   la capture nuevamente.
                 </p>
               }
-              <p class="mt-2"><span class="font-semibold">Motivo:</span> {{ item.reason }}</p>
+              <p class="hidden"><span class="font-semibold">Motivo:</span> {{ item.reason }}</p>
             </div>
-            <label class="block text-sm"
+            <label class="hidden block text-sm"
               >Motivo de la decisión
               <textarea
                 class="mt-1 w-full rounded-lg border border-slate-200 p-2"
@@ -169,7 +189,7 @@ interface CorrectionAddress extends Record<string, string> {
             <div class="flex gap-2">
               <button
                 class="rounded-lg bg-blue-700 px-3 py-2 text-white disabled:opacity-50"
-                [disabled]="!decisionReasons[item.id] || !item.requested_changes"
+                [disabled]="!item.requested_changes"
                 data-manager-action
                 (click)="decide(item, 'AUTHORIZE')"
               >
@@ -177,7 +197,7 @@ interface CorrectionAddress extends Record<string, string> {
               </button>
               <button
                 class="rounded-lg border border-red-300 px-3 py-2 text-red-700 disabled:opacity-50"
-                [disabled]="!decisionReasons[item.id]"
+                [disabled]="!item.requested_changes"
                 data-manager-action
                 (click)="decide(item, 'REJECT')"
               >
@@ -420,12 +440,12 @@ interface CorrectionAddress extends Record<string, string> {
               <!-- Identidad -->
               <section class="space-y-2">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500">
-                  Identidad oficial de la distribuidora
+                  Identidad oficial del cliente
                 </h3>
                 <div
                   class="rounded-lg bg-gray-50 p-4 border border-gray-100 h-full flex flex-col gap-3"
                 >
-                  <p class="font-medium text-lg">{{ voucher.distributor?.full_name }}</p>
+                  <p class="font-medium text-lg">{{ voucher.client?.full_name }}</p>
                   @if (voucher.identity?.official_id_type) {
                     <p class="text-sm text-gray-700">
                       Id: {{ voucher.identity?.official_id_type }}
@@ -461,7 +481,7 @@ interface CorrectionAddress extends Record<string, string> {
               <!-- Domicilio -->
               <section class="space-y-2">
                 <h3 class="text-sm font-bold uppercase tracking-wider text-gray-500">
-                  Comprobante de domicilio de la distribuidora
+                  Comprobante de domicilio del cliente
                 </h3>
                 <div
                   class="rounded-lg bg-gray-50 p-4 border border-gray-100 h-full flex flex-col gap-3"
@@ -517,25 +537,18 @@ interface CorrectionAddress extends Record<string, string> {
                   </div>
                   <div class="col-span-2">
                     <p class="text-xs text-blue-800 font-semibold mb-1">
-                      Cuenta bancaria de la distribuidora para dep&oacute;sito
+                      Cuenta bancaria del cliente para dep&oacute;sito
                     </p>
-                    @if (voucher.bank_account && voucher.bank_account.bank_name !== 'N/A') {
+                    @if (voucher.bank_account?.clabe_masked) {
                       <div class="flex items-center gap-3">
-                        <p class="text-sm font-medium">{{ voucher.bank_account.bank_name }}</p>
+                        <p class="text-sm font-medium">
+                          {{ voucher.bank_account?.bank_name || 'Banco no especificado' }}
+                        </p>
                         <p
                           class="font-mono text-sm bg-white px-2 py-1 rounded border border-blue-200"
                         >
                           {{ voucher.bank_account.clabe_masked }}
                         </p>
-                        @if (voucher.status === 'GENERATED' && !useAnotherBankAccount) {
-                          <button
-                            type="button"
-                            class="text-sm font-medium text-blue-700 underline"
-                            (click)="useAnotherBankAccount = true"
-                          >
-                            Usar otra cuenta
-                          </button>
-                        }
                       </div>
                     } @else {
                       <p class="text-sm text-blue-600/70 italic">
@@ -550,7 +563,7 @@ interface CorrectionAddress extends Record<string, string> {
             <!-- Actions Area -->
             <div class="space-y-4 border-t border-slate-200 bg-gray-50 p-5">
               @if (voucher.status === 'GENERATED') {
-                @if (requiresBankAccount(voucher) || useAnotherBankAccount) {
+                @if (false && (requiresBankAccount(voucher) || useAnotherBankAccount)) {
                   <div
                     class="space-y-3 rounded-lg bg-emerald-50 p-4 mb-4 border border-emerald-100"
                   >
@@ -618,7 +631,7 @@ interface CorrectionAddress extends Record<string, string> {
                     </div>
                   </div>
                 }
-                @if (!hasAddressProof(voucher)) {
+                @if (false && !hasAddressProof(voucher)) {
                   <div class="space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-4">
                     <p class="font-semibold text-amber-900">Comprobante de domicilio requerido</p>
                     <p class="text-sm text-amber-800">
@@ -640,13 +653,7 @@ interface CorrectionAddress extends Record<string, string> {
                 <div class="flex flex-wrap gap-2">
                   <button
                     class="rounded-lg bg-emerald-700 px-4 py-2 text-white disabled:opacity-50"
-                    [disabled]="
-                      busy() ||
-                      uploadingAddressProof() ||
-                      !hasAddressProof(voucher) ||
-                      ((requiresBankAccount(voucher) || useAnotherBankAccount) &&
-                        (!bankName || clabe !== clabeConfirm || clabe.length !== 18))
-                    "
+                    [disabled]="busy()"
                     (click)="release(voucher)"
                   >
                     Identidad coincide: liberar</button
@@ -670,6 +677,77 @@ interface CorrectionAddress extends Record<string, string> {
                     ><input type="checkbox" [(ngModel)]="correctAddress" name="address" />
                     Domicilio</label
                   >
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    <label
+                      ><input type="checkbox" [(ngModel)]="correctFirstName" name="firstName" />
+                      Nombre</label
+                    ><label
+                      ><input
+                        type="checkbox"
+                        [(ngModel)]="correctFirstLastName"
+                        name="firstLastName"
+                      />
+                      Apellido paterno</label
+                    ><label
+                      ><input
+                        type="checkbox"
+                        [(ngModel)]="correctSecondLastName"
+                        name="secondLastName"
+                      />
+                      Apellido materno</label
+                    ><label
+                      ><input type="checkbox" [(ngModel)]="correctBirthDate" name="birthDate" />
+                      Fecha de nacimiento</label
+                    ><label
+                      ><input
+                        type="checkbox"
+                        [(ngModel)]="correctPhoneNumber"
+                        name="phoneNumber"
+                      />
+                      Teléfono</label
+                  >
+                  </div>
+                  @if (correctFirstName) {
+                    <label class="block text-sm"
+                      >Nombre corregido<input
+                        class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+                        [formControl]="correctionFirstNameControl"
+                      /> </label
+                    >
+                  }
+                  @if (correctFirstLastName) {
+                    <label class="block text-sm"
+                      >Apellido paterno corregido<input
+                        class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+                        [formControl]="correctionFirstLastNameControl"
+                      /> </label
+                    >
+                  }
+                  @if (correctSecondLastName) {
+                    <label class="block text-sm"
+                      >Apellido materno corregido<input
+                        class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+                        [formControl]="correctionSecondLastNameControl"
+                      /> </label
+                    >
+                  }
+                  @if (correctBirthDate) {
+                    <label class="block text-sm"
+                      >Fecha de nacimiento corregida<input
+                        type="date"
+                        class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+                        [formControl]="correctionBirthDateControl"
+                      /> </label
+                    >
+                  }
+                  @if (correctPhoneNumber) {
+                    <label class="block text-sm"
+                      >Teléfono corregido<app-phone-input
+                        class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+                        [formControl]="correctionPhoneNumberControl"
+                      ></app-phone-input> </label
+                    >
+                  }
                   @if (correctCurp) {
                     <label class="block text-sm"
                       >CURP corregida
@@ -715,7 +793,7 @@ interface CorrectionAddress extends Record<string, string> {
                       />
                     </fieldset>
                   }
-                  <label class="block text-sm"
+                  <label class="hidden block text-sm"
                     >Motivo de la corrección
                     <textarea
                       #correctionReasonInput
@@ -734,7 +812,6 @@ interface CorrectionAddress extends Record<string, string> {
                       [class.ring-red-500]="
                         correctionReasonModel.invalid && correctionReasonModel.touched
                       "
-                      required
                     ></textarea>
                   </label>
                   <app-input-error
@@ -748,6 +825,28 @@ interface CorrectionAddress extends Record<string, string> {
               }
               @if (voucher.status === 'RELEASED') {
                 <form class="space-y-3 rounded-lg bg-emerald-50 p-4" (ngSubmit)="cash(voucher)">
+                  <label class="block text-sm"
+                    >Forma de pago<select
+                      class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+                      [(ngModel)]="paymentMethod"
+                      name="paymentMethod"
+                    >
+                      <option value="CASH">Efectivo</option>
+                      <option value="TRANSFER">Transferencia</option>
+                    </select></label
+                  >
+                  @if (paymentMethod === 'TRANSFER') {
+                    <label class="block text-sm"
+                      >CLABE del cliente<input
+                        class="mt-1 w-full rounded-lg border border-slate-200 p-2"
+                        [(ngModel)]="paymentClabe"
+                        name="paymentClabe"
+                        inputmode="numeric"
+                        maxlength="18"
+                        autocomplete="off"
+                        placeholder="18 dÃ­gitos"
+                      /> </label
+                    >
                   <label class="block text-sm"
                     >Número de transacción del depósito manual<input
                       #transactionInput
@@ -769,7 +868,7 @@ interface CorrectionAddress extends Record<string, string> {
                         transactionControl.invalid && transactionControl.touched
                       "
                   /></label>
-                  <app-input-error
+                  <app-input-erro
                     [control]="transactionControl"
                     label="El número de transacción"
                     [customMessages]="{
@@ -778,12 +877,13 @@ interface CorrectionAddress extends Record<string, string> {
                       pattern: 'El número de transacción solo puede contener números.',
                     }"
                   ></app-input-error>
-                  <label
+                  }
+                  <label [class.hidden]="paymentMethod === 'CASH'"
                     ><input type="checkbox" [(ngModel)]="confirmed" name="confirmed" required />
                     Confirmo que el depósito se realizó fuera de MisVales</label
                   ><button
                     class="block rounded-lg bg-emerald-700 px-4 py-2 text-white"
-                    [disabled]="busy() || !confirmed"
+                    [disabled]="busy() || (paymentMethod === 'TRANSFER' && !confirmed)"
                   >
                     Feriar vale
                   </button>
@@ -893,6 +993,31 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     validators: [Validators.required, Validators.maxLength(25), Validators.pattern(/^\d+$/)],
   });
   correctionReason = '';
+  correctionFirstName = '';
+  correctionFirstLastName = '';
+  correctionSecondLastName = '';
+  correctionBirthDate = '';
+  correctionPhoneNumber = '';
+  readonly correctionFirstNameControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(120), personNameValidator],
+  });
+  readonly correctionFirstLastNameControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(120), personNameValidator],
+  });
+  readonly correctionSecondLastNameControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(120), personNameValidator],
+  });
+  readonly correctionBirthDateControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, adultBirthDateValidator],
+  });
+  readonly correctionPhoneNumberControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, phoneValidator()],
+  });
   readonly correctionCurpControl = new FormControl('', {
     nonNullable: true,
     validators: [
@@ -918,6 +1043,13 @@ export class CajaFeriadoPageComponent implements OnDestroy {
   modificationVersion = 1;
   decisionReasons: Record<string, string> = {};
   confirmed = false;
+  paymentMethod: 'CASH' | 'TRANSFER' = 'TRANSFER';
+  paymentClabe = '';
+  correctFirstName = false;
+  correctFirstLastName = false;
+  correctSecondLastName = false;
+  correctBirthDate = false;
+  correctPhoneNumber = false;
   correctCurp = false;
   correctAddress = false;
   bankName = '';
@@ -939,14 +1071,19 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     return this.session.permissions().includes('vouchers.cash_branch');
   }
   canAuthorize(): boolean {
-    return this.session
-      .permissions()
-      .some((p) =>
-        [
-          'voucher_modifications.authorize_branch',
-          'voucher_modifications.authorize_global',
-        ].includes(p),
-      );
+    const roles = this.session.roles();
+    const isManager = roles.includes('general_manager') || roles.includes('branch_manager');
+    return (
+      isManager &&
+      this.session
+        .permissions()
+        .some((p) =>
+          [
+            'voucher_modifications.authorize_branch',
+            'voucher_modifications.authorize_global',
+          ].includes(p),
+        )
+    );
   }
   searchVouchers(): void {
     const term = this.search.trim();
@@ -994,6 +1131,22 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     this.clabe = '';
     this.clabeConfirm = '';
     this.useAnotherBankAccount = false;
+    this.paymentMethod = 'TRANSFER';
+    this.paymentClabe = '';
+    this.correctFirstName = false;
+    this.correctFirstLastName = false;
+    this.correctSecondLastName = false;
+    this.correctBirthDate = false;
+    this.correctPhoneNumber = false;
+    this.correctCurp = false;
+    this.correctAddress = false;
+    this.correctionFirstNameControl.reset();
+    this.correctionFirstLastNameControl.reset();
+    this.correctionSecondLastNameControl.reset();
+    this.correctionBirthDateControl.reset();
+    this.correctionPhoneNumberControl.reset();
+    this.correctionCurpControl.reset();
+    this.correctionReason = '';
     this.api
       .detail(id)
       .subscribe({ next: (v) => this.setSelected(v), error: (e) => this.handle(e) });
@@ -1043,14 +1196,14 @@ export class CajaFeriadoPageComponent implements OnDestroy {
       });
   }
   release(v: CashVoucher): void {
-    if (this.requiresBankAccount(v) || this.useAnotherBankAccount) {
+    if (false) {
       if (!this.bankName || this.clabe !== this.clabeConfirm || this.clabe.length !== 18) {
         this.error.set(
           'Por favor, ingresa un banco válido y asegúrate de que la CLABE tenga 18 dígitos y coincida.',
         );
         return;
       }
-      this.run(this.api.release(v.id, v.lock_version, this.bankName, this.clabe));
+      this.run(this.api.release(v.id, v.lock_version));
     } else {
       this.run(this.api.release(v.id, v.lock_version));
     }
@@ -1067,15 +1220,22 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     this.clabeConfirm = '';
   }
   cash(v: CashVoucher): void {
-    this.transactionControl.markAsTouched();
-    if (this.transactionControl.invalid) {
+    if (this.paymentMethod === 'TRANSFER') {
+      this.transactionControl.markAsTouched();
+    }
+    if (this.paymentMethod === 'TRANSFER' && this.transactionControl.invalid) {
       this.error.set('Corrige el número de transacción marcado antes de feriar el vale.');
       queueMicrotask(() => this.transactionInput?.nativeElement.focus());
       return;
     }
-    if (!this.confirmed) return;
-    this.run(this.api.cash(v.id, this.transactionControl.value, v.lock_version), () => {
+    if (this.paymentMethod === 'TRANSFER' && !/^\d{18}$/.test(this.paymentClabe)) {
+      this.error.set('Captura una CLABE válida de 18 dígitos para la transferencia.');
+      return;
+    }
+    if (this.paymentMethod === 'TRANSFER' && !this.confirmed) return;
+    this.run(this.api.cash(v.id, this.paymentMethod, this.paymentMethod === 'TRANSFER' ? this.transactionControl.value : '', this.paymentMethod === 'TRANSFER' ? this.paymentClabe : '', v.lock_version), () => {
       this.transactionControl.reset();
+      this.paymentClabe = '';
       this.confirmed = false;
     });
   }
@@ -1093,13 +1253,66 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     this.transactionControl.setValue(sanitized);
   }
   requestCorrection(v: CashVoucher): void {
-    const fields: Array<'curp' | 'address'> = [];
+    const fields: Array<
+      | 'first_name'
+      | 'first_last_name'
+      | 'second_last_name'
+      | 'birth_date'
+      | 'phone_number'
+      | 'curp'
+      | 'address'
+    > = [];
     const changes: ModificationChanges = {};
+    if (this.correctFirstName) fields.push('first_name');
+    if (this.correctFirstLastName) fields.push('first_last_name');
+    if (this.correctSecondLastName) fields.push('second_last_name');
+    if (this.correctBirthDate) fields.push('birth_date');
+    if (this.correctPhoneNumber) fields.push('phone_number');
     if (this.correctCurp) fields.push('curp');
     if (this.correctAddress) fields.push('address');
     if (!fields.length) {
       this.error.set('Selecciona al menos un campo para corregir.');
       return;
+    }
+    if (this.correctFirstName) {
+      this.correctionFirstNameControl.markAsTouched();
+      if (this.correctionFirstNameControl.invalid) {
+        this.error.set('Captura el nombre corregido.');
+        return;
+      }
+      changes.first_name = this.correctionFirstNameControl.value.trim();
+    }
+    if (this.correctFirstLastName) {
+      this.correctionFirstLastNameControl.markAsTouched();
+      if (this.correctionFirstLastNameControl.invalid) {
+        this.error.set('Captura el apellido paterno corregido.');
+        return;
+      }
+      changes.first_last_name = this.correctionFirstLastNameControl.value.trim();
+    }
+    if (this.correctSecondLastName) {
+      this.correctionSecondLastNameControl.markAsTouched();
+      if (this.correctionSecondLastNameControl.invalid) {
+        this.error.set('Captura el apellido materno corregido.');
+        return;
+      }
+      changes.second_last_name = this.correctionSecondLastNameControl.value.trim();
+    }
+    if (this.correctBirthDate) {
+      this.correctionBirthDateControl.markAsTouched();
+      if (this.correctionBirthDateControl.invalid) {
+        this.error.set('Captura la fecha de nacimiento corregida.');
+        return;
+      }
+      changes.birth_date = this.correctionBirthDateControl.value;
+    }
+    if (this.correctPhoneNumber) {
+      this.correctionPhoneNumberControl.markAsTouched();
+      if (this.correctionPhoneNumberControl.invalid) {
+        this.error.set('Captura un teléfono válido con lada, por ejemplo +526181234567.');
+        return;
+      }
+      changes.phone_number = this.correctionPhoneNumberControl.value;
     }
     if (this.correctCurp) {
       this.normalizeCorrectionCurp();
@@ -1116,7 +1329,7 @@ export class CajaFeriadoPageComponent implements OnDestroy {
       return;
     }
     if (this.correctAddress) changes.address = { ...this.correctionAddress };
-    if (!this.correctionReason.trim()) {
+    if (false) {
       this.correctionReasonModel?.control.markAsTouched();
       this.error.set('Captura el motivo de la corrección.');
       queueMicrotask(() => this.correctionReasonInput?.nativeElement.focus());
@@ -1125,7 +1338,7 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     this.clear();
     this.busy.set(true);
     this.api
-      .requestModification(v.id, fields, changes, this.correctionReason.trim())
+      .requestModification(v.id, fields, changes)
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: (r) => {
@@ -1161,9 +1374,7 @@ export class CajaFeriadoPageComponent implements OnDestroy {
       .subscribe({ next: (v) => this.modifications.set(v), error: (e) => this.handle(e) });
   }
   decide(item: ModificationRequest, decision: 'AUTHORIZE' | 'REJECT'): void {
-    const reason = this.decisionReasons[item.id]?.trim();
-    if (!reason) return;
-    this.api.decide(item.id, decision, reason, item.lock_version).subscribe({
+    this.api.decide(item.id, decision, item.lock_version).subscribe({
       next: (v) => {
         this.issuedToken.set(v.token ?? '');
         this.tokenExpires.set(v.expires_at ?? '');
@@ -1225,8 +1436,27 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     this.clearPreviews();
   }
 
-  correctionFieldsLabel(fields: Array<'curp' | 'address'>): string {
-    return fields.map((field) => (field === 'curp' ? 'CURP' : 'Domicilio')).join(' y ');
+  correctionFieldsLabel(
+    fields: Array<
+      | 'first_name'
+      | 'first_last_name'
+      | 'second_last_name'
+      | 'birth_date'
+      | 'phone_number'
+      | 'curp'
+      | 'address'
+    >,
+  ): string {
+    const labels: Record<string, string> = {
+      first_name: 'Nombre',
+      first_last_name: 'Apellido paterno',
+      second_last_name: 'Apellido materno',
+      birth_date: 'Fecha de nacimiento',
+      phone_number: 'Teléfono',
+      curp: 'CURP',
+      address: 'Domicilio',
+    };
+    return fields.map((field) => labels[field] ?? field).join(' y ');
   }
 
   addressLabel(address: Record<string, string>): string {

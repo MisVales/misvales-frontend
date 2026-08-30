@@ -1,6 +1,6 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { map, Observable } from 'rxjs';
+import { forkJoin, map, Observable, switchMap } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
 
 export interface VoucherProduct {
@@ -15,6 +15,14 @@ export interface VoucherClient {
   id: string;
   client_number: string;
   full_name: string;
+}
+export interface NewClientRegistration {
+  first_name: string;
+  first_last_name: string;
+  second_last_name: string;
+  birth_date: string;
+  phone_number: string;
+  address: Record<string, string>;
 }
 export interface VoucherCalculation {
   capital: string;
@@ -162,27 +170,46 @@ export class ValesApiService {
       meta: { current_page: number; last_page: number; total: number };
     }>(`${this.config.baseUrl}/vouchers`, { params });
   }
-  crearClienteRápido(
-    firstName: string,
-    firstLastName: string,
-    secondLastName: string = '',
-  ): Observable<{ id: string; client_number: string; full_name: string }> {
+  crearClienteCompleto(
+    datos: NewClientRegistration,
+    ineFront: File,
+    addressProof: File,
+  ): Observable<VoucherClient> {
     return this.http
-      .post<{ data: { id: string; client_number: string; full_name: string } }>(
-        `${this.config.baseUrl}/voucher-clients`,
-        {
-          first_name: firstName,
-          first_last_name: firstLastName,
-          second_last_name: secondLastName,
-        },
-        { headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }) },
-      )
+      .post<{ data: { id: string } }>(`${this.config.baseUrl}/client-registration-drafts`, datos, {
+        headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }),
+      })
       .pipe(
-        map((res) => ({
-          id: res.data.id,
-          client_number: res.data.client_number,
-          full_name: res.data.full_name,
+        switchMap(({ data: draft }) =>
+          forkJoin({
+            ine: this.subirArchivo(draft.id, ineFront, 'CLIENT_INE_FRONT'),
+            address: this.subirArchivo(draft.id, addressProof, 'ADDRESS_PROOF'),
+          }).pipe(
+            switchMap(() =>
+              this.http.post<{ data: VoucherClient }>(
+                `${this.config.baseUrl}/client-registration-drafts/${draft.id}/complete`,
+                {},
+                { headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }) },
+              ),
+            ),
+          ),
+        ),
+        map(({ data }) => ({
+          id: data.id,
+          client_number: data.client_number,
+          full_name: data.full_name,
         })),
       );
+  }
+
+  private subirArchivo(draftId: string, file: File, purpose: 'CLIENT_INE_FRONT' | 'ADDRESS_PROOF') {
+    const body = new FormData();
+    body.append('file', file);
+    body.append('owner_type', 'client_registration_draft');
+    body.append('owner_id', draftId);
+    body.append('purpose', purpose);
+    return this.http.post(`${this.config.baseUrl}/media`, body, {
+      headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }),
+    });
   }
 }

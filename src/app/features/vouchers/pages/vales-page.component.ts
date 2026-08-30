@@ -6,6 +6,7 @@ import {
   inject,
   OnInit,
   signal,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -31,6 +32,7 @@ import {
   VoucherPreview,
   VoucherProduct,
   VoucherView,
+  NewClientRegistration,
 } from '../data-access/vales-api.service';
 import { HistoryPageHeaderComponent } from '../../../shared/components/history/history-page-header.component';
 import { HistoryPaginationComponent } from '../../../shared/components/history/history-pagination.component';
@@ -38,6 +40,13 @@ import { HistoryFilterBarComponent } from '../../../shared/components/history/hi
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 import { ConfirmationService } from '../../../shared/dialogs/confirmation.service';
 import { AlertService } from '../../../shared/components/alerts/alert.service';
+import { AddressFormComponent, AddressResult } from '../../../shared/components/inputs/address-form/address-form';
+import { PhoneInputComponent } from '../../../shared/components/inputs/phone-input/phone-input.component';
+import { AttachmentPreviewComponent } from '../../../shared/components/media/attachment-preview/attachment-preview.component';
+import { adultBirthDateValidator } from '../../applications/validators/adult-birth-date.validator';
+import { personNameValidator } from '../../applications/validators/person-name.validator';
+import { phoneValidator } from '../../applications/validators/phone.validator';
+import { CLIENT_INE_FRONT_FILE_RULE, PRIVATE_MEDIA_FILE_RULE, validateUploadFile } from '../../../shared/utils/files/file-validation';
 
 @Component({
   selector: 'app-vales-page',
@@ -50,6 +59,9 @@ import { AlertService } from '../../../shared/components/alerts/alert.service';
     HistoryPaginationComponent,
     HistoryFilterBarComponent,
     RefactorSelectComponent,
+    AddressFormComponent,
+    PhoneInputComponent,
+    AttachmentPreviewComponent,
   ],
   templateUrl: './vales-page.component.html',
   styleUrl: './vales-page.component.css',
@@ -69,9 +81,11 @@ export class ValesPageComponent implements OnInit {
     productVersionId: this.formBuilder.nonNullable.control(''),
   });
   protected readonly clientForm = this.formBuilder.nonNullable.group({
-    firstName: ['', [Validators.required, Validators.maxLength(120)]],
-    firstLastName: ['', [Validators.required, Validators.maxLength(120)]],
-    secondLastName: ['', [Validators.maxLength(120)]],
+    firstName: ['', [Validators.required, Validators.maxLength(120), personNameValidator]],
+    firstLastName: ['', [Validators.required, Validators.maxLength(120), personNameValidator]],
+    secondLastName: ['', [Validators.required, Validators.maxLength(120), personNameValidator]],
+    birthDate: ['', [Validators.required, adultBirthDateValidator]],
+    phoneNumber: ['', [Validators.required, phoneValidator()]],
   });
   private readonly formValue = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
@@ -96,6 +110,21 @@ export class ValesPageComponent implements OnInit {
   protected readonly historyPages = signal(1);
   protected readonly historyTotal = signal(0);
   protected readonly historyStatus = signal('');
+  protected clientAddress: Record<string, string> = {
+    street: '',
+    exterior_number: '',
+    interior_number: '',
+    neighborhood: '',
+    postal_code: '',
+    municipality: '',
+    city: '',
+    state: '',
+    country: 'MX',
+  };
+  protected clientIneFront: File | null = null;
+  protected clientAddressProof: File | null = null;
+  protected clientFileError = '';
+  @ViewChild('clientAddressForm') private clientAddressForm?: AddressFormComponent;
 
   protected readonly selectedClient = computed(
     () => this.clients().find((client) => client.id === this.formValue().clientId) ?? null,
@@ -381,7 +410,11 @@ export class ValesPageComponent implements OnInit {
   }
 
   protected openClientDialog(): void {
-    this.clientForm.reset({ firstName: '', firstLastName: '', secondLastName: '' });
+    this.clientForm.reset({ firstName: '', firstLastName: '', secondLastName: '', birthDate: '', phoneNumber: '' });
+    this.clientAddress = { street: '', exterior_number: '', interior_number: '', neighborhood: '', postal_code: '', municipality: '', city: '', state: '', country: 'MX' };
+    this.clientIneFront = null;
+    this.clientAddressProof = null;
+    this.clientFileError = '';
     this.clientDialogOpen.set(true);
   }
 
@@ -422,11 +455,27 @@ export class ValesPageComponent implements OnInit {
       this.clientForm.markAllAsTouched();
       return;
     }
-    const { firstName, firstLastName, secondLastName } = this.clientForm.getRawValue();
+    const { firstName, firstLastName, secondLastName, birthDate, phoneNumber } = this.clientForm.getRawValue();
+    if (!this.clientAddressForm?.validarYEnfocarPrimerError()) {
+      this.clientFileError = 'Completa la dirección del cliente.';
+      return;
+    }
+    if (!this.clientIneFront || !this.clientAddressProof) {
+      this.clientFileError = 'Adjunta la INE frontal y el comprobante de domicilio.';
+      return;
+    }
     this.creatingClient.set(true);
     this.clearError();
+    const registration: NewClientRegistration = {
+      first_name: firstName.trim(),
+      first_last_name: firstLastName.trim(),
+      second_last_name: secondLastName.trim(),
+      birth_date: birthDate,
+      phone_number: phoneNumber,
+      address: this.clientAddress,
+    };
     this.api
-      .crearClienteRápido(firstName.trim(), firstLastName.trim(), secondLastName.trim())
+      .crearClienteCompleto(registration, this.clientIneFront, this.clientAddressProof)
       .pipe(finalize(() => this.creatingClient.set(false)))
       .subscribe({
         next: (client) => {
@@ -437,6 +486,34 @@ export class ValesPageComponent implements OnInit {
         },
         error: (error) => this.handle(error),
       });
+  }
+
+  protected onClientAddressChange(address: AddressResult): void {
+    this.clientAddress = {
+      street: address.street,
+      exterior_number: address.exterior_number,
+      interior_number: address.interior_number ?? '',
+      neighborhood: address.neighborhood,
+      postal_code: address.zip_code,
+      municipality: address.municipality,
+      city: address.city,
+      state: address.state,
+      country: address.country || 'MX',
+    };
+  }
+
+  protected selectClientFile(event: Event, type: 'ine' | 'address'): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    const error = validateUploadFile(file, type === 'ine' ? CLIENT_INE_FRONT_FILE_RULE : PRIVATE_MEDIA_FILE_RULE);
+    if (error) {
+      this.clientFileError = error;
+      input.value = '';
+      return;
+    }
+    this.clientFileError = '';
+    if (type === 'ine') this.clientIneFront = file;
+    else this.clientAddressProof = file;
   }
 
   viewInstallments(voucher: VoucherView): void {

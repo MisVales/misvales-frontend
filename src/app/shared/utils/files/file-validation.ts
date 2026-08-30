@@ -27,6 +27,12 @@ export const PRIVATE_MEDIA_FILE_RULE: UploadFileRule = {
   maxBytes: 15 * 1024 * 1024,
 };
 
+export const CLIENT_INE_FRONT_FILE_RULE: UploadFileRule = {
+  label: IMAGE_LABEL,
+  extensions: [...IMAGE_EXTENSIONS],
+  maxBytes: 15 * 1024 * 1024,
+};
+
 export const VERIFICATION_EVIDENCE_FILE_RULE: UploadFileRule = {
   label: `${IMAGE_LABEL} o PDF`,
   extensions: [...IMAGE_EXTENSIONS, 'pdf'],

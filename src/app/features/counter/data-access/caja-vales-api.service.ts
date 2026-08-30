@@ -14,7 +14,18 @@ export interface CashVoucher extends VoucherView {
   };
   document_owner?: { owner_type: 'distributor_application'; owner_id: string } | null;
   address?: Record<string, string | null>;
-  bank_account?: { bank_name: string; account_holder_name: string; clabe_masked: string };
+  bank_account?: { bank_name: string | null; account_holder_name: string; clabe_masked: string | null };
+  client_verification?: {
+    id: string;
+    first_name: string;
+    first_last_name: string;
+    second_last_name: string | null;
+    full_name: string;
+    birth_date: string | null;
+    phone_number: string | null;
+    identity: { official_id_type: string | null; official_id_media_id: string | null };
+    address: Record<string, string | null> | null;
+  } | null;
   released_at?: string;
   cashed_at?: string;
   lock_version: number;
@@ -25,6 +36,11 @@ export interface CashVoucher extends VoucherView {
   } | null;
 }
 export interface ModificationChanges {
+  first_name?: string;
+  first_last_name?: string;
+  second_last_name?: string;
+  birth_date?: string;
+  phone_number?: string;
   curp?: string;
   address?: Record<string, string>;
 }
@@ -33,9 +49,9 @@ export interface ModificationRequest {
   voucher_id: string;
   client_id: string;
   branch_id: string;
-  requested_fields: Array<'curp' | 'address'>;
+  requested_fields: Array<'first_name' | 'first_last_name' | 'second_last_name' | 'birth_date' | 'phone_number' | 'curp' | 'address'>;
   requested_changes: ModificationChanges | null;
-  reason: string;
+  reason?: string | null;
   status: string;
   lock_version: number;
   vale?: CashVoucher;
@@ -65,29 +81,25 @@ export class CajaValesApiService {
       .get<{ data: CashVoucher }>(`${this.config.baseUrl}/cashier/vouchers/${id}`)
       .pipe(map((response) => response.data));
   }
-  release(id: string, lock_version: number, bank_name?: string, clabe?: string): Observable<CashVoucher> {
-    const payload: any = { lock_version };
-    if (bank_name && clabe) {
-      payload.bank_name = bank_name;
-      payload.clabe = clabe;
-    }
-    return this.post<CashVoucher>(`${this.config.baseUrl}/cashier/vouchers/${id}/release`, payload);
+  release(id: string, lock_version: number): Observable<CashVoucher> {
+    return this.post<CashVoucher>(`${this.config.baseUrl}/cashier/vouchers/${id}/release`, { lock_version, matches: true });
   }
-  cash(id: string, transaction: string, lockVersion: number): Observable<CashVoucher> {
+  cash(id: string, paymentMethod: 'CASH' | 'TRANSFER', transaction: string, clabe: string, lockVersion: number): Observable<CashVoucher> {
     return this.post<CashVoucher>(`${this.config.baseUrl}/cashier/vouchers/${id}/cash`, {
+      payment_method: paymentMethod,
       bank_transaction_number: transaction,
+      clabe: clabe || undefined,
       lock_version: lockVersion,
     });
   }
   requestModification(
     id: string,
-    fields: Array<'curp' | 'address'>,
+    fields: Array<'first_name' | 'first_last_name' | 'second_last_name' | 'birth_date' | 'phone_number' | 'curp' | 'address'>,
     changes: ModificationChanges,
-    reason: string,
   ): Observable<ModificationRequest> {
     return this.post<ModificationRequest>(
       `${this.config.baseUrl}/cashier/vouchers/${id}/modification-requests`,
-      { fields, changes, reason },
+      { fields, changes },
     );
   }
   listModifications(): Observable<ModificationRequest[]> {
@@ -98,12 +110,10 @@ export class CajaValesApiService {
   decide(
     id: string,
     decision: 'AUTHORIZE' | 'REJECT',
-    reason: string,
     lockVersion: number,
   ): Observable<{ request: ModificationRequest; token: string | null; expires_at: string | null }> {
     return this.post(`${this.config.baseUrl}/voucher-modification-requests/${id}/decision`, {
       decision,
-      reason,
       lock_version: lockVersion,
     });
   }
@@ -123,7 +133,6 @@ export class CajaValesApiService {
     body.append('owner_type', 'distributor_application');
     body.append('owner_id', applicationId);
     body.append('purpose', 'ADDRESS_PROOF');
-
     return this.http.post<{ data: PrivateMediaFile }>(`${this.config.baseUrl}/media`, body, {
       headers: new HttpHeaders({ 'Idempotency-Key': crypto.randomUUID() }),
     }).pipe(map((response) => response.data));
