@@ -26,9 +26,13 @@
 
     <!-- Acciones Operativas según Rol y Estado -->
     <div class="actions-toolbar">
-      @if (solicitud.estado === 'COORDINATOR_REVIEW' && canAssign) {
-        <button type="button" class="btn btn-secondary" (click)="abrirDevolucionModal()" [disabled]="facade.isLoading()">Devolver a Captura</button>
-        <a [routerLink]="['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id, 'asignar-verificador']" class="btn btn-primary">Asignar Verificador</a>
+      @if ((solicitud.estado === 'COORDINATOR_REVIEW' || solicitud.estado === 'PHYSICAL_VERIFICATION') && canAssign) {
+        @if (solicitud.estado === 'COORDINATOR_REVIEW') {
+          <button type="button" class="btn btn-secondary" (click)="abrirDevolucionModal()" [disabled]="facade.isLoading()">Devolver a Captura</button>
+        }
+        <a [routerLink]="['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id, 'asignar-verificador']" class="btn btn-primary">
+          {{ solicitud.estado === 'PHYSICAL_VERIFICATION' ? 'Cambiar Horario / Verificador' : 'Asignar Verificador' }}
+        </a>
       }
       
       @if (solicitud.estado === 'COORDINATOR_CORRECTION' && canEvaluate) {
@@ -108,15 +112,23 @@
             <h2 class="section-title">Visita de Verificación</h2>
             @for (visita of solicitud.visitas; track visita.id) {
               <div class="visita-summary">
-                <div class="visita-header">
-                  <strong>Estado de Visita:</strong> {{ visita.estado | statusLabel }}
-                  @if (visita.resultadoFisico) {
-                    <span class="badge" [class.badge-success]="visita.resultadoFisico === 'FAVORABLE'" [class.badge-danger]="visita.resultadoFisico === 'UNFAVORABLE'">
-                      {{ visita.resultadoFisico }}
-                    </span>
+                <div class="visita-header flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <strong>Estado de Visita:</strong> {{ visita.estado | statusLabel }}
+                    @if (visita.resultadoFisico) {
+                      <span class="badge" [class.badge-success]="visita.resultadoFisico === 'FAVORABLE'" [class.badge-danger]="visita.resultadoFisico === 'UNFAVORABLE'">
+                        {{ visita.resultadoFisico }}
+                      </span>
+                    }
+                  </div>
+                  @if (visita.estado === 'ASSIGNED' && canAssign) {
+                    <a [routerLink]="['/verificacion-distribuidoras/solicitudes-distribuidora', solicitud.id, 'asignar-verificador']" class="btn btn-sm btn-outline-primary">
+                      Cambiar Horario / Verificador
+                    </a>
                   }
                 </div>
                 <div class="visita-details">
+                  <p><strong>Programada para:</strong> {{ (visita.fechaProgramada | date:'medium') || 'Sin fecha' }}</p>
                   <p><strong>Asignado el:</strong> {{ visita.fechaAsignacion | date:'medium' }}</p>
                   @if (visita.fechaFin) {
                     <p><strong>Finalizada el:</strong> {{ visita.fechaFin | date:'medium' }}</p>

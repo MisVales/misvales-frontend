@@ -12,6 +12,7 @@ export interface AsignarVerificadorRequestDto {
 
 export interface AgendaVerificadorDto {
   id: string;
+  application_id?: string;
   scheduled_for: string;
   reserved_from: string;
   reserved_until: string;

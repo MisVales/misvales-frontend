@@ -242,7 +242,10 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     }
   }
 
-  private formatearValor(campo: string, valor: unknown): string {
+  readonly etiquetasSecciones = ETIQUETAS_SECCIONES;
+  readonly etiquetasCampos = ETIQUETAS_CAMPOS;
+
+  formatearValor(campo: string, valor: unknown): string {
     if (valor === null || valor === undefined || valor === '') return 'Sin dato';
     if (typeof valor === 'boolean') return valor ? 'Sí' : 'No';
     if (['birth_date', 'started_at', 'ended_at'].includes(campo) && typeof valor === 'string') {
@@ -259,7 +262,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     return VALORES_TRADUCIDOS[String(valor)] ?? String(valor);
   }
 
-  private humanizar(valor: string): string {
+  humanizar(valor: string): string {
     return valor.replaceAll('_', ' ').replace(/\b\w/g, (letra) => letra.toUpperCase());
   }
 
@@ -496,7 +499,8 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
 
 const CAMPOS_INTERNOS = new Set([
   'id', 'application_id', 'created_at', 'updated_at', 'lock_version', 'details_payload', 'reference_payload',
-  'is_current', 'is_active', 'declared_age', 'relationship', 'entry_type', 'is_family_reference',
+  'is_current', 'is_active', 'declared_age', 'entry_type', 'is_family_reference',
+  'school_name', 'school',
 ]);
 
 const ETIQUETAS_SECCIONES: Record<string, string> = {
@@ -509,7 +513,7 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
   birth_country: 'País de nacimiento', curp_masked: 'CURP', curp: 'CURP', rfc_masked: 'RFC', rfc: 'RFC', birth_date: 'Fecha de nacimiento',
   birth_place: 'Lugar de nacimiento', birth_state: 'Estado de nacimiento', birth_city: 'Ciudad de nacimiento', email: 'Correo electrónico',
   phone_number: 'Teléfono', identification_country: 'País de emisión de identificación', official_id_type: 'Tipo de identificación',
-  official_id_number_masked: 'Número de identificación', official_id_number: 'Número de identificación', relationship: 'Parentesco', school_name: 'Escuela', street: 'Calle',
+  official_id_number_masked: 'Número de identificación', official_id_number: 'Número de identificación', relationship: 'Parentesco', street: 'Calle',
   exterior_number: 'Número exterior', interior_number: 'Número interior', neighborhood: 'Colonia', postal_code: 'Código postal',
   municipality: 'Municipio', city: 'Ciudad', state: 'Estado', country: 'País', housing_tenure: 'Tipo de vivienda',
   financing_status: 'Financiamiento', width_meters: 'Frente', length_meters: 'Fondo', built_area_square_meters: 'Área construida',
@@ -520,6 +524,24 @@ const ETIQUETAS_CAMPOS: Record<string, string> = {
 };
 
 const VALORES_TRADUCIDOS: Record<string, string> = {
-  MEXICAN: 'Mexicana', MX: 'México', INE: 'Credencial para votar (INE)', SIBLING: 'Hermano/a', CHILD: 'Hijo/a',
-  OWNED: 'Propio', RENTED: 'Rentada', INFONAVIT: 'INFONAVIT', ASSET: 'Bien', LIABILITY: 'Pasivo',
+  // Nacionalidad y Países
+  MEXICAN: 'Mexicana', FOREIGN: 'Extranjera', MX: 'México', US: 'Estados Unidos', HT: 'Haití',
+  CO: 'Colombia', VE: 'Venezuela', GT: 'Guatemala', HN: 'Honduras', SV: 'El Salvador', NI: 'Nicaragua', CU: 'Cuba',
+  // Documentos
+  INE: 'Credencial para votar (INE)', PASSPORT: 'Pasaporte', PROFESSIONAL_LICENSE: 'Cédula Profesional', OTHER: 'Otro',
+  // Parentescos
+  SPOUSE: 'Esposo(a)', PARTNER: 'Pareja', CHILD: 'Hijo(a)', FATHER: 'Padre', MOTHER: 'Madre', SIBLING: 'Hermano(a)',
+  // Domicilio - Tenencia
+  OWNED: 'Propia', RENTED: 'Rentada', BORROWED: 'Prestada',
+  // Domicilio - Financiamiento
+  PAID: 'Pagada', MORTGAGE: 'Hipotecada', LOAN: 'Préstamo', INFONAVIT: 'INFONAVIT', NOT_APPLICABLE: 'No Aplica',
+  // Vehículos
+  AUTOMOBILE: 'Automóvil', MOTORCYCLE: 'Motocicleta', TRUCK: 'Camioneta / Camión',
+  FINANCED: 'Financiado', COMPANY: 'De empresa',
+  // Patrimonio
+  ASSET: 'Bien', LIABILITY: 'Deuda', ACTIVE_COMMITMENT: 'Compromiso activo',
+  // Créditos
+  CARTA: 'Carta', ESTADO_DE_CUENTA: 'Estado de cuenta',
+  // Booleanos
+  true: 'Sí', false: 'No',
 };
