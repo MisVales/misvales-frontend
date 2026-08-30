@@ -868,7 +868,7 @@ interface CorrectionAddress extends Record<string, string> {
                         transactionControl.invalid && transactionControl.touched
                       "
                   /></label>
-                  <app-input-erro
+                  <app-input-error
                     [control]="transactionControl"
                     label="El número de transacción"
                     [customMessages]="{
