@@ -5,7 +5,7 @@ import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distr
 import { ListaComprobacionVisitaComponent, PuntoComprobacion } from '../../components/lista-comprobacion-visita/lista-comprobacion-visita.component';
 import { CapturaEvidenciaComponent } from '../../components/captura-evidencia/captura-evidencia.component';
 import { GaleriaEvidenciasComponent } from '../../components/galeria-evidencias/galeria-evidencias.component';
-import { EditorDiferenciasComponent, DiferenciaPayload } from '../../components/editor-diferencias/editor-diferencias.component';
+import { EditorDiferenciasComponent, DiferenciaPayload, DiferenciaRelacionada } from '../../components/editor-diferencias/editor-diferencias.component';
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
@@ -203,6 +203,11 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
         Object.entries(registro as Record<string, unknown>).forEach(([campo, valor]) => {
           if (CAMPOS_INTERNOS.has(campo)) return;
           const id = `${seccion}.${indice}.${campo}`;
+          const diferencia = diferencias.find((item) =>
+            item.seccion === seccion
+            && item.campo === campo
+            && (!item.registroId || item.registroId === (registro as Record<string, unknown>)['id'])
+          );
           const declarado = this.formatearValor(campo, valor);
           puntos.push({
             id,
@@ -210,6 +215,8 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
             campo,
             etiqueta: ETIQUETAS_CAMPOS[campo] ?? this.humanizar(campo),
             datoDeclarado: declarado,
+            datoObservado: diferencia ? this.formatearValor(campo, diferencia.datoObservado) : undefined,
+            descripcion: diferencia?.descripcion,
             grupo: ETIQUETAS_SECCIONES[seccion] ?? this.humanizar(seccion),
             registro: this.etiquetaRegistro(seccion, registro as Record<string, unknown>, indice),
             registroId: typeof (registro as Record<string, unknown>)['id'] === 'string' ? String((registro as Record<string, unknown>)['id']) : undefined,
@@ -311,13 +318,29 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     const dif = this.facade.visitaSeleccionada()?.diferencias.find(
       (d) => d.seccion === punto.seccion && d.campo === punto.campo && (!d.registroId || d.registroId === punto.registroId)
     );
+    const relacionadas: DiferenciaRelacionada[] = punto.campo === 'nationality'
+      ? this.puntosComprobacion()
+        .filter((item) => item.seccion === punto.seccion && item.registroId === punto.registroId && ['birth_country', 'identification_country'].includes(item.campo))
+        .map((item) => {
+          const relatedDifference = this.facade.visitaSeleccionada()?.diferencias.find(
+            (difference) => difference.seccion === item.seccion && difference.campo === item.campo && (!difference.registroId || difference.registroId === item.registroId),
+          );
+          return {
+            campo: item.campo,
+            etiqueta: item.etiqueta,
+            datoDeclarado: item.datoDeclarado,
+            datoObservado: relatedDifference?.datoObservado ?? '',
+          };
+        })
+      : [];
     return {
       seccion: punto.seccion,
       campo: punto.campo,
       etiqueta: punto.grupo + ' · ' + punto.etiqueta,
       datoDeclarado: punto.datoDeclarado,
       datoObservado: dif?.datoObservado || '',
-      descripcion: dif?.descripcion || ''
+      descripcion: dif?.descripcion || '',
+      relacionadas,
     };
   });
 
@@ -332,17 +355,19 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     this.puntoDiferencia.set(null);
   }
 
-  async onGuardarDiferencia(diferencia: DiferenciaPayload) {
+  async onGuardarDiferencia(payload: DiferenciaPayload | DiferenciaPayload[]) {
     const visita = this.facade.visitaSeleccionada();
     if (!visita) return;
 
     const punto = this.puntoDiferencia();
+    const diferencias = Array.isArray(payload) ? payload : [payload];
+    const keys = new Set(diferencias.map((diferencia) => `${diferencia.seccion}|${diferencia.campo}`));
     const registroId = punto?.registroId;
     const registroNombre = punto?.registro;
 
     // Filter out previous difference for this specific field to allow editing without duplicates
     const diferenciasFiltradas = visita.diferencias.filter(
-      (d) => !(d.seccion === diferencia.seccion && d.campo === diferencia.campo && (!d.registroId || d.registroId === registroId))
+      (d) => !(keys.has(`${d.seccion}|${d.campo}`) && (!d.registroId || d.registroId === registroId))
     );
 
     const nuevasDiferencias = [
@@ -355,15 +380,15 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
         registro_id: d.registroId,
         registro_nombre: d.registroNombre
       })),
-      {
+      ...diferencias.map((diferencia) => ({
         seccion: diferencia.seccion,
         campo: diferencia.campo,
         dato_declarado: diferencia.datoDeclarado,
         dato_observado: diferencia.datoObservado,
         descripcion: diferencia.descripcion,
         registro_id: registroId,
-        registro_nombre: registroNombre
-      }
+        registro_nombre: registroNombre,
+      }))
     ];
 
     const success = await this.facade.actualizarVisita(visita.id, {
@@ -373,10 +398,12 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
 
     if (success) {
       if (punto) {
-        this.puntosComprobacion.update((puntos) => puntos.map((item) => item.id === punto.id
-          ? { ...item, estado: 'DIFERENCIA', diferenciaRegistrada: true }
-          : item
-        ));
+        this.puntosComprobacion.update((puntos) => puntos.map((item) => {
+          const cambio = diferencias.find((diferencia) => diferencia.seccion === item.seccion && diferencia.campo === item.campo && item.registroId === registroId);
+          return cambio
+            ? { ...item, estado: 'DIFERENCIA', diferenciaRegistrada: true, datoObservado: this.formatearValor(item.campo, cambio.datoObservado), descripcion: cambio.descripcion }
+            : item;
+        }));
       }
       this.alerts.showAlert('Diferencia guardada exitosamente.', 'success');
       this.cerrarEditorDiferencia();
@@ -387,8 +414,12 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     const visita = this.facade.visitaSeleccionada();
     if (!visita) return;
 
+    const camposAEliminar = new Set([
+      punto.campo,
+      ...(punto.campo === 'nationality' ? ['birth_country', 'identification_country'] : []),
+    ]);
     const nuevasDiferencias = visita.diferencias
-      .filter((d) => !(d.seccion === punto.seccion && d.campo === punto.campo && (!d.registroId || d.registroId === punto.registroId)))
+      .filter((d) => !(d.seccion === punto.seccion && camposAEliminar.has(d.campo) && (!d.registroId || d.registroId === punto.registroId)))
       .map((d) => ({
         seccion: d.seccion,
         campo: d.campo,
@@ -405,9 +436,10 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     });
 
     if (success) {
-      this.puntosComprobacion.update((puntos) => puntos.map((item) => item.id === punto.id
-        ? { ...item, estado: 'COMPROBADO', diferenciaRegistrada: false }
-        : item
+      this.puntosComprobacion.update((puntos) => puntos.map((item) =>
+        item.seccion === punto.seccion && camposAEliminar.has(item.campo) && item.registroId === punto.registroId
+          ? { ...item, estado: 'COMPROBADO', diferenciaRegistrada: false, datoObservado: undefined, descripcion: undefined }
+          : item,
       ));
       this.alerts.showAlert('Diferencia revertida; campo marcado como correcto.', 'info');
     }

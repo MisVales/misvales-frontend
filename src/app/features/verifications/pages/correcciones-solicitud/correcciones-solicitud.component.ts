@@ -16,6 +16,8 @@ import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
+import { PhoneInputComponent } from '../../../../shared/components/inputs/phone-input/phone-input.component';
+import { ISO_COUNTRIES } from '../../../../shared/utils/data/iso-countries';
 
 const MIN_BIRTH_DATE = '1900-01-01';
 
@@ -37,7 +39,7 @@ export interface PasoCorreccion {
 @Component({
   selector: 'app-correcciones-solicitud',
   standalone: true,
-  imports: [CommonModule, ComparadorCorreccionesComponent, FormsModule, RefactorSelectComponent],
+  imports: [CommonModule, ComparadorCorreccionesComponent, FormsModule, RefactorSelectComponent, PhoneInputComponent],
   templateUrl: './correcciones-solicitud.component.html',
   styleUrl: './correcciones-solicitud.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -74,6 +76,14 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   readonly maxAdultDate = maxAdultBirthDate();
   readonly maxDate = toDateInputValue(new Date());
   readonly maxModelYear = String(new Date().getFullYear() + 1);
+  readonly countryOptions = ISO_COUNTRIES.map((country) => ({
+    value: country.code,
+    label: `${country.name} (${country.code})`,
+  }));
+  readonly nationalityOptions = [
+    { value: 'MEXICAN', label: 'Mexicana' },
+    { value: 'FOREIGN', label: 'Extranjera' },
+  ];
 
   async ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -170,11 +180,13 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     this.registroSeleccionado.set(diferencia.registroId || '');
     let initialVal = diferencia.datoObservado ?? diferencia.datoDeclarado ?? '';
     if (this.isCountryField(diferencia.campo)) {
+      initialVal = this.normalizarPais(initialVal);
       if (['México', 'Mexicana', 'Mexico', 'MX'].includes(initialVal)) initialVal = 'MX';
       else if (['Haití', 'Haiti', 'HT'].includes(initialVal)) initialVal = 'HT';
       else if (['Estados Unidos', 'USA', 'US'].includes(initialVal)) initialVal = 'US';
     }
     if (this.isNationalityField(diferencia.campo)) {
+      initialVal = this.normalizarNacionalidad(initialVal);
       if (['Mexicana', 'Mexicano', 'México', 'MEXICAN'].includes(initialVal)) initialVal = 'MEXICAN';
       else if (['Extranjera', 'Extranjero', 'FOREIGN'].includes(initialVal)) initialVal = 'FOREIGN';
     }
@@ -278,7 +290,20 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   }
 
   onValueChange(value: unknown): void {
-    this.valorCorregido.set(value === null || value === undefined ? '' : String(value));
+    const nextValue = value === null || value === undefined ? '' : String(value);
+    this.valorCorregido.set(
+      this.isIntegerField(this.diferenciaSeleccionada()?.campo)
+        ? nextValue.replace(/\D/g, '').slice(0, 4)
+        : this.isNumericField(this.diferenciaSeleccionada()?.campo)
+          ? this.sanitizarNumero(nextValue)
+          : nextValue,
+    );
+  }
+
+  private sanitizarNumero(value: string): string {
+    const cleaned = value.replace(/[^\d.]/g, '');
+    const [integer, ...decimals] = cleaned.split('.');
+    return decimals.length ? `${integer}.${decimals.join('')}` : integer;
   }
 
   async aplicarCorreccion() {
@@ -293,6 +318,11 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
 
     let nuevoValor = this.valorCorregido().trim();
     const campo = dif.campo === 'curp_masked' ? 'curp' : dif.campo;
+
+    if (!nuevoValor && (this.isIntegerField(campo) || this.isNumericField(campo))) {
+      this.alerts.showAlert('Captura un valor numérico antes de guardar la corrección.', 'warning');
+      return;
+    }
 
     // Specific field validations
     if (nuevoValor) {
@@ -377,6 +407,26 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     const raw = String(value ?? '').trim();
     const digits = raw.replace(/\D/g, '');
     return raw.startsWith('+') ? digits.slice(-10) : digits.slice(0, 10);
+  }
+
+  private normalizarPais(value: unknown): string {
+    const raw = String(value ?? '').trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(raw)) return raw;
+    const codeInLabel = raw.match(/\(([A-Z]{2})\)$/)?.[1];
+    if (codeInLabel) return codeInLabel;
+    const comparable = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const option = ISO_COUNTRIES.find((country) => {
+      const countryName = country.name.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return countryName === comparable || comparable.includes(countryName) || countryName.includes(comparable);
+    });
+    return option?.code ?? raw;
+  }
+
+  private normalizarNacionalidad(value: unknown): string {
+    const raw = String(value ?? '').trim().toUpperCase();
+    if (raw === 'MEXICAN' || raw === 'MEXICANA' || raw === 'MEXICANO' || raw === 'MX' || raw.includes('XICO')) return 'MEXICAN';
+    if (raw === 'FOREIGN' || raw.includes('EXTRANJ')) return 'FOREIGN';
+    return raw;
   }
 
   private fechaEsValida(campo: string, value: string): boolean {

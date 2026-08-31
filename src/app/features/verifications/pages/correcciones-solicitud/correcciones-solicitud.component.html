@@ -131,12 +131,13 @@
                           }
 
                           <!-- Comparación Visual Antiguo vs Nuevo -->
-                          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                            <div class="bg-white rounded-lg p-3 border border-red-100">
+                          <div class="difference-strip">
+                            <div class="difference-strip-value difference-strip-value--old">
                               <span class="text-xs font-bold text-red-600 block mb-1">Dato Declarado (Original)</span>
                               <span class="text-sm font-semibold text-gray-800 break-words">{{ dif.datoDeclarado || 'Sin dato registrado' }}</span>
                             </div>
-                            <div class="bg-white rounded-lg p-3 border border-blue-100">
+                            <span class="difference-strip-arrow" aria-hidden="true">→</span>
+                            <div class="difference-strip-value difference-strip-value--new">
                               <span class="text-xs font-bold text-blue-600 block mb-1">Dato Observado (Verificador)</span>
                               <span class="text-sm font-semibold text-gray-800 break-words">{{ dif.datoObservado || 'Sin dato' }}</span>
                             </div>
@@ -275,7 +276,7 @@
         </p>
 
         <!-- Comparador Dato Declarado vs Dato Observado -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+        <div class="difference-strip modal-difference-strip" aria-label="Historial del dato">
           <div class="form-group readonly-group">
             <label class="text-xs font-bold text-red-600">Dato Declarado (Original)</label>
             <input
@@ -285,6 +286,7 @@
               disabled
             />
           </div>
+          <span class="difference-strip-arrow" aria-hidden="true">→</span>
           <div class="form-group readonly-group">
             <label class="text-xs font-bold text-blue-600">Dato Observado (Verificador)</label>
             <input
@@ -337,29 +339,26 @@
 
           <!-- Select para Nacionalidad -->
           @else if (isNationalityField(dif.campo)) {
-            <select
+            <refactor-select
+              [options]="nationalityOptions"
+              placeholder="Selecciona nacionalidad"
               class="form-control"
               [ngModel]="valorCorregido()"
               (ngModelChange)="valorCorregido.set($event)"
               [disabled]="facade.isLoading()"
-            >
-              <option value="MEXICAN">Mexicana</option>
-              <option value="FOREIGN">Extranjera</option>
-            </select>
+            ></refactor-select>
           }
 
           <!-- Select para País -->
           @else if (isCountryField(dif.campo)) {
-            <select
+            <refactor-select
+              [options]="countryOptions"
+              placeholder="Selecciona un país"
               class="form-control"
               [ngModel]="valorCorregido()"
               (ngModelChange)="valorCorregido.set($event)"
               [disabled]="facade.isLoading()"
-            >
-              @for (pais of paises; track pais.code) {
-                <option [value]="pais.code">{{ pais.name }}</option>
-              }
-            </select>
+            ></refactor-select>
           }
 
           <!-- Select para Tipo de Identificación -->
@@ -516,7 +515,7 @@
           <!-- Campos numéricos -->
           @else if (isIntegerField(dif.campo)) {
             <input
-              type="number"
+              type="text"
               class="form-control"
               min="1990"
               [max]="maxModelYear"
@@ -532,7 +531,7 @@
 
           @else if (isNumericField(dif.campo)) {
             <input
-              type="number"
+              type="text"
               class="form-control"
               min="0"
               step="0.01"
@@ -575,7 +574,7 @@
 
           <!-- Teléfono con 10 dígitos -->
           @else if (dif.campo === 'phone_number') {
-            <input
+            <app-phone-input
               type="tel"
               class="form-control"
               maxlength="10"

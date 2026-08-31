@@ -103,6 +103,72 @@
   word-break: break-all;
 }
 
+.difference-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.difference-strip-value {
+  min-width: 0;
+}
+
+.difference-strip-value > span:first-child {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.difference-strip-value > span:last-child {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #475569;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.difference-strip-value--new > span:last-child {
+  color: #1a4d2e;
+}
+
+.difference-strip-arrow {
+  color: #94a3b8;
+  font-size: 1.2rem;
+}
+
+.modal-difference-strip {
+  margin-bottom: 1rem;
+}
+
+.modal-difference-strip .readonly-group {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.modal-difference-strip .readonly-group label {
+  margin-bottom: 0.2rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.modal-difference-strip .readonly-value {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 0.86rem;
+}
+
 /* Modal Overlay */
 .modal-overlay {
   position: fixed;

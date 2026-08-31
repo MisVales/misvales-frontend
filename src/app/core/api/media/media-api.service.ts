@@ -45,4 +45,10 @@ export class MediaApiService {
       responseType: 'blob',
     });
   }
+
+  preview(mediaId: string): Observable<Blob> {
+    return this.http.get(`${this.apiConfig.baseUrl}/media/${mediaId}/preview`, {
+      responseType: 'blob',
+    });
+  }
 }

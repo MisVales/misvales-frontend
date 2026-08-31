@@ -13,6 +13,84 @@
   color: var(--text-primary, #1f2937);
 }
 
+.comparison-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  background: #f8fafc;
+}
+
+.comparison-value {
+  min-width: 0;
+}
+
+.comparison-value span {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: #64748b;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.comparison-value strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #1f2937;
+  font-size: 0.9rem;
+}
+
+.comparison-value--new strong {
+  color: #1a4d2e;
+}
+
+.comparison-arrow {
+  color: #94a3b8;
+  font-size: 1.25rem;
+}
+
+.comparison-input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  outline: 0;
+}
+
+.related-fields {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-left: 3px solid #386641;
+  border-radius: 0.35rem;
+  background: #f4f8f4;
+}
+
+.related-fields-title {
+  margin: 0;
+  color: #386641;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.related-field {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  color: #374151;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

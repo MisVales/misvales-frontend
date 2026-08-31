@@ -1,26 +1,30 @@
 <div class="alert-viewport" aria-label="Avisos de la aplicación">
   @for (alert of alertService.alerts(); track alert.id) {
-    <div 
+    <div
       class="app-toast"
+      [class.app-toast--success]="alert.type === 'success'"
+      [class.app-toast--error]="alert.type === 'error'"
+      [class.app-toast--warning]="alert.type === 'warning'"
+      [class.app-toast--info]="alert.type === 'info'"
       [class.app-toast--closing]="alert.closing"
       [ngClass]="getColorClasses(alert.type)"
       [attr.role]="alert.type === 'error' ? 'alert' : 'status'"
       [attr.aria-live]="alert.type === 'error' ? 'assertive' : 'polite'"
       aria-atomic="true"
     >
-      <lucide-icon 
-        [name]="getIconName(alert.type)" 
+      <lucide-icon
+        [name]="getIconName(alert.type)"
         class="w-5 h-5 flex-shrink-0 mt-0.5"
         [ngClass]="getIconColorClass(alert.type)"
         aria-hidden="true"
       ></lucide-icon>
-      
+
       <div class="toast-copy">
         <strong>{{ title(alert.type) }}</strong>
         <p>{{ alert.message }}</p>
       </div>
 
-      <button 
+      <button
         type="button"
         (click)="alertService.removeAlert(alert.id)"
         [attr.aria-label]="'Cerrar aviso: ' + alert.message"
@@ -28,7 +32,13 @@
       >
         <lucide-icon name="x" class="w-4 h-4" aria-hidden="true"></lucide-icon>
       </button>
-      @if (alert.duration > 0) { <span class="toast-progress" [style.--alert-duration.ms]="alert.duration" aria-hidden="true"></span> }
+      @if (alert.duration > 0) {
+        <span
+          class="toast-progress"
+          [style.--alert-duration.ms]="alert.duration"
+          aria-hidden="true"
+        ></span>
+      }
     </div>
   }
 </div>

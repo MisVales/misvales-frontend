@@ -57,5 +57,6 @@ describe('AlertComponent accessibility', () => {
 
     const liveRegion = fixture.nativeElement.querySelector('[role="status"]') as HTMLElement;
     expect(liveRegion.getAttribute('aria-live')).toBe('polite');
+    expect(liveRegion.classList.contains('app-toast--success')).toBe(true);
   });
 });

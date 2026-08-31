@@ -2,21 +2,22 @@
   <h3 id="editor-diferencia-titulo" class="editor-title">Registrar diferencia</h3>
   <p class="editor-helper">{{ contexto().etiqueta }}</p>
   
-  <!-- Comparador Visual Dato Anterior vs Dato Nuevo -->
-  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-    <div class="bg-red-50/70 p-3 rounded-lg border border-red-100">
+  <!-- Comparador compacto del dato actual y observado -->
+  <div class="comparison-strip" aria-label="Comparación del dato">
+    <div class="comparison-value comparison-value--old">
       <span class="text-[11px] font-bold text-red-600 block mb-0.5 uppercase tracking-wide">Dato Anterior (Declarado)</span>
       <input
-        class="form-control bg-gray-100 text-sm font-semibold text-gray-800"
+        class="comparison-input"
         [value]="contexto().datoDeclarado || 'Sin dato'"
         aria-label="Dato declarado actual"
         disabled
       />
     </div>
-    <div class="bg-blue-50/70 p-3 rounded-lg border border-blue-100">
+    <span class="comparison-arrow" aria-hidden="true">→</span>
+    <div class="comparison-value comparison-value--new">
       <span class="text-[11px] font-bold text-blue-600 block mb-0.5 uppercase tracking-wide">Dato Nuevo (Observado en Visita)</span>
       <input
-        class="form-control bg-gray-100 text-sm font-semibold text-blue-900"
+        class="comparison-input"
         [value]="formatearValorObservado() || 'Selecciona o captura el valor abajo...'"
         aria-label="Dato observado"
         disabled
@@ -42,31 +43,48 @@
 
     <!-- Nationality select -->
     @else if (isNationalityField()) {
-      <select
+      <refactor-select
+        [options]="nationalityOptions"
+        placeholder="Selecciona nacionalidad"
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
-        <option value="">Selecciona nacionalidad</option>
-        <option value="MEXICAN">Mexicana</option>
-        <option value="FOREIGN">Extranjera</option>
-      </select>
+      </refactor-select>
+
+      @if (contexto().relacionadas?.length) {
+        <div class="related-fields">
+          <p class="related-fields-title">Confirma también el país de nacimiento y el país emisor de la identificación.</p>
+          @for (related of contexto().relacionadas; track related.campo) {
+            <label class="related-field">
+              <span>{{ related.etiqueta }}</span>
+              <refactor-select
+                [options]="countryOptions"
+                placeholder="Selecciona un país"
+                size="compact"
+                [ngModel]="valorRelacionado(related.campo)"
+                (ngModelChange)="onValorRelacionadoChange(related.campo, $event)"
+                [disabled]="isProcessing()"
+              ></refactor-select>
+            </label>
+          }
+        </div>
+      }
     }
 
     <!-- Country select -->
     @else if (isCountryField()) {
-      <select
+      <refactor-select
+        [options]="countryOptions"
+        placeholder="Selecciona un país"
         class="form-control"
         [ngModel]="datoObservado()"
         (ngModelChange)="datoObservado.set($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona país...</option>
-        @for (pais of paises; track pais.code) {
-          <option [value]="pais.code">{{ pais.name }}</option>
-        }
-      </select>
+      </refactor-select>
     }
 
     <!-- Official ID Type select -->
@@ -233,7 +251,7 @@
     <!-- Numeric fields -->
     @else if (isIntegerField()) {
       <input
-        type="number"
+        type="text"
         class="form-control"
         min="1990"
         [max]="maxModelYear"
@@ -249,7 +267,7 @@
 
     @else if (isNumericField()) {
       <input
-        type="number"
+        type="text"
         class="form-control"
         min="0"
         step="0.01"
@@ -292,7 +310,7 @@
 
     <!-- Phone input with 10 digits -->
     @else if (campo() === 'phone_number') {
-      <input
+      <app-phone-input
         type="tel"
         class="form-control"
         maxlength="10"

@@ -1059,6 +1059,13 @@ export class AuditoriaApiService {
     }
     if (typeof value === 'string') {
       if (value === '') return '(vacío)';
+      if (fieldName === 'fields') {
+        return value
+          .split(',')
+          .map((field) => this.getFieldLabel(field.trim()))
+          .filter(Boolean)
+          .join(', ');
+      }
       if (VALUE_LABELS_ES[value]) return VALUE_LABELS_ES[value];
       if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/.test(value)) {
         const date = new Date(value);
@@ -1139,6 +1146,9 @@ export class AuditoriaApiService {
   }
 
   extractActualChanges(audit: AuditRecord): ChangedFieldDetail[] {
+    if (['PRIVATE_MEDIA_DOWNLOADED', 'VERIFICATION_EVIDENCE_DOWNLOADED'].includes(audit.event_name)) {
+      return [];
+    }
     let prevRaw: Record<string, unknown> = {};
     let nextRaw: Record<string, unknown> = {};
 
@@ -1200,8 +1210,6 @@ export class AuditoriaApiService {
       'lock_version',
       'application_lock_version',
       'fields_updated',
-      'fields',
-      'reason_code',
       'changes',
     ]);
 
@@ -1211,9 +1219,11 @@ export class AuditoriaApiService {
       ...Object.keys(nextRaw).filter((k) => !envelopeKeys.has(k) && (!hasVerifierName || k !== 'verifier_id')),
     ]);
 
+    const deletionEvent = this.isDeletionEvent(audit.event_name);
     const changes: ChangedFieldDetail[] = this.extractStructuredChanges(
       prevRaw['changes'],
       nextRaw['changes'],
+      deletionEvent,
     );
 
     allKeys.forEach((key) => {
@@ -1228,7 +1238,7 @@ export class AuditoriaApiService {
           newValue: this.formatValue(newVal, key),
           rawNew: newVal,
           isCreation: oldVal === undefined || oldVal === null,
-          isDeletion: newVal === undefined || newVal === null,
+          isDeletion: deletionEvent && (newVal === undefined || newVal === null),
         });
       }
     });
@@ -1236,7 +1246,7 @@ export class AuditoriaApiService {
     return changes;
   }
 
-  private extractStructuredChanges(previous: unknown, next: unknown): ChangedFieldDetail[] {
+  private extractStructuredChanges(previous: unknown, next: unknown, deletionEvent = false): ChangedFieldDetail[] {
     const previousEntries = this.toStructuredChangeEntries(previous);
     const nextEntries = this.toStructuredChangeEntries(next);
     const fields = new Set([...previousEntries.keys(), ...nextEntries.keys()]);
@@ -1263,11 +1273,15 @@ export class AuditoriaApiService {
         newValue: this.formatValue(after, field),
         rawNew: after,
         isCreation: before === undefined || before === null,
-        isDeletion: after === undefined || after === null,
+        isDeletion: deletionEvent && (after === undefined || after === null),
       });
     });
 
     return changes;
+  }
+
+  private isDeletionEvent(eventName: string): boolean {
+    return eventName.endsWith('_REMOVED') || eventName.endsWith('_DELETED') || eventName === 'CLIENT_DELETED';
   }
 
   private toStructuredChangeEntries(

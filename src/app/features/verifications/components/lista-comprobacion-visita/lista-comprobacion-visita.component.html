@@ -45,6 +45,15 @@
                     <span class="label">Declarado</span>
                     <span class="value">{{ punto.datoDeclarado || 'Sin dato' }}</span>
                   </div>
+                  @if (punto.estado === 'DIFERENCIA' && punto.diferenciaRegistrada) {
+                    <div class="punto-cambio" aria-label="Cambio registrado">
+                      <span>Actual</span>
+                      <strong>{{ punto.datoDeclarado || 'Sin dato' }}</strong>
+                      <span class="punto-cambio-arrow" aria-hidden="true">→</span>
+                      <span>Nuevo</span>
+                      <strong class="punto-cambio-nuevo">{{ punto.datoObservado || 'Sin dato observado' }}</strong>
+                    </div>
+                  }
                 </div>
 
                 @if (punto.estado === 'DIFERENCIA' && punto.diferenciaRegistrada) {

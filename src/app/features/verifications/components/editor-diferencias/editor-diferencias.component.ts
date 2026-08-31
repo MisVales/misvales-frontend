@@ -2,6 +2,9 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, output, si
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
+import { PhoneInputComponent } from '../../../../shared/components/inputs/phone-input/phone-input.component';
+import { RefactorSelectComponent, RefactorSelectOption } from '../../../../shared/components/inputs/refactor-select/refactor-select.component';
+import { ISO_COUNTRIES } from '../../../../shared/utils/data/iso-countries';
 
 const MIN_BIRTH_DATE = '1900-01-01';
 
@@ -23,6 +26,13 @@ export interface DiferenciaPayload {
   descripcion: string;
 }
 
+export interface DiferenciaRelacionada {
+  campo: string;
+  etiqueta: string;
+  datoDeclarado: string;
+  datoObservado?: string;
+}
+
 export interface DiferenciaContexto {
   seccion: string;
   campo: string;
@@ -30,12 +40,13 @@ export interface DiferenciaContexto {
   datoDeclarado: string;
   datoObservado?: string;
   descripcion?: string;
+  relacionadas?: DiferenciaRelacionada[];
 }
 
 @Component({
   selector: 'app-editor-diferencias',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PhoneInputComponent, RefactorSelectComponent],
   templateUrl: './editor-diferencias.component.html',
   styleUrl: './editor-diferencias.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -47,25 +58,17 @@ export class EditorDiferenciasComponent {
   isProcessing = input<boolean>(false);
   
   // Output
-  guardar = output<DiferenciaPayload>();
+  guardar = output<DiferenciaPayload | DiferenciaPayload[]>();
   cancelar = output<void>();
 
   datoObservado = signal<string>('');
   descripcion = signal<string>('');
+  readonly valoresRelacionados = signal<Record<string, string>>({});
   submitted = signal<boolean>(false);
   readonly minBirthDate = MIN_BIRTH_DATE;
   readonly maxAdultDate = maxAdultBirthDate();
   readonly maxDate = toDateInputValue(new Date());
   readonly maxModelYear = String(new Date().getFullYear() + 1);
-
-  constructor() {
-    // When contexto is updated, populate inputs
-    const ctx = this.contexto;
-    // We can also sync via effect in constructor
-    import('@angular/core').then(({ effect }) => {
-      // noop
-    });
-  }
 
   ngOnInit() {
     const ctx = this.contexto();
@@ -73,12 +76,19 @@ export class EditorDiferenciasComponent {
       this.datoObservado.set(
         ctx.campo === 'phone_number'
           ? this.normalizarTelefonoNacional(ctx.datoObservado)
+          : this.isNationalityContext(ctx.campo)
+            ? this.normalizarNacionalidad(ctx.datoObservado)
+            : this.isCountryContext(ctx.campo)
+              ? this.normalizarPais(ctx.datoObservado)
           : ctx.datoObservado,
       );
     }
     if (ctx.descripcion) {
       this.descripcion.set(ctx.descripcion);
     }
+    this.valoresRelacionados.set(Object.fromEntries(
+      (ctx.relacionadas ?? []).map((relacionada) => [relacionada.campo, relacionada.datoObservado ?? '']),
+    ));
   }
 
   // Field type helpers
@@ -96,6 +106,15 @@ export class EditorDiferenciasComponent {
     { code: 'NI', name: 'Nicaragua (NI)' },
     { code: 'CU', name: 'Cuba (CU)' },
   ];
+
+  readonly nationalityOptions: readonly RefactorSelectOption[] = [
+    { value: 'MEXICAN', label: 'Mexicana' },
+    { value: 'FOREIGN', label: 'Extranjera' },
+  ];
+  readonly countryOptions: readonly RefactorSelectOption[] = ISO_COUNTRIES.map((country) => ({
+    value: country.code,
+    label: `${country.name} (${country.code})`,
+  }));
 
   isDateField(): boolean {
     return ['birth_date', 'started_at', 'ended_at'].includes(this.campo());
@@ -206,7 +225,41 @@ export class EditorDiferenciasComponent {
   }
 
   onValueChange(value: unknown): void {
-    this.datoObservado.set(value === null || value === undefined ? '' : String(value));
+    const nextValue = value === null || value === undefined ? '' : String(value);
+    this.datoObservado.set(
+      this.isIntegerField()
+        ? nextValue.replace(/\D/g, '').slice(0, 4)
+        : this.isNumericField()
+          ? this.sanitizarNumero(nextValue)
+          : nextValue,
+    );
+    if (this.isNationalityField()) {
+      const related = this.contexto().relacionadas ?? [];
+      if (nextValue === 'MEXICAN') {
+        this.valoresRelacionados.update(() => Object.fromEntries(related.map((item) => [item.campo, 'MX'])));
+      } else if (nextValue === 'FOREIGN') {
+        this.valoresRelacionados.update((values) => Object.fromEntries(
+          related.map((item) => [item.campo, values[item.campo] === 'MX' ? '' : values[item.campo] ?? '']),
+        ));
+      }
+    }
+  }
+
+  valorRelacionado(campo: string): string {
+    return this.valoresRelacionados()[campo] ?? '';
+  }
+
+  onValorRelacionadoChange(campo: string, value: unknown): void {
+    this.valoresRelacionados.update((values) => ({
+      ...values,
+      [campo]: value === null || value === undefined ? '' : String(value),
+    }));
+  }
+
+  private sanitizarNumero(value: string): string {
+    const cleaned = value.replace(/[^\d.]/g, '');
+    const [integer, ...decimals] = cleaned.split('.');
+    return decimals.length ? `${integer}.${decimals.join('')}` : integer;
   }
 
   onGuardar() {
@@ -216,6 +269,10 @@ export class EditorDiferenciasComponent {
 
     if (!valorObservado && !this.descripcion().trim()) {
       this.alerts.showAlert('Indica el dato observado o describe claramente la diferencia.', 'warning');
+      return;
+    }
+    if (!valorObservado && (this.isDateField() || this.isIntegerField() || this.isNumericField() || this.isNationalityField() || this.isCountryField() || this.isOfficialIdTypeField() || this.isBooleanField())) {
+      this.alerts.showAlert('Captura el valor observado para este tipo de campo.', 'warning');
       return;
     }
 
@@ -275,13 +332,58 @@ export class EditorDiferenciasComponent {
     }
 
     const contexto = this.contexto();
-    this.guardar.emit({
+    if (this.isNationalityField() && (contexto.relacionadas ?? []).some((related) => !this.valorRelacionado(related.campo).trim())) {
+      this.alerts.showAlert('Al cambiar la nacionalidad confirma también el país de nacimiento y el país emisor de la identificación.', 'warning');
+      return;
+    }
+    const payload: DiferenciaPayload = {
       seccion: contexto.seccion,
       campo: contexto.campo,
       datoDeclarado: contexto.datoDeclarado,
       datoObservado: valorObservado,
-      descripcion: this.descripcion().trim()
+      descripcion: this.descripcion().trim(),
+    };
+    const relatedPayloads = this.isNationalityField()
+      ? (contexto.relacionadas ?? [])
+        .map((related) => ({ related, value: this.valorRelacionado(related.campo).trim() }))
+        .filter(({ related, value }) => value && this.normalizarPais(value) !== this.normalizarPais(related.datoDeclarado))
+        .map(({ related, value }): DiferenciaPayload => ({
+          seccion: contexto.seccion,
+          campo: related.campo,
+          datoDeclarado: related.datoDeclarado,
+          datoObservado: value,
+          descripcion: this.descripcion().trim(),
+        }))
+      : [];
+    this.guardar.emit(relatedPayloads.length ? [payload, ...relatedPayloads] : payload);
+  }
+
+  private normalizarPais(value: string): string {
+    const normalized = value.trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(normalized)) return normalized;
+    const codeInLabel = normalized.match(/\(([A-Z]{2})\)$/)?.[1];
+    if (codeInLabel) return codeInLabel;
+    const comparable = normalized.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const option = ISO_COUNTRIES.find((country) => {
+      const countryName = country.name.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      return countryName === comparable || comparable.includes(countryName) || countryName.includes(comparable);
     });
+    return option?.code ?? normalized;
+  }
+
+  private normalizarNacionalidad(value: string): string {
+    const normalized = value.trim().toUpperCase();
+    if (normalized === 'MEXICAN' || normalized === 'MEXICANA' || normalized === 'MEXICANO' || normalized === 'MX' || normalized.includes('XICO')) return 'MEXICAN';
+    if (normalized === 'FOREIGN' || normalized.includes('EXTRANJ')) return 'FOREIGN';
+    return normalized;
+  }
+
+  private isNationalityContext(campo: string): boolean {
+    return campo === 'nationality';
+  }
+
+  private isCountryContext(campo: string): boolean {
+    return ['birth_country', 'identification_country', 'country'].includes(campo);
   }
 
   private normalizarTelefonoNacional(value: string): string {

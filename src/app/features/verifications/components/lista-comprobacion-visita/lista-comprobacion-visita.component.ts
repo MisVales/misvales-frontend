@@ -6,6 +6,8 @@ export interface PuntoComprobacion {
   campo: string;
   etiqueta: string;
   datoDeclarado: string;
+  datoObservado?: string;
+  descripcion?: string;
   grupo: string;
   registro: string;
   registroId?: string;

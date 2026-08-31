@@ -128,6 +128,37 @@
   gap: 0.65rem;
 }
 
+.punto-cambio {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.45rem;
+  margin-top: 0.45rem;
+  color: #64748b;
+  font-size: 0.72rem;
+}
+
+.punto-cambio span {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.punto-cambio strong {
+  color: #475569;
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.punto-cambio-nuevo {
+  color: #1a4d2e !important;
+}
+
+.punto-cambio-arrow {
+  color: #94a3b8;
+  font-size: 1rem;
+}
+
 .comprobacion-item.readonly {
   opacity: 0.9;
   background-color: var(--mv-surface-muted, #f9faf9);

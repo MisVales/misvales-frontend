@@ -81,11 +81,11 @@ export class GaleriaEvidenciasComponent implements OnDestroy {
     for (const evidencia of evidencias) {
       if (this.previewUrls()[evidencia.id] || this.previewIdsLoading.has(evidencia.id)) continue;
 
-      this.previewIdsLoading.add(evidencia.id);
+        this.previewIdsLoading.add(evidencia.id);
       try {
         const blob = await firstValueFrom(this.descargaPrivada()
-          ? this.mediaApi.download(evidencia.id)
-          : this.api.descargarEvidencia('', evidencia.id));
+          ? this.mediaApi.preview(evidencia.id)
+          : this.api.previsualizarEvidencia('', evidencia.id));
         const url = URL.createObjectURL(blob);
         this.previewUrls.update((actuales) => ({ ...actuales, [evidencia.id]: url }));
       } catch {

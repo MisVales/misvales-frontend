@@ -251,6 +251,12 @@ export class VerificacionDistribuidorasApiService {
     });
   }
 
+  previsualizarEvidencia(visitaId: string, evidenciaId: string): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/verification-evidences/${evidenciaId}/preview`, {
+      responseType: 'blob',
+    });
+  }
+
   eliminarEvidencia(visitaId: string, evidenciaId: string, lockVersion: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/verification-evidences/${evidenciaId}`, {
       body: { lock_version: lockVersion },
