@@ -28,5 +28,6 @@ describe('GlobalErrorHandler', () => {
       message: 'NG0303 render failure',
       stack: expect.any(String),
     });
+    expect(alertService.showAlert).not.toHaveBeenCalled();
   });
 });
