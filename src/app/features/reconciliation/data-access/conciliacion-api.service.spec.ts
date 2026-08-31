@@ -3,6 +3,7 @@ import { HttpClientTestingModule, HttpTestingController } from '@angular/common/
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { API_CONFIG, defaultApiConfig } from '../../../core/api/api.config';
+import { SKIP_GLOBAL_ALERT } from '../../../core/interceptors/error-handling.interceptor';
 import { ConciliacionApiService } from './conciliacion-api.service';
 describe('ConciliacionApiService', () => {
   let service: ConciliacionApiService;
@@ -47,16 +48,43 @@ describe('ConciliacionApiService', () => {
     expect(create.request.method).toBe('POST');
     create.flush({ data: { id: 's1', payment_reference: 'REL-1' } });
 
-    service.exportSimulatedTransfers('run-1').subscribe((file) => expect(file.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'));
+    service
+      .exportSimulatedTransfers('run-1')
+      .subscribe((file) =>
+        expect(file.type).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+      );
     const download = http.expectOne((request) => request.url.endsWith('/bank-simulations/export'));
     expect(download.request.responseType).toBe('blob');
     expect(download.request.params.get('process_run_id')).toBe('run-1');
-    download.flush(new Blob(['xlsx'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+    download.flush(
+      new Blob(['xlsx'], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+    );
 
     service.simulationTicket('s1').subscribe((file) => expect(file.type).toBe('application/pdf'));
     const ticket = http.expectOne((request) => request.url.endsWith('/bank-simulations/s1/ticket'));
     expect(ticket.request.responseType).toBe('blob');
     ticket.flush(new Blob(['pdf'], { type: 'application/pdf' }));
+  });
+
+  it('permite que las consultas auxiliares manejen su propio error sin toast global', () => {
+    service.imports({ skipGlobalAlert: true }).subscribe();
+    const imports = http.expectOne((request) => request.url.endsWith('/bank-imports'));
+    expect(imports.request.context.get(SKIP_GLOBAL_ALERT)).toBe(true);
+    imports.flush({ data: [] });
+
+    service.pendingPeriods({ skipGlobalAlert: true }).subscribe();
+    const pending = http.expectOne((request) =>
+      request.url.endsWith('/bank-reconciliation-periods'),
+    );
+    expect(pending.request.context.get(SKIP_GLOBAL_ALERT)).toBe(true);
+    pending.flush({ data: [] });
+
+    service.simulatedTransfers('run-1', { skipGlobalAlert: true }).subscribe();
+    const simulations = http.expectOne((request) => request.url.endsWith('/bank-simulations'));
+    expect(simulations.request.context.get(SKIP_GLOBAL_ALERT)).toBe(true);
+    simulations.flush({ data: [] });
   });
 
   it('envía los filtros de resultado y estado al backend', () => {

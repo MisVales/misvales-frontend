@@ -1,6 +1,7 @@
 import {
   HttpErrorResponse,
   HttpEvent,
+  HttpContextToken,
   HttpInterceptorFn,
   HttpRequest,
 } from '@angular/common/http';
@@ -20,6 +21,9 @@ import { runtimeDebugEnabled } from '@core/auth/data-access/auth-configuration.s
 const PRODUCTION_SERVER_ERROR_MESSAGE = 'Ocurrió un error interno. Intenta nuevamente más tarde.';
 const SAFE_REQUEST_ID = /^[A-Za-z0-9._:-]{8,128}$/;
 
+/** Requests with their own inline error state should not duplicate a global toast. */
+export const SKIP_GLOBAL_ALERT = new HttpContextToken<boolean>(() => false);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -28,7 +32,10 @@ function requestReference(error: HttpErrorResponse): string {
   const requestId = normalizeApiError(error).requestId;
   if (!requestId || !SAFE_REQUEST_ID.test(requestId)) return '';
 
-  const supportCode = requestId.replace(/[^A-Za-z0-9]/g, '').slice(0, 10).toUpperCase();
+  const supportCode = requestId
+    .replace(/[^A-Za-z0-9]/g, '')
+    .slice(0, 10)
+    .toUpperCase();
   return supportCode.length >= 8 ? ` Folio de soporte: ${supportCode}.` : '';
 }
 
@@ -37,14 +44,21 @@ export function isConcurrencyConflict(error: HttpErrorResponse): boolean {
   if (error.status !== 409) return false;
 
   const code = apiErrorCode(error, '');
-  return code === 'CONCURRENT_REQUEST' || code === 'VERSION_CONFLICT' || code?.endsWith('_VERSION_CONFLICT') === true;
+  return (
+    code === 'CONCURRENT_REQUEST' ||
+    code === 'VERSION_CONFLICT' ||
+    code?.endsWith('_VERSION_CONFLICT') === true
+  );
 }
 
 export function shouldEndSessionForHttpStatus(status: number): boolean {
   return status === 401 || status === 419;
 }
 
-export function sanitizeServerError(error: HttpErrorResponse, developmentMode: boolean): HttpErrorResponse {
+export function sanitizeServerError(
+  error: HttpErrorResponse,
+  developmentMode: boolean,
+): HttpErrorResponse {
   if (developmentMode || error.status < 500) {
     return error;
   }
@@ -86,6 +100,8 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
     request: HttpRequest<unknown>,
     allowRefresh: boolean,
   ): Observable<HttpEvent<unknown>> {
+    const skipGlobalAlert = request.context.get(SKIP_GLOBAL_ALERT);
+
     if (isDevMode() || runtimeDebugEnabled()) {
       const normalized = normalizeApiError(error);
       console.error('[MisVales HTTP]', {
@@ -156,43 +172,50 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
     if (error.status === 403) {
       if (apiErrorCode(error, '') === 'VPN_REQUIRED') {
         sessionStore.setManagerAccess(false, false);
+        if (!skipGlobalAlert) {
+          alertService.showAlert(
+            'Conéctate a la VPN para realizar acciones gerenciales. Tu sesión sigue activa.',
+            'error',
+            7000,
+          );
+        }
+        return throwError(() => sanitizeServerError(error, isDevMode()));
+      }
+      if (!skipGlobalAlert) {
         alertService.showAlert(
-          'Conéctate a la VPN para realizar acciones gerenciales. Tu sesión sigue activa.',
+          'No tienes autorización para realizar esta acción. Tu sesión sigue activa.',
           'error',
           7000,
         );
-        return throwError(() => sanitizeServerError(error, isDevMode()));
       }
-      alertService.showAlert(
-        'No tienes autorización para realizar esta acción. Tu sesión sigue activa.',
-        'error',
-        7000,
-      );
-    } else if (error.status === 404) {
+    } else if (!skipGlobalAlert && error.status === 404) {
       alertService.showAlert(
         'El recurso solicitado ya no existe o no está disponible.',
         'error',
         6000,
       );
-    } else if (isConcurrencyConflict(error)) {
+    } else if (!skipGlobalAlert && isConcurrencyConflict(error)) {
       alertService.showAlert(
         'La información cambió mientras trabajaba. Recargue los datos e inténtelo de nuevo.',
         'error',
         7000,
       );
-    } else if (error.status === 429) {
+    } else if (!skipGlobalAlert && error.status === 429) {
       const retryAfter = error.headers.get('Retry-After');
       const suffix = retryAfter
         ? ` Inténtelo nuevamente en ${retryAfter} segundos.`
         : ' Inténtelo nuevamente más tarde.';
       alertService.showAlert(`Se alcanzó el límite de solicitudes.${suffix}`, 'error', 7000);
-    } else if (error.status === 0) {
+    } else if (!skipGlobalAlert && error.status === 0) {
       alertService.showAlert(
         'No fue posible conectar con el servidor. Tus cambios actuales continúan en pantalla.',
         'error',
         7000,
       );
-    } else if (error.status === 502 || error.status === 503 || error.status === 504) {
+    } else if (
+      !skipGlobalAlert &&
+      (error.status === 502 || error.status === 503 || error.status === 504)
+    ) {
       alertService.showAlert(
         `El servicio no está disponible temporalmente. Intenta nuevamente.${requestReference(error)}`,
         'error',
@@ -203,8 +226,5 @@ export const errorHandlingInterceptor: HttpInterceptorFn = (req, next) => {
     return throwError(() => sanitizeServerError(error, isDevMode()));
   }
 
-  return next(req).pipe(
-    catchError((error: HttpErrorResponse) => handleError(error, req, true)),
-  );
+  return next(req).pipe(catchError((error: HttpErrorResponse) => handleError(error, req, true)));
 };
-

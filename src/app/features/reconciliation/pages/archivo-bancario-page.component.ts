@@ -15,6 +15,11 @@ import {
   BANK_XLSX_FILE_RULE,
   validateUploadFile,
 } from '../../../shared/utils/files/file-validation';
+import {
+  canExportBankSimulation as canExportBankSimulationAccess,
+  canUploadBankFile as canUploadBankFileAccess,
+  canViewBankImports as canViewBankImportsAccess,
+} from '../reconciliation-access';
 
 @Component({
   selector: 'app-archivo-bancario-page',
@@ -63,9 +68,23 @@ export class ArchivoBancarioPageComponent {
   }
 
   canUpload(): boolean {
-    return (
-      !this.session.roles().includes('general_manager') &&
-      this.session.permissions().includes('bank_imports.create_branch')
+    return canUploadBankFileAccess(
+      this.session.roles(),
+      this.session.permissions(),
+      this.session.activeBranch(),
+      this.session.scopes(),
+    );
+  }
+
+  canViewPeriods(): boolean {
+    return canViewBankImportsAccess(this.session.permissions());
+  }
+
+  canExportBankSimulation(): boolean {
+    return canExportBankSimulationAccess(
+      this.session.permissions(),
+      this.session.activeBranch(),
+      this.session.scopes(),
     );
   }
 
@@ -128,10 +147,10 @@ export class ArchivoBancarioPageComponent {
   }
 
   exportSimulations(): void {
-    this.exportBusy.set(true);
-    this.clearMessages();
     const processRunId = this.selectedProcessRunId();
     if (!processRunId) return;
+    this.exportBusy.set(true);
+    this.clearMessages();
     this.api.exportSimulatedTransfers(processRunId).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
@@ -189,7 +208,7 @@ export class ArchivoBancarioPageComponent {
   }
 
   private load(): void {
-    if (this.canUpload()) {
+    if (this.canViewPeriods()) {
       this.loadPendingPeriods();
     } else {
       this.loadImports();
@@ -198,9 +217,10 @@ export class ArchivoBancarioPageComponent {
   }
 
   private loadPendingPeriods(): void {
-    this.api.pendingPeriods().subscribe({
+    this.api.pendingPeriods({ skipGlobalAlert: true }).subscribe({
       next: (periods) => {
         this.pendingPeriods.set(periods);
+        this.loadImports();
         const selected = this.selectedProcessRunId();
         const next = periods.some((period) => period.process_run_id === selected)
           ? selected
@@ -216,20 +236,22 @@ export class ArchivoBancarioPageComponent {
         this.pendingPeriods.set([]);
         this.reconciliationAvailable.set(false);
         this.availabilityLoading.set(false);
+        this.availabilityMessage.set('No fue posible consultar las conciliaciones disponibles.');
+        this.loadImports();
       },
     });
   }
 
   private loadImports(): void {
     this.api
-      .imports()
+      .imports({ skipGlobalAlert: true })
       .subscribe({ next: (value) => this.imports.set(value), error: () => undefined });
   }
 
   private loadSimulations(): void {
     const processRunId = this.selectedProcessRunId();
     if (!processRunId) return;
-    this.api.simulatedTransfers(processRunId).subscribe({
+    this.api.simulatedTransfers(processRunId, { skipGlobalAlert: true }).subscribe({
       next: (value) => {
         this.simulatedTransfers.set(value);
         this.reconciliationAvailable.set(true);

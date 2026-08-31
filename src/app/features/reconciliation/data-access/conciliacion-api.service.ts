@@ -1,7 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
+import { SKIP_GLOBAL_ALERT } from '../../../core/interceptors/error-handling.interceptor';
 
 export interface BankImport {
   id: string;
@@ -97,6 +98,10 @@ export interface MovementFilters {
   search?: string;
 }
 
+export interface ReconciliationRequestOptions {
+  skipGlobalAlert?: boolean;
+}
+
 export interface SimulatedBankTransfer {
   id: string;
   relation_id: string;
@@ -131,9 +136,11 @@ export class ConciliacionApiService {
       .pipe(map((response) => response.data));
   }
 
-  imports(): Observable<BankImport[]> {
+  imports(options: ReconciliationRequestOptions = {}): Observable<BankImport[]> {
     return this.http
-      .get<{ data: BankImport[] }>(`${this.config.baseUrl}/bank-imports`)
+      .get<{ data: BankImport[] }>(`${this.config.baseUrl}/bank-imports`, {
+        context: this.requestContext(options),
+      })
       .pipe(map((response) => response.data));
   }
 
@@ -143,10 +150,14 @@ export class ConciliacionApiService {
       .pipe(map((response) => response.data));
   }
 
-  simulatedTransfers(processRunId: string): Observable<SimulatedBankTransfer[]> {
+  simulatedTransfers(
+    processRunId: string,
+    options: ReconciliationRequestOptions = {},
+  ): Observable<SimulatedBankTransfer[]> {
     return this.http
       .get<{ data: SimulatedBankTransfer[] }>(`${this.config.baseUrl}/bank-simulations`, {
         params: { process_run_id: processRunId },
+        context: this.requestContext(options),
       })
       .pipe(map((response) => response.data));
   }
@@ -250,9 +261,18 @@ export class ConciliacionApiService {
       .pipe(map((response) => response.data));
   }
 
-  pendingPeriods(): Observable<PendingReconciliationPeriod[]> {
+  pendingPeriods(
+    options: ReconciliationRequestOptions = {},
+  ): Observable<PendingReconciliationPeriod[]> {
     return this.http
-      .get<{ data: PendingReconciliationPeriod[] }>(`${this.config.baseUrl}/bank-reconciliation-periods`)
+      .get<{ data: PendingReconciliationPeriod[] }>(
+        `${this.config.baseUrl}/bank-reconciliation-periods`,
+        { context: this.requestContext(options) },
+      )
       .pipe(map((response) => response.data));
+  }
+
+  private requestContext(options: ReconciliationRequestOptions): HttpContext {
+    return new HttpContext().set(SKIP_GLOBAL_ALERT, options.skipGlobalAlert === true);
   }
 }

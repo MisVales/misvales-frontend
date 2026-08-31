@@ -26,45 +26,79 @@
     </div>
   }
 
-  @if (canUpload() && pendingPeriods().length) {
-    <section class="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6" aria-labelledby="pending-periods-title">
+  @if (canViewPeriods() && pendingPeriods().length) {
+    <section
+      class="rounded-2xl border border-amber-200 bg-amber-50 p-5 sm:p-6"
+      aria-labelledby="pending-periods-title"
+    >
       <h2 id="pending-periods-title" class="text-xl font-bold text-amber-950">
         Conciliaciones pendientes ({{ pendingPeriods().length }})
       </h2>
-      <p class="mt-1 text-sm text-amber-900">Se procesan en orden, de la más antigua a la más reciente. Ninguna se sustituye ni se oculta.</p>
+      <p class="mt-1 text-sm text-amber-900">
+        Se procesan en orden, de la más antigua a la más reciente. Ninguna se sustituye ni se
+        oculta.
+      </p>
       <div class="mt-4 grid gap-3 md:grid-cols-2">
         @for (period of pendingPeriods(); track period.process_run_id) {
-          <button type="button" class="rounded-xl border bg-white p-4 text-left transition hover:border-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700" [class.border-emerald-600]="selectedProcessRunId() === period.process_run_id" [class.ring-2]="selectedProcessRunId() === period.process_run_id" [class.ring-emerald-200]="selectedProcessRunId() === period.process_run_id" [class.border-amber-200]="selectedProcessRunId() !== period.process_run_id" (click)="selectPeriod(period.process_run_id)">
+          <button
+            type="button"
+            class="rounded-xl border bg-white p-4 text-left transition hover:border-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+            [class.border-emerald-600]="selectedProcessRunId() === period.process_run_id"
+            [class.ring-2]="selectedProcessRunId() === period.process_run_id"
+            [class.ring-emerald-200]="selectedProcessRunId() === period.process_run_id"
+            [class.border-amber-200]="selectedProcessRunId() !== period.process_run_id"
+            (click)="selectPeriod(period.process_run_id)"
+          >
             <div class="flex items-center justify-between gap-3">
               <strong>Conciliación #{{ period.reconciliation_number }}</strong>
-              <span class="rounded-full px-2 py-1 text-xs font-bold" [class.bg-emerald-100]="selectedProcessRunId() === period.process_run_id" [class.text-emerald-800]="selectedProcessRunId() === period.process_run_id" [class.bg-slate-100]="selectedProcessRunId() !== period.process_run_id">
-                {{ selectedProcessRunId() === period.process_run_id ? 'SELECCIONADA' : 'PENDIENTE' }}
+              <span
+                class="rounded-full px-2 py-1 text-xs font-bold"
+                [class.bg-emerald-100]="selectedProcessRunId() === period.process_run_id"
+                [class.text-emerald-800]="selectedProcessRunId() === period.process_run_id"
+                [class.bg-slate-100]="selectedProcessRunId() !== period.process_run_id"
+              >
+                {{
+                  selectedProcessRunId() === period.process_run_id ? 'SELECCIONADA' : 'PENDIENTE'
+                }}
               </span>
             </div>
-            <p class="mt-2 text-sm font-semibold text-slate-800">Corte {{ period.cutoff_at | date: 'mediumDate' }} · Fecha límite {{ period.payment_deadline_at | date: 'mediumDate' }}</p>
-            <p class="mt-1 text-sm text-slate-600">{{ period.relations }} relaciones · {{ period.distributors }} distribuidoras</p>
-            <strong class="mt-1 block text-lg text-slate-950">{{ period.pending_total | currency: 'MXN' }} pendientes</strong>
+            <p class="mt-2 text-sm font-semibold text-slate-800">
+              Corte {{ period.cutoff_at | date: 'mediumDate' }} · Fecha límite
+              {{ period.payment_deadline_at | date: 'mediumDate' }}
+            </p>
+            <p class="mt-1 text-sm text-slate-600">
+              {{ period.relations }} relaciones · {{ period.distributors }} distribuidoras
+            </p>
+            <strong class="mt-1 block text-lg text-slate-950"
+              >{{ period.pending_total | currency: 'MXN' }} pendientes</strong
+            >
           </button>
         }
       </div>
     </section>
   }
 
-  @if (canUpload() && !availabilityLoading() && !reconciliationAvailable()) {
+  @if (canViewPeriods() && !availabilityLoading() && !reconciliationAvailable()) {
     <section
       class="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-950 sm:p-6"
       role="status"
     >
       <h2 class="text-xl font-bold">Conciliación pendiente</h2>
       <p class="mt-2 text-base">{{ availabilityMessage() }}</p>
-      <p class="mt-1 text-sm text-blue-800">
-        Caja puede seguir registrando pagos en ventanilla. El Excel y la carga del archivo se
-        habilitarán al vencer el corte.
-      </p>
+      @if (canUpload()) {
+        <p class="mt-1 text-sm text-blue-800">
+          Caja puede seguir registrando pagos en ventanilla. El Excel y la carga del archivo se
+          habilitarán al vencer el corte.
+        </p>
+      } @else {
+        <p class="mt-1 text-sm text-blue-800">
+          La información se actualizará cuando exista un corte vencido pendiente de conciliar.
+        </p>
+      }
     </section>
   }
 
-  @if (canUpload() && reconciliationAvailable()) {
+  @if (canExportBankSimulation() && reconciliationAvailable()) {
     <section
       class="rounded-2xl bg-emerald-950 p-5 text-white sm:p-6"
       aria-labelledby="simulations-title"
@@ -72,7 +106,11 @@
       <div class="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 id="simulations-title" class="text-xl font-bold">
-            Movimientos simulados de la sucursal
+            {{
+              canUpload()
+                ? 'Movimientos simulados de la sucursal'
+                : 'Movimientos simulados globales'
+            }}
           </h2>
           <p class="mt-1 text-base text-emerald-100">
             Las transferencias se registran desde el detalle de cada relación.
@@ -129,8 +167,11 @@
         </div>
       </details>
     } @else {
-      <p class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700" role="status">
-        Este periodo no tiene movimientos. Descarga el Excel con encabezados y súbelo para registrar la conciliación sin abonos.
+      <p
+        class="rounded-xl border border-slate-200 bg-white p-4 text-sm text-slate-700"
+        role="status"
+      >
+        Este periodo no tiene movimientos. El Excel se generará con los encabezados de conciliación.
       </p>
     }
   }
@@ -145,7 +186,9 @@
         Cargar archivo para conciliar
       </h2>
       @if (selectedProcessRunId()) {
-        <p class="mt-2 font-semibold text-emerald-800">El archivo se aplicará únicamente a la conciliación seleccionada arriba.</p>
+        <p class="mt-2 font-semibold text-emerald-800">
+          El archivo se aplicará únicamente a la conciliación seleccionada arriba.
+        </p>
       }
       <p class="mt-1 text-base text-gray-600">
         Acepta el Excel descargado aquí y también el formato del banco con: Concepto, Referencia,
