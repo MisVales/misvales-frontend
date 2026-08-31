@@ -11,7 +11,7 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { FormControl, FormsModule, NgModel, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize, forkJoin } from 'rxjs';
+import { EMPTY, finalize, forkJoin, switchMap, tap } from 'rxjs';
 import { SessionStore } from '../../../core/session/session.store';
 import { MediaApiService } from '../../../core/api/media/media-api.service';
 import {
@@ -140,41 +140,33 @@ interface CorrectionAddress extends Record<string, string> {
                 {{ correctionFieldsLabel(item.requested_fields) }}
               </p>
             </div>
-            <div class="rounded-lg bg-gray-50 p-3 text-sm">
-              @if (item.requested_changes?.first_name) {
-                <p><span class="font-semibold">Nombre propuesto:</span> {{ item.requested_changes?.first_name }}</p>
-              }
-              @if (item.requested_changes?.first_last_name) {
-                <p><span class="font-semibold">Apellido paterno propuesto:</span> {{ item.requested_changes?.first_last_name }}</p>
-              }
-              @if (item.requested_changes?.second_last_name) {
-                <p><span class="font-semibold">Apellido materno propuesto:</span> {{ item.requested_changes?.second_last_name }}</p>
-              }
-              @if (item.requested_changes?.birth_date) {
-                <p><span class="font-semibold">Fecha de nacimiento propuesta:</span> {{ item.requested_changes?.birth_date }}</p>
-              }
-              @if (item.requested_changes?.phone_number) {
-                <p><span class="font-semibold">Teléfono propuesto:</span> {{ item.requested_changes?.phone_number }}</p>
-              }
-              @if (item.requested_changes?.curp) {
-                <p>
-                  <span class="font-semibold">CURP propuesta:</span>
-                  <span class="font-mono">{{ item.requested_changes?.curp }}</span>
-                </p>
-              }
-              @if (item.requested_changes?.address; as address) {
-                <p>
-                  <span class="font-semibold">Domicilio propuesto:</span>
-                  {{ addressLabel(address) }}
-                </p>
-              }
-              @if (!item.requested_changes) {
-                <p class="font-medium text-amber-800">
-                  Esta solicitud anterior no contiene los datos corregidos. Recházala para que Caja
-                  la capture nuevamente.
-                </p>
-              }
-              <p class="hidden"><span class="font-semibold">Motivo:</span> {{ item.reason }}</p>
+            <div class="grid gap-3 rounded-lg bg-gray-50 p-3 text-sm lg:grid-cols-2">
+              <div class="rounded-lg border border-slate-200 bg-white p-3">
+                <p class="mb-2 font-semibold text-slate-700">Información actual (solo lectura)</p>
+                <div class="space-y-2">
+                  @for (field of item.requested_fields; track field) {
+                    <label class="block text-xs font-medium text-slate-600">
+                      {{ correctionFieldLabel(field) }}
+                      <input
+                        class="mt-1 w-full rounded border border-slate-200 bg-slate-100 px-2 py-1.5 text-slate-700"
+                        [value]="modificationValue(item, field, false)"
+                        disabled
+                      />
+                    </label>
+                  }
+                </div>
+              </div>
+              <div class="rounded-lg border border-emerald-200 bg-emerald-50/60 p-3">
+                <p class="mb-2 font-semibold text-emerald-900">Nuevo valor solicitado</p>
+                <div class="space-y-2">
+                  @for (field of item.requested_fields; track field) {
+                    <div class="rounded border border-emerald-200 bg-white px-2 py-1.5">
+                      <span class="block text-xs font-medium text-emerald-800">{{ correctionFieldLabel(field) }}</span>
+                      <span class="break-words text-sm font-semibold text-slate-800">{{ modificationValue(item, field, true) }}</span>
+                    </div>
+                  }
+                </div>
+              </div>
             </div>
             <label class="hidden block text-sm"
               >Motivo de la decisión
@@ -670,6 +662,22 @@ interface CorrectionAddress extends Record<string, string> {
                   class="space-y-3 rounded-lg bg-gray-50 p-4"
                   (ngSubmit)="requestCorrection(voucher)"
                 >
+                  <div class="rounded-lg border border-slate-200 bg-white p-3">
+                    <p class="mb-2 font-semibold text-slate-700">Información actual del cliente (solo lectura)</p>
+                    <div class="grid gap-2 sm:grid-cols-2">
+                      @for (field of correctionFieldOrder; track field) {
+                        <label class="block text-xs font-medium text-slate-600">
+                          {{ correctionFieldLabel(field) }}
+                          <input
+                            class="mt-1 w-full rounded border border-slate-200 bg-slate-100 px-2 py-1.5 text-slate-700"
+                            [value]="currentClientValue(voucher, field)"
+                            disabled
+                          />
+                        </label>
+                      }
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">Selecciona un campo y captura abajo el dato que debe sustituirlo.</p>
+                  </div>
                   <p class="font-semibold">Campos discrepantes</p>
                   <label class="mr-4"
                     ><input type="checkbox" [(ngModel)]="correctCurp" name="curp" /> CURP</label
@@ -1051,6 +1059,9 @@ export class CajaFeriadoPageComponent implements OnDestroy {
   correctBirthDate = false;
   correctPhoneNumber = false;
   correctCurp = false;
+  readonly correctionFieldOrder: Array<
+    'first_name' | 'first_last_name' | 'second_last_name' | 'birth_date' | 'phone_number' | 'curp' | 'address'
+  > = ['first_name', 'first_last_name', 'second_last_name', 'birth_date', 'phone_number', 'curp', 'address'];
   correctAddress = false;
   bankName = '';
   clabe = '';
@@ -1355,10 +1366,29 @@ export class CajaFeriadoPageComponent implements OnDestroy {
       this.error.set('Introduce el token completo de 8 caracteres.');
       return;
     }
+    const voucher = this.selected();
+    if (!voucher) {
+      this.error.set('Selecciona nuevamente el vale para actualizar la solicitud.');
+      return;
+    }
     this.clear();
     this.busy.set(true);
     this.api
-      .apply(this.modificationId, this.token.trim().toUpperCase(), this.modificationVersion)
+      .detail(voucher.id)
+      .pipe(
+        tap((latest) => this.setSelected(latest)),
+        switchMap((latest) => {
+          const request = latest.modification_request;
+          if (!request) {
+            this.errorCode.set('MODIFICATION_REQUEST_NOT_ACTIVE');
+            this.error.set('La solicitud ya no está activa. Actualiza el vale y revisa su estado.');
+            return EMPTY;
+          }
+          this.modificationId = request.id;
+          this.modificationVersion = request.lock_version;
+          return this.api.apply(request.id, this.token.trim().toUpperCase(), request.lock_version);
+        }),
+      )
       .pipe(finalize(() => this.busy.set(false)))
       .subscribe({
         next: () => {
@@ -1378,9 +1408,14 @@ export class CajaFeriadoPageComponent implements OnDestroy {
       next: (v) => {
         this.issuedToken.set(v.token ?? '');
         this.tokenExpires.set(v.expires_at ?? '');
+        this.modificationId = v.request.id;
+        this.modificationVersion = v.request.lock_version;
         delete this.decisionReasons[item.id];
-        if (decision === 'REJECT' && this.selected()?.id === item.voucher_id) {
-          this.open(item.voucher_id);
+        if (this.selected()?.id === item.voucher_id) {
+          this.api.detail(item.voucher_id).subscribe({
+            next: (updated) => this.setSelected(updated),
+            error: (e) => this.handle(e),
+          });
         }
         this.loadModifications();
       },
@@ -1459,7 +1494,48 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     return fields.map((field) => labels[field] ?? field).join(' y ');
   }
 
-  addressLabel(address: Record<string, string>): string {
+  correctionFieldLabel(
+    field: 'first_name' | 'first_last_name' | 'second_last_name' | 'birth_date' | 'phone_number' | 'curp' | 'address',
+  ): string {
+    return {
+      first_name: 'Nombre',
+      first_last_name: 'Apellido paterno',
+      second_last_name: 'Apellido materno',
+      birth_date: 'Fecha de nacimiento',
+      phone_number: 'Teléfono',
+      curp: 'CURP',
+      address: 'Domicilio',
+    }[field];
+  }
+
+  currentClientValue(
+    voucher: CashVoucher,
+    field: 'first_name' | 'first_last_name' | 'second_last_name' | 'birth_date' | 'phone_number' | 'curp' | 'address',
+  ): string {
+    const client = voucher.client_verification;
+    if (!client) return 'Sin dato';
+    if (field === 'address') return client.address ? this.addressLabel(client.address) : 'Sin domicilio';
+    if (field === 'curp') return client.curp_masked ?? 'Sin CURP registrada';
+    const value = client[field];
+    return value === null || value === undefined || value === '' ? 'Sin dato' : String(value);
+  }
+
+  modificationValue(
+    item: ModificationRequest,
+    field: 'first_name' | 'first_last_name' | 'second_last_name' | 'birth_date' | 'phone_number' | 'curp' | 'address',
+    requested: boolean,
+  ): string {
+    const values = requested ? item.requested_changes : item.changes_before;
+    if (!values) return 'Sin dato';
+    const value = values[field];
+    if (field === 'address') {
+      return value ? this.addressLabel(value as Record<string, string | null | undefined>) : 'Sin domicilio';
+    }
+    return value === null || value === undefined || value === '' ? 'Sin dato' : String(value);
+  }
+
+  addressLabel(address: Record<string, string | null | undefined> | null | undefined): string {
+    if (!address) return 'Sin domicilio';
     const number = [
       address['exterior_number'],
       address['interior_number'] ? `Int. ${address['interior_number']}` : '',
@@ -1533,7 +1609,19 @@ export class CajaFeriadoPageComponent implements OnDestroy {
     this.errorCode.set('');
   }
   private handle(e: HttpErrorResponse): void {
-    this.errorCode.set(e.error?.error?.code ?? 'CASHIER_REQUEST_FAILED');
-    this.error.set(e.error?.error?.message ?? 'No fue posible completar la operación.');
+    const code = e?.error?.error?.code;
+    this.errorCode.set(code ?? 'CASHIER_REQUEST_FAILED');
+    if (code === 'MODIFICATION_VERSION_CONFLICT') {
+      this.error.set('La solicitud cambió mientras estaba abierta. Se actualizó la versión; intenta aplicar nuevamente el mismo token.');
+      const voucher = this.selected();
+      if (voucher) {
+        this.api.detail(voucher.id).subscribe({
+          next: (updated) => this.setSelected(updated),
+          error: () => undefined,
+        });
+      }
+      return;
+    }
+    this.error.set(e?.error?.error?.message ?? 'No fue posible completar la operación.');
   }
 }

@@ -278,11 +278,21 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
           <div class="form-group readonly-group">
             <label class="text-xs font-bold text-red-600">Dato Declarado (Original)</label>
-            <div class="readonly-value text-sm">{{ dif.datoDeclarado || 'Sin dato' }}</div>
+            <input
+              class="readonly-value form-control text-sm"
+              [value]="dif.datoDeclarado || 'Sin dato'"
+              aria-label="Dato declarado actual"
+              disabled
+            />
           </div>
           <div class="form-group readonly-group">
             <label class="text-xs font-bold text-blue-600">Dato Observado (Verificador)</label>
-            <div class="readonly-value text-sm">{{ dif.datoObservado || 'Sin dato' }}</div>
+            <input
+              class="readonly-value form-control text-sm"
+              [value]="dif.datoObservado || 'Sin dato'"
+              aria-label="Dato observado por el verificador"
+              disabled
+            />
           </div>
         </div>
 

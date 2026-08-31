@@ -23,6 +23,7 @@ export interface CashVoucher extends VoucherView {
     full_name: string;
     birth_date: string | null;
     phone_number: string | null;
+    curp_masked: string | null;
     identity: { official_id_type: string | null; official_id_media_id: string | null };
     address: Record<string, string | null> | null;
   } | null;
@@ -51,6 +52,8 @@ export interface ModificationRequest {
   branch_id: string;
   requested_fields: Array<'first_name' | 'first_last_name' | 'second_last_name' | 'birth_date' | 'phone_number' | 'curp' | 'address'>;
   requested_changes: ModificationChanges | null;
+  changes_before?: ModificationChanges | null;
+  changes_after?: ModificationChanges | null;
   reason?: string | null;
   status: string;
   lock_version: number;

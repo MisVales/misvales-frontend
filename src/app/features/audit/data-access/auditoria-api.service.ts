@@ -537,6 +537,18 @@ export const EVENT_LABELS_ES: Record<
     icon: 'check',
     badgeColor: 'badge-emerald',
   },
+  VOUCHER_MODIFICATION_AUTHORIZED: {
+    label: 'Modificación de Vale Autorizada',
+    category: 'Vales',
+    icon: 'check',
+    badgeColor: 'badge-emerald',
+  },
+  VOUCHER_MODIFICATION_REJECTED: {
+    label: 'Modificación de Vale Rechazada',
+    category: 'Vales',
+    icon: 'x',
+    badgeColor: 'badge-red',
+  },
   VOUCHER_MODIFICATION_APPLIED: {
     label: 'Modificación de Vale Aplicada',
     category: 'Vales',
@@ -758,8 +770,11 @@ export const FIELD_LABELS_ES: Record<string, string> = {
 
   // Operación y Dictamen
   status: 'Estado',
+  correction_count: 'Correcciones aplicadas',
   result: 'Resultado',
   reason: 'Motivo',
+  reason_code: 'Motivo de la solicitud',
+  fields: 'Campos solicitados',
   observations: 'Observaciones',
   decision: 'Dictamen / Decisión',
   initial_credit_line_amount: 'Línea de Crédito Inicial',
@@ -1018,7 +1033,9 @@ export class AuditoriaApiService {
   }
 
   getFieldLabel(field: string): string {
-    return FIELD_LABELS_ES[field] || this.humanize(field);
+    if (FIELD_LABELS_ES[field]) return FIELD_LABELS_ES[field];
+    const lastSegment = field.split('.').pop() || field;
+    return FIELD_LABELS_ES[lastSegment] || this.humanize(lastSegment);
   }
 
   formatValue(value: unknown, fieldName?: string): string {
@@ -1068,7 +1085,13 @@ export class AuditoriaApiService {
     }
     if (Array.isArray(value)) {
       if (value.length === 0) return '(lista vacía)';
-      return value.map((item) => this.formatValue(item, fieldName)).join(', ');
+      return value
+        .map((item) =>
+          fieldName === 'fields' && typeof item === 'string'
+            ? this.getFieldLabel(item)
+            : this.formatValue(item, fieldName),
+        )
+        .join(', ');
     }
     if (typeof value === 'object') {
       const keys = Object.keys(value as Record<string, unknown>);
@@ -1177,6 +1200,9 @@ export class AuditoriaApiService {
       'lock_version',
       'application_lock_version',
       'fields_updated',
+      'fields',
+      'reason_code',
+      'changes',
     ]);
 
     const hasVerifierName = Boolean(nextRaw['verifier_name'] || prevRaw['verifier_name']);
@@ -1185,7 +1211,10 @@ export class AuditoriaApiService {
       ...Object.keys(nextRaw).filter((k) => !envelopeKeys.has(k) && (!hasVerifierName || k !== 'verifier_id')),
     ]);
 
-    const changes: ChangedFieldDetail[] = [];
+    const changes: ChangedFieldDetail[] = this.extractStructuredChanges(
+      prevRaw['changes'],
+      nextRaw['changes'],
+    );
 
     allKeys.forEach((key) => {
       const oldVal = prevRaw[key];
@@ -1205,6 +1234,68 @@ export class AuditoriaApiService {
     });
 
     return changes;
+  }
+
+  private extractStructuredChanges(previous: unknown, next: unknown): ChangedFieldDetail[] {
+    const previousEntries = this.toStructuredChangeEntries(previous);
+    const nextEntries = this.toStructuredChangeEntries(next);
+    const fields = new Set([...previousEntries.keys(), ...nextEntries.keys()]);
+    const changes: ChangedFieldDetail[] = [];
+
+    fields.forEach((field) => {
+      const previousEntry = previousEntries.get(field);
+      const nextEntry = nextEntries.get(field);
+      const source = nextEntry || previousEntry || {};
+      const before = this.structuredEntryValue(source, 'before')
+        ?? this.structuredEntryValue(source, 'old_value')
+        ?? previousEntry?.value;
+      const after = this.structuredEntryValue(source, 'after')
+        ?? this.structuredEntryValue(source, 'new_value')
+        ?? nextEntry?.value;
+
+      if (JSON.stringify(before) === JSON.stringify(after)) return;
+
+      changes.push({
+        field,
+        label: typeof source['label'] === 'string' ? String(source['label']) : this.getFieldLabel(field),
+        oldValue: this.formatValue(before, field),
+        rawOld: before,
+        newValue: this.formatValue(after, field),
+        rawNew: after,
+        isCreation: before === undefined || before === null,
+        isDeletion: after === undefined || after === null,
+      });
+    });
+
+    return changes;
+  }
+
+  private toStructuredChangeEntries(
+    value: unknown,
+  ): Map<string, Record<string, unknown> & { value?: unknown }> {
+    const entries = new Map<string, Record<string, unknown> & { value?: unknown }>();
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (!item || typeof item !== 'object') return;
+        const raw = item as Record<string, unknown>;
+        const field = String(raw['field'] ?? raw['field_path'] ?? '');
+        if (field) entries.set(field, raw as Record<string, unknown> & { value?: unknown });
+      });
+      return entries;
+    }
+    if (value && typeof value === 'object') {
+      Object.entries(value as Record<string, unknown>).forEach(([field, item]) => {
+        entries.set(field, { value: item });
+      });
+    }
+    return entries;
+  }
+
+  private structuredEntryValue(
+    entry: Record<string, unknown> & { value?: unknown },
+    key: string,
+  ): unknown {
+    return Object.prototype.hasOwnProperty.call(entry, key) ? entry[key] : undefined;
   }
 
   getChangedFields(audit: AuditRecord): ChangedFieldDetail[] {
