@@ -46,6 +46,7 @@ import { AttachmentPreviewComponent } from '../../../shared/components/media/att
 import { adultBirthDateValidator } from '../../applications/validators/adult-birth-date.validator';
 import { personNameValidator } from '../../applications/validators/person-name.validator';
 import { phoneValidator } from '../../applications/validators/phone.validator';
+import { curpValidator } from '../../clients/validators/curp.validators';
 import { CLIENT_INE_FRONT_FILE_RULE, PRIVATE_MEDIA_FILE_RULE, validateUploadFile } from '../../../shared/utils/files/file-validation';
 
 @Component({
@@ -84,6 +85,7 @@ export class ValesPageComponent implements OnInit {
     firstName: ['', [Validators.required, Validators.maxLength(120), personNameValidator]],
     firstLastName: ['', [Validators.required, Validators.maxLength(120), personNameValidator]],
     secondLastName: ['', [Validators.required, Validators.maxLength(120), personNameValidator]],
+    curp: ['', [Validators.required, Validators.maxLength(18), curpValidator()]],
     birthDate: ['', [Validators.required, adultBirthDateValidator]],
     phoneNumber: ['', [Validators.required, phoneValidator()]],
   });
@@ -410,7 +412,7 @@ export class ValesPageComponent implements OnInit {
   }
 
   protected openClientDialog(): void {
-    this.clientForm.reset({ firstName: '', firstLastName: '', secondLastName: '', birthDate: '', phoneNumber: '' });
+    this.clientForm.reset({ firstName: '', firstLastName: '', secondLastName: '', curp: '', birthDate: '', phoneNumber: '' });
     this.clientAddress = { street: '', exterior_number: '', interior_number: '', neighborhood: '', postal_code: '', municipality: '', city: '', state: '', country: 'MX' };
     this.clientIneFront = null;
     this.clientAddressProof = null;
@@ -455,7 +457,7 @@ export class ValesPageComponent implements OnInit {
       this.clientForm.markAllAsTouched();
       return;
     }
-    const { firstName, firstLastName, secondLastName, birthDate, phoneNumber } = this.clientForm.getRawValue();
+    const { firstName, firstLastName, secondLastName, curp, birthDate, phoneNumber } = this.clientForm.getRawValue();
     if (!this.clientAddressForm?.validarYEnfocarPrimerError()) {
       this.clientFileError = 'Completa la dirección del cliente.';
       return;
@@ -470,6 +472,7 @@ export class ValesPageComponent implements OnInit {
       first_name: firstName.trim(),
       first_last_name: firstLastName.trim(),
       second_last_name: secondLastName.trim(),
+      curp,
       birth_date: birthDate,
       phone_number: phoneNumber,
       address: this.clientAddress,
@@ -486,6 +489,13 @@ export class ValesPageComponent implements OnInit {
         },
         error: (error) => this.handle(error),
       });
+  }
+
+  protected normalizeClientCurp(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 18);
+    if (input.value !== value) input.value = value;
+    this.clientForm.controls.curp.setValue(value);
   }
 
   protected onClientAddressChange(address: AddressResult): void {

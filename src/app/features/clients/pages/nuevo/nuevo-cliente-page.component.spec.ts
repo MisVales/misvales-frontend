@@ -42,6 +42,11 @@ describe('NuevoClientePageComponent', () => {
     expect(component.form.controls.first_name.hasError('required')).toBe(true);
   });
 
+  it('should require the client CURP', () => {
+    component.form.controls.curp.setValue('');
+    expect(component.form.controls.curp.hasError('required')).toBe(true);
+  });
+
   it('should reject a first surname longer than the current limit', () => {
     component.form.controls.first_last_name.setValue('A'.repeat(101));
     expect(component.form.controls.first_last_name.hasError('maxlength')).toBe(true);

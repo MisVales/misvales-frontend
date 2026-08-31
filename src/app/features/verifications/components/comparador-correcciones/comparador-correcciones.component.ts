@@ -18,6 +18,7 @@ export class ComparadorCorreccionesComponent {
   }
 
   etiquetaCampo(value: string): string {
+    if (value === 'curp' || value === 'curp_masked') return 'CURP';
     return ({ has_identification_evidence: 'Identificación oficial', school_name: 'Escuela', proof_reference: 'Comprobante del crédito' } as Record<string, string>)[value] || value.replaceAll('_', ' ');
   }
 }

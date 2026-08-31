@@ -115,13 +115,13 @@
     }
 
     <!-- CURP input with 18 max -->
-    @else if (campo() === 'curp') {
+    @else if (isCurpField()) {
       <input
         type="text"
         class="form-control uppercase"
         maxlength="18"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onCurpChange($event)"
         placeholder="Ej. GOHM850101HMCNRN01 (18 caracteres)"
         [disabled]="isProcessing()"
       />

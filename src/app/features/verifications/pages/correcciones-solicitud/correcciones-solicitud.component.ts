@@ -201,6 +201,10 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     return campo === 'birth_date';
   }
 
+  isCurpField(campo: string): boolean {
+    return campo === 'curp' || campo === 'curp_masked';
+  }
+
   isNationalityField(campo: string): boolean {
     return campo === 'nationality';
   }
@@ -237,6 +241,10 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     this.valorCorregido.set(this.normalizarTelefonoNacional(value));
   }
 
+  onCurpChange(value: string): void {
+    this.valorCorregido.set(value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 18));
+  }
+
   onValueChange(value: unknown): void {
     this.valorCorregido.set(value === null || value === undefined ? '' : String(value));
   }
@@ -252,17 +260,13 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     }
 
     let nuevoValor = this.valorCorregido().trim();
-    const campo = dif.campo;
+    const campo = dif.campo === 'curp_masked' ? 'curp' : dif.campo;
 
     // Specific field validations
     if (nuevoValor) {
-      if (campo === 'curp') {
+      if (this.isCurpField(campo)) {
         const curpClean = nuevoValor.toUpperCase();
-        if (curpClean.length > 18) {
-          this.alerts.showAlert('La CURP no puede exceder 18 caracteres.', 'warning');
-          return;
-        }
-        if (!curpClean.includes('*') && !/^[A-Z\d]{18}$/i.test(curpClean)) {
+        if (!/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z\d]\d$/.test(curpClean)) {
           this.alerts.showAlert('La CURP debe tener un formato válido de 18 caracteres alfanuméricos.', 'warning');
           return;
         }

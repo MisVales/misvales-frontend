@@ -20,6 +20,7 @@ export interface NewClientRegistration {
   first_name: string;
   first_last_name: string;
   second_last_name: string;
+  curp: string;
   birth_date: string;
   phone_number: string;
   address: Record<string, string>;

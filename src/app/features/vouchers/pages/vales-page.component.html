@@ -642,6 +642,22 @@
         @if (clientForm.controls.secondLastName.touched && clientForm.controls.secondLastName.invalid) {
           <small class="field-error">Captura el apellido materno.</small>
         }
+        <label for="client-curp">CURP</label>
+        <input
+          id="client-curp"
+          type="text"
+          formControlName="curp"
+          maxlength="18"
+          autocomplete="off"
+          inputmode="text"
+          (input)="normalizeClientCurp($event)"
+          placeholder="18 caracteres alfanuméricos"
+        />
+        @if (clientForm.controls.curp.touched && clientForm.controls.curp.hasError('required')) {
+          <small class="field-error">La CURP es obligatoria.</small>
+        } @else if (clientForm.controls.curp.touched && clientForm.controls.curp.invalid) {
+          <small class="field-error">Captura una CURP válida de 18 caracteres.</small>
+        }
         <label for="client-birth-date">Fecha de nacimiento</label>
         <input id="client-birth-date" type="date" formControlName="birthDate" required />
         @if (clientForm.controls.birthDate.touched && clientForm.controls.birthDate.invalid) {

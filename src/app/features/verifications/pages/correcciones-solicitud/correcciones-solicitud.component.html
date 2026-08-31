@@ -413,13 +413,13 @@
           }
 
           <!-- CURP con max 18 -->
-          @else if (dif.campo === 'curp') {
+          @else if (isCurpField(dif.campo)) {
             <input
               type="text"
               class="form-control uppercase"
               maxlength="18"
               [ngModel]="valorCorregido()"
-              (ngModelChange)="valorCorregido.set($event)"
+              (ngModelChange)="onCurpChange($event)"
               placeholder="18 caracteres alfanuméricos"
               [disabled]="facade.isLoading()"
             />

@@ -105,6 +105,10 @@ export class EditorDiferenciasComponent {
     return this.campo() === 'birth_date';
   }
 
+  isCurpField(): boolean {
+    return this.campo() === 'curp' || this.campo() === 'curp_masked';
+  }
+
   isNationalityField(): boolean {
     return this.campo() === 'nationality';
   }
@@ -141,6 +145,10 @@ export class EditorDiferenciasComponent {
     this.datoObservado.set(this.normalizarTelefonoNacional(value));
   }
 
+  onCurpChange(value: string): void {
+    this.datoObservado.set(value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 18));
+  }
+
   onValueChange(value: unknown): void {
     this.datoObservado.set(value === null || value === undefined ? '' : String(value));
   }
@@ -157,13 +165,9 @@ export class EditorDiferenciasComponent {
 
     // Specific field validations
     if (valorObservado) {
-      if (campo === 'curp') {
+      if (this.isCurpField()) {
         const curpClean = valorObservado.toUpperCase();
-        if (curpClean.length > 18) {
-          this.alerts.showAlert('La CURP no puede exceder 18 caracteres.', 'warning');
-          return;
-        }
-        if (!curpClean.includes('*') && !/^[A-Z\d]{18}$/i.test(curpClean)) {
+        if (!/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z\d]\d$/.test(curpClean)) {
           this.alerts.showAlert('La CURP debe tener un formato válido de 18 caracteres alfanuméricos.', 'warning');
           return;
         }
