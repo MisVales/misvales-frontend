@@ -18,16 +18,16 @@ export class AlertService {
   private readonly timers = new Map<string, ReturnType<typeof setTimeout>>();
   private sequence = 0;
 
-  success(message: string, duration = 5000): void {
+  success(message: unknown, duration = 5000): void {
     this.showAlert(message, 'success', duration);
   }
 
-  error(message: string, duration = 8000): void { this.showAlert(message, 'error', duration); }
-  warning(message: string, duration = 6500): void { this.showAlert(message, 'warning', duration); }
-  info(message: string, duration = 5500): void { this.showAlert(message, 'info', duration); }
+  error(message: unknown, duration = 8000): void { this.showAlert(message, 'error', duration); }
+  warning(message: unknown, duration = 6500): void { this.showAlert(message, 'warning', duration); }
+  info(message: unknown, duration = 5500): void { this.showAlert(message, 'info', duration); }
 
-  showAlert(message: string, type: AlertType = 'info', duration = this.defaultDuration(type)): void {
-    const normalized = message.trim();
+  showAlert(message: unknown, type: AlertType = 'info', duration = this.defaultDuration(type)): void {
+    const normalized = this.normalizeMessage(message);
     if (!normalized) return;
     const duplicate = this.alerts().find(alert => alert.message === normalized && alert.type === type);
     if (duplicate) this.removeAlert(duplicate.id, true);
@@ -68,5 +68,23 @@ export class AlertService {
 
   private defaultDuration(type: AlertType): number {
     return ({ success: 4500, info: 5500, warning: 6500, error: 8000 })[type];
+  }
+
+  private normalizeMessage(value: unknown): string {
+    if (typeof value === 'string') return value.trim();
+    if (value instanceof Error) return value.message.trim();
+    if (!value || typeof value !== 'object') return '';
+
+    const record = value as Record<string, unknown>;
+    const nestedError = record['error'];
+    const candidates = [
+      record['message'],
+      record['detail'],
+      nestedError && typeof nestedError === 'object'
+        ? (nestedError as Record<string, unknown>)['message']
+        : undefined,
+    ];
+    const message = candidates.find((candidate) => typeof candidate === 'string' && candidate.trim());
+    return typeof message === 'string' ? message.trim() : '';
   }
 }

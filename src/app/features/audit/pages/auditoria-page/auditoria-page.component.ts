@@ -1,7 +1,8 @@
 ﻿import { DatePipe, JsonPipe } from '@angular/common';
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { LucideAngularModule } from 'lucide-angular';
+import { firstValueFrom } from 'rxjs';
 import {
   ACTION_LABELS_ES,
   AuditActionGroup,
@@ -13,6 +14,7 @@ import {
   ChangedFieldDetail,
   OperationalLog,
 } from '../../data-access/auditoria-api.service';
+import { MediaApiService } from '../../../../core/api/media/media-api.service';
 
 export interface AuditRowViewModel {
   id: string;
@@ -41,8 +43,9 @@ export interface AuditRowViewModel {
   templateUrl: './auditoria-page.component.html',
   styleUrl: './auditoria-page.component.css',
 })
-export class AuditoriaPageComponent implements OnInit {
+export class AuditoriaPageComponent implements OnInit, OnDestroy {
   protected readonly api = inject(AuditoriaApiService);
+  private readonly mediaApi = inject(MediaApiService);
 
   readonly audits = signal<AuditRecord[]>([]);
   readonly operationalLogs = signal<OperationalLog[]>([]);
@@ -56,6 +59,11 @@ export class AuditoriaPageComponent implements OnInit {
   readonly detailTab = signal<'summary' | 'changes' | 'tech'>('summary');
   readonly showRawJson = signal<boolean>(false);
   readonly copySuccess = signal<boolean>(false);
+  readonly auditPreviewUrl = signal<string | null>(null);
+  readonly auditPreviewLoading = signal<boolean>(false);
+  readonly auditPreviewError = signal<boolean>(false);
+  private auditPreviewObjectUrl: string | null = null;
+  private auditPreviewRequest = 0;
 
   readonly activeView = signal<'events' | 'requests'>('events');
   readonly isLoading = signal<boolean>(false);
@@ -141,6 +149,10 @@ export class AuditoriaPageComponent implements OnInit {
   ngOnInit(): void {
     this.loadFilterOptions();
     this.loadAudits(1);
+  }
+
+  ngOnDestroy(): void {
+    this.limpiarVistaPreviaAuditoria();
   }
 
   get actionOptions(): { value: AuditActionGroup; label: string }[] {
@@ -372,6 +384,7 @@ export class AuditoriaPageComponent implements OnInit {
     this.detailTab.set('summary');
     this.showRawJson.set(false);
     this.copySuccess.set(false);
+    void this.cargarVistaPreviaAuditoria(audit);
   }
 
   openJsonModal(audit: AuditRecord): void {
@@ -379,12 +392,71 @@ export class AuditoriaPageComponent implements OnInit {
     this.detailTab.set('changes');
     this.showRawJson.set(true);
     this.copySuccess.set(false);
+    void this.cargarVistaPreviaAuditoria(audit);
   }
 
   closeDetailModal(): void {
     this.selectedAudit.set(null);
     this.showRawJson.set(false);
     this.copySuccess.set(false);
+    this.limpiarVistaPreviaAuditoria();
+  }
+
+  isMediaAudit(audit: AuditRecord): boolean {
+    return [
+      'VERIFICATION_EVIDENCE_UPLOADED',
+      'VERIFICATION_EVIDENCE_REMOVED',
+      'PRIVATE_MEDIA_STORED',
+      'MEDIA_UPLOADED',
+      'PRIVATE_MEDIA_DOWNLOADED',
+      'VERIFICATION_EVIDENCE_DOWNLOADED',
+    ].includes(audit.event_name);
+  }
+
+  isImageMediaAudit(audit: AuditRecord): boolean {
+    if (!this.isMediaAudit(audit)) return false;
+    const values = [audit.new_value, audit.previous_value].filter(Boolean) as Record<string, unknown>[];
+    return values.some((value) => String(value['mime_type'] ?? '').toLowerCase().startsWith('image/'));
+  }
+
+  auditMediaName(audit: AuditRecord): string {
+    const values = [audit.new_value, audit.previous_value].filter(Boolean) as Record<string, unknown>[];
+    for (const value of values) {
+      const fileName = value['file_name'] ?? value['original_name'];
+      if (fileName) return String(fileName);
+    }
+    return 'Imagen de evidencia';
+  }
+
+  auditMediaCaption(audit: AuditRecord): string {
+    return audit.event_name === 'VERIFICATION_EVIDENCE_REMOVED' ? 'Imagen anterior' : 'Imagen nueva';
+  }
+
+  private async cargarVistaPreviaAuditoria(audit: AuditRecord): Promise<void> {
+    this.limpiarVistaPreviaAuditoria();
+    if (!audit.entity_id || !this.isImageMediaAudit(audit)) return;
+
+    const request = ++this.auditPreviewRequest;
+    this.auditPreviewLoading.set(true);
+    try {
+      const blob = await firstValueFrom(this.mediaApi.preview(audit.entity_id));
+      if (request !== this.auditPreviewRequest) return;
+      this.auditPreviewObjectUrl = URL.createObjectURL(blob);
+      this.auditPreviewUrl.set(this.auditPreviewObjectUrl);
+    } catch {
+      if (request === this.auditPreviewRequest) this.auditPreviewError.set(true);
+    } finally {
+      if (request === this.auditPreviewRequest) this.auditPreviewLoading.set(false);
+    }
+  }
+
+  private limpiarVistaPreviaAuditoria(): void {
+    this.auditPreviewRequest++;
+    if (this.auditPreviewObjectUrl) URL.revokeObjectURL(this.auditPreviewObjectUrl);
+    this.auditPreviewObjectUrl = null;
+    this.auditPreviewUrl.set(null);
+    this.auditPreviewLoading.set(false);
+    this.auditPreviewError.set(false);
   }
 
   toggleRawJson(): void {

@@ -528,6 +528,49 @@ select.form-control {
   display: inline-block;
 }
 
+.audit-media-panel {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid #bfdbfe;
+  border-radius: 0.85rem;
+  background: #eff6ff;
+}
+
+.audit-media-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.audit-media-panel__image {
+  display: block;
+  width: min(100%, 34rem);
+  max-height: 24rem;
+  margin: 0 auto;
+  border-radius: 0.65rem;
+  border: 1px solid #bfdbfe;
+  background: #ffffff;
+  object-fit: contain;
+}
+
+.audit-media-panel__state {
+  padding: 1.5rem;
+  border: 1px dashed #93c5fd;
+  border-radius: 0.65rem;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.audit-media-panel__state--error {
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
 /* Entity/Folio in table */
 .folio-badge {
   font-weight: 800;

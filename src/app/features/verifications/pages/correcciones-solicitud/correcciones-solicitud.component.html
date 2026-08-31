@@ -324,8 +324,21 @@
             Nuevo Valor a Registrar en el Expediente <span class="text-red-500">*</span>
           </label>
           
+          <!-- Cualquier corrección de domicilio se captura como domicilio completo -->
+          @if (isAddressField(dif.campo)) {
+            <div class="correction-address-form">
+              <app-address-form
+                [initialAddress]="direccionCorregida() ?? undefined"
+                [showValidationState]="true"
+                [enableStreetAutocomplete]="false"
+                (addressChange)="onAddressChange($event)"
+              ></app-address-form>
+              <p class="form-help">Actualiza estado, municipio, código postal, colonia, calle y números desde el catálogo SEPOMEX.</p>
+            </div>
+          }
+
           <!-- Datepicker para fechas -->
-          @if (isDateField(dif.campo)) {
+          @else if (isDateField(dif.campo)) {
             <input
               type="date"
               class="form-control"
@@ -497,6 +510,43 @@
               <option value="WIDOWED">Viudo(a)</option>
               <option value="COHABITING">Unión Libre</option>
             </select>
+          }
+
+          <!-- Evidencia de identificación: mostrar archivo actual y permitir reemplazo -->
+          @else if (isIdentificationEvidenceField(dif.campo)) {
+            <div class="evidence-correction-panel">
+              <p class="evidence-correction-title">Evidencia actual</p>
+              <app-galeria-evidencias
+                [evidencias]="evidenciasIdentificacion()"
+                [permitirDescargar]="false"
+                [permitirEliminar]="false"
+                [descargaPrivada]="true"
+              ></app-galeria-evidencias>
+
+              <label class="evidence-upload-label" for="identification-evidence-update">Actualizar evidencia</label>
+              <input
+                id="identification-evidence-update"
+                type="file"
+                accept=".jpg,.jpeg,.jfif,.png,.webp,.gif,.bmp,.tif,.tiff,.heic,.heif,.avif,application/pdf"
+                (change)="onEvidenceFileChange($event)"
+                [disabled]="evidenciaSubiendo() || facade.isLoading()"
+                class="form-control evidence-file-input"
+              />
+              @if (evidenciaNueva(); as archivo) {
+                <p class="form-help">Archivo seleccionado: {{ archivo.name }}</p>
+                <button
+                  type="button"
+                  class="btn btn-primary evidence-update-button"
+                  (click)="actualizarEvidenciaIdentificacion()"
+                  [disabled]="evidenciaSubiendo() || facade.isLoading()"
+                >
+                  {{ evidenciaSubiendo() ? 'Actualizando evidencia...' : 'Actualizar evidencia' }}
+                </button>
+              }
+              @if (evidenciaError(); as error) {
+                <p class="field-error" role="alert">{{ error }}</p>
+              }
+            </div>
           }
 
           <!-- Select para Booleanos -->

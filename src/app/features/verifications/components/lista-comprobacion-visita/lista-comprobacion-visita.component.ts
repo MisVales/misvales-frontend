@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import { AddressResult } from '../../../../shared/components/inputs/address-form/address-form';
 
 export interface PuntoComprobacion {
   id: string;
@@ -13,6 +14,8 @@ export interface PuntoComprobacion {
   registroId?: string;
   estado: 'COMPROBADO' | 'DIFERENCIA' | 'NO_APLICA' | null;
   diferenciaRegistrada?: boolean;
+  direccionDeclarada?: Partial<AddressResult>;
+  direccionObservada?: Partial<AddressResult>;
 }
 
 interface RegistroComprobacion {

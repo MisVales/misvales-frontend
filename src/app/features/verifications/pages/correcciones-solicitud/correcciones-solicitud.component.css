@@ -103,6 +103,40 @@
   word-break: break-all;
 }
 
+.correction-address-form {
+  padding: 0.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.65rem;
+  background: #f8fafc;
+}
+
+.evidence-correction-panel {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  border: 1px solid #dbe4dc;
+  border-radius: 0.65rem;
+  background: #f8faf8;
+}
+
+.evidence-correction-title,
+.evidence-upload-label {
+  margin: 0;
+  color: #374151;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.evidence-file-input {
+  background: #ffffff;
+  font-size: 0.8rem;
+}
+
+.evidence-update-button {
+  justify-self: start;
+  margin-top: 0.15rem;
+}
+
 .difference-strip {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);

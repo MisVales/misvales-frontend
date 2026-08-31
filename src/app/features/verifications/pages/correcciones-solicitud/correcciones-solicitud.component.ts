@@ -7,6 +7,7 @@ import {
   OnDestroy,
   signal,
   computed,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -18,8 +19,25 @@ import { ConfirmationService } from '../../../../shared/dialogs/confirmation.ser
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 import { PhoneInputComponent } from '../../../../shared/components/inputs/phone-input/phone-input.component';
 import { ISO_COUNTRIES } from '../../../../shared/utils/data/iso-countries';
+import { RFC_REGEX } from '../../../applications/validators/rfc.validator';
+import { AddressFormComponent, AddressResult } from '../../../../shared/components/inputs/address-form/address-form';
+import { GaleriaEvidenciasComponent } from '../../components/galeria-evidencias/galeria-evidencias.component';
+import { MediaApiService } from '../../../../core/api/media/media-api.service';
+import { PRIVATE_MEDIA_FILE_RULE, validateUploadFile } from '../../../../shared/utils/files/file-validation';
+import { firstValueFrom } from 'rxjs';
 
 const MIN_BIRTH_DATE = '1900-01-01';
+const ADDRESS_FIELDS = new Set([
+  'street',
+  'exterior_number',
+  'interior_number',
+  'neighborhood',
+  'postal_code',
+  'municipality',
+  'city',
+  'state',
+  'country',
+]);
 
 function toDateInputValue(date: Date): string {
   return [date.getFullYear(), String(date.getMonth() + 1).padStart(2, '0'), String(date.getDate()).padStart(2, '0')].join('-');
@@ -39,7 +57,7 @@ export interface PasoCorreccion {
 @Component({
   selector: 'app-correcciones-solicitud',
   standalone: true,
-  imports: [CommonModule, ComparadorCorreccionesComponent, FormsModule, RefactorSelectComponent, PhoneInputComponent],
+  imports: [CommonModule, ComparadorCorreccionesComponent, FormsModule, RefactorSelectComponent, PhoneInputComponent, AddressFormComponent, GaleriaEvidenciasComponent],
   templateUrl: './correcciones-solicitud.component.html',
   styleUrl: './correcciones-solicitud.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -51,6 +69,8 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   private readonly alerts = inject(AlertService);
   private readonly confirmation = inject(ConfirmationService);
   private readonly cdr = inject(ChangeDetectorRef);
+  private readonly mediaApi = inject(MediaApiService);
+  @ViewChild(AddressFormComponent) private addressForm?: AddressFormComponent;
 
   readonly pasos: PasoCorreccion[] = [
     { id: 'personal_data', label: 'Datos Personales' },
@@ -72,6 +92,10 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   registroSeleccionado = signal<string>('');
   valorCorregido = signal<string>('');
   motivoCorreccion = signal<string>('');
+  readonly direccionCorregida = signal<Partial<AddressResult> | null>(null);
+  readonly evidenciaNueva = signal<File | null>(null);
+  readonly evidenciaError = signal<string | null>(null);
+  readonly evidenciaSubiendo = signal(false);
   readonly minBirthDate = MIN_BIRTH_DATE;
   readonly maxAdultDate = maxAdultBirthDate();
   readonly maxDate = toDateInputValue(new Date());
@@ -104,7 +128,8 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
 
     const diferencias = solicitud.visitas.flatMap((v) => v.diferencias);
     return diferencias.filter(
-      (d) => !solicitud.correcciones.some((c) => c.indiceDiferencia === d.indice),
+      (d) => d.campo !== 'birth_place'
+        && !solicitud.correcciones.some((c) => c.indiceDiferencia === d.indice),
     );
   });
 
@@ -193,6 +218,11 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     if (diferencia.campo === 'phone_number') {
       initialVal = this.normalizarTelefonoNacional(initialVal);
     }
+    if (this.isAddressField(diferencia.campo)) {
+      this.direccionCorregida.set(this.direccionDesdeRegistro(diferencia));
+    } else {
+      this.direccionCorregida.set(null);
+    }
     this.valorCorregido.set(initialVal);
     this.motivoCorreccion.set(diferencia.descripcion ?? 'Corrección aceptada por coordinación');
     this.mostrarFormularioCorreccion.set(true);
@@ -203,6 +233,10 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     this.diferenciaSeleccionada.set(null);
     this.valorCorregido.set('');
     this.motivoCorreccion.set('');
+    this.direccionCorregida.set(null);
+    this.evidenciaNueva.set(null);
+    this.evidenciaError.set(null);
+    this.evidenciaSubiendo.set(false);
   }
 
   isDateField(campo: string): boolean {
@@ -223,6 +257,14 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
 
   isCountryField(campo: string): boolean {
     return ['birth_country', 'identification_country', 'country'].includes(campo);
+  }
+
+  isAddressField(campo: string): boolean {
+    return ADDRESS_FIELDS.has(campo);
+  }
+
+  onAddressChange(address: AddressResult): void {
+    this.direccionCorregida.set(address);
   }
 
   isOfficialIdTypeField(campo: string): boolean {
@@ -263,6 +305,62 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
 
   isBooleanField(campo: string): boolean {
     return ['is_current', 'is_active', 'has_identification_evidence', 'has_evidence', 'economic_dependency', 'is_family_reference'].includes(campo);
+  }
+
+  isIdentificationEvidenceField(campo: string): boolean {
+    return campo === 'has_identification_evidence';
+  }
+
+  evidenciasIdentificacion() {
+    const evidencias = this.facade.solicitudSeleccionada()?.evidenciasDeclaradas
+      .filter((evidencia) => evidencia.tipo === 'IDENTIFICATION') ?? [];
+    return evidencias.length > 0 ? [evidencias.at(-1)!] : [];
+  }
+
+  onEvidenceFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0] ?? null;
+    this.evidenciaError.set(null);
+    if (!file) {
+      this.evidenciaNueva.set(null);
+      return;
+    }
+    const error = validateUploadFile(file, PRIVATE_MEDIA_FILE_RULE);
+    if (error) {
+      this.evidenciaNueva.set(null);
+      this.evidenciaError.set(error);
+      input.value = '';
+      return;
+    }
+    this.evidenciaNueva.set(file);
+  }
+
+  async actualizarEvidenciaIdentificacion(): Promise<void> {
+    const solicitud = this.facade.solicitudSeleccionada();
+    const file = this.evidenciaNueva();
+    if (!solicitud || !file) {
+      this.evidenciaError.set('Selecciona una imagen o PDF antes de actualizar la evidencia.');
+      return;
+    }
+
+    this.evidenciaSubiendo.set(true);
+    this.evidenciaError.set(null);
+    try {
+      await firstValueFrom(this.mediaApi.upload({
+        file,
+        owner_type: 'distributor_application',
+        owner_id: solicitud.id,
+        purpose: 'IDENTIFICATION',
+      }));
+      await this.facade.cargarSolicitud(solicitud.id);
+      this.evidenciaNueva.set(null);
+      this.alerts.showAlert('La evidencia de identificación se actualizó correctamente.', 'success');
+    } catch (error: any) {
+      this.evidenciaError.set(error?.error?.error?.message ?? error?.error?.message ?? 'No fue posible actualizar la evidencia.');
+    } finally {
+      this.evidenciaSubiendo.set(false);
+      this.cdr.markForCheck();
+    }
   }
 
   isIntegerField(campo: string): boolean {
@@ -319,6 +417,11 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
     let nuevoValor = this.valorCorregido().trim();
     const campo = dif.campo === 'curp_masked' ? 'curp' : dif.campo;
 
+    if (this.isAddressField(campo)) {
+      await this.aplicarCorreccionDomicilio(dif);
+      return;
+    }
+
     if (!nuevoValor && (this.isIntegerField(campo) || this.isNumericField(campo))) {
       this.alerts.showAlert('Captura un valor numérico antes de guardar la corrección.', 'warning');
       return;
@@ -341,8 +444,7 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
           this.alerts.showAlert('El RFC debe tener exactamente 12 o 13 caracteres.', 'warning');
           return;
         }
-        const rfcRegex = /^([A-ZÑ&]{3,4})(\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01]))([A-Z\d]{2})([A\d])$/i;
-        if (!rfcRegex.test(rfcClean)) {
+        if (!RFC_REGEX.test(rfcClean)) {
           this.alerts.showAlert('El formato de RFC es inválido.', 'warning');
           return;
         }
@@ -406,7 +508,94 @@ export class CorreccionesSolicitudComponent implements OnInit, OnDestroy {
   private normalizarTelefonoNacional(value: string): string {
     const raw = String(value ?? '').trim();
     const digits = raw.replace(/\D/g, '');
-    return raw.startsWith('+') ? digits.slice(-10) : digits.slice(0, 10);
+    return digits.slice(-10);
+  }
+
+  private direccionDesdeRegistro(dif: any): Partial<AddressResult> {
+    const solicitud = this.facade.solicitudSeleccionada();
+    const records = solicitud?.datosDeclarados?.[dif.seccion];
+    const record = Array.isArray(records)
+      ? records.find((item: any) => String(item?.id ?? '') === String(dif.registroId ?? ''))
+      : records && typeof records === 'object' ? records as Record<string, unknown> : null;
+    const direccion: Partial<AddressResult> = {
+      street: record?.street ?? '',
+      exterior_number: record?.exterior_number ?? '',
+      interior_number: record?.interior_number ?? '',
+      neighborhood: record?.neighborhood ?? '',
+      zip_code: record?.postal_code ?? record?.zip_code ?? '',
+      municipality: record?.municipality ?? '',
+      city: record?.city ?? record?.municipality ?? '',
+      state: record?.state ?? '',
+      country: record?.country ?? 'MX',
+    };
+
+    this.correccionesAplicadas()
+      .filter((correction) =>
+        correction.seccion === dif.seccion
+        && String(correction.registroId ?? '') === String(dif.registroId ?? '')
+        && ADDRESS_FIELDS.has(correction.campo),
+      )
+      .forEach((correction) => {
+        const property = correction.campo === 'postal_code' ? 'zip_code' : correction.campo;
+        (direccion as Record<string, unknown>)[property] = correction.valorCorregido || correction.valorObservado;
+      });
+
+    return direccion;
+  }
+
+  private valorDireccion(direccion: Partial<AddressResult>, campo: string): string {
+    const property = campo === 'postal_code' ? 'zip_code' : campo;
+    return String((direccion as Record<string, unknown>)[property] ?? '').trim();
+  }
+
+  private async aplicarCorreccionDomicilio(dif: any): Promise<void> {
+    if (!this.addressForm || !this.addressForm.validarYEnfocarPrimerError()) {
+      this.alerts.showAlert('Completa el domicilio con estado, municipio, código postal, colonia, calle y número exterior.', 'warning');
+      return;
+    }
+
+    const actual = this.direccionDesdeRegistro(dif);
+    const nueva = this.direccionCorregida();
+    if (!nueva) return;
+
+    const diferenciasDomicilio = this.diferenciasPendientes().filter((pendiente) =>
+      pendiente.seccion === dif.seccion
+      && String(pendiente.registroId ?? '') === String(dif.registroId ?? '')
+      && ADDRESS_FIELDS.has(pendiente.campo),
+    );
+    const diferenciaPorCampo = new Map(diferenciasDomicilio.map((pendiente) => [pendiente.campo, pendiente]));
+    const cambios = [...ADDRESS_FIELDS].filter((campo) =>
+      this.valorDireccion(actual, campo) !== this.valorDireccion(nueva, campo),
+    ).filter((campo) => diferenciaPorCampo.has(campo));
+    if (cambios.length === 0) {
+      this.alerts.showAlert('No hay cambios en el domicilio para aplicar.', 'warning');
+      return;
+    }
+
+    const motivo = this.motivoCorreccion().trim() || dif.descripcion;
+
+    for (const campo of cambios) {
+      const solicitudActual = this.facade.solicitudSeleccionada();
+      if (!solicitudActual) return;
+      const diferencia = diferenciaPorCampo.get(campo);
+      const nuevoValor = this.valorDireccion(nueva, campo);
+      const success = await this.facade.aplicarCorreccion(solicitudActual.id, {
+        visit_id: solicitudActual.visitas.at(-1)?.id || '',
+        seccion: dif.seccion,
+        campo,
+        valor_original: this.valorDireccion(actual, campo),
+        valor_observado: diferencia?.datoObservado ?? nuevoValor,
+        valor_corregido: nuevoValor,
+        motivo,
+        lock_version: solicitudActual.lockVersion,
+        record_id: dif.registroId || undefined,
+        difference_index: diferencia!.indice,
+      });
+      if (!success) return;
+    }
+
+    this.alerts.showAlert('Domicilio corregido y aplicado al expediente.', 'success');
+    this.cerrarCorreccion();
   }
 
   private normalizarPais(value: unknown): string {

@@ -137,15 +137,25 @@
                   }
 
                   <!-- Lista de Comprobación para la Sección Actual -->
-                  <app-lista-comprobacion-visita
-                    [puntos]="puntosPasoActual()"
-                    [isReadonly]="visita.estado === 'COMPLETED'"
-                    (cambiarEstadoGrupo)="onEstadoGrupoChange($event)"
-                    (cambiarEstadoPunto)="onEstadoPuntoChange($event)"
-                    (registrarDiferencia)="abrirEditorDiferencia($event)"
-                    (quitarDiferencia)="onEliminarDiferencia($event)"
-                  >
-                  </app-lista-comprobacion-visita>
+                  @if (puntosPasoActual().length > 0) {
+                    <app-lista-comprobacion-visita
+                      [puntos]="puntosPasoActual()"
+                      [isReadonly]="visita.estado === 'COMPLETED'"
+                      (cambiarEstadoGrupo)="onEstadoGrupoChange($event)"
+                      (cambiarEstadoPunto)="onEstadoPuntoChange($event)"
+                      (registrarDiferencia)="abrirEditorDiferencia($event)"
+                      (quitarDiferencia)="onEliminarDiferencia($event)"
+                    >
+                    </app-lista-comprobacion-visita>
+                  } @else {
+                    <div class="empty-section-state" role="status">
+                      <svg class="empty-section-state__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M9 17h6m-6-4h6m-6-4h3m7 9V7.8a2 2 0 0 0-.6-1.4l-3.8-3.8A2 2 0 0 0 13.2 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2Z" />
+                      </svg>
+                      <strong>No se adjuntó información en esta sección.</strong>
+                      <span>{{ pasoConfig.label }} no cuenta con datos declarados para revisar.</span>
+                    </div>
+                  }
                 }
               }
 

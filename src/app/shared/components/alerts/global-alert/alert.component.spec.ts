@@ -58,5 +58,29 @@ describe('AlertComponent accessibility', () => {
     const liveRegion = fixture.nativeElement.querySelector('[role="status"]') as HTMLElement;
     expect(liveRegion.getAttribute('aria-live')).toBe('polite');
     expect(liveRegion.classList.contains('app-toast--success')).toBe(true);
+    expect(liveRegion.querySelector('strong')?.textContent).toBe('Listo');
+    expect(liveRegion.querySelector('p')?.textContent).toBe('Cambios guardados.');
+  });
+
+  it('no renderiza tarjetas sin contenido aunque exista un elemento inválido', () => {
+    TestBed.configureTestingModule({
+      imports: [
+        AlertComponent,
+        LucideAngularModule.pick({ AlertTriangle, CheckCircle2, Info, OctagonAlert, X }),
+      ],
+    });
+    const alerts = TestBed.inject(AlertService);
+    const fixture = TestBed.createComponent(AlertComponent);
+
+    alerts.alerts.set([{
+      id: 'invalid-alert',
+      type: 'warning',
+      message: '   ',
+      duration: 0,
+      closing: false,
+    }]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.app-toast')).toBeNull();
   });
 });

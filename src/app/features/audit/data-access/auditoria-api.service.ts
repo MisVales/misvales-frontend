@@ -2,6 +2,7 @@
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
+import { ISO_COUNTRIES } from '../../../shared/utils/data/iso-countries';
 
 export interface AuditRecord {
   id: string;
@@ -809,6 +810,9 @@ export const FIELD_LABELS_ES: Record<string, string> = {
   owner_id: 'ID de Registro Asociado',
 };
 
+const COUNTRY_FIELDS = new Set(['birth_country', 'identification_country', 'country']);
+const COUNTRY_LABELS_ES = new Map(ISO_COUNTRIES.map((country) => [country.code, country.name]));
+
 export const VALUE_LABELS_ES: Record<string, string> = {
   // Estados de solicitud
   DRAFT: 'Borrador / Captura',
@@ -1066,6 +1070,11 @@ export class AuditoriaApiService {
           .filter(Boolean)
           .join(', ');
       }
+      if (fieldName && COUNTRY_FIELDS.has(fieldName)) {
+        const countryCode = value.trim().toUpperCase();
+        const countryName = COUNTRY_LABELS_ES.get(countryCode);
+        if (countryName) return `${countryName} (${countryCode})`;
+      }
       if (VALUE_LABELS_ES[value]) return VALUE_LABELS_ES[value];
       if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/.test(value)) {
         const date = new Date(value);
@@ -1146,7 +1155,14 @@ export class AuditoriaApiService {
   }
 
   extractActualChanges(audit: AuditRecord): ChangedFieldDetail[] {
-    if (['PRIVATE_MEDIA_DOWNLOADED', 'VERIFICATION_EVIDENCE_DOWNLOADED'].includes(audit.event_name)) {
+    if ([
+      'PRIVATE_MEDIA_DOWNLOADED',
+      'VERIFICATION_EVIDENCE_DOWNLOADED',
+      'VERIFICATION_EVIDENCE_UPLOADED',
+      'VERIFICATION_EVIDENCE_REMOVED',
+      'PRIVATE_MEDIA_STORED',
+      'MEDIA_UPLOADED',
+    ].includes(audit.event_name)) {
       return [];
     }
     let prevRaw: Record<string, unknown> = {};
@@ -1211,6 +1227,8 @@ export class AuditoriaApiService {
       'application_lock_version',
       'fields_updated',
       'changes',
+      // La evidencia se representa con su imagen, no como un booleano técnico.
+      'has_identification_evidence',
     ]);
 
     const hasVerifierName = Boolean(nextRaw['verifier_name'] || prevRaw['verifier_name']);
@@ -1224,7 +1242,7 @@ export class AuditoriaApiService {
       prevRaw['changes'],
       nextRaw['changes'],
       deletionEvent,
-    );
+    ).filter((change) => change.field !== 'has_identification_evidence');
 
     allKeys.forEach((key) => {
       const oldVal = prevRaw[key];

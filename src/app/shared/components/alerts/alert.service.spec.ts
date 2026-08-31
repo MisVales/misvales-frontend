@@ -14,4 +14,14 @@ describe('AlertService', () => {
       duration: 0,
     });
   });
+
+  it('descarta avisos vacíos y normaliza mensajes de error', () => {
+    const service = new AlertService();
+
+    service.warning('   ', 0);
+    service.showAlert({ error: { message: '  Revisa los datos capturados.  ' } }, 'warning', 0);
+
+    expect(service.alerts()).toHaveLength(1);
+    expect(service.alerts()[0].message).toBe('Revisa los datos capturados.');
+  });
 });

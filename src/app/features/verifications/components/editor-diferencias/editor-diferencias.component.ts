@@ -1,10 +1,16 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output, signal, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { PhoneInputComponent } from '../../../../shared/components/inputs/phone-input/phone-input.component';
 import { RefactorSelectComponent, RefactorSelectOption } from '../../../../shared/components/inputs/refactor-select/refactor-select.component';
 import { ISO_COUNTRIES } from '../../../../shared/utils/data/iso-countries';
+import { AddressFormComponent, AddressResult } from '../../../../shared/components/inputs/address-form/address-form';
+import { InputErrorComponent } from '../../../../shared/components/inputs/input-error/input-error.component';
+import { ValidationRule, ValidationTooltipComponent } from '../../../../shared/components/inputs/validation-tooltip/validation-tooltip.component';
+import { curpValidator } from '../../../applications/validators/curp.validator';
+import { RFC_REGEX, rfcValidator } from '../../../applications/validators/rfc.validator';
 
 const MIN_BIRTH_DATE = '1900-01-01';
 
@@ -33,6 +39,12 @@ export interface DiferenciaRelacionada {
   datoObservado?: string;
 }
 
+export interface DireccionContexto {
+  declarada: Partial<AddressResult>;
+  observada?: Partial<AddressResult>;
+  campos: DiferenciaRelacionada[];
+}
+
 export interface DiferenciaContexto {
   seccion: string;
   campo: string;
@@ -41,18 +53,20 @@ export interface DiferenciaContexto {
   datoObservado?: string;
   descripcion?: string;
   relacionadas?: DiferenciaRelacionada[];
+  direccion?: DireccionContexto;
 }
 
 @Component({
   selector: 'app-editor-diferencias',
   standalone: true,
-  imports: [CommonModule, FormsModule, PhoneInputComponent, RefactorSelectComponent],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PhoneInputComponent, RefactorSelectComponent, AddressFormComponent, InputErrorComponent, ValidationTooltipComponent],
   templateUrl: './editor-diferencias.component.html',
   styleUrl: './editor-diferencias.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditorDiferenciasComponent {
   private readonly alerts = inject(AlertService);
+  @ViewChild(AddressFormComponent) private addressForm?: AddressFormComponent;
   contexto = input.required<DiferenciaContexto>();
   
   isProcessing = input<boolean>(false);
@@ -64,11 +78,32 @@ export class EditorDiferenciasComponent {
   datoObservado = signal<string>('');
   descripcion = signal<string>('');
   readonly valoresRelacionados = signal<Record<string, string>>({});
+  readonly direccionObservada = signal<AddressResult | null>(null);
+  readonly camposTocados = signal<ReadonlySet<string>>(new Set());
   submitted = signal<boolean>(false);
   readonly minBirthDate = MIN_BIRTH_DATE;
   readonly maxAdultDate = maxAdultBirthDate();
   readonly maxDate = toDateInputValue(new Date());
   readonly maxModelYear = String(new Date().getFullYear() + 1);
+
+  readonly curpControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.required, Validators.maxLength(18), curpValidator()],
+  });
+  readonly rfcControl = new FormControl('', {
+    nonNullable: true,
+    validators: [Validators.maxLength(13), rfcValidator()],
+  });
+
+  readonly curpRules: ValidationRule[] = [
+    { label: 'Tener exactamente 18 caracteres', test: (value) => value.length === 18 },
+    { label: 'Sólo letras y números permitidos', test: (value) => /^[A-Z0-9]+$/i.test(value) },
+  ];
+  readonly rfcRules: ValidationRule[] = [
+    { label: '3 o 4 letras iniciales', test: (value) => /^[A-Z\u00D1&]{3,4}/i.test(value) },
+    { label: '6 dígitos de fecha (AAMMDD)', test: (value) => /^[A-Z\u00D1&]{3,4}\d{6}/i.test(value) },
+    { label: '3 caracteres de homoclave final', test: (value) => RFC_REGEX.test(value) },
+  ];
 
   ngOnInit() {
     const ctx = this.contexto();
@@ -85,6 +120,15 @@ export class EditorDiferenciasComponent {
     }
     if (ctx.descripcion) {
       this.descripcion.set(ctx.descripcion);
+    }
+    if (this.isCurpField()) {
+      this.curpControl.setValue(this.datoObservado(), { emitEvent: false });
+    }
+    if (this.isRfcField()) {
+      this.rfcControl.setValue(this.datoObservado(), { emitEvent: false });
+    }
+    if (ctx.direccion?.observada) {
+      this.direccionObservada.set({ ...ctx.direccion.declarada, ...ctx.direccion.observada } as AddressResult);
     }
     this.valoresRelacionados.set(Object.fromEntries(
       (ctx.relacionadas ?? []).map((relacionada) => [relacionada.campo, relacionada.datoObservado ?? '']),
@@ -177,6 +221,10 @@ export class EditorDiferenciasComponent {
   }
 
   formatearValorObservado(): string {
+    if (this.isAddressField()) {
+      const direccion = this.direccionObservada();
+      return direccion ? this.formatearDomicilio(direccion) : '';
+    }
     const valor = this.datoObservado();
     if (!valor) return '';
     if (this.isDateField() && typeof valor === 'string') {
@@ -218,13 +266,26 @@ export class EditorDiferenciasComponent {
 
   onPhoneNumberChange(value: string): void {
     this.datoObservado.set(this.normalizarTelefonoNacional(value));
+    this.marcarCampoTocado('phone_number');
   }
 
   onCurpChange(value: string): void {
-    this.datoObservado.set(value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 18));
+    const normalized = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 18);
+    this.datoObservado.set(normalized);
+    this.curpControl.setValue(normalized);
+    this.marcarCampoTocado('curp');
+  }
+
+  onRfcChange(value: string): void {
+    const normalized = value.toUpperCase().replace(/[^A-Z0-9\u00D1&]/g, '').slice(0, 13);
+    this.datoObservado.set(normalized);
+    // Actualiza inmediatamente el tooltip y los mensajes de error.
+    this.rfcControl.setValue(normalized);
+    this.marcarCampoTocado('rfc');
   }
 
   onValueChange(value: unknown): void {
+    this.marcarCampoTocado();
     const nextValue = value === null || value === undefined ? '' : String(value);
     this.datoObservado.set(
       this.isIntegerField()
@@ -245,11 +306,122 @@ export class EditorDiferenciasComponent {
     }
   }
 
+  onAddressChange(value: AddressResult): void {
+    this.direccionObservada.set(value);
+  }
+
+  marcarCampoTocado(campo = this.campo()): void {
+    this.camposTocados.update((campos) => {
+      const siguientes = new Set(campos);
+      siguientes.add(campo);
+      return siguientes;
+    });
+    if (campo === 'curp') this.curpControl.markAsTouched();
+    if (campo === 'rfc') this.rfcControl.markAsTouched();
+  }
+
+  mostrarErrorCampo(campo = this.campo()): boolean {
+    return this.submitted() || this.camposTocados().has(campo);
+  }
+
+  mostrarCamposRelacionados(): boolean {
+    if (!this.isNationalityField()) return false;
+    const observado = this.normalizarNacionalidad(this.datoObservado());
+    const declarado = this.normalizarNacionalidad(this.contexto().datoDeclarado);
+    return observado === 'FOREIGN' && observado !== declarado;
+  }
+
+  direccionInicial(): Partial<AddressResult> | undefined {
+    const direccion = this.contexto().direccion;
+    if (!direccion) return undefined;
+    return { ...direccion.declarada, ...direccion.observada };
+  }
+
+  puedeGuardar(): boolean {
+    if (this.isAddressField()) {
+      return !this.errorDireccion() && !!this.descripcion().trim() && this.direccionTieneCambios();
+    }
+
+    if (!this.datoValido()) return false;
+    if (this.isNationalityField() && this.mostrarCamposRelacionados()) {
+      const faltanPaises = (this.contexto().relacionadas ?? []).some(
+        (relacionada) => !this.valorRelacionado(relacionada.campo).trim(),
+      );
+      if (faltanPaises) return false;
+    }
+
+    return !!this.descripcion().trim();
+  }
+
+  errorDatoObservado(): string | null {
+    const campo = this.campo();
+    const value = this.datoObservado().trim();
+    if (this.isCurpField() || this.isRfcField() || this.isAddressField()) return null;
+    if (!value) return 'Captura el dato observado para registrar la diferencia.';
+    if (campo === 'phone_number' && value.replace(/\D/g, '').length !== 10) {
+      return 'El teléfono debe contener exactamente 10 dígitos numéricos.';
+    }
+    if (this.isDateField()) return this.errorFecha(campo, value);
+    if (this.isIntegerField() && (!/^\d{4}$/.test(value) || Number(value) < 1990 || Number(value) > Number(this.maxModelYear))) {
+      return `El año debe tener cuatro dígitos y estar entre 1990 y ${this.maxModelYear}.`;
+    }
+    if (this.isNumericField()) {
+      if (!/^\d{1,15}(?:\.\d{1,4})?$/.test(value)) {
+        return 'Captura un número válido, sin signo negativo y con hasta 4 decimales.';
+      }
+      if (['width_meters', 'length_meters', 'built_area_square_meters'].includes(campo) && Number(value) <= 0) {
+        return 'La medida debe ser mayor que cero.';
+      }
+    }
+    if (this.isNationalityField()) {
+      const nationality = this.normalizarNacionalidad(value);
+      if (!['MEXICAN', 'FOREIGN'].includes(nationality)) return 'Selecciona una nacionalidad válida.';
+      if (nationality === this.normalizarNacionalidad(this.contexto().datoDeclarado)) {
+        return 'Selecciona una nacionalidad diferente para registrar la diferencia.';
+      }
+    }
+    if (this.isCountryField() && !/^[A-Z]{2}$/.test(this.normalizarPais(value))) {
+      return 'Selecciona un país válido.';
+    }
+    if (this.isOfficialIdTypeField() && !['INE', 'PASSPORT', 'PROFESSIONAL_LICENSE', 'OTHER'].includes(value)) {
+      return 'Selecciona un tipo de identificación válido.';
+    }
+    if (campo === 'official_id_number' && value.length > 25) {
+      return 'El número de identificación no puede exceder 25 caracteres.';
+    }
+    return null;
+  }
+
+  errorDescripcion(): string | null {
+    return this.descripcion().trim() ? null : 'Describe el hallazgo para que pueda ser revisado.';
+  }
+
+  errorDireccion(): string | null {
+    if (!this.addressForm) return 'Completa la dirección observada.';
+    if (this.addressForm.form.invalid) return 'Completa todos los campos obligatorios de la dirección.';
+    return null;
+  }
+
+  private datoValido(): boolean {
+    if (this.isCurpField()) return this.curpControl.valid;
+    if (this.isRfcField()) return this.rfcControl.valid && !!this.datoObservado().trim();
+    return !this.errorDatoObservado();
+  }
+
+  isRfcField(): boolean {
+    return this.campo() === 'rfc';
+  }
+
+  isAddressField(): boolean {
+    return this.campo() === 'address';
+  }
+
   valorRelacionado(campo: string): string {
     return this.valoresRelacionados()[campo] ?? '';
   }
 
   onValorRelacionadoChange(campo: string, value: unknown): void {
+    this.marcarCampoTocado(campo);
     this.valoresRelacionados.update((values) => ({
       ...values,
       [campo]: value === null || value === undefined ? '' : String(value),
@@ -263,6 +435,46 @@ export class EditorDiferenciasComponent {
   }
 
   onGuardar() {
+    this.submitted.set(true);
+    const contexto = this.contexto();
+
+    if (!this.puedeGuardar()) {
+      if (this.isAddressField()) this.addressForm?.validarYEnfocarPrimerError();
+      this.alerts.showAlert('Corrige los campos marcados antes de guardar la diferencia.', 'warning');
+      return;
+    }
+
+    if (this.isAddressField()) {
+      this.guardar.emit(this.construirPayloadsDireccion(contexto));
+      return;
+    }
+
+    const valorObservado = this.isCurpField() || this.isRfcField()
+      ? this.datoObservado().trim().toUpperCase()
+      : this.datoObservado().trim();
+    const payload: DiferenciaPayload = {
+      seccion: contexto.seccion,
+      campo: contexto.campo,
+      datoDeclarado: contexto.datoDeclarado,
+      datoObservado: valorObservado,
+      descripcion: this.descripcion().trim(),
+    };
+    const relatedPayloads = this.isNationalityField()
+      ? (contexto.relacionadas ?? [])
+        .map((related) => ({ related, value: this.valorRelacionado(related.campo).trim() }))
+        .filter(({ related, value }) => value && this.normalizarPais(value) !== this.normalizarPais(related.datoDeclarado))
+        .map(({ related, value }): DiferenciaPayload => ({
+          seccion: contexto.seccion,
+          campo: related.campo,
+          datoDeclarado: related.datoDeclarado,
+          datoObservado: value,
+          descripcion: this.descripcion().trim(),
+        }))
+      : [];
+    this.guardar.emit(relatedPayloads.length ? [payload, ...relatedPayloads] : payload);
+  }
+
+  private onGuardarLegacy() {
     this.submitted.set(true);
     const campo = this.campo();
     let valorObservado = this.datoObservado().trim();
@@ -358,6 +570,74 @@ export class EditorDiferenciasComponent {
     this.guardar.emit(relatedPayloads.length ? [payload, ...relatedPayloads] : payload);
   }
 
+  private errorFecha(campo: string, value: string): string | null {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !this.fechaCalendarioEsValida(value)) {
+      return 'Selecciona una fecha válida.';
+    }
+    if (campo === 'birth_date' && (value < this.minBirthDate || value > this.maxAdultDate)) {
+      return 'La fecha debe ser posterior a 1900 y corresponder a una persona mayor de edad.';
+    }
+    if (['started_at', 'ended_at'].includes(campo) && value > this.maxDate) {
+      return 'La fecha no puede ser posterior a hoy.';
+    }
+    return null;
+  }
+
+  private direccionTieneCambios(): boolean {
+    const direccion = this.direccionObservada();
+    const contexto = this.contexto().direccion;
+    if (!direccion || !contexto) return false;
+    return contexto.campos.some((campo) =>
+      this.valorDireccion(direccion, campo.campo).trim() !== campo.datoDeclarado.trim(),
+    );
+  }
+
+  private construirPayloadsDireccion(contexto: DiferenciaContexto): DiferenciaPayload[] {
+    const direccion = this.direccionObservada();
+    if (!direccion || !contexto.direccion) return [];
+    const descripcion = this.descripcion().trim();
+    return contexto.direccion.campos
+      .map((campo) => ({
+        campo,
+        value: this.valorDireccion(direccion, campo.campo).trim(),
+        declared: campo.datoDeclarado.trim(),
+      }))
+      .filter(({ value, declared }) => value !== declared)
+      .map(({ campo, value }): DiferenciaPayload => ({
+        seccion: contexto.seccion,
+        campo: campo.campo,
+        datoDeclarado: campo.datoDeclarado,
+        datoObservado: value,
+        descripcion,
+      }));
+  }
+
+  private valorDireccion(direccion: Partial<AddressResult>, campo: string): string {
+    const values: Record<string, unknown> = {
+      street: direccion.street,
+      exterior_number: direccion.exterior_number,
+      interior_number: direccion.interior_number,
+      neighborhood: direccion.neighborhood,
+      postal_code: direccion.zip_code,
+      municipality: direccion.municipality,
+      city: direccion.city,
+      state: direccion.state,
+      country: direccion.country,
+    };
+    return String(values[campo] ?? '');
+  }
+
+  private formatearDomicilio(direccion: Partial<AddressResult>): string {
+    const linea = [direccion.street, direccion.exterior_number, direccion.interior_number ? `Int. ${direccion.interior_number}` : '']
+      .filter(Boolean)
+      .join(' ');
+    const ubicacion = [direccion.neighborhood ? `Col. ${direccion.neighborhood}` : '', direccion.municipality || direccion.city, direccion.state]
+      .filter(Boolean)
+      .join(', ');
+    const cp = direccion.zip_code ? `C.P. ${direccion.zip_code}` : '';
+    return [linea, ubicacion, cp].filter(Boolean).join(' · ');
+  }
+
   private normalizarPais(value: string): string {
     const normalized = value.trim().toUpperCase();
     if (/^[A-Z]{2}$/.test(normalized)) return normalized;
@@ -389,7 +669,7 @@ export class EditorDiferenciasComponent {
   private normalizarTelefonoNacional(value: string): string {
     const raw = String(value ?? '').trim();
     const digits = raw.replace(/\D/g, '');
-    return raw.startsWith('+') ? digits.slice(-10) : digits.slice(0, 10);
+    return digits.slice(-10);
   }
 
   private fechaEsValida(campo: string, value: string): boolean {

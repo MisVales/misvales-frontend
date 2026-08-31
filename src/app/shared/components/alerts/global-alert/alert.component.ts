@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AlertService } from '../alert.service';
 import { LucideAngularModule } from 'lucide-angular';
@@ -11,7 +11,10 @@ import { LucideAngularModule } from 'lucide-angular';
   styleUrl: './alert.component.css',
 })
 export class AlertComponent {
-  alertService = inject(AlertService);
+  readonly alertService = inject(AlertService);
+  readonly visibleAlerts = computed(() => this.alertService.alerts().filter((alert) =>
+    typeof alert?.message === 'string' && alert.message.trim().length > 0,
+  ));
 
   getIconName(type: string): string {
     switch (type) {
@@ -43,7 +46,7 @@ export class AlertComponent {
     }
   }
 
-  title(type: string): string {
+  alertTitle(type: string): string {
     return ({ success: 'Listo', error: 'No se pudo completar', warning: 'Revisa antes de continuar', info: 'Información' } as Record<string, string>)[type] ?? 'Información';
   }
 }

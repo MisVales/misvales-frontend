@@ -5,7 +5,8 @@ import { VerificacionDistribuidorasFacade } from '../../state/verificacion-distr
 import { ListaComprobacionVisitaComponent, PuntoComprobacion } from '../../components/lista-comprobacion-visita/lista-comprobacion-visita.component';
 import { CapturaEvidenciaComponent } from '../../components/captura-evidencia/captura-evidencia.component';
 import { GaleriaEvidenciasComponent } from '../../components/galeria-evidencias/galeria-evidencias.component';
-import { EditorDiferenciasComponent, DiferenciaPayload, DiferenciaRelacionada } from '../../components/editor-diferencias/editor-diferencias.component';
+import { EditorDiferenciasComponent, DiferenciaPayload, DiferenciaRelacionada, DireccionContexto } from '../../components/editor-diferencias/editor-diferencias.component';
+import { AddressResult } from '../../../../shared/components/inputs/address-form/address-form';
 import { FormsModule } from '@angular/forms';
 import { AlertService } from '../../../../shared/components/alerts/alert.service';
 import { ConfirmationService } from '../../../../shared/dialogs/confirmation.service';
@@ -200,13 +201,44 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
       const registros = Array.isArray(contenido) ? contenido : [contenido];
       registros.forEach((registro, indice) => {
         if (!registro || typeof registro !== 'object') return;
-        Object.entries(registro as Record<string, unknown>).forEach(([campo, valor]) => {
-          if (CAMPOS_INTERNOS.has(campo)) return;
+        const registroDatos = registro as Record<string, unknown>;
+        const registroId = typeof registroDatos['id'] === 'string' ? String(registroDatos['id']) : undefined;
+        const direccionDeclarada = this.direccionDesdeRegistro(registroDatos);
+        const diferenciasDireccion = diferencias.filter((item) =>
+          item.seccion === seccion
+          && CAMPOS_DIRECCION.has(item.campo)
+          && (!item.registroId || item.registroId === registroId),
+        );
+        if (seccion === 'residences' && Object.keys(direccionDeclarada).length > 0) {
+          const direccionObservada = diferenciasDireccion.length > 0
+            ? this.combinarDireccionObservada(direccionDeclarada, diferenciasDireccion)
+            : undefined;
+          const descripciones = [...new Set(diferenciasDireccion.map((item) => item.descripcion).filter(Boolean))];
+          puntos.push({
+            id: `${seccion}.${indice}.address`,
+            seccion,
+            campo: 'address',
+            etiqueta: 'Domicilio completo',
+            datoDeclarado: this.formatearDomicilio(direccionDeclarada),
+            datoObservado: direccionObservada ? this.formatearDomicilio(direccionObservada) : undefined,
+            descripcion: descripciones.join(' · ') || undefined,
+            grupo: ETIQUETAS_SECCIONES[seccion] ?? this.humanizar(seccion),
+            registro: this.etiquetaRegistro(seccion, registroDatos, indice),
+            registroId,
+            estado: diferenciasDireccion.length > 0 ? 'DIFERENCIA' : 'COMPROBADO',
+            diferenciaRegistrada: diferenciasDireccion.length > 0,
+            direccionDeclarada,
+            direccionObservada,
+          });
+        }
+
+        Object.entries(registroDatos).forEach(([campo, valor]) => {
+          if (CAMPOS_INTERNOS.has(campo) || (seccion === 'residences' && CAMPOS_DIRECCION.has(campo))) return;
           const id = `${seccion}.${indice}.${campo}`;
           const diferencia = diferencias.find((item) =>
             item.seccion === seccion
             && item.campo === campo
-            && (!item.registroId || item.registroId === (registro as Record<string, unknown>)['id'])
+            && (!item.registroId || item.registroId === registroId)
           );
           const declarado = this.formatearValor(campo, valor);
           puntos.push({
@@ -218,23 +250,83 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
             datoObservado: diferencia ? this.formatearValor(campo, diferencia.datoObservado) : undefined,
             descripcion: diferencia?.descripcion,
             grupo: ETIQUETAS_SECCIONES[seccion] ?? this.humanizar(seccion),
-            registro: this.etiquetaRegistro(seccion, registro as Record<string, unknown>, indice),
-            registroId: typeof (registro as Record<string, unknown>)['id'] === 'string' ? String((registro as Record<string, unknown>)['id']) : undefined,
+            registro: this.etiquetaRegistro(seccion, registroDatos, indice),
+            registroId,
             estado: diferencias.some((diferencia) =>
               diferencia.seccion === seccion
               && diferencia.campo === campo
-              && (!diferencia.registroId || diferencia.registroId === (registro as Record<string, unknown>)['id'])
+              && (!diferencia.registroId || diferencia.registroId === registroId)
             ) ? 'DIFERENCIA' : 'COMPROBADO',
             diferenciaRegistrada: diferencias.some((diferencia) =>
               diferencia.seccion === seccion
               && diferencia.campo === campo
-              && (!diferencia.registroId || diferencia.registroId === (registro as Record<string, unknown>)['id'])
+              && (!diferencia.registroId || diferencia.registroId === registroId)
             ),
           });
         });
       });
     }
     this.puntosComprobacion.set(puntos);
+  }
+
+  private direccionDesdeRegistro(registro: Record<string, unknown>): Partial<AddressResult> {
+    const direccion: Partial<AddressResult> = {
+      street: this.texto(registro['street']),
+      exterior_number: this.texto(registro['exterior_number']),
+      interior_number: this.texto(registro['interior_number']),
+      neighborhood: this.texto(registro['neighborhood']),
+      zip_code: this.texto(registro['postal_code']),
+      municipality: this.texto(registro['municipality']),
+      city: this.texto(registro['city']),
+      state: this.texto(registro['state']),
+      country: this.texto(registro['country']),
+    };
+    return Object.fromEntries(Object.entries(direccion).filter(([, value]) => value)) as Partial<AddressResult>;
+  }
+
+  private combinarDireccionObservada(
+    declarada: Partial<AddressResult>,
+    diferencias: Array<{ campo: string; datoObservado: string }>,
+  ): Partial<AddressResult> {
+    return diferencias.reduce<Partial<AddressResult>>((direccion, diferencia) => ({
+      ...direccion,
+      [this.propiedadDireccion(diferencia.campo)]: diferencia.datoObservado,
+    }), { ...declarada });
+  }
+
+  private propiedadDireccion(campo: string): keyof AddressResult {
+    return campo === 'postal_code' ? 'zip_code' : campo as keyof AddressResult;
+  }
+
+  private formatearDomicilio(direccion: Partial<AddressResult>): string {
+    const linea = [direccion.street, direccion.exterior_number, direccion.interior_number ? `Int. ${direccion.interior_number}` : '']
+      .filter(Boolean)
+      .join(' ');
+    const ubicacion = [direccion.neighborhood ? `Col. ${direccion.neighborhood}` : '', direccion.municipality || direccion.city, direccion.state]
+      .filter(Boolean)
+      .join(', ');
+    const cp = direccion.zip_code ? `C.P. ${direccion.zip_code}` : '';
+    return [linea, ubicacion, cp].filter(Boolean).join(' · ');
+  }
+
+  private valorCampoDireccion(direccion: Partial<AddressResult> | undefined, campo: string): string {
+    if (!direccion) return '';
+    const values: Record<string, unknown> = {
+      street: direccion.street,
+      exterior_number: direccion.exterior_number,
+      interior_number: direccion.interior_number,
+      neighborhood: direccion.neighborhood,
+      postal_code: direccion.zip_code,
+      municipality: direccion.municipality,
+      city: direccion.city,
+      state: direccion.state,
+      country: direccion.country,
+    };
+    return this.texto(values[campo]);
+  }
+
+  private texto(value: unknown): string {
+    return value === null || value === undefined ? '' : String(value);
   }
 
   private etiquetaRegistro(seccion: string, registro: Record<string, unknown>, indice: number): string {
@@ -315,9 +407,17 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   contextoEditor = computed(() => {
     const punto = this.puntoDiferencia();
     if (!punto) return null;
-    const dif = this.facade.visitaSeleccionada()?.diferencias.find(
+    const visita = this.facade.visitaSeleccionada();
+    const dif = visita?.diferencias.find(
       (d) => d.seccion === punto.seccion && d.campo === punto.campo && (!d.registroId || d.registroId === punto.registroId)
     );
+    const diferenciasDireccion = punto.campo === 'address'
+      ? (visita?.diferencias ?? []).filter((difference) =>
+        difference.seccion === punto.seccion
+        && CAMPOS_DIRECCION.has(difference.campo)
+        && (!difference.registroId || difference.registroId === punto.registroId),
+      )
+      : [];
     const relacionadas: DiferenciaRelacionada[] = punto.campo === 'nationality'
       ? this.puntosComprobacion()
         .filter((item) => item.seccion === punto.seccion && item.registroId === punto.registroId && ['birth_country', 'identification_country'].includes(item.campo))
@@ -333,14 +433,27 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
           };
         })
       : [];
+    const direccion: DireccionContexto | undefined = punto.campo === 'address'
+      ? {
+        declarada: punto.direccionDeclarada ?? {},
+        observada: punto.direccionObservada,
+        campos: [...CAMPOS_DIRECCION].map((campo) => ({
+          campo,
+          etiqueta: ETIQUETAS_CAMPOS[campo] ?? this.humanizar(campo),
+          datoDeclarado: this.valorCampoDireccion(punto.direccionDeclarada, campo),
+          datoObservado: diferenciasDireccion.find((difference) => difference.campo === campo)?.datoObservado,
+        })),
+      }
+      : undefined;
     return {
       seccion: punto.seccion,
       campo: punto.campo,
       etiqueta: punto.grupo + ' · ' + punto.etiqueta,
       datoDeclarado: punto.datoDeclarado,
-      datoObservado: dif?.datoObservado || '',
-      descripcion: dif?.descripcion || '',
+      datoObservado: punto.campo === 'address' ? punto.datoObservado || '' : dif?.datoObservado || '',
+      descripcion: punto.campo === 'address' ? punto.descripcion || '' : dif?.descripcion || '',
       relacionadas,
+      direccion,
     };
   });
 
@@ -364,10 +477,17 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     const keys = new Set(diferencias.map((diferencia) => `${diferencia.seccion}|${diferencia.campo}`));
     const registroId = punto?.registroId;
     const registroNombre = punto?.registro;
+    const esDireccion = punto?.campo === 'address';
 
     // Filter out previous difference for this specific field to allow editing without duplicates
     const diferenciasFiltradas = visita.diferencias.filter(
-      (d) => !(keys.has(`${d.seccion}|${d.campo}`) && (!d.registroId || d.registroId === registroId))
+      (d) => {
+        const mismoRegistro = !d.registroId || d.registroId === registroId;
+        if (esDireccion && d.seccion === punto?.seccion && CAMPOS_DIRECCION.has(d.campo) && mismoRegistro) {
+          return false;
+        }
+        return !(keys.has(`${d.seccion}|${d.campo}`) && mismoRegistro);
+      },
     );
 
     const nuevasDiferencias = [
@@ -399,6 +519,18 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     if (success) {
       if (punto) {
         this.puntosComprobacion.update((puntos) => puntos.map((item) => {
+          if (esDireccion && item.id === punto.id) {
+            const diferenciasDireccion = diferencias.filter((diferencia) => CAMPOS_DIRECCION.has(diferencia.campo));
+            const direccionObservada = this.combinarDireccionObservada(punto.direccionDeclarada ?? {}, diferenciasDireccion);
+            return {
+              ...item,
+              estado: diferenciasDireccion.length > 0 ? 'DIFERENCIA' : 'COMPROBADO',
+              diferenciaRegistrada: diferenciasDireccion.length > 0,
+              datoObservado: diferenciasDireccion.length > 0 ? this.formatearDomicilio(direccionObservada) : undefined,
+              descripcion: [...new Set(diferenciasDireccion.map((diferencia) => diferencia.descripcion).filter(Boolean))].join(' · ') || undefined,
+              direccionObservada: diferenciasDireccion.length > 0 ? direccionObservada : undefined,
+            };
+          }
           const cambio = diferencias.find((diferencia) => diferencia.seccion === item.seccion && diferencia.campo === item.campo && item.registroId === registroId);
           return cambio
             ? { ...item, estado: 'DIFERENCIA', diferenciaRegistrada: true, datoObservado: this.formatearValor(item.campo, cambio.datoObservado), descripcion: cambio.descripcion }
@@ -416,6 +548,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
 
     const camposAEliminar = new Set([
       punto.campo,
+      ...(punto.campo === 'address' ? [...CAMPOS_DIRECCION] : []),
       ...(punto.campo === 'nationality' ? ['birth_country', 'identification_country'] : []),
     ]);
     const nuevasDiferencias = visita.diferencias
@@ -438,7 +571,7 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
     if (success) {
       this.puntosComprobacion.update((puntos) => puntos.map((item) =>
         item.seccion === punto.seccion && camposAEliminar.has(item.campo) && item.registroId === punto.registroId
-          ? { ...item, estado: 'COMPROBADO', diferenciaRegistrada: false, datoObservado: undefined, descripcion: undefined }
+          ? { ...item, estado: 'COMPROBADO', diferenciaRegistrada: false, datoObservado: undefined, descripcion: undefined, direccionObservada: undefined }
           : item,
       ));
       this.alerts.showAlert('Diferencia revertida; campo marcado como correcto.', 'info');
@@ -529,9 +662,15 @@ export class RealizarVisitaComponent implements OnInit, OnDestroy {
   }
 }
 
+const CAMPOS_DIRECCION = new Set([
+  'street', 'exterior_number', 'interior_number', 'neighborhood', 'postal_code',
+  'municipality', 'city', 'state', 'country',
+]);
+
 const CAMPOS_INTERNOS = new Set([
   'id', 'application_id', 'created_at', 'updated_at', 'lock_version', 'details_payload', 'reference_payload',
   'is_current', 'is_active', 'declared_age', 'entry_type', 'is_family_reference',
+  'has_identification_evidence', 'birth_place',
   'school_name', 'school',
 ]);
 

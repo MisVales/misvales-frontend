@@ -15,13 +15,13 @@ export interface ValidationRule {
   imports: [CommonModule, LucideAngularModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="relative inline-flex items-center group cursor-help">
+    <div class="relative inline-flex items-center group cursor-help validation-tooltip">
       <div [class]="hasErrors() ? 'text-red-500' : 'text-green-500'">
         <lucide-icon [name]="hasErrors() ? 'info' : 'check-circle'" [size]="16" class="mt-0.5"></lucide-icon>
       </div>
 
       <!-- Tooltip Content -->
-      <div class="absolute bottom-full right-0 mb-2 hidden w-64 p-3 bg-white border border-gray-200 shadow-xl rounded-xl group-hover:block z-50">
+      <div class="absolute bottom-full left-0 mb-2 hidden w-64 max-w-[calc(100vw-2rem)] p-3 bg-white border border-gray-200 shadow-xl rounded-xl group-hover:block z-[100] validation-tooltip__content">
         <p class="text-xs font-semibold text-gray-700 mb-2">Requisitos:</p>
         <ul class="space-y-1.5">
           @for (rule of rules; track rule.label) {
@@ -31,8 +31,8 @@ export interface ValidationRule {
             </li>
           }
         </ul>
-        <div class="absolute top-full right-2 -mt-[1px] border-4 border-transparent border-t-white"></div>
-        <div class="absolute top-full right-2 -mt-[2px] border-4 border-transparent border-t-gray-200 -z-10"></div>
+        <div class="absolute top-full left-2 -mt-[1px] border-4 border-transparent border-t-white"></div>
+        <div class="absolute top-full left-2 -mt-[2px] border-4 border-transparent border-t-gray-200 -z-10"></div>
       </div>
     </div>
   `

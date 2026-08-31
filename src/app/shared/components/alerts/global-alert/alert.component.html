@@ -1,5 +1,5 @@
 <div class="alert-viewport" aria-label="Avisos de la aplicación">
-  @for (alert of alertService.alerts(); track alert.id) {
+  @for (alert of visibleAlerts(); track alert.id) {
     <div
       class="app-toast"
       [class.app-toast--success]="alert.type === 'success'"
@@ -20,8 +20,8 @@
       ></lucide-icon>
 
       <div class="toast-copy">
-        <strong>{{ title(alert.type) }}</strong>
-        <p>{{ alert.message }}</p>
+        <strong [textContent]="alertTitle(alert.type)"></strong>
+        <p [textContent]="alert.message"></p>
       </div>
 
       <button

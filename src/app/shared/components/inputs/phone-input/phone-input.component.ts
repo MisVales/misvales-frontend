@@ -146,24 +146,26 @@ export class PhoneInputComponent implements ControlValueAccessor, OnInit, OnDest
       return;
     }
 
-    const phoneNumber = parsePhoneNumberFromString(String(value));
-    if (phoneNumber) {
-      this.form.patchValue(
-        {
-          dialCode: `+${phoneNumber.countryCallingCode}`,
-          digits: phoneNumber.nationalNumber.replace(/\D/g, '').slice(0, 10),
-        },
-        { emitEvent: false },
-      );
-      return;
-    }
-
     const rawValue = String(value);
-    const match = rawValue.match(/^(\+\d{1,4})(\d+)$/);
+    const rawDigits = rawValue.replace(/\D/g, '');
+    const phoneNumber = parsePhoneNumberFromString(rawValue);
+    const parsedDialCode = phoneNumber ? `+${phoneNumber.countryCallingCode}` : undefined;
+    const detectedDialCode = parsedDialCode ?? this.dialCodes
+      .filter((country) => rawDigits.startsWith(country.code.slice(1)))
+      .sort((a, b) => b.code.length - a.code.length)[0]?.code;
+    const dialCode = rawValue.startsWith('+') ? detectedDialCode : undefined;
+    const dialCodeDigits = dialCode?.replace(/\D/g, '') ?? '';
+    const nationalDigits = dialCode && rawDigits.startsWith(dialCodeDigits)
+      ? rawDigits.slice(dialCodeDigits.length)
+      : rawDigits;
+
     this.form.patchValue(
-      match
-        ? { dialCode: match[1], digits: match[2].replace(/\D/g, '').slice(0, 10) }
-        : { digits: rawValue.replace(/\D/g, '').slice(0, 10) },
+      {
+        ...(dialCode ? { dialCode } : {}),
+        // El prefijo internacional vive en el selector; el input sólo muestra
+        // los diez dígitos nacionales, incluso si el valor llegó repetido.
+        digits: nationalDigits.slice(-10),
+      },
       { emitEvent: false },
     );
   }

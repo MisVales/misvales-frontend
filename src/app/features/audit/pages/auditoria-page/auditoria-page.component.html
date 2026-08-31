@@ -708,6 +708,26 @@
                 </div>
               }
             </div>
+            @if (isMediaAudit(target)) {
+              <section class="audit-media-panel" aria-label="Evidencia visual de auditoría">
+                <div class="audit-media-panel__header">
+                  <div>
+                    <h4 class="changes-tab-title">{{ auditMediaCaption(target) }}</h4>
+                    <p class="changes-tab-subtitle">{{ auditMediaName(target) }}</p>
+                  </div>
+                  <lucide-icon name="image" class="w-5 h-5 text-blue-600"></lucide-icon>
+                </div>
+                @if (auditPreviewUrl(); as previewUrl) {
+                  <img class="audit-media-panel__image" [src]="previewUrl" [alt]="auditMediaName(target)" />
+                } @else if (auditPreviewLoading()) {
+                  <div class="audit-media-panel__state">Cargando imagen protegida...</div>
+                } @else if (auditPreviewError()) {
+                  <div class="audit-media-panel__state audit-media-panel__state--error">No fue posible cargar la imagen de esta auditoría.</div>
+                } @else if (!isImageMediaAudit(target)) {
+                  <div class="audit-media-panel__state">Esta evidencia no es una imagen previsualizable.</div>
+                }
+              </section>
+            }
           }
 
           <!-- TAB 2: Comparativa de Cambios -->
@@ -733,7 +753,24 @@
                 </button>
               </div>
 
-              @if (changes.length > 0) {
+              @if (isMediaAudit(target)) {
+                @if (auditPreviewUrl(); as previewUrl) {
+                  <section class="audit-media-panel" aria-label="Evidencia visual de auditoría">
+                    <div class="audit-media-panel__header">
+                      <div>
+                        <h4 class="changes-tab-title">{{ auditMediaCaption(target) }}</h4>
+                        <p class="changes-tab-subtitle">{{ auditMediaName(target) }}</p>
+                      </div>
+                      <lucide-icon name="image" class="w-5 h-5 text-blue-600"></lucide-icon>
+                    </div>
+                    <img class="audit-media-panel__image" [src]="previewUrl" [alt]="auditMediaName(target)" />
+                  </section>
+                } @else if (auditPreviewLoading()) {
+                  <div class="audit-media-panel__state">Cargando imagen protegida...</div>
+                } @else {
+                  <div class="audit-media-panel__state audit-media-panel__state--error">No fue posible cargar la imagen de esta auditoría.</div>
+                }
+              } @else if (changes.length > 0) {
                 <div class="changes-table-wrap">
                   <table class="changes-table">
                     <thead>

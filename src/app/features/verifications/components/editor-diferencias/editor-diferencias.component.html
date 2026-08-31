@@ -28,13 +28,28 @@
   <div class="form-group">
     <label>Dato observado (físico / real)</label>
     
+    <!-- Domicilio completo con el mismo formulario SEPOMEX de la solicitud -->
+    @if (isAddressField()) {
+      <div class="address-editor">
+        <app-address-form
+          [initialAddress]="direccionInicial()"
+          [showValidationState]="true"
+          [enableStreetAutocomplete]="false"
+          (addressChange)="onAddressChange($event)"
+        ></app-address-form>
+        @if (mostrarErrorCampo('address') && errorDireccion(); as error) {
+          <p class="field-error" role="alert">{{ error }}</p>
+        }
+      </div>
+    }
+
     <!-- Date picker for dates -->
-    @if (isDateField()) {
+    @else if (isDateField()) {
       <input
         type="date"
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [min]="isBirthDateField() ? minBirthDate : null"
         [max]="isBirthDateField() ? maxAdultDate : maxDate"
         [disabled]="isProcessing()"
@@ -53,7 +68,7 @@
       >
       </refactor-select>
 
-      @if (contexto().relacionadas?.length) {
+      @if (mostrarCamposRelacionados()) {
         <div class="related-fields">
           <p class="related-fields-title">Confirma también el país de nacimiento y el país emisor de la identificación.</p>
           @for (related of contexto().relacionadas; track related.campo) {
@@ -67,6 +82,9 @@
                 (ngModelChange)="onValorRelacionadoChange(related.campo, $event)"
                 [disabled]="isProcessing()"
               ></refactor-select>
+              @if (mostrarErrorCampo(related.campo) && !valorRelacionado(related.campo).trim()) {
+                <span class="field-error">Selecciona un país.</span>
+              }
             </label>
           }
         </div>
@@ -80,7 +98,7 @@
         placeholder="Selecciona un país"
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona país...</option>
@@ -92,7 +110,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona tipo de identificación</option>
@@ -108,7 +126,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona tipo de vivienda</option>
@@ -124,7 +142,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona financiamiento / situación</option>
@@ -142,7 +160,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona parentesco</option>
@@ -161,7 +179,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona propiedad</option>
@@ -177,7 +195,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona tipo de vehículo</option>
@@ -193,7 +211,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona tipo de registro</option>
@@ -208,7 +226,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona tipo de comprobante</option>
@@ -222,7 +240,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Selecciona estado civil</option>
@@ -239,7 +257,7 @@
       <select
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         [disabled]="isProcessing()"
       >
         <option value="">Seleccionar...</option>
@@ -282,30 +300,57 @@
 
     <!-- CURP input with 18 max -->
     @else if (isCurpField()) {
+      <div class="field-label-with-tooltip">
+        <span>CURP</span>
+        <app-validation-tooltip [control]="curpControl" [rules]="curpRules"></app-validation-tooltip>
+      </div>
       <input
         type="text"
         class="form-control uppercase"
         maxlength="18"
-        [ngModel]="datoObservado()"
-        (ngModelChange)="onCurpChange($event)"
+        [value]="datoObservado()"
+        (input)="onCurpChange($any($event.target).value)"
+        (blur)="marcarCampoTocado('curp')"
         placeholder="Ej. GOHM850101HMCNRN01 (18 caracteres)"
+        [class.form-control--invalid]="mostrarErrorCampo('curp') && curpControl.invalid"
+        [attr.aria-invalid]="mostrarErrorCampo('curp') && curpControl.invalid"
         [disabled]="isProcessing()"
       />
       <small class="form-help text-xs text-gray-500">Exactamente 18 caracteres alfanuméricos.</small>
+      <app-input-error
+        [control]="curpControl"
+        [forceShow]="mostrarErrorCampo('curp')"
+        label="El CURP"
+        [customMessages]="{ required: 'Captura la CURP.', maxlength: 'La CURP debe tener exactamente 18 caracteres.', invalidCurp: 'La CURP debe tener exactamente 18 caracteres alfanuméricos.' }"
+      ></app-input-error>
     }
 
     <!-- RFC input with 13 max -->
-    @else if (campo() === 'rfc') {
+    @else if (isRfcField()) {
+      <div class="field-label-with-tooltip">
+        <span>RFC</span>
+        <app-validation-tooltip [control]="rfcControl" [rules]="rfcRules"></app-validation-tooltip>
+      </div>
       <input
         type="text"
         class="form-control uppercase"
         maxlength="13"
-        [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        [value]="datoObservado()"
+        (input)="onRfcChange($any($event.target).value)"
+        (blur)="marcarCampoTocado('rfc')"
         placeholder="Ej. GOHM8501011A2 (13 caracteres)"
+        [class.form-control--invalid]="mostrarErrorCampo('rfc') && rfcControl.invalid"
+        [attr.aria-invalid]="mostrarErrorCampo('rfc') && rfcControl.invalid"
         [disabled]="isProcessing()"
       />
       <small class="form-help text-xs text-gray-500">Máximo 13 caracteres para persona física.</small>
+      <app-input-error
+        [control]="rfcControl"
+        [forceShow]="mostrarErrorCampo('rfc')"
+        label="El RFC"
+        [customMessages]="{ maxlength: 'El RFC debe tener 12 o 13 caracteres.', invalidRfc: 'El RFC debe cumplir el formato de 12 o 13 caracteres, incluyendo los últimos 3 de homoclave.' }"
+      ></app-input-error>
+      <small class="form-help text-xs text-gray-500">12 o 13 caracteres; los últimos 3 corresponden a la homoclave.</small>
     }
 
     <!-- Phone input with 10 digits -->
@@ -331,7 +376,7 @@
         class="form-control"
         maxlength="25"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         placeholder="Número de identificación oficial"
         [disabled]="isProcessing()"
       />
@@ -344,10 +389,14 @@
         type="text"
         class="form-control"
         [ngModel]="datoObservado()"
-        (ngModelChange)="datoObservado.set($event)"
+        (ngModelChange)="onValueChange($event)"
         placeholder="¿Qué observaste durante la visita?"
         [disabled]="isProcessing()"
       />
+    }
+
+    @if (!isAddressField() && !isCurpField() && !isRfcField() && mostrarErrorCampo() && errorDatoObservado(); as error) {
+      <p class="field-error" role="alert">{{ error }}</p>
     }
   </div>
 
@@ -357,17 +406,20 @@
       class="form-control"
       [ngModel]="descripcion()"
       (ngModelChange)="descripcion.set($event)"
+      (blur)="marcarCampoTocado('description')"
       rows="3"
       placeholder="Describe la diferencia para el coordinador."
+      [class.form-control--invalid]="mostrarErrorCampo('description') && !!errorDescripcion()"
+      [attr.aria-invalid]="mostrarErrorCampo('description') && !!errorDescripcion()"
       [disabled]="isProcessing()"
     ></textarea>
-    @if (submitted() && !datoObservado().trim() && !descripcion().trim()) {
-      <p class="text-sm text-danger mt-1">Debes ingresar el dato observado o describir la diferencia encontrada.</p>
+    @if (mostrarErrorCampo('description') && errorDescripcion(); as error) {
+      <p class="field-error" role="alert">{{ error }}</p>
     }
   </div>
 
   <div class="editor-actions">
     <button type="button" class="btn btn-secondary" (click)="cancelar.emit()" [disabled]="isProcessing()">Cancelar</button>
-    <button type="button" class="btn btn-primary" (click)="onGuardar()" [disabled]="isProcessing()">Guardar diferencia</button>
+    <button type="button" class="btn btn-primary" (click)="onGuardar()" [disabled]="isProcessing() || !puedeGuardar()">Guardar diferencia</button>
   </div>
 </div>
