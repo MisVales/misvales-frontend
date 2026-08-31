@@ -367,6 +367,129 @@
             </select>
           }
 
+          <!-- Select para Tipo de Vivienda -->
+          @else if (isHousingTenureField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="OWNED">Propia</option>
+              <option value="RENTED">Rentada</option>
+              <option value="BORROWED">Prestada</option>
+              <option value="OTHER">Otro</option>
+            </select>
+          }
+
+          <!-- Select para Financiamiento / Situación Vivienda -->
+          @else if (isFinancingStatusField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="PAID">Pagada</option>
+              <option value="MORTGAGE">Hipotecada</option>
+              <option value="LOAN">Préstamo</option>
+              <option value="INFONAVIT">INFONAVIT</option>
+              <option value="OTHER">Otro</option>
+              <option value="NOT_APPLICABLE">No Aplica</option>
+            </select>
+          }
+
+          <!-- Select para Parentesco -->
+          @else if (isRelationshipField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="SPOUSE">Esposo(a)</option>
+              <option value="PARTNER">Pareja</option>
+              <option value="CHILD">Hijo(a)</option>
+              <option value="FATHER">Padre</option>
+              <option value="MOTHER">Madre</option>
+              <option value="SIBLING">Hermano(a)</option>
+              <option value="OTHER">Otro</option>
+            </select>
+          }
+
+          <!-- Select para Propiedad de Vehículo -->
+          @else if (isOwnershipStatusField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="OWNED">Propio</option>
+              <option value="FINANCED">Financiado</option>
+              <option value="COMPANY">De empresa</option>
+              <option value="OTHER">Otro</option>
+            </select>
+          }
+
+          <!-- Select para Tipo de Vehículo -->
+          @else if (isVehicleTypeField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="AUTOMOBILE">Automóvil</option>
+              <option value="MOTORCYCLE">Motocicleta</option>
+              <option value="TRUCK">Camioneta / Camión</option>
+              <option value="OTHER">Otro</option>
+            </select>
+          }
+
+          <!-- Select para Tipo de Registro Patrimonio -->
+          @else if (isEntryTypeField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="ASSET">Bien</option>
+              <option value="LIABILITY">Deuda</option>
+              <option value="ACTIVE_COMMITMENT">Compromiso activo</option>
+            </select>
+          }
+
+          <!-- Select para Tipo de Comprobante -->
+          @else if (isProofTypeField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="CARTA">Carta</option>
+              <option value="ESTADO_DE_CUENTA">Estado de cuenta</option>
+            </select>
+          }
+
+          <!-- Select para Estado Civil -->
+          @else if (isCivilStatusField(dif.campo)) {
+            <select
+              class="form-control"
+              [ngModel]="valorCorregido()"
+              (ngModelChange)="valorCorregido.set($event)"
+              [disabled]="facade.isLoading()"
+            >
+              <option value="SINGLE">Soltero(a)</option>
+              <option value="MARRIED">Casado(a)</option>
+              <option value="DIVORCED">Divorciado(a)</option>
+              <option value="WIDOWED">Viudo(a)</option>
+              <option value="COHABITING">Unión Libre</option>
+            </select>
+          }
+
           <!-- Select para Booleanos -->
           @else if (isBooleanField(dif.campo)) {
             <select

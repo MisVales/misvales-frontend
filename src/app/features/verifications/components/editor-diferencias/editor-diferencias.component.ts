@@ -121,8 +121,64 @@ export class EditorDiferenciasComponent {
     return this.campo() === 'official_id_type';
   }
 
+  isHousingTenureField(): boolean {
+    return this.campo() === 'housing_tenure';
+  }
+
+  isFinancingStatusField(): boolean {
+    return this.campo() === 'financing_status';
+  }
+
+  isRelationshipField(): boolean {
+    return this.campo() === 'relationship';
+  }
+
+  isOwnershipStatusField(): boolean {
+    return this.campo() === 'ownership_status';
+  }
+
+  isVehicleTypeField(): boolean {
+    return this.campo() === 'vehicle_type';
+  }
+
+  isEntryTypeField(): boolean {
+    return this.campo() === 'entry_type';
+  }
+
+  isProofTypeField(): boolean {
+    return ['proof_type', 'proof_reference_type'].includes(this.campo());
+  }
+
+  isCivilStatusField(): boolean {
+    return ['marital_status', 'civil_status'].includes(this.campo());
+  }
+
   isBooleanField(): boolean {
-    return ['is_current', 'is_active', 'has_identification_evidence'].includes(this.campo());
+    return ['is_current', 'is_active', 'has_identification_evidence', 'has_evidence', 'economic_dependency', 'is_family_reference'].includes(this.campo());
+  }
+
+  formatearValorObservado(): string {
+    const valor = this.datoObservado();
+    if (!valor) return '';
+    if (this.isDateField() && typeof valor === 'string') {
+      const [year, month, day] = valor.split('-');
+      return year && month && day ? `${day}/${month}/${year}` : valor;
+    }
+    const traducciones: Record<string, string> = {
+      MEXICAN: 'Mexicana', FOREIGN: 'Extranjera', MX: 'México', US: 'Estados Unidos', HT: 'Haití',
+      CO: 'Colombia', VE: 'Venezuela', GT: 'Guatemala', HN: 'Honduras', SV: 'El Salvador', NI: 'Nicaragua', CU: 'Cuba',
+      INE: 'Credencial para votar (INE)', PASSPORT: 'Pasaporte', PROFESSIONAL_LICENSE: 'Cédula Profesional', OTHER: 'Otro',
+      SPOUSE: 'Esposo(a)', PARTNER: 'Pareja', CHILD: 'Hijo(a)', FATHER: 'Padre', MOTHER: 'Madre', SIBLING: 'Hermano(a)',
+      OWNED: 'Propia / Propio', RENTED: 'Rentada', BORROWED: 'Prestada',
+      PAID: 'Pagada', MORTGAGE: 'Hipotecada', LOAN: 'Préstamo', INFONAVIT: 'INFONAVIT', NOT_APPLICABLE: 'No Aplica',
+      AUTOMOBILE: 'Automóvil', MOTORCYCLE: 'Motocicleta', TRUCK: 'Camioneta / Camión',
+      FINANCED: 'Financiado', COMPANY: 'De empresa',
+      ASSET: 'Bien', LIABILITY: 'Deuda', ACTIVE_COMMITMENT: 'Compromiso activo',
+      CARTA: 'Carta', ESTADO_DE_CUENTA: 'Estado de cuenta',
+      SINGLE: 'Soltero(a)', MARRIED: 'Casado(a)', DIVORCED: 'Divorciado(a)', WIDOWED: 'Viudo(a)', COHABITING: 'Unión Libre',
+      true: 'Sí (Comprobado)', false: 'No (Sin comprobar)',
+    };
+    return traducciones[valor] ?? valor;
   }
 
   isIntegerField(): boolean {

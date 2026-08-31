@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+﻿import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { API_CONFIG } from '../../../core/api/api.config';
@@ -110,359 +110,816 @@ export interface OperationalLogFilters {
   per_page?: number;
 }
 
+export interface ChangedFieldDetail {
+  field: string;
+  label: string;
+  oldValue: string;
+  rawOld: unknown;
+  newValue: string;
+  rawNew: unknown;
+  isCreation: boolean;
+  isDeletion: boolean;
+}
+
 export type AuditActionGroup =
-  'CREATE' | 'UPDATE' | 'DELETE' | 'ACCESS' | 'READ' | 'PROCESS' | 'OTHER';
+  | 'AUTH'
+  | 'SOLICITUDES'
+  | 'DISTRIBUIDORAS'
+  | 'VALES'
+  | 'CLIENTES'
+  | 'PAGOS'
+  | 'CREDITOS'
+  | 'DOCUMENTOS'
+  | 'CONFIGURACION'
+  | 'SISTEMA';
 
 export const ACTION_LABELS_ES: Record<AuditActionGroup, string> = {
-  CREATE: 'Creaciones y altas',
-  UPDATE: 'Cambios y actualizaciones',
-  DELETE: 'Bajas, cancelaciones y rechazos',
-  ACCESS: 'Accesos, sesiones e invitaciones',
-  READ: 'Consultas, descargas y exportaciones',
-  PROCESS: 'Procesos, pagos y autorizaciones',
-  OTHER: 'Otras acciones',
+  AUTH: 'Seguridad y Accesos',
+  SOLICITUDES: 'Solicitudes de Distribuidora',
+  DISTRIBUIDORAS: 'Gestión de Distribuidoras',
+  VALES: 'Operación de Vales',
+  CLIENTES: 'Padrón de Clientes',
+  PAGOS: 'Cobranza y Conciliación',
+  CREDITOS: 'Líneas de Crédito',
+  DOCUMENTOS: 'Documentos y Archivos',
+  CONFIGURACION: 'Configuración y Roles',
+  SISTEMA: 'Eventos del Sistema',
+};
+
+export const ROLE_LABELS_ES: Record<string, string> = {
+  admin: 'Administrador del Sistema',
+  general_manager: 'Gerente General',
+  branch_manager: 'Gerente de Sucursal',
+  coordinator: 'Coordinador',
+  verifier: 'Verificador',
+  distributor: 'Distribuidora',
+  cashier: 'Cajero',
+  support: 'Soporte Técnico',
+};
+
+export const ENTITY_LABELS_ES: Record<string, string> = {
+  distributor_application: 'Solicitud de Distribuidora',
+  distributor: 'Distribuidora',
+  distributor_relation: 'Relación de Distribuidora',
+  client: 'Cliente',
+  voucher: 'Vale',
+  payment: 'Pago',
+  payment_clarification: 'Aclaración de Pago',
+  credit_line: 'Línea de Crédito',
+  credit_lines: 'Líneas de Crédito',
+  credit_limit_request: 'Solicitud de Incremento',
+  manual_reconciliation_request: 'Conciliación Manual',
+  bank_file_import: 'Importación Bancaria',
+  distributor_surplus: 'Excedente de Pago',
+  surplus_refund_request: 'Devolución de Excedente',
+  surplus_application: 'Aplicación de Excedente',
+  verification_visit: 'Visita de Verificación',
+  media_file: 'Archivo Digital',
+  user: 'Usuario',
+  role: 'Rol y Permisos',
+  Client: 'Cliente',
+  User: 'Usuario',
+  Sistema: 'Sistema',
 };
 
 export const EVENT_LABELS_ES: Record<
   string,
   { label: string; category: string; icon: string; badgeColor: string }
 > = {
-  // Autenticación y Sesiones
+  // Autenticación y Seguridad
   LOGIN_SUCCESSFUL: {
-    label: 'Inicio de Sesión Exitoso',
-    category: 'Sesión',
+    label: 'Inicio de Sesión',
+    category: 'Seguridad',
     icon: 'log-in',
-    badgeColor: 'badge-blue',
+    badgeColor: 'badge-emerald',
   },
   LOGIN_FAILED: {
-    label: 'Intento de Inicio Fallido',
-    category: 'Sesión',
+    label: 'Intento de Acceso Fallido',
+    category: 'Seguridad',
     icon: 'shield-alert',
     badgeColor: 'badge-red',
   },
   LOGOUT: {
     label: 'Cierre de Sesión',
-    category: 'Sesión',
+    category: 'Seguridad',
     icon: 'log-out',
-    badgeColor: 'badge-gray',
+    badgeColor: 'badge-slate',
+  },
+  PASSWORD_RESET: {
+    label: 'Restablecimiento de Contraseña',
+    category: 'Seguridad',
+    icon: 'key',
+    badgeColor: 'badge-amber',
   },
   PASSWORD_CHANGED: {
     label: 'Cambio de Contraseña',
     category: 'Seguridad',
     icon: 'key',
-    badgeColor: 'badge-amber',
+    badgeColor: 'badge-blue',
   },
-  MFA_ENABLED: {
-    label: 'Activación de MFA (2FA)',
+  MFA_SETUP_COMPLETED: {
+    label: 'Configuración MFA Completada',
     category: 'Seguridad',
     icon: 'shield-check',
-    badgeColor: 'badge-green',
+    badgeColor: 'badge-emerald',
+  },
+  WEBAUTHN_REGISTERED: {
+    label: 'Biometría / Llave Registrada',
+    category: 'Seguridad',
+    icon: 'shield-check',
+    badgeColor: 'badge-emerald',
+  },
+  INVITATION_USED: {
+    label: 'Invitación Activada',
+    category: 'Seguridad',
+    icon: 'key',
+    badgeColor: 'badge-indigo',
+  },
+  SESSION_REVOKED: {
+    label: 'Sesión Revocada',
+    category: 'Seguridad',
+    icon: 'log-out',
+    badgeColor: 'badge-red',
   },
 
-  // Vales y Clientes
+  // Solicitudes de Distribuidora
+  DISTRIBUTOR_APPLICATION_CREATED: {
+    label: 'Alta de Solicitud (Borrador)',
+    category: 'Solicitudes',
+    icon: 'file-plus',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_UPDATED: {
+    label: 'Actualización de Solicitud',
+    category: 'Solicitudes',
+    icon: 'pen-tool',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_SUBMITTED: {
+    label: 'Envío a Revisión',
+    category: 'Solicitudes',
+    icon: 'send',
+    badgeColor: 'badge-purple',
+  },
+  DISTRIBUTOR_APPLICATION_PERSONAL_DATA_UPDATED: {
+    label: 'Actualización de Datos Personales',
+    category: 'Solicitudes',
+    icon: 'user-check',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_RESIDENCE_ADDED: {
+    label: 'Registro de Domicilio',
+    category: 'Solicitudes',
+    icon: 'house',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_RESIDENCE_UPDATED: {
+    label: 'Actualización de Domicilio',
+    category: 'Solicitudes',
+    icon: 'house',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_RESIDENCE_REMOVED: {
+    label: 'Eliminación de Domicilio',
+    category: 'Solicitudes',
+    icon: 'house',
+    badgeColor: 'badge-red',
+  },
+  DISTRIBUTOR_APPLICATION_COMMERCIAL_CREDIT_ADDED: {
+    label: 'Registro de Crédito Comercial',
+    category: 'Solicitudes',
+    icon: 'credit-card',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_COMMERCIAL_CREDIT_UPDATED: {
+    label: 'Actualización de Crédito Comercial',
+    category: 'Solicitudes',
+    icon: 'credit-card',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_COMMERCIAL_CREDIT_REMOVED: {
+    label: 'Eliminación de Crédito Comercial',
+    category: 'Solicitudes',
+    icon: 'credit-card',
+    badgeColor: 'badge-red',
+  },
+  DISTRIBUTOR_APPLICATION_VEHICLE_ADDED: {
+    label: 'Registro de Vehículo',
+    category: 'Solicitudes',
+    icon: 'truck',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_VEHICLE_UPDATED: {
+    label: 'Actualización de Vehículo',
+    category: 'Solicitudes',
+    icon: 'truck',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_VEHICLE_REMOVED: {
+    label: 'Eliminación de Vehículo',
+    category: 'Solicitudes',
+    icon: 'truck',
+    badgeColor: 'badge-red',
+  },
+  DISTRIBUTOR_APPLICATION_EMPLOYMENT_ADDED: {
+    label: 'Registro de Empleo / Actividad',
+    category: 'Solicitudes',
+    icon: 'briefcase',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_EMPLOYMENT_UPDATED: {
+    label: 'Actualización de Empleo',
+    category: 'Solicitudes',
+    icon: 'briefcase',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_EMPLOYMENT_REMOVED: {
+    label: 'Eliminación de Empleo',
+    category: 'Solicitudes',
+    icon: 'briefcase',
+    badgeColor: 'badge-red',
+  },
+  DISTRIBUTOR_APPLICATION_FAMILY_MEMBER_ADDED: {
+    label: 'Registro de Familiar',
+    category: 'Solicitudes',
+    icon: 'users',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_FAMILY_MEMBER_UPDATED: {
+    label: 'Actualización de Familiar',
+    category: 'Solicitudes',
+    icon: 'users',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_FAMILY_MEMBER_REMOVED: {
+    label: 'Eliminación de Familiar',
+    category: 'Solicitudes',
+    icon: 'users',
+    badgeColor: 'badge-red',
+  },
+  DISTRIBUTOR_APPLICATION_ASSET_LIABILITY_ADDED: {
+    label: 'Registro de Patrimonio / Bienes',
+    category: 'Solicitudes',
+    icon: 'landmark',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_ASSET_LIABILITY_UPDATED: {
+    label: 'Actualización de Patrimonio',
+    category: 'Solicitudes',
+    icon: 'landmark',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_APPLICATION_ASSET_LIABILITY_REMOVED: {
+    label: 'Eliminación de Patrimonio',
+    category: 'Solicitudes',
+    icon: 'landmark',
+    badgeColor: 'badge-red',
+  },
+  DISTRIBUTOR_APPLICATION_RETURNED_TO_DRAFT: {
+    label: 'Devolución a Captura',
+    category: 'Solicitudes',
+    icon: 'undo-2',
+    badgeColor: 'badge-amber',
+  },
+
+  // Verificación y Coordinación
+  VERIFICATION_VISIT_ASSIGNED: {
+    label: 'Asignación de Verificador',
+    category: 'Verificación',
+    icon: 'calendar-plus',
+    badgeColor: 'badge-blue',
+  },
+  VERIFICATION_VISIT_RESCHEDULED: {
+    label: 'Reprogramación de Visita',
+    category: 'Verificación',
+    icon: 'calendar-clock',
+    badgeColor: 'badge-amber',
+  },
+  VERIFICATION_VISIT_STARTED: {
+    label: 'Inicio de Visita en Campo',
+    category: 'Verificación',
+    icon: 'map-pin',
+    badgeColor: 'badge-amber',
+  },
+  VERIFICATION_DIFFERENCE_RECORDED: {
+    label: 'Registro de Diferencia en Visita',
+    category: 'Verificación',
+    icon: 'circle-alert',
+    badgeColor: 'badge-amber',
+  },
+  VERIFICATION_VISIT_COMPLETED: {
+    label: 'Finalización de Visita',
+    category: 'Verificación',
+    icon: 'circle-check',
+    badgeColor: 'badge-emerald',
+  },
+  VERIFICATION_EVIDENCE_UPLOADED: {
+    label: 'Carga de Fotografía de Visita',
+    category: 'Verificación',
+    icon: 'camera',
+    badgeColor: 'badge-blue',
+  },
+  VERIFICATION_EVIDENCE_REMOVED: {
+    label: 'Eliminación de Fotografía de Visita',
+    category: 'Verificación',
+    icon: 'trash-2',
+    badgeColor: 'badge-red',
+  },
+  VERIFICATION_ACCESS_DENIED: {
+    label: 'Acceso Denegado a Verificación',
+    category: 'Seguridad',
+    icon: 'shield-alert',
+    badgeColor: 'badge-red',
+  },
+  APPLICATION_CORRECTION_APPLIED: {
+    label: 'Corrección de Diferencia Aplicada',
+    category: 'Coordinación',
+    icon: 'check',
+    badgeColor: 'badge-blue',
+  },
+  APPLICATION_CORRECTIONS_COMPLETED: {
+    label: 'Correcciones Completadas',
+    category: 'Coordinación',
+    icon: 'check-check',
+    badgeColor: 'badge-emerald',
+  },
+  APPLICATION_COORDINATOR_EVALUATED: {
+    label: 'Evaluación de Coordinación',
+    category: 'Coordinación',
+    icon: 'clipboard-check',
+    badgeColor: 'badge-purple',
+  },
+  APPLICATION_SENT_TO_MANAGER: {
+    label: 'Envío a Dictamen Gerencial',
+    category: 'Coordinación',
+    icon: 'arrow-up-right',
+    badgeColor: 'badge-indigo',
+  },
+  APPLICATION_TERMINATED_UNFAVORABLE: {
+    label: 'Solicitud Dictaminada Desfavorable',
+    category: 'Dictamen',
+    icon: 'circle-x',
+    badgeColor: 'badge-red',
+  },
+  APPLICATION_MANAGER_APPROVED: {
+    label: 'Aprobación de Solicitud (Línea Otorgada)',
+    category: 'Dictamen',
+    icon: 'circle-check',
+    badgeColor: 'badge-emerald',
+  },
+  APPLICATION_MANAGER_REJECTED: {
+    label: 'Rechazo de Solicitud de Distribuidora',
+    category: 'Dictamen',
+    icon: 'circle-x',
+    badgeColor: 'badge-red',
+  },
+
+  // Documentos y Archivos
+  PRIVATE_MEDIA_DOWNLOADED: {
+    label: 'Descarga de Documento Privado',
+    category: 'Documentos',
+    icon: 'download',
+    badgeColor: 'badge-cyan',
+  },
+  PRIVATE_MEDIA_STORED: {
+    label: 'Carga de Documento Digital',
+    category: 'Documentos',
+    icon: 'upload',
+    badgeColor: 'badge-blue',
+  },
+  MEDIA_UPLOADED: {
+    label: 'Carga de Expediente',
+    category: 'Documentos',
+    icon: 'upload',
+    badgeColor: 'badge-blue',
+  },
+
+  // Vales
   VOUCHER_GENERATED: {
-    label: 'Generación de Vale',
+    label: 'Emisión de Vale',
     category: 'Vales',
     icon: 'ticket',
-    badgeColor: 'badge-emerald',
+    badgeColor: 'badge-indigo',
   },
   VOUCHER_CANCELLED: {
     label: 'Cancelación de Vale',
     category: 'Vales',
-    icon: 'x-circle',
+    icon: 'circle-x',
     badgeColor: 'badge-red',
   },
+  VOUCHER_CANCELLED_BY_DISTRIBUTOR: {
+    label: 'Cancelación por Distribuidora',
+    category: 'Vales',
+    icon: 'circle-x',
+    badgeColor: 'badge-red',
+  },
+  VOUCHER_RELEASED: {
+    label: 'Liberación de Vale',
+    category: 'Vales',
+    icon: 'circle-check',
+    badgeColor: 'badge-emerald',
+  },
+  VOUCHER_CASHED: {
+    label: 'Cobro en Caja de Vale',
+    category: 'Vales',
+    icon: 'banknote',
+    badgeColor: 'badge-emerald',
+  },
+  VOUCHER_MODIFICATION_REQUESTED: {
+    label: 'Solicitud de Modificación de Vale',
+    category: 'Vales',
+    icon: 'pen-tool',
+    badgeColor: 'badge-amber',
+  },
+  VOUCHER_MODIFICATION_APPROVED: {
+    label: 'Modificación de Vale Aprobada',
+    category: 'Vales',
+    icon: 'check',
+    badgeColor: 'badge-emerald',
+  },
+  VOUCHER_MODIFICATION_APPLIED: {
+    label: 'Modificación de Vale Aplicada',
+    category: 'Vales',
+    icon: 'check-check',
+    badgeColor: 'badge-emerald',
+  },
+
+  // Clientes
   CLIENT_CREATED: {
-    label: 'Alta de Nuevo Cliente',
+    label: 'Alta de Cliente',
     category: 'Clientes',
     icon: 'user-plus',
-    badgeColor: 'badge-green',
+    badgeColor: 'badge-emerald',
   },
   CLIENT_UPDATED: {
-    label: 'Actualización de Cliente',
+    label: 'Edición de Datos de Cliente',
     category: 'Clientes',
     icon: 'user-check',
     badgeColor: 'badge-blue',
   },
   CLIENT_DELETED: {
-    label: 'Eliminación de Cliente',
+    label: 'Baja de Cliente',
     category: 'Clientes',
     icon: 'user-x',
     badgeColor: 'badge-red',
   },
 
-  // Créditos y Pagos
+  // Líneas de Crédito y Consultas
+  'EV-READ-LINE': {
+    label: 'Consulta de Línea de Crédito',
+    category: 'Créditos',
+    icon: 'file-text',
+    badgeColor: 'badge-slate',
+  },
   'EV-READ-MOVEMENTS': {
     label: 'Consulta de Movimientos',
-    category: 'Línea de Crédito',
-    icon: 'eye',
+    category: 'Créditos',
+    icon: 'activity',
     badgeColor: 'badge-slate',
+  },
+  CREDIT_LINE_REQUEST_CREATED: {
+    label: 'Solicitud de Incremento de Línea',
+    category: 'Créditos',
+    icon: 'trending-up',
+    badgeColor: 'badge-blue',
   },
   CREDIT_LINE_ADJUSTED: {
     label: 'Ajuste de Línea de Crédito',
-    category: 'Línea de Crédito',
-    icon: 'trending-up',
+    category: 'Créditos',
+    icon: 'credit-card',
+    badgeColor: 'badge-emerald',
+  },
+  CUTOFF_EXECUTED: {
+    label: 'Ejecución de Corte Quincenal',
+    category: 'Créditos',
+    icon: 'scissors',
     badgeColor: 'badge-purple',
   },
+
+  // Pagos y Conciliación
   PAYMENT_APPLIED: {
     label: 'Aplicación de Pago',
     category: 'Pagos',
-    icon: 'credit-card',
-    badgeColor: 'badge-green',
-  },
-  CUTOFF_EXECUTED: {
-    label: 'Ejecución de Corte',
-    category: 'Relaciones',
-    icon: 'scissors',
-    badgeColor: 'badge-amber',
-  },
-
-  // Puntos
-  POINTS_REDEMPTION_REQUESTED: {
-    label: 'Solicitud Canje de Puntos',
-    category: 'Puntos',
     icon: 'coins',
+    badgeColor: 'badge-emerald',
+  },
+  PAYMENT_CLARIFICATION_CREATED: {
+    label: 'Registro de Aclaración de Pago',
+    category: 'Pagos',
+    icon: 'circle-alert',
     badgeColor: 'badge-amber',
   },
-  POINTS_REDEMPTION_AUTHORIZED: {
-    label: 'Autorización Canje de Puntos',
-    category: 'Puntos',
-    icon: 'check-circle-2',
+  PAYMENT_CLARIFICATION_RESOLVED: {
+    label: 'Aclaración de Pago Resuelta',
+    category: 'Pagos',
+    icon: 'circle-check',
+    badgeColor: 'badge-emerald',
+  },
+  EXCESS_CREATED: {
+    label: 'Excedente de Pago Detectado',
+    category: 'Pagos',
+    icon: 'banknote',
     badgeColor: 'badge-blue',
   },
-  POINTS_REDEMPTION_DELIVERED: {
-    label: 'Entrega de Efectivo por Puntos',
-    category: 'Puntos',
-    icon: 'banknote',
-    badgeColor: 'badge-green',
-  },
-  POINTS_REDEMPTION_REJECTED: {
-    label: 'Rechazo de Canje de Puntos',
-    category: 'Puntos',
-    icon: 'x-circle',
-    badgeColor: 'badge-red',
-  },
-
-  // Riesgo y Morosidad
-  RISK_ALERT_GENERATED: {
-    label: 'Alerta de Riesgo (3 Faltas)',
-    category: 'Riesgo',
-    icon: 'alert-triangle',
-    badgeColor: 'badge-red',
-  },
-  DISTRIBUTOR_BLOCKED: {
-    label: 'Bloqueo Operativo de Distribuidora',
-    category: 'Riesgo',
-    icon: 'lock',
-    badgeColor: 'badge-red',
-  },
-  DISTRIBUTOR_RELEASED: {
-    label: 'Levantamiento de Bloqueo',
-    category: 'Riesgo',
-    icon: 'unlock',
-    badgeColor: 'badge-green',
-  },
-  DELINQUENCY_REMOVAL_REQUESTED: {
-    label: 'Solicitud de Retiro de Morosidad',
-    category: 'Riesgo',
-    icon: 'file-text',
+  REFUND_REQUESTED: {
+    label: 'Solicitud de Devolución de Excedente',
+    category: 'Pagos',
+    icon: 'undo-2',
     badgeColor: 'badge-amber',
   },
-  DELINQUENCY_REMOVAL_AUTHORIZED: {
-    label: 'Autorización Retiro de Morosidad',
-    category: 'Riesgo',
-    icon: 'check-check',
-    badgeColor: 'badge-green',
+  REFUND_COMPLETED: {
+    label: 'Devolución de Excedente Completada',
+    category: 'Pagos',
+    icon: 'circle-check',
+    badgeColor: 'badge-emerald',
+  },
+  REFUND_CANCELLED: {
+    label: 'Devolución de Excedente Cancelada',
+    category: 'Pagos',
+    icon: 'circle-x',
+    badgeColor: 'badge-red',
   },
 
-  // Medios y Expedientes
-  PRIVATE_MEDIA_DOWNLOADED: {
-    label: 'Descarga de Expediente/Archivo',
-    category: 'Archivos',
-    icon: 'download',
+  // Distribuidoras
+  DISTRIBUTOR_ACCESS_ACTIVATED: {
+    label: 'Activación de Acceso de Distribuidora',
+    category: 'Distribuidoras',
+    icon: 'circle-check',
+    badgeColor: 'badge-emerald',
+  },
+  DISTRIBUTOR_COORDINATOR_ASSIGNED: {
+    label: 'Asignación de Coordinador',
+    category: 'Distribuidoras',
+    icon: 'user-check',
+    badgeColor: 'badge-blue',
+  },
+  DISTRIBUTOR_CATEGORY_ASSIGNED: {
+    label: 'Asignación de Categoría',
+    category: 'Distribuidoras',
+    icon: 'tag',
     badgeColor: 'badge-indigo',
   },
-  MEDIA_UPLOADED: {
-    label: 'Carga de Documento',
-    category: 'Archivos',
-    icon: 'upload',
-    badgeColor: 'badge-cyan',
+  DISTRIBUTOR_STATUS_CHANGED: {
+    label: 'Cambio de Estado Operativo',
+    category: 'Distribuidoras',
+    icon: 'activity',
+    badgeColor: 'badge-amber',
   },
-};
-
-export const ROLE_LABELS_ES: Record<string, string> = {
-  general_manager: 'Gerente General',
-  branch_manager: 'Gerente de Sucursal',
-  cashier: 'Cajera / Mostrador',
-  coordinator: 'Coordinador',
-  distributor: 'Distribuidora',
-  admin: 'Administrador del Sistema',
-  auditor: 'Auditor',
-  system: 'Proceso Automático del Sistema',
-};
-
-export const ENTITY_LABELS_ES: Record<string, string> = {
-  vouchers: 'Vales',
-  voucher: 'Vales',
-  Client: 'Clientes',
-  clients: 'Clientes',
-  credit_lines: 'Líneas de Crédito',
-  media_file: 'Archivos / Expedientes',
-  distributors: 'Distribuidoras',
-  Distributor: 'Distribuidoras',
-  distributor_application: 'Solicitudes de distribuidora',
-  DistributorApplication: 'Solicitudes de distribuidora',
-  payments: 'Pagos',
-  users: 'Usuarios',
-  User: 'Personal y usuarios',
-  AccountInvitation: 'Invitaciones',
-  branches: 'Sucursales',
-  Branch: 'Sucursales',
-  roles: 'Roles y Permisos',
-  CoordinatorDistributorAssignment: 'Asignaciones de personal',
-  point_accounts: 'Cuentas de Puntos',
-  point_redemption_requests: 'Canjes de Puntos',
-  distributor_risk_alerts: 'Alertas de Riesgo',
-  distributor_operational_blocks: 'Bloqueos Operativos',
-  delinquency_removal_requests: 'Retiros de Morosidad',
-  distributor_relation: 'Relaciones',
-  relations: 'Relaciones',
-  configurations: 'Configuraciones',
-  products: 'Productos',
-  categories: 'Categorías',
-  bank_imports: 'Archivos bancarios',
-  refunds: 'Devoluciones',
+  DISTRIBUTOR_BRANCH_TRANSFERRED: {
+    label: 'Traspaso de Sucursal',
+    category: 'Distribuidoras',
+    icon: 'building',
+    badgeColor: 'badge-purple',
+  },
 };
 
 export const FIELD_LABELS_ES: Record<string, string> = {
-  // Personal / Usuario
-  name: 'Nombre',
-  email: 'Correo electrónico',
-  normalized_email: 'Correo normalizado',
+  // Solicitud y Datos Personales
+  first_name: 'Nombre(s)',
+  last_name: 'Primer Apellido',
+  first_last_name: 'Primer Apellido',
+  second_last_name: 'Segundo Apellido',
+  name: 'Nombre / Concepto',
+  email: 'Correo Electrónico',
   phone: 'Teléfono',
   phone_number: 'Teléfono',
   mobile_phone: 'Celular',
-  state: 'Estado de cuenta',
-  password: 'Contraseña',
+  birth_date: 'Fecha de Nacimiento',
+  birth_place: 'Lugar de Nacimiento',
+  birth_city: 'Ciudad de Nacimiento',
+  birth_state: 'Estado de Nacimiento',
+  birth_country: 'País de Nacimiento',
+  gender: 'Género',
+  marital_status: 'Estado Civil',
+  civil_status: 'Estado Civil',
+  nationality: 'Nacionalidad',
+  identification_country: 'País de Identificación',
+  official_id_type: 'Tipo de Identificación',
+  official_id_number: 'Folio de Identificación',
   curp: 'CURP',
   rfc: 'RFC',
-  ine_number: 'Número de INE',
-  birth_date: 'Fecha de nacimiento',
-  gender: 'Género',
-  marital_status: 'Estado civil',
-  nationality: 'Nacionalidad',
-  education_level: 'Nivel de estudios',
 
-  // Dirección
+  // Domicilio
+  housing_tenure: 'Tipo de Vivienda / Tenencia',
+  financing_status: 'Situación de Financiamiento',
   street: 'Calle',
-  exterior_number: 'Número exterior',
-  interior_number: 'Número interior',
+  exterior_number: 'Número Exterior',
+  interior_number: 'Número Interior',
   neighborhood: 'Colonia',
   city: 'Ciudad',
   municipality: 'Municipio',
-  state_name: 'Estado',
-  zip_code: 'Código postal',
-  postal_code: 'Código postal',
-  address: 'Dirección',
-  validated_address: 'Dirección validada',
+  state: 'Estado',
+  postal_code: 'Código Postal',
+  zip_code: 'Código Postal',
+  country: 'País',
+  years_at_residence: 'Años en el Domicilio',
+  is_current: 'Registro Actual / Vigente',
+  is_active: 'Activo / Vigente',
 
-  // Financiero
-  credit_limit: 'Límite de crédito',
-  available_balance: 'Saldo disponible',
-  used_balance: 'Saldo utilizado',
-  amount: 'Monto',
-  total_amount: 'Monto total',
-  interest_rate: 'Tasa de interés',
-  late_fee: 'Cargo por mora',
-  payment_amount: 'Monto del pago',
-  balance: 'Saldo',
-  folio: 'Folio',
-  voucher_folio: 'Folio de vale',
-  distributor_number: 'Número de distribuidora',
-  client_number: 'Número de cliente',
+  // Patrimonio y Bienes
+  entry_type: 'Tipo de Concepto',
+  amount: 'Monto / Valor Comercial',
+  estimated_value: 'Valor Estimado',
+  outstanding_balance: 'Saldo Pendiente',
+  monthly_payment: 'Pago Mensual',
+  description: 'Descripción',
 
-  // Estado / Workflow
+  // Crédito Comercial
+  company_name: 'Empresa / Comercio',
+  credit_limit: 'Límite de Crédito',
+  account_number: 'Número de Cuenta',
+  proof_type: 'Tipo de Comprobante',
+  proof_reference: 'Referencia de Comprobante',
+  has_evidence: 'Cuenta con Evidencia',
+
+  // Vehículos
+  vehicle_type: 'Tipo de Vehículo',
+  ownership_status: 'Tipo de Propiedad',
+  model_year: 'Año del Modelo',
+  brand: 'Marca',
+  model: 'Modelo',
+  plates: 'Placas',
+
+  // Empleo
+  employer_name: 'Empresa / Empleador',
+  job_title: 'Puesto / Cargo',
+  position: 'Puesto / Ocupación',
+  monthly_income: 'Ingreso Mensual',
+  started_at: 'Fecha de Ingreso',
+  ended_at: 'Fecha de Término',
+
+  // Familiar
+  relationship: 'Parentesco',
+  declared_age: 'Edad',
+  school_name: 'Escuela / Grado',
+  is_economic_dependent: 'Dependiente Económico',
+  economic_dependency: 'Dependiente Económico',
+  is_family_reference: 'Referencia Familiar',
+
+  // Operación y Dictamen
   status: 'Estado',
   result: 'Resultado',
-  outcome: 'Resultado',
-  severity: 'Severidad',
   reason: 'Motivo',
-  revocation_reason: 'Motivo de revocación',
-  rejection_reason: 'Motivo de rechazo',
-  cancellation_reason: 'Motivo de cancelación',
-  notes: 'Notas',
   observations: 'Observaciones',
-  comment: 'Comentario',
-  comments: 'Comentarios',
-
-  // Organización
+  decision: 'Dictamen / Decisión',
+  initial_credit_line_amount: 'Línea de Crédito Inicial',
+  total_amount: 'Monto Total',
+  payment_amount: 'Monto de Pago',
+  credit_line_amount: 'Línea de Crédito',
   branch_id: 'Sucursal',
-  branch_name: 'Nombre de sucursal',
-  role: 'Rol',
-  role_code: 'Código de rol',
-  category: 'Categoría',
-  category_name: 'Nombre de categoría',
-  product_name: 'Nombre del producto',
-  code: 'Código',
-
-  // Fechas
-  created_at: 'Fecha de creación',
-  updated_at: 'Fecha de actualización',
-  activated_at: 'Fecha de activación',
-  expires_at: 'Fecha de expiración',
-  revoked_at: 'Fecha de revocación',
-  scheduled_for: 'Programado para',
-  effective_from: 'Vigente desde',
-  effective_to: 'Vigente hasta',
-  due_date: 'Fecha de vencimiento',
-  payment_date: 'Fecha de pago',
-  cutoff_date: 'Fecha de corte',
-
-  // Seguridad
-  ip_address: 'Dirección IP',
-  user_agent: 'Navegador',
-  device: 'Dispositivo',
-  mfa_method: 'Método MFA',
-  authentication_method: 'Método de autenticación',
-
-  // Verificación
-  verification_result: 'Resultado de verificación',
-  verifier_id: 'Verificador',
   coordinator_id: 'Coordinador',
-  evaluation_result: 'Resultado de evaluación',
+  verifier_id: 'ID de Verificador',
+  verifier_name: 'Verificador Asignado',
+  verifier_email: 'Correo del Verificador',
+  scheduled_for: 'Fecha y Hora Programada',
+  has_differences: 'Diferencias Reportadas',
+  total_differences: 'Total de Diferencias Observadas',
+  completed_at: 'Fecha de Finalización',
+  visited_at: 'Fecha de Visita',
+  field: 'Campo Modificado',
+  details_payload: 'Detalles Adicionales',
+  reference_payload: 'Datos de Referencia',
+
+  // Archivos y Evidencias
+  file_name: 'Nombre del Archivo',
+  original_name: 'Nombre del Archivo',
+  file_type: 'Tipo de Evidencia / Archivo',
+  file_size: 'Tamaño del Archivo',
+  size_bytes: 'Tamaño del Archivo',
+  mime_type: 'Tipo MIME / Formato',
+  sha256: 'Firma Digital (SHA-256)',
+  purpose: 'Propósito del Archivo',
+  purposes: 'Propósitos del Archivo',
+  owner_type: 'Tipo de Registro Asociado',
+  owner_id: 'ID de Registro Asociado',
 };
 
-@Injectable({ providedIn: 'root' })
+export const VALUE_LABELS_ES: Record<string, string> = {
+  // Estados de solicitud
+  DRAFT: 'Borrador / Captura',
+  COORDINATOR_REVIEW: 'Revisión de Coordinación',
+  PHYSICAL_VERIFICATION: 'Verificación Física',
+  COORDINATOR_CORRECTION: 'Corrección de Diferencias',
+  COORDINATOR_EVALUATION: 'Evaluación de Coordinación',
+  MANAGER_AUTHORIZATION: 'Autorización Gerencial',
+  AUTHORIZED_PENDING_ACTIVATION: 'Autorizada (Pendiente Activación)',
+  ACTIVE: 'Activa',
+  REJECTED: 'Rechazada',
+  TERMINATED: 'Finalizada Desfavorable',
+  RETURNED_TO_DRAFT: 'Devuelta a Captura',
+
+  // Tipos de Patrimonio
+  ASSET: 'Activo (Propiedad / Bien)',
+  LIABILITY: 'Pasivo (Deuda / Crédito)',
+  ACTIVE_COMMITMENT: 'Compromiso Activo',
+
+  // Propiedad y Tenencia
+  OWNED: 'Propio(a)',
+  RENTED: 'Rentado(a)',
+  FAMILY: 'Familiar',
+  BORROWED: 'Prestada',
+  PAID: 'Pagada',
+  MORTGAGE: 'Hipotecada',
+  MORTGAGED: 'Hipotecado(a)',
+  FINANCED: 'Financiado(a)',
+  LOAN: 'Préstamo',
+  INFONAVIT: 'INFONAVIT',
+  NOT_APPLICABLE: 'No Aplica',
+
+  // Vehículos
+  CAR: 'Automóvil',
+  AUTOMOBILE: 'Automóvil',
+  MOTORCYCLE: 'Motocicleta',
+  TRUCK: 'Camioneta / Camión',
+  VAN: 'Furgoneta',
+
+  // Parentescos
+  SPOUSE: 'Cónyuge',
+  CHILD: 'Hijo(a)',
+  PARENT: 'Padre / Madre',
+
+  // Tipos de Evidencia y Archivos
+  EVIDENCE: 'Evidencia de Visita',
+  IDENTIFICATION: 'Identificación Oficial',
+  ADDRESS_PROOF: 'Comprobante de Domicilio',
+  VEHICLE_EVIDENCE: 'Evidencia de Vehículo',
+  ASSET_EVIDENCE: 'Evidencia de Patrimonio',
+  COMMERCIAL_EVIDENCE: 'Evidencia de Crédito Comercial',
+  REFUND_EVIDENCE: 'Evidencia de Devolución',
+  PHOTO: 'Fotografía',
+  DOCUMENT: 'Documento Digital',
+  FRONT_PHOTO: 'Foto de Fachada / Frente',
+  INSIDE_PHOTO: 'Foto Interior',
+  NEIGHBORHOOD_PHOTO: 'Foto de Entorno / Calle',
+  IDENTIFICATION_PHOTO: 'Foto de Identificación',
+  SIBLING: 'Hermano(a)',
+  OTHER: 'Otro(a)',
+
+  // Nacionalidad e Identificaciones
+  MEXICAN: 'Mexicana',
+  FOREIGN: 'Extranjera',
+  INE: 'Credencial para Votar (INE)',
+  PASSPORT: 'Pasaporte',
+  PROFESSIONAL_LICENSE: 'Cédula Profesional',
+
+  // Estado civil y género
+  SINGLE: 'Soltero(a)',
+  MARRIED: 'Casado(a)',
+  DIVORCED: 'Divorciado(a)',
+  WIDOWED: 'Viudo(a)',
+  FREE_UNION: 'Unión Libre',
+  MALE: 'Masculino',
+  FEMALE: 'Femenino',
+
+  // Verificación
+  ASSIGNED: 'Asignada',
+  IN_PROGRESS: 'En Curso',
+  COMPLETED: 'Completada',
+  FAVORABLE: 'Favorable',
+  UNFAVORABLE: 'Desfavorable',
+  SUCCESS: 'Exitoso',
+  FAILURE: 'Fallido',
+  DENIED: 'Denegado',
+};
+
+@Injectable({
+  providedIn: 'root',
+})
 export class AuditoriaApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
 
-  getAudits(filters: AuditFilters = {}): Observable<AuditPagination> {
+  getAudits(filters: AuditFilters): Observable<AuditPagination> {
     let params = new HttpParams();
     Object.entries(filters).forEach(([key, value]) => {
-      if (Array.isArray(value)) {
-        value.forEach((item) => {
-          params = params.append(`${key}[]`, item);
-        });
-        return;
-      }
       if (value !== undefined && value !== null && value !== '') {
-        params = params.set(key, String(value));
+        if (Array.isArray(value)) {
+          value.forEach((val) => {
+            params = params.append(`${key}[]`, String(val));
+          });
+        } else {
+          params = params.set(key, String(value));
+        }
       }
     });
 
-    return this.http
-      .get<{ data: AuditPagination }>(`${this.config.baseUrl}/audit-logs`, { params })
-      .pipe(map((response) => response.data));
+    return this.http.get<AuditPagination>(`${this.config.baseUrl}/audit-logs`, { params });
   }
 
   getFilterOptions(): Observable<AuditFilterOptions> {
     return this.http
-      .get<{ data: AuditFilterOptions }>(`${this.config.baseUrl}/audit-logs/options`)
-      .pipe(map((response) => response.data));
+      .get<{ data: AuditFilterOptions } | AuditFilterOptions>(`${this.config.baseUrl}/audit-logs/options`)
+      .pipe(
+        map((res: any) => {
+          if (res && res.data && typeof res.data === "object" && "events" in res.data) {
+            return res.data as AuditFilterOptions;
+          }
+          return res as AuditFilterOptions;
+        }),
+      );
   }
 
-  getOperationalLogs(filters: OperationalLogFilters = {}): Observable<OperationalLogPagination> {
+  getOperationalLogs(filters: OperationalLogFilters): Observable<OperationalLogPagination> {
     let params = new HttpParams();
     Object.entries(filters).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -470,29 +927,71 @@ export class AuditoriaApiService {
       }
     });
 
-    return this.http
-      .get<{ data: OperationalLogPagination }>(`${this.config.baseUrl}/operational-logs`, {
-        params,
-      })
-      .pipe(map((response) => response.data));
+    return this.http.get<OperationalLogPagination>(
+      `${this.config.baseUrl}/operational-logs`,
+      { params },
+    );
   }
 
   getActionGroup(eventName: string): AuditActionGroup {
-    const event = eventName.toUpperCase();
-    if (/(CREAT|GENERAT|ISSU|REGISTER|ADDED|OPENED)/.test(event)) return 'CREATE';
-    if (/(DELET|REMOV|REVOK|CANCEL|REJECT|ENDED|DISABL|BLOCK)/.test(event)) return 'DELETE';
-    if (/(LOGIN|LOGOUT|PASSWORD|MFA|SESSION|INVITATION|ACCESS|AUTHENTICAT)/.test(event))
-      return 'ACCESS';
-    if (/(VIEW|READ|DOWNLOAD|EXPORT|INSPECT|SEARCH|CONSULT)/.test(event)) return 'READ';
-    if (/(PAY|CASH|RECONCIL|AUTHOR|APPROV|DELIVER|EXECUT|PROCESS|CUT|REDEEM|SETTLE)/.test(event))
-      return 'PROCESS';
     if (
-      /(UPDAT|CHANG|ADJUST|ASSIGN|PUBLISH|EDIT|CONFIGUR|RESEND|ACTIVAT|ENABLE|RELEASE|SUBMIT|CONFIRM)/.test(
-        event,
-      )
-    )
-      return 'UPDATE';
-    return 'OTHER';
+      eventName.startsWith('LOGIN') ||
+      eventName.startsWith('LOGOUT') ||
+      eventName.includes('PASSWORD') ||
+      eventName.includes('MFA') ||
+      eventName.includes('WEBAUTHN') ||
+      eventName.includes('INVITATION') ||
+      eventName.includes('SESSION')
+    ) {
+      return 'AUTH';
+    }
+    if (
+      eventName.startsWith('DISTRIBUTOR_APPLICATION') ||
+      eventName.startsWith('VERIFICATION') ||
+      eventName.startsWith('APPLICATION')
+    ) {
+      return 'SOLICITUDES';
+    }
+    if (eventName.startsWith('DISTRIBUTOR_')) {
+      return 'DISTRIBUIDORAS';
+    }
+    if (eventName.startsWith('VOUCHER_')) {
+      return 'VALES';
+    }
+    if (eventName.startsWith('CLIENT_')) {
+      return 'CLIENTES';
+    }
+    if (
+      eventName.startsWith('PAYMENT_') ||
+      eventName.startsWith('EXCESS_') ||
+      eventName.startsWith('REFUND_') ||
+      eventName.startsWith('BANK_')
+    ) {
+      return 'PAGOS';
+    }
+    if (
+      eventName.startsWith('CREDIT_') ||
+      eventName.startsWith('EV-READ-') ||
+      eventName === 'CUTOFF_EXECUTED'
+    ) {
+      return 'CREDITOS';
+    }
+    if (eventName.includes('MEDIA') || eventName.includes('FILE')) {
+      return 'DOCUMENTOS';
+    }
+    if (eventName.includes('ROLE') || eventName.includes('PERMISSION')) {
+      return 'CONFIGURACION';
+    }
+    return 'SISTEMA';
+  }
+
+  getRoleLabel(role: string | null | undefined): string {
+    if (!role) return 'Sistema / Sin rol';
+    return ROLE_LABELS_ES[role] || role;
+  }
+
+  getEntityLabel(entity: string): string {
+    return ENTITY_LABELS_ES[entity] || this.humanize(entity);
   }
 
   getEventInfo(eventName: string): {
@@ -504,10 +1003,9 @@ export class AuditoriaApiService {
     if (EVENT_LABELS_ES[eventName]) {
       return EVENT_LABELS_ES[eventName];
     }
-    // Fallback humanizer
-    const cleaned = eventName
-      .replace(/_/g, ' ')
+    const cleaned = (eventName || 'EVENT')
       .replace(/^EV-/, '')
+      .replace(/_/g, ' ')
       .toLowerCase()
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
@@ -515,73 +1013,193 @@ export class AuditoriaApiService {
       label: cleaned,
       category: 'General',
       icon: 'activity',
-      badgeColor: 'badge-slate',
+      badgeColor: 'badge-gray',
     };
-  }
-
-  getRoleLabel(role: string): string {
-    return ROLE_LABELS_ES[role] || role;
-  }
-
-  getEntityLabel(entity: string): string {
-    return ENTITY_LABELS_ES[entity] || this.humanize(entity);
-  }
-
-  private humanize(value: string): string {
-    return value
-      .replace(/([a-z])([A-Z])/g, '$1 $2')
-      .replace(/[_-]+/g, ' ')
-      .trim()
-      .toLowerCase()
-      .replace(/\b\p{L}/gu, (letter) => letter.toUpperCase());
   }
 
   getFieldLabel(field: string): string {
     return FIELD_LABELS_ES[field] || this.humanize(field);
   }
 
-  formatValue(value: unknown): string {
+  formatValue(value: unknown, fieldName?: string): string {
     if (value === null || value === undefined) return '(vacío)';
     if (typeof value === 'boolean') return value ? 'Sí' : 'No';
-    if (typeof value === 'number') return String(value);
+    if (typeof value === 'number') {
+      if (
+        fieldName &&
+        /amount|balance|limit|income|price|payment|line_amount|value/i.test(fieldName)
+      ) {
+        return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(
+          value,
+        );
+      }
+      if (fieldName && /size_bytes|file_size/i.test(fieldName)) {
+        if (value >= 1048576) return (value / 1048576).toFixed(2) + ' MB';
+        if (value >= 1024) return (value / 1024).toFixed(1) + ' KB';
+        return value + ' B';
+      }
+      return String(value);
+    }
     if (typeof value === 'string') {
       if (value === '') return '(vacío)';
-      if (value.length > 80) return value.substring(0, 77) + '...';
+      if (VALUE_LABELS_ES[value]) return VALUE_LABELS_ES[value];
+      if (/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}:\d{2})?/.test(value)) {
+        const date = new Date(value);
+        if (!isNaN(date.getTime())) {
+          return date.toLocaleDateString('es-MX', {
+            day: '2-digit',
+            month: '2-digit',
+            year: 'numeric',
+            ...(value.includes('T') ? { hour: '2-digit', minute: '2-digit' } : {}),
+          });
+        }
+      }
+      if (
+        fieldName &&
+        /amount|balance|limit|income|price|payment|line_amount|value/i.test(fieldName) &&
+        !isNaN(Number(value))
+      ) {
+        return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(
+          Number(value),
+        );
+      }
+      if (value.length > 90) return value.substring(0, 87) + '...';
       return value;
     }
-    if (Array.isArray(value)) return value.map((item) => this.formatValue(item)).join(', ');
-    if (typeof value === 'object') return JSON.stringify(value);
+    if (Array.isArray(value)) {
+      if (value.length === 0) return '(lista vacía)';
+      return value.map((item) => this.formatValue(item, fieldName)).join(', ');
+    }
+    if (typeof value === 'object') {
+      const keys = Object.keys(value as Record<string, unknown>);
+      if (keys.length === 0) return '(vacío)';
+      return keys
+        .map(
+          (k) =>
+            `${this.getFieldLabel(k)}: ${this.formatValue((value as Record<string, unknown>)[k], k)}`,
+        )
+        .join(' · ');
+    }
     return String(value);
   }
 
-  getChangedFields(
-    audit: AuditRecord,
-  ): { field: string; label: string; oldValue: string; newValue: string }[] {
-    const prev = audit.previous_value ?? {};
+  getEntityFolioOrIdentifier(audit: AuditRecord): { folio: string; isRealFolio: boolean } {
     const next = audit.new_value ?? {};
-    const allKeys = new Set([...Object.keys(prev), ...Object.keys(next)]);
-    const changes: { field: string; label: string; oldValue: string; newValue: string }[] = [];
+    const prev = audit.previous_value ?? {};
+    const evidence = audit.evidence ?? {};
 
-    const skipKeys = new Set([
+    const fileName = next['file_name'] || prev['file_name'] || next['original_name'] || prev['original_name'];
+    if (fileName) return { folio: String(fileName), isRealFolio: true };
+
+    const appNumber =
+      next['application_number'] || prev['application_number'] || evidence['application_number'];
+    if (appNumber) return { folio: String(appNumber), isRealFolio: true };
+
+    const folio = next['folio'] || prev['folio'] || next['voucher_folio'] || prev['voucher_folio'];
+    if (folio) return { folio: String(folio), isRealFolio: true };
+
+    const distNumber = next['distributor_number'] || prev['distributor_number'];
+    if (distNumber) return { folio: `Dist. #${distNumber}`, isRealFolio: true };
+
+    const clientNumber = next['client_number'] || prev['client_number'];
+    if (clientNumber) return { folio: `Cli. #${clientNumber}`, isRealFolio: true };
+
+    if (audit.entity_id) {
+      const id = String(audit.entity_id);
+      return {
+        folio: id.length > 18 ? `${id.substring(0, 8)}...${id.substring(id.length - 4)}` : id,
+        isRealFolio: false,
+      };
+    }
+
+    return { folio: 'Sistema', isRealFolio: false };
+  }
+
+  extractActualChanges(audit: AuditRecord): ChangedFieldDetail[] {
+    let prevRaw: Record<string, unknown> = {};
+    let nextRaw: Record<string, unknown> = {};
+
+    // 1. Extraer payload anterior
+    if (audit.previous_value && typeof audit.previous_value === 'object') {
+      prevRaw = { ...audit.previous_value };
+    } else if (
+      audit.new_value &&
+      typeof audit.new_value === 'object' &&
+      audit.new_value['previous_values'] &&
+      typeof audit.new_value['previous_values'] === 'object' &&
+      !Array.isArray(audit.new_value['previous_values'])
+    ) {
+      prevRaw = { ...(audit.new_value['previous_values'] as Record<string, unknown>) };
+    }
+
+    // 2. Extraer payload nuevo
+    if (
+      audit.new_value &&
+      typeof audit.new_value === 'object' &&
+      audit.new_value['new_values'] &&
+      typeof audit.new_value['new_values'] === 'object' &&
+      !Array.isArray(audit.new_value['new_values'])
+    ) {
+      nextRaw = { ...(audit.new_value['new_values'] as Record<string, unknown>) };
+    } else if (audit.new_value && typeof audit.new_value === 'object') {
+      nextRaw = { ...audit.new_value };
+    }
+
+    // 3. Claves técnicas envolventes a omitir del cuadro de cambios de negocio
+    const envelopeKeys = new Set([
       'id',
+      'actor_role',
+      'application_id',
+      'application_number',
+      'action',
+      'device',
+      'security_event_id',
+      'reason',
+      'result',
       'created_at',
       'updated_at',
       'deleted_at',
-      'device',
-      'security_event_id',
       'password',
+      'previous_values',
+      'new_values',
+      'metadata',
+      'evidence',
+      'user_id',
+      'branch_id',
+      'record_id',
+      'residence_id',
+      'client_id',
+      'distributor_id',
+      'vehicle_id',
+      'family_member_id',
+      'employment_id',
+      'asset_liability_id',
+      'lock_version',
+      'application_lock_version',
+      'fields_updated',
     ]);
 
+    const hasVerifierName = Boolean(nextRaw['verifier_name'] || prevRaw['verifier_name']);
+    const allKeys = new Set([
+      ...Object.keys(prevRaw).filter((k) => !envelopeKeys.has(k) && (!hasVerifierName || k !== 'verifier_id')),
+      ...Object.keys(nextRaw).filter((k) => !envelopeKeys.has(k) && (!hasVerifierName || k !== 'verifier_id')),
+    ]);
+
+    const changes: ChangedFieldDetail[] = [];
+
     allKeys.forEach((key) => {
-      if (skipKeys.has(key)) return;
-      const oldVal = prev[key];
-      const newVal = next[key];
+      const oldVal = prevRaw[key];
+      const newVal = nextRaw[key];
       if (JSON.stringify(oldVal) !== JSON.stringify(newVal)) {
         changes.push({
           field: key,
           label: this.getFieldLabel(key),
-          oldValue: this.formatValue(oldVal),
-          newValue: this.formatValue(newVal),
+          oldValue: this.formatValue(oldVal, key),
+          rawOld: oldVal,
+          newValue: this.formatValue(newVal, key),
+          rawNew: newVal,
+          isCreation: oldVal === undefined || oldVal === null,
+          isDeletion: newVal === undefined || newVal === null,
         });
       }
     });
@@ -589,165 +1207,237 @@ export class AuditoriaApiService {
     return changes;
   }
 
+  getChangedFields(audit: AuditRecord): ChangedFieldDetail[] {
+    return this.extractActualChanges(audit);
+  }
+
   describeAction(audit: AuditRecord): string {
-    const event = audit.event_name;
-    const actorName = audit.actor?.name ?? 'Un usuario';
+    const event = audit.event_name || '';
+    const actorName =
+      audit.actor?.name ?? (audit.actor_role ? this.getRoleLabel(audit.actor_role) : 'Un usuario');
     const entityLabel = this.getEntityLabel(audit.entity_type || '').toLowerCase();
     const newVal = audit.new_value ?? {};
     const prevVal = audit.previous_value ?? {};
-    const targetName =
-      (newVal['name'] as string) ||
-      (newVal['email'] as string) ||
-      (newVal['folio'] as string) ||
-      (newVal['voucher_folio'] as string) ||
-      (newVal['distributor_number'] as string) ||
-      (newVal['client_number'] as string) ||
-      '';
+    const folioInfo = this.getEntityFolioOrIdentifier(audit);
+    const folioText = folioInfo.isRealFolio ? ` ${folioInfo.folio}` : '';
 
-    // --- Accesos y Seguridad ---
-    if (event === 'LOGIN_SUCCESSFUL') return `${actorName} inició sesión`;
-    if (event === 'LOGIN_FAILED')
-      return `Intento fallido de inicio de sesión${newVal['email'] ? ' con ' + (newVal['email'] as string) : ''}`;
-    if (event === 'LOGOUT') return `${actorName} cerró sesión`;
-    if (event === 'PASSWORD_CHANGED') return `${actorName} cambió su contraseña`;
-    if (event === 'MFA_ENABLED') return `${actorName} activó la autenticación de dos pasos (MFA)`;
+    // --- Solicitudes de Distribuidora ---
+    if (event === 'DISTRIBUTOR_APPLICATION_SUBMITTED') {
+      return `${actorName} envió la solicitud${folioText} a revisión de coordinación.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_CREATED') {
+      return `${actorName} dio de alta la solicitud${folioText} en borrador.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_PERSONAL_DATA_UPDATED') {
+      return `${actorName} actualizó los datos personales de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_RESIDENCE_ADDED') {
+      return `${actorName} agregó un domicilio a la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_RESIDENCE_UPDATED') {
+      return `${actorName} actualizó los datos de domicilio de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_RESIDENCE_REMOVED') {
+      return `${actorName} eliminó un domicilio de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_COMMERCIAL_CREDIT_ADDED') {
+      return `${actorName} agregó un crédito comercial a la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_COMMERCIAL_CREDIT_UPDATED') {
+      return `${actorName} actualizó un crédito comercial de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_COMMERCIAL_CREDIT_REMOVED') {
+      return `${actorName} eliminó un crédito comercial de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_VEHICLE_ADDED') {
+      return `${actorName} agregó un vehículo a la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_VEHICLE_UPDATED') {
+      return `${actorName} actualizó los datos de vehículo de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_VEHICLE_REMOVED') {
+      return `${actorName} eliminó un vehículo de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_EMPLOYMENT_ADDED') {
+      return `${actorName} agregó un empleo / actividad económica a la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_EMPLOYMENT_UPDATED') {
+      return `${actorName} actualizó la actividad económica de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_EMPLOYMENT_REMOVED') {
+      return `${actorName} eliminó un empleo de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_FAMILY_MEMBER_ADDED') {
+      return `${actorName} registró un familiar en la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_FAMILY_MEMBER_UPDATED') {
+      return `${actorName} actualizó datos de un familiar en la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_FAMILY_MEMBER_REMOVED') {
+      return `${actorName} eliminó un familiar de la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_ASSET_LIABILITY_ADDED') {
+      return `${actorName} registró patrimonio / bienes en la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_ASSET_LIABILITY_UPDATED') {
+      return `${actorName} actualizó datos de patrimonio en la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_ASSET_LIABILITY_REMOVED') {
+      return `${actorName} eliminó un registro de patrimonio en la solicitud${folioText}.`;
+    }
+    if (event === 'DISTRIBUTOR_APPLICATION_RETURNED_TO_DRAFT') {
+      const reason = audit.reason ? `: "${audit.reason}"` : '';
+      return `${actorName} devolvió la solicitud${folioText} a captura para corrección${reason}.`;
+    }
+
+    // --- Verificación ---
+    if (event === 'VERIFICATION_VISIT_ASSIGNED') {
+      return `${actorName} asignó un verificador y programó visita para la solicitud${folioText}.`;
+    }
+    if (event === 'VERIFICATION_VISIT_RESCHEDULED') {
+      return `${actorName} reprogramó el horario o verificador de la visita para la solicitud${folioText}.`;
+    }
+    if (event === 'VERIFICATION_VISIT_STARTED') {
+      return `${actorName} inició la visita de verificación en campo para la solicitud${folioText}.`;
+    }
+    if (event === 'VERIFICATION_DIFFERENCE_RECORDED') {
+      return `${actorName} registró diferencias encontradas en la visita de la solicitud${folioText}.`;
+    }
+    if (event === 'VERIFICATION_VISIT_COMPLETED') {
+      const result = newVal['result']
+        ? ` con resultado ${this.formatValue(newVal['result'])}`
+        : '';
+      return `${actorName} finalizó la visita de verificación${result} para la solicitud${folioText}.`;
+    }
+    if (event === 'VERIFICATION_EVIDENCE_UPLOADED') {
+      return `${actorName} subió fotografía de evidencia para la verificación${folioText}.`;
+    }
+    if (event === 'VERIFICATION_EVIDENCE_REMOVED') {
+      return `${actorName} eliminó una fotografía de evidencia de la verificación${folioText}.`;
+    }
+    if (event === 'APPLICATION_CORRECTION_APPLIED') {
+      const field = newVal['field']
+        ? ` en el campo "${this.getFieldLabel(String(newVal['field']))}"`
+        : '';
+      return `${actorName} aplicó una corrección de diferencia${field} en la solicitud${folioText}.`;
+    }
+    if (event === 'APPLICATION_CORRECTIONS_COMPLETED') {
+      return `${actorName} finalizó la etapa de correcciones de diferencias de la solicitud${folioText}.`;
+    }
+    if (event === 'APPLICATION_COORDINATOR_EVALUATED') {
+      const res = newVal['result'] ? ` como ${this.formatValue(newVal['result'])}` : '';
+      return `${actorName} evaluó la solicitud${folioText}${res}.`;
+    }
+    if (event === 'APPLICATION_SENT_TO_MANAGER') {
+      return `${actorName} envió la solicitud${folioText} a dictamen de gerencia.`;
+    }
+    if (event === 'APPLICATION_TERMINATED_UNFAVORABLE') {
+      return `${actorName} finalizó la solicitud${folioText} con dictamen desfavorable.`;
+    }
+    if (event === 'APPLICATION_MANAGER_APPROVED') {
+      const line = newVal['initial_credit_line_amount']
+        ? ` con línea de crédito de $${newVal['initial_credit_line_amount']}`
+        : '';
+      return `${actorName} aprobó la solicitud de distribuidora${folioText}${line}.`;
+    }
+    if (event === 'APPLICATION_MANAGER_REJECTED') {
+      const reason = audit.reason ? `: "${audit.reason}"` : '';
+      return `${actorName} rechazó la solicitud de distribuidora${folioText}${reason}.`;
+    }
+
+    // --- Consultas y Lecturas ---
+    if (event === 'EV-READ-LINE') {
+      return `${actorName} consultó el estado y saldo de la línea de crédito.`;
+    }
+    if (event === 'EV-READ-MOVEMENTS') {
+      return `${actorName} consultó el historial de movimientos de la línea de crédito.`;
+    }
+    if (event === 'PRIVATE_MEDIA_DOWNLOADED') {
+      return `${actorName} descargó un archivo de expediente.`;
+    }
+    if (event === 'PRIVATE_MEDIA_STORED' || event === 'MEDIA_UPLOADED') {
+      return `${actorName} cargó un documento digitalizado.`;
+    }
 
     // --- Vales ---
     if (event === 'VOUCHER_GENERATED') {
       const folio = (newVal['folio'] as string) || (newVal['voucher_folio'] as string) || '';
       const amount = newVal['amount'] || newVal['total_amount'] || '';
-      let desc = `${actorName} generó un vale`;
-      if (folio) desc += ` con folio ${folio}`;
-      if (amount) desc += ` por $${amount}`;
-      return desc;
+      return `${actorName} generó el vale ${folio}${amount ? ' por $' + amount : ''}.`;
     }
     if (event === 'VOUCHER_CANCELLED' || event === 'VOUCHER_CANCELLED_BY_DISTRIBUTOR') {
       const folio = (newVal['folio'] as string) || (prevVal['folio'] as string) || '';
-      return `${actorName} canceló el vale${folio ? ' ' + folio : ''}`;
+      return `${actorName} canceló el vale ${folio}.`;
     }
     if (event === 'VOUCHER_RELEASED') {
       const folio = (newVal['folio'] as string) || '';
-      return `${actorName} liberó el vale${folio ? ' ' + folio : ''}`;
+      return `${actorName} liberó el vale ${folio}.`;
     }
     if (event === 'VOUCHER_CASHED') {
       const folio = (newVal['folio'] as string) || '';
-      return `${actorName} cobró el vale${folio ? ' ' + folio : ''}`;
-    }
-    if (event.startsWith('VOUCHER_MODIFICATION')) {
-      if (event.includes('REQUESTED')) return `${actorName} solicitó modificación de vale`;
-      if (event.includes('AUTHORIZED')) return `${actorName} autorizó modificación de vale`;
-      if (event.includes('REJECTED')) return `${actorName} rechazó modificación de vale`;
-      if (event.includes('APPLIED')) return `${actorName} aplicó la modificación de vale`;
+      return `${actorName} cobró en caja el vale ${folio}.`;
     }
 
     // --- Clientes ---
     if (event === 'CLIENT_CREATED') {
-      return `${actorName} dio de alta al cliente${targetName ? ' "' + targetName + '"' : ''}`;
+      const clientName = newVal['name'] || newVal['first_name'] || '';
+      return `${actorName} dio de alta al cliente ${clientName ? '"' + clientName + '"' : ''}.`;
     }
     if (event === 'CLIENT_UPDATED') {
-      const changes = this.getChangedFields(audit);
+      const changes = this.extractActualChanges(audit);
       if (changes.length > 0) {
-        const fieldList = changes
+        const fields = changes
           .slice(0, 3)
           .map((c) => c.label.toLowerCase())
           .join(', ');
-        return `${actorName} editó ${fieldList} del cliente`;
+        return `${actorName} editó ${fields} del cliente.`;
       }
-      return `${actorName} actualizó datos del cliente`;
+      return `${actorName} actualizó los datos del cliente.`;
     }
     if (event === 'CLIENT_DELETED') {
-      return `${actorName} eliminó al cliente${targetName ? ' "' + targetName + '"' : ''}`;
+      return `${actorName} eliminó al cliente.`;
     }
 
-    // --- Créditos ---
-    if (event === 'CREDIT_LINE_ADJUSTED') {
-      const amount = newVal['amount'] || newVal['credit_limit'] || '';
-      return `${actorName} ajustó la línea de crédito${amount ? ' a $' + amount : ''}`;
-    }
-
-    // --- Pagos ---
+    // --- Pagos y Créditos ---
     if (event === 'PAYMENT_APPLIED') {
       const amount = newVal['amount'] || newVal['payment_amount'] || '';
-      return `${actorName} aplicó un pago${amount ? ' de $' + amount : ''}`;
+      return `${actorName} aplicó un pago${amount ? ' por $' + amount : ''}.`;
     }
-    if (event === 'CUTOFF_EXECUTED') return `${actorName} ejecutó un corte de relación`;
-
-    // --- Puntos ---
-    if (event === 'POINTS_REDEMPTION_REQUESTED') return `${actorName} solicitó un canje de puntos`;
-    if (event === 'POINTS_REDEMPTION_AUTHORIZED') return `${actorName} autorizó un canje de puntos`;
-    if (event === 'POINTS_REDEMPTION_DELIVERED')
-      return `${actorName} entregó el efectivo del canje de puntos`;
-    if (event === 'POINTS_REDEMPTION_REJECTED') return `${actorName} rechazó un canje de puntos`;
-
-    // --- Distribuidoras ---
-    if (event === 'DISTRIBUTOR_BLOCKED') return `${actorName} bloqueó a la distribuidora`;
-    if (event === 'DISTRIBUTOR_RELEASED')
-      return `${actorName} levantó el bloqueo de la distribuidora`;
-    if (event === 'RISK_ALERT_GENERATED') return `Se generó una alerta de riesgo`;
-    if (event === 'DELINQUENCY_REMOVAL_REQUESTED')
-      return `${actorName} solicitó retiro de morosidad`;
-    if (event === 'DELINQUENCY_REMOVAL_AUTHORIZED')
-      return `${actorName} autorizó retiro de morosidad`;
-
-    // --- Archivos ---
-    if (event === 'PRIVATE_MEDIA_DOWNLOADED')
-      return `${actorName} descargó un archivo de ${entityLabel || 'expediente'}`;
-    if (event === 'MEDIA_UPLOADED') return `${actorName} cargó un documento`;
-    if (event === 'PRIVATE_MEDIA_STORED') return `${actorName} almacenó un archivo`;
-
-    // --- Solicitudes de distribuidora ---
-    if (event === 'APPLICATION_MANAGER_APPROVED')
-      return `${actorName} aprobó la solicitud de distribuidora`;
-    if (event === 'APPLICATION_MANAGER_REJECTED')
-      return `${actorName} rechazó la solicitud de distribuidora`;
-    if (event === 'APPLICATION_COORDINATOR_EVALUATED')
-      return `${actorName} evaluó la solicitud de distribuidora`;
-    if (event === 'APPLICATION_SENT_TO_MANAGER')
-      return `${actorName} envió la solicitud al gerente`;
-    if (event === 'APPLICATION_CORRECTION_APPLIED')
-      return `${actorName} aplicó correcciones a la solicitud`;
-    if (event === 'APPLICATION_CORRECTIONS_COMPLETED')
-      return `${actorName} completó las correcciones de la solicitud`;
-    if (event.includes('DISTRIBUTOR_APPLICATION_RETURNED'))
-      return `${actorName} devolvió la solicitud al verificador`;
-
-    // --- Verificación ---
-    if (event === 'VERIFICATION_ACCESS_DENIED')
-      return `Se denegó acceso de verificación a ${actorName}`;
-    if (event === 'VERIFICATION_EVIDENCE_UPLOADED')
-      return `${actorName} cargó evidencia de verificación`;
-    if (event === 'VERIFICATION_EVIDENCE_REMOVED')
-      return `${actorName} eliminó evidencia de verificación`;
-
-    // --- Genérico por patrón ---
-    const group = this.getActionGroup(event);
-    if (group === 'CREATE') {
-      return `${actorName} creó un registro en ${entityLabel || 'el sistema'}${targetName ? ': "' + targetName + '"' : ''}`;
+    if (event === 'CREDIT_LINE_ADJUSTED') {
+      const amount = newVal['credit_limit'] || newVal['amount'] || '';
+      return `${actorName} ajustó la línea de crédito${amount ? ' a $' + amount : ''}.`;
     }
-    if (group === 'UPDATE') {
-      const changes = this.getChangedFields(audit);
-      if (changes.length > 0) {
-        const fieldList = changes
-          .slice(0, 3)
-          .map((c) => c.label.toLowerCase())
-          .join(', ');
-        const suffix = changes.length > 3 ? ` y ${changes.length - 3} campo(s) más` : '';
-        return `${actorName} editó ${fieldList}${suffix} en ${entityLabel || 'el sistema'}`;
-      }
-      return `${actorName} actualizó ${entityLabel || 'un registro'}`;
-    }
-    if (group === 'DELETE') {
-      return `${actorName} eliminó/canceló un registro de ${entityLabel || 'el sistema'}`;
-    }
-    if (group === 'PROCESS') {
-      return `${actorName} procesó una operación en ${entityLabel || 'el sistema'}`;
-    }
-    if (group === 'READ') {
-      return `${actorName} consultó ${entityLabel || 'información del sistema'}`;
+    if (event === 'CUTOFF_EXECUTED') {
+      return `${actorName} ejecutó el corte quincenal de relaciones.`;
     }
 
-    // Fallback
+    // --- Accesos ---
+    if (event === 'LOGIN_SUCCESSFUL') return `${actorName} inició sesión en el sistema.`;
+    if (event === 'LOGIN_FAILED') return `Intento fallido de inicio de sesión.`;
+    if (event === 'LOGOUT') return `${actorName} cerró su sesión de usuario.`;
+
+    // Fallback genérico por cambios detectados
+    const changes = this.extractActualChanges(audit);
+    if (changes.length > 0) {
+      const fieldList = changes
+        .slice(0, 3)
+        .map((c) => c.label.toLowerCase())
+        .join(', ');
+      const suffix = changes.length > 3 ? ` y ${changes.length - 3} campo(s) más` : '';
+      return `${actorName} modificó ${fieldList}${suffix} en ${entityLabel || 'el sistema'}.`;
+    }
+
     const eventInfo = this.getEventInfo(event);
-    return `${actorName} realizó: ${eventInfo.label}`;
+    return `${actorName} realizó: ${eventInfo.label}.`;
+  }
+
+  private humanize(text: string): string {
+    return text
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 }
+
+
+

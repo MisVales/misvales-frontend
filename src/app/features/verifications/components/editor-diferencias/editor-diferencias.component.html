@@ -2,9 +2,16 @@
   <h3 id="editor-diferencia-titulo" class="editor-title">Registrar diferencia</h3>
   <p class="editor-helper">{{ contexto().etiqueta }}</p>
   
-  <div class="form-group readonly-group">
-    <label>Dato declarado (actual)</label>
-    <div class="readonly-value">{{ contexto().datoDeclarado || 'Sin dato' }}</div>
+  <!-- Comparador Visual Dato Anterior vs Dato Nuevo -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+    <div class="bg-red-50/70 p-3 rounded-lg border border-red-100">
+      <span class="text-[11px] font-bold text-red-600 block mb-0.5 uppercase tracking-wide">Dato Anterior (Declarado)</span>
+      <span class="text-sm font-semibold text-gray-800 break-words">{{ contexto().datoDeclarado || 'Sin dato' }}</span>
+    </div>
+    <div class="bg-blue-50/70 p-3 rounded-lg border border-blue-100">
+      <span class="text-[11px] font-bold text-blue-600 block mb-0.5 uppercase tracking-wide">Dato Nuevo (Observado en Visita)</span>
+      <span class="text-sm font-semibold text-blue-900 break-words">{{ formatearValorObservado() || 'Selecciona o captura el valor abajo...' }}</span>
+    </div>
   </div>
 
   <div class="form-group">
@@ -65,6 +72,137 @@
         <option value="PASSPORT">Pasaporte</option>
         <option value="PROFESSIONAL_LICENSE">Cédula Profesional</option>
         <option value="OTHER">Otro</option>
+      </select>
+    }
+
+    <!-- Housing Tenure select -->
+    @else if (isHousingTenureField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona tipo de vivienda</option>
+        <option value="OWNED">Propia</option>
+        <option value="RENTED">Rentada</option>
+        <option value="BORROWED">Prestada</option>
+        <option value="OTHER">Otro</option>
+      </select>
+    }
+
+    <!-- Financing Status select -->
+    @else if (isFinancingStatusField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona financiamiento / situación</option>
+        <option value="PAID">Pagada</option>
+        <option value="MORTGAGE">Hipotecada</option>
+        <option value="LOAN">Préstamo</option>
+        <option value="INFONAVIT">INFONAVIT</option>
+        <option value="OTHER">Otro</option>
+        <option value="NOT_APPLICABLE">No Aplica</option>
+      </select>
+    }
+
+    <!-- Relationship select -->
+    @else if (isRelationshipField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona parentesco</option>
+        <option value="SPOUSE">Esposo(a)</option>
+        <option value="PARTNER">Pareja</option>
+        <option value="CHILD">Hijo(a)</option>
+        <option value="FATHER">Padre</option>
+        <option value="MOTHER">Madre</option>
+        <option value="SIBLING">Hermano(a)</option>
+        <option value="OTHER">Otro</option>
+      </select>
+    }
+
+    <!-- Vehicle Ownership Status select -->
+    @else if (isOwnershipStatusField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona propiedad</option>
+        <option value="OWNED">Propio</option>
+        <option value="FINANCED">Financiado</option>
+        <option value="COMPANY">De empresa</option>
+        <option value="OTHER">Otro</option>
+      </select>
+    }
+
+    <!-- Vehicle Type select -->
+    @else if (isVehicleTypeField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona tipo de vehículo</option>
+        <option value="AUTOMOBILE">Automóvil</option>
+        <option value="MOTORCYCLE">Motocicleta</option>
+        <option value="TRUCK">Camioneta / Camión</option>
+        <option value="OTHER">Otro</option>
+      </select>
+    }
+
+    <!-- Entry Type (Patrimonio) select -->
+    @else if (isEntryTypeField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona tipo de registro</option>
+        <option value="ASSET">Bien</option>
+        <option value="LIABILITY">Deuda</option>
+        <option value="ACTIVE_COMMITMENT">Compromiso activo</option>
+      </select>
+    }
+
+    <!-- Proof Type select -->
+    @else if (isProofTypeField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona tipo de comprobante</option>
+        <option value="CARTA">Carta</option>
+        <option value="ESTADO_DE_CUENTA">Estado de cuenta</option>
+      </select>
+    }
+
+    <!-- Civil Status select -->
+    @else if (isCivilStatusField()) {
+      <select
+        class="form-control"
+        [ngModel]="datoObservado()"
+        (ngModelChange)="datoObservado.set($event)"
+        [disabled]="isProcessing()"
+      >
+        <option value="">Selecciona estado civil</option>
+        <option value="SINGLE">Soltero(a)</option>
+        <option value="MARRIED">Casado(a)</option>
+        <option value="DIVORCED">Divorciado(a)</option>
+        <option value="WIDOWED">Viudo(a)</option>
+        <option value="COHABITING">Unión Libre</option>
       </select>
     }
 
