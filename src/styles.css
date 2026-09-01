@@ -154,7 +154,7 @@
 }
 .pagos-container .voucher-installment-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
   gap: 0.55rem;
   padding: 0 1.1rem 1rem;
 }
@@ -170,7 +170,16 @@
 }
 .pagos-container .voucher-installment-card > div {
   display: flex;
+  min-width: 0;
   flex-direction: column;
+}
+.pagos-container .voucher-installment-card > div > strong {
+  display: block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 0.82rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
 }
 .pagos-container .voucher-installment-card span,
 .pagos-container .voucher-installment-card small {

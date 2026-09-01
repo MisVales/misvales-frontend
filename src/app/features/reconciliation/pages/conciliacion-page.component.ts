@@ -16,6 +16,12 @@ import {
 } from '@features/relations/data-access/relaciones-api.service';
 import { RefactorSelectComponent } from '@shared/components/inputs/refactor-select/refactor-select.component';
 import { BankReconciliationActionsComponent } from '../components/bank-reconciliation-actions.component';
+import {
+  canViewBranchReconciliation as canViewBranchReconciliationAccess,
+  canViewGlobalReconciliation as canViewGlobalReconciliationAccess,
+  canUploadBankFile as canUploadBankFileAccess,
+  canViewBankImports as canViewBankImportsAccess,
+} from '../reconciliation-access';
 
 @Component({
   selector: 'app-conciliacion-page',
@@ -53,8 +59,8 @@ import { BankReconciliationActionsComponent } from '../components/bank-reconcili
       </div>
     }
 
-    @if (canRequest()) {
-      <app-bank-reconciliation-actions />
+    @if (canViewBankImports()) {
+      <app-bank-reconciliation-actions [canUpload]="canUploadBankFile()" />
     }
 
     <section class="space-y-4" aria-labelledby="movements-title">
@@ -568,6 +574,23 @@ export class ConciliacionPageComponent {
 
   canRequest(): boolean {
     return this.session.permissions().includes('manual_reconciliation.request_branch');
+  }
+  canViewBankImports(): boolean {
+    return canViewBankImportsAccess(this.session.permissions());
+  }
+  canViewGlobalReconciliation(): boolean {
+    return canViewGlobalReconciliationAccess(this.session.permissions());
+  }
+  canViewBranchReconciliation(): boolean {
+    return canViewBranchReconciliationAccess(this.session.permissions());
+  }
+  canUploadBankFile(): boolean {
+    return canUploadBankFileAccess(
+      this.session.roles(),
+      this.session.permissions(),
+      this.session.activeBranch(),
+      this.session.scopes(),
+    );
   }
   canExecute(): boolean {
     return this.session.permissions().includes('manual_reconciliation.execute_branch');

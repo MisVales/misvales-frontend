@@ -25,6 +25,16 @@
                 "glob": "**/*",
                 "input": "public"
               },
+              {
+                "glob": "maplibre-gl-worker.mjs",
+                "input": "node_modules/maplibre-gl/dist",
+                "output": "."
+              },
+              {
+                "glob": "maplibre-gl-worker-dev.mjs",
+                "input": "node_modules/maplibre-gl/dist",
+                "output": "."
+              },
               "src/manifest.webmanifest"
             ],
             "styles": ["src/styles.css"]

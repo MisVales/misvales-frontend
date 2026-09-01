@@ -22,7 +22,7 @@ import { API_CONFIG, defaultApiConfig } from '@core/api/api.config';
 import { GlobalErrorHandler } from '@core/error-handling/global-error-handler';
 import { AuthConfigurationService } from '@core/auth/data-access/auth-configuration.service';
 import { AccessContextRefreshService } from '@core/auth/services/access-context-refresh.service';
-import { LucideAngularModule, icons } from 'lucide-angular';
+import { Loader2, LucideAngularModule, icons } from 'lucide-angular';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -63,7 +63,12 @@ export const appConfig: ApplicationConfig = {
       }),
       withInterceptors([requestActivityInterceptor, authInterceptor, errorHandlingInterceptor]),
     ),
-    importProvidersFrom(LucideAngularModule.pick(icons)),
+    importProvidersFrom(
+      LucideAngularModule.pick({
+        ...icons,
+        Loader2,
+      }),
+    ),
     { provide: API_CONFIG, useValue: defaultApiConfig },
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
   ],

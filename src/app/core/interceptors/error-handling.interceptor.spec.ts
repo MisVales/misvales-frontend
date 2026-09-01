@@ -1,8 +1,19 @@
 import 'fake-indexeddb/auto';
 import { TestBed } from '@angular/core/testing';
-import { HttpClient, HttpErrorResponse, provideHttpClient, withInterceptors } from '@angular/common/http';
+import {
+  HttpClient,
+  HttpContext,
+  HttpErrorResponse,
+  provideHttpClient,
+  withInterceptors,
+} from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { errorHandlingInterceptor, isConcurrencyConflict, sanitizeServerError } from './error-handling.interceptor';
+import {
+  errorHandlingInterceptor,
+  isConcurrencyConflict,
+  sanitizeServerError,
+  SKIP_GLOBAL_ALERT,
+} from './error-handling.interceptor';
 import { SessionStore } from '../session/session.store';
 import { AlertService } from '../../shared/components/alerts/alert.service';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,7 +49,7 @@ describe('errorHandlingInterceptor', () => {
         { provide: AuthTokenStore, useValue: tokenStoreSpy },
         { provide: SessionRefreshService, useValue: sessionRefreshSpy },
         { provide: Router, useValue: routerSpy },
-      ]
+      ],
     });
 
     http = TestBed.inject(HttpClient);
@@ -52,7 +63,7 @@ describe('errorHandlingInterceptor', () => {
 
   it('clears the session and redirects to login when refresh fails after a 401', () => {
     http.get('/test').subscribe({
-      error: (error) => expect(error).toBeTruthy()
+      error: (error) => expect(error).toBeTruthy(),
     });
 
     const req = httpTestingController.expectOne('/test');
@@ -66,7 +77,7 @@ describe('errorHandlingInterceptor', () => {
 
   it('keeps the session active on a 403 error', () => {
     http.get('/test').subscribe({
-      error: (error) => expect(error).toBeTruthy()
+      error: (error) => expect(error).toBeTruthy(),
     });
 
     const req = httpTestingController.expectOne('/test');
@@ -83,9 +94,21 @@ describe('errorHandlingInterceptor', () => {
     );
   });
 
+  it('does not show a global toast when the request owns its error state', () => {
+    http.get('/test', { context: new HttpContext().set(SKIP_GLOBAL_ALERT, true) }).subscribe({
+      error: (error) => expect(error).toBeTruthy(),
+    });
+
+    httpTestingController
+      .expectOne('/test')
+      .flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+
+    expect(alertServiceSpy.showAlert).not.toHaveBeenCalled();
+  });
+
   it('clears the session and redirects to login on a 419 response', () => {
     http.get('/test').subscribe({
-      error: (error) => expect(error).toBeTruthy()
+      error: (error) => expect(error).toBeTruthy(),
     });
 
     const req = httpTestingController.expectOne('/test');
@@ -171,7 +194,12 @@ describe('errorHandlingInterceptor', () => {
 
     const req = httpTestingController.expectOne('/test');
     req.flush(
-      { error: { code: 'CREDIT_50_PERCENT_RULE_NOT_SATISFIED', message: 'Fuera del rango permitido.' } },
+      {
+        error: {
+          code: 'CREDIT_50_PERCENT_RULE_NOT_SATISFIED',
+          message: 'Fuera del rango permitido.',
+        },
+      },
       { status: 409, statusText: 'Conflict' },
     );
 
@@ -224,13 +252,23 @@ describe('errorHandlingInterceptor', () => {
       7000,
     );
   });
-
 });
 
 describe('isConcurrencyConflict', () => {
   it('recognizes both nested and top-level version conflict codes', () => {
-    expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { error: { code: 'CREDIT_LINE_VERSION_CONFLICT' } } }))).toBe(true);
-    expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { code: 'VERSION_CONFLICT' } }))).toBe(true);
+    expect(
+      isConcurrencyConflict(
+        new HttpErrorResponse({
+          status: 409,
+          error: { error: { code: 'CREDIT_LINE_VERSION_CONFLICT' } },
+        }),
+      ),
+    ).toBe(true);
+    expect(
+      isConcurrencyConflict(
+        new HttpErrorResponse({ status: 409, error: { code: 'VERSION_CONFLICT' } }),
+      ),
+    ).toBe(true);
   });
 
   it('recognizes HTTP 412 as a concurrency conflict', () => {
@@ -238,7 +276,11 @@ describe('isConcurrencyConflict', () => {
   });
 
   it('rejects non-concurrency business conflicts', () => {
-    expect(isConcurrencyConflict(new HttpErrorResponse({ status: 409, error: { error: { code: 'CREDIT_INSUFFICIENT' } } }))).toBe(false);
+    expect(
+      isConcurrencyConflict(
+        new HttpErrorResponse({ status: 409, error: { error: { code: 'CREDIT_INSUFFICIENT' } } }),
+      ),
+    ).toBe(false);
   });
 });
 
@@ -263,4 +305,3 @@ describe('sanitizeServerError', () => {
     expect(JSON.stringify(sanitized.error)).not.toContain('SQLSTATE');
   });
 });
-
