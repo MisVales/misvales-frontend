@@ -95,10 +95,10 @@ export class ArchivoBancarioPageComponent {
   upload(): void {
     const file = this.file();
     const processRunId = this.selectedProcessRunId();
-    if (!file || !this.reconciliationAvailable() || !processRunId) return;
+    if (!file) return;
     this.busy.set(true);
     this.clearMessages();
-    this.api.upload(file, processRunId).subscribe({
+    this.api.upload(file, processRunId || undefined).subscribe({
       next: (value) => {
         this.result.set(value);
         this.success.set(
@@ -110,6 +110,7 @@ export class ArchivoBancarioPageComponent {
         );
         this.busy.set(false);
         this.loadPendingPeriods();
+        this.loadImports();
       },
       error: (response: HttpErrorResponse) => {
         this.busy.set(false);
@@ -131,8 +132,7 @@ export class ArchivoBancarioPageComponent {
     this.exportBusy.set(true);
     this.clearMessages();
     const processRunId = this.selectedProcessRunId();
-    if (!processRunId) return;
-    this.api.exportSimulatedTransfers(processRunId).subscribe({
+    this.api.exportSimulatedTransfers(processRunId || undefined).subscribe({
       next: (blob) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -206,16 +206,12 @@ export class ArchivoBancarioPageComponent {
           ? selected
           : (periods[0]?.process_run_id ?? '');
         this.selectedProcessRunId.set(next);
-        if (next) this.loadSimulations();
-        else {
-          this.reconciliationAvailable.set(false);
-          this.availabilityLoading.set(false);
-        }
+        this.loadSimulations();
       },
       error: () => {
         this.pendingPeriods.set([]);
-        this.reconciliationAvailable.set(false);
-        this.availabilityLoading.set(false);
+        this.selectedProcessRunId.set('');
+        this.loadSimulations();
       },
     });
   }
@@ -228,7 +224,6 @@ export class ArchivoBancarioPageComponent {
 
   private loadSimulations(): void {
     const processRunId = this.selectedProcessRunId();
-    if (!processRunId) return;
     this.api.simulatedTransfers(processRunId).subscribe({
       next: (value) => {
         this.simulatedTransfers.set(value);

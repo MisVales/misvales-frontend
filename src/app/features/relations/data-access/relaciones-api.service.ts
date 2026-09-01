@@ -33,6 +33,21 @@ export interface VoucherFinancialSummary {
   cumulative_misvales_due: string;
   cumulative_surcharge: string;
   cumulative_forfeited_profit: string;
+  amount_owed?: string;
+  amount_paid?: string;
+  capital_owed?: string;
+  capital_paid?: string;
+  capital_pending?: string;
+  interest_pending?: string;
+  insurance_pending?: string;
+  commission_pending?: string;
+  current_amount?: string;
+  overdue_amount?: string;
+  accumulated_surcharges?: string;
+  pending_balance?: string;
+  is_settled?: boolean;
+  financial_status?: string;
+  current_installment?: number | null;
   occurrences: VoucherOccurrenceSummary[];
 }
 export type PaymentComponent =
@@ -42,6 +57,7 @@ export interface PaymentAllocation {
   id: string;
   payment_id: string;
   relation_item_id: string;
+  voucher_id?: string | null;
   component: PaymentComponent;
   amount: string;
   partida_relacion?: RelationItem;
@@ -75,6 +91,7 @@ export interface PaymentItem {
   id: string;
   relation_id: string;
   bank_movement_id?: string | null;
+  target_voucher_id?: string | null;
   source_type?: string;
   source_id?: string;
   amount: string;
@@ -85,6 +102,7 @@ export interface PaymentItem {
   commission_applied: string;
   capital_applied: string;
   line_recovered: string;
+  trace_snapshot?: Array<Record<string, unknown>> | null;
   asignaciones?: PaymentAllocation[];
   bank_movement?: {
     amount: string;

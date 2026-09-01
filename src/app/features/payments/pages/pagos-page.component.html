@@ -819,6 +819,28 @@
               </div>
             }
 
+            @if (payableVouchers(relation).length > 0) {
+              <label class="mb-5 block text-sm font-bold text-gray-800"
+                >Aplicar pago a
+                <refactor-select
+                  class="mt-1 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 font-normal text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700"
+                  [(ngModel)]="paymentTargetVoucherId"
+                  (ngModelChange)="paymentSuccess.set('')"
+                  ariaLabel="Vale al que se aplicará el pago"
+                >
+                  <option value="">Toda la relación</option>
+                  @for (voucher of payableVouchers(relation); track voucher.voucher_id) {
+                    <option [value]="voucher.voucher_id">
+                      {{ voucher.client }} · {{ voucher.folio }} · saldo
+                      {{ voucher.pending_balance || voucher.cumulative_misvales_due | currency: 'MXN' }}
+                    </option>
+                  }
+                </refactor-select>
+                <span class="mt-1 block text-xs font-normal text-gray-600"
+                  >El pago de un vale no modifica los saldos de los demás.</span
+              ></label>
+            }
+
             @if (isCashier()) {
               <div class="grid gap-4 md:grid-cols-2">
                 <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-4">

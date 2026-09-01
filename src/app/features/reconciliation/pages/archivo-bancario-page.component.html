@@ -58,13 +58,13 @@
       <h2 class="text-xl font-bold">Conciliación pendiente</h2>
       <p class="mt-2 text-base">{{ availabilityMessage() }}</p>
       <p class="mt-1 text-sm text-blue-800">
-        Caja puede seguir registrando pagos en ventanilla. El Excel y la carga del archivo se
-        habilitarán al vencer el corte.
+        Los pagos posteriores al corte pueden conciliarse de inmediato por referencia. Si
+        seleccionas un periodo vencido, el archivo también cerrará su evaluación pendiente.
       </p>
     </section>
   }
 
-  @if (canUpload() && reconciliationAvailable()) {
+  @if (canUpload()) {
     <section
       class="rounded-2xl bg-emerald-950 p-5 text-white sm:p-6"
       aria-labelledby="simulations-title"
@@ -135,7 +135,7 @@
     }
   }
 
-  @if (canUpload() && reconciliationAvailable()) {
+  @if (canUpload()) {
     <section
       class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm sm:p-6"
       aria-labelledby="upload-title"
@@ -146,6 +146,8 @@
       </h2>
       @if (selectedProcessRunId()) {
         <p class="mt-2 font-semibold text-emerald-800">El archivo se aplicará únicamente a la conciliación seleccionada arriba.</p>
+      } @else {
+        <p class="mt-2 font-semibold text-emerald-800">Sin periodo seleccionado: cada movimiento se aplicará de inmediato a su relación vigente por referencia.</p>
       }
       <p class="mt-1 text-base text-gray-600">
         Acepta el Excel descargado aquí y también el formato del banco con: Concepto, Referencia,
@@ -210,7 +212,7 @@
     </section>
   }
 
-  @if (!canUpload() || reconciliationAvailable()) {
+  @if (!availabilityLoading()) {
     <app-history-filter-bar label="Filtros del historial de archivos bancarios">
       <input
         type="search"

@@ -100,6 +100,7 @@ export interface MovementFilters {
 export interface SimulatedBankTransfer {
   id: string;
   relation_id: string;
+  target_voucher_id?: string | null;
   concept: string;
   payment_reference: string;
   amount: string;
@@ -111,6 +112,7 @@ export interface SimulatedBankTransfer {
 
 export interface SimulatedBankTransferPayload {
   relation_id: string;
+  target_voucher_id?: string;
   amount: number;
   payment_type: SimulatedBankTransfer['payment_type'];
   concept?: string;
@@ -122,10 +124,10 @@ export class ConciliacionApiService {
   private readonly http = inject(HttpClient);
   private readonly config = inject(API_CONFIG);
 
-  upload(file: File, processRunId: string): Observable<BankImport> {
+  upload(file: File, processRunId?: string): Observable<BankImport> {
     const data = new FormData();
     data.append('file', file);
-    data.append('process_run_id', processRunId);
+    if (processRunId) data.append('process_run_id', processRunId);
     return this.http
       .post<{ data: BankImport }>(`${this.config.baseUrl}/bank-imports`, data)
       .pipe(map((response) => response.data));
@@ -143,18 +145,22 @@ export class ConciliacionApiService {
       .pipe(map((response) => response.data));
   }
 
-  simulatedTransfers(processRunId: string): Observable<SimulatedBankTransfer[]> {
+  simulatedTransfers(processRunId?: string): Observable<SimulatedBankTransfer[]> {
+    let params = new HttpParams();
+    if (processRunId) params = params.set('process_run_id', processRunId);
     return this.http
       .get<{ data: SimulatedBankTransfer[] }>(`${this.config.baseUrl}/bank-simulations`, {
-        params: { process_run_id: processRunId },
+        params,
       })
       .pipe(map((response) => response.data));
   }
 
-  exportSimulatedTransfers(processRunId: string): Observable<Blob> {
+  exportSimulatedTransfers(processRunId?: string): Observable<Blob> {
+    let params = new HttpParams();
+    if (processRunId) params = params.set('process_run_id', processRunId);
     return this.http.get(`${this.config.baseUrl}/bank-simulations/export`, {
       responseType: 'blob',
-      params: { process_run_id: processRunId },
+      params,
     });
   }
 

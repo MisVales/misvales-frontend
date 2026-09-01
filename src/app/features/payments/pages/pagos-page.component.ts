@@ -13,6 +13,7 @@ import {
 import {
   PaymentItem,
   PaymentAllocation,
+  VoucherFinancialSummary,
   RelacionesApiService,
   RelationItem,
   RelationView,
@@ -188,6 +189,7 @@ export class PagosPageComponent implements OnDestroy {
   readonly reportBusy = signal(false);
   readonly reportSuccess = signal('');
   paymentAmount: number | null = null;
+  paymentTargetVoucherId: string | null = null;
   paymentType: SimulatedBankTransfer['payment_type'] = 'TRANSFER';
   paymentConcept = '';
 
@@ -472,6 +474,12 @@ export class PagosPageComponent implements OnDestroy {
 
   allocationsFor(payment: PaymentItem): PaymentAllocation[] {
     return payment.asignaciones ?? [];
+  }
+
+  payableVouchers(relation: RelationView): VoucherFinancialSummary[] {
+    return (relation.voucher_summaries ?? []).filter(
+      (voucher) => Number(voucher.pending_balance ?? voucher.cumulative_misvales_due ?? 0) > 0,
+    );
   }
 
   allocationComponentLabel(component: PaymentAllocation['component']): string {
@@ -866,6 +874,7 @@ export class PagosPageComponent implements OnDestroy {
     this.reconciliationApi
       .simulateTransfer({
         relation_id: relation.id,
+        target_voucher_id: this.paymentTargetVoucherId || undefined,
         amount: this.paymentAmount,
         payment_type: this.isCashier() ? 'COUNTER' : this.paymentType,
         concept: this.isCashier() ? undefined : this.paymentConcept.trim() || undefined,
@@ -881,6 +890,7 @@ export class PagosPageComponent implements OnDestroy {
             'Pago simulado registrado para el siguiente archivo de conciliación de Caja.',
           );
           this.paymentAmount = null;
+          this.paymentTargetVoucherId = null;
           this.paymentConcept = '';
         },
         error: (response: HttpErrorResponse) => {
@@ -903,6 +913,7 @@ export class PagosPageComponent implements OnDestroy {
         URL.revokeObjectURL(url);
         this.paymentBusy.set(false);
         this.paymentAmount = null;
+        this.paymentTargetVoucherId = null;
         this.paymentSuccess.set(
           'Pago en efectivo guardado para conciliación. El ticket se descargó correctamente.',
         );
@@ -1018,6 +1029,7 @@ export class PagosPageComponent implements OnDestroy {
     this.paymentBusy.set(false);
     this.paymentSuccess.set('');
     this.paymentAmount = null;
+    this.paymentTargetVoucherId = null;
     this.paymentType = 'TRANSFER';
     this.paymentConcept = '';
     this.reportFile.set(null);
